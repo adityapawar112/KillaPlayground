@@ -2,11 +2,13 @@
 
 import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
-import { TopNavBar } from '@/components/hud/TopNavBar';
-import { BottomDock } from '@/components/hud/BottomDock';
+import { AppMenuBar } from '@/components/hud/AppMenuBar';
+import { LeftToolShelf } from '@/components/hud/LeftToolShelf';
 import { ContextualDock } from '@/components/hud/ContextualDock';
+import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
+import { StartupModal } from '@/components/modals/StartupModal';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 
 const KillaCanvas = dynamic(
@@ -16,10 +18,12 @@ const KillaCanvas = dynamic(
     loading: () => (
       <div className="w-full h-full flex flex-col items-center justify-center bg-[#F9F6F0]">
         <div className="w-12 h-12 rounded-full border-4 border-[#B85F45] border-t-transparent animate-spin mb-4" />
-        <span className="font-sans font-bold text-lg text-[#4B382C] tracking-wide">
-          Loading 3D Diorama Viewport...
+        <span className="font-yatra font-bold text-2xl text-[#4B382C] tracking-wide">
+          The Killa Playground
         </span>
-        <span className="text-xs text-[#8D7666] mt-1">किल्ला प्लेग्राउंड सुरू होत आहे</span>
+        <span className="text-xs text-[#8D7666] mt-1 font-sans">
+          किल्ला प्लेग्राउंड सुरू होत आहे • Loading 3D Viewport...
+        </span>
       </div>
     ),
   }
@@ -39,9 +43,12 @@ export default function HomePage() {
     isShortcutsModalOpen,
     isResetConfirmOpen,
     setResetConfirmOpen,
+    isStartupModalOpen,
+    setStartupModalOpen,
+    setCameraViewPreset,
   } = useEditorStore();
 
-  // Global Keyboard Shortcuts (Tool keys 1-7, Brush size, Night mode, Reset)
+  // Global Keyboard Shortcuts (Tool keys 1-7, Brush size, Night mode, Reset, etc.)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing inside text fields
@@ -54,6 +61,7 @@ export default function HomePage() {
 
       // Close modal on Escape
       if (e.key === 'Escape') {
+        if (isStartupModalOpen) setStartupModalOpen(false);
         if (isShortcutsModalOpen) setShortcutsModalOpen(false);
         if (isResetConfirmOpen) setResetConfirmOpen(false);
         return;
@@ -126,6 +134,8 @@ export default function HomePage() {
     isShortcutsModalOpen,
     isResetConfirmOpen,
     setResetConfirmOpen,
+    isStartupModalOpen,
+    setStartupModalOpen,
   ]);
 
   return (
@@ -139,12 +149,22 @@ export default function HomePage() {
         <KillaCanvas />
       </div>
 
-      {/* Floating HUD Layer */}
-      <TopNavBar />
-      <ContextualDock />
-      <BottomDock />
+      {/* Desktop Application Menu Bar + Webpage Title */}
+      <AppMenuBar onSetCameraView={(view) => setCameraViewPreset(view)} />
 
-      {/* Modals */}
+      {/* Left Vertical Tool Shelf (Tooltips expand cleanly to the right) */}
+      <LeftToolShelf />
+
+      {/* Secondary Contextual Settings Bar */}
+      <ContextualDock />
+
+      {/* Unobtrusive Bottom Controls Strip */}
+      <BottomStatusBar />
+
+      {/* Blender-Style Startup Splash / Project Hub */}
+      <StartupModal />
+
+      {/* Helper Modals */}
       <ShortcutsModal />
       <ResetConfirmModal />
     </main>

@@ -142,7 +142,7 @@ This document serves as the master roadmap and tracker for building **Killa Play
 
 ---
 
-## Ticket 06: State Serialization, Undo/Redo & Local Persistence Adapter
+## Ticket 06: State Serialization, Local Persistence Adapter & Project Hub
 
 - **Status**: `ready-for-agent`
 - **Blocked by**: `Ticket 04`, `Ticket 05`
@@ -151,17 +151,23 @@ This document serves as the master roadmap and tracker for building **Killa Play
   - **Binary Serialization**:
     - Quantize `stateBuffer` to `Uint8Array`.
     - Export `paintCanvas` as WebP buffer.
-    - Compress state + paint + props JSON with `fflate.zipSync` into a compact `< 35 KB` binary package.
-  - **Persistence Adapter**:
-    - Pluggable interface: `saveKilla()`, `loadKilla()`, `listLocalKillas()`.
-    - Local storage / IndexedDB implementation for offline and unconfigured runs.
+    - Compress state + paint + props JSON with `fflate.zipSync` into a compact `< 35 KB` binary package (`.killa` file format).
+  - **Persistence Adapter & Local Vault**:
+    - Local storage / IndexedDB implementation (`killa_saved_projects_v1`) persisting named projects with timestamp of last save (`updatedAt`), blueprint type, and diorama data.
+    - Full project lifecycle methods: `saveProjectLocally()`, `loadProjectLocally()`, `deleteProjectLocally()`.
+    - Blender-style startup modal hub displaying recent locally saved projects with relative time elapsed (`Just now`, `5 mins ago`, etc.) and one-click loading.
+  - **Project File Import & Export**:
+    - Direct desktop file download of `.killa` / `.json` diorama project packages.
+    - Native file picker upload to import external or backed-up `.killa` project files directly into the 3D canvas without an active database.
+  - **Validation & Future Supabase Bridge**:
     - Defensive Zod validation schema for inbound payloads.
-    - Ready-to-connect Supabase client module and SQL migration script for future linking.
+    - Pluggable adapter interface ready for cloud sync and read-only shareable links (`/killa/[id]`).
 
 ### Acceptance Criteria
 - [ ] Undo and redo reliably revert and restore sculpting, painting, and prop placement operations.
 - [ ] `serializeKilla()` packages dirty state + paint + 50 props into $\le 35\text{ KB}$ in $< 15\text{ms}$.
-- [ ] Killa state is persisted to local storage and successfully restored upon page reload.
+- [ ] Killa state is persisted to local storage and listed in the startup modal with last-saved timestamp.
+- [ ] `.killa` / `.json` project files can be downloaded and imported cleanly through the desktop application menu.
 - [ ] Inbound payload schema validates types and rejects malformed data.
 
 ---

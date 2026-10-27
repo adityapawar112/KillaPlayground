@@ -29,6 +29,25 @@ export interface SplinePath {
   type: SplineConversionType;
 }
 
+export interface SavedProject {
+  id: string;
+  name: string;
+  templateId: string;
+  updatedAt: number;
+  data: {
+    splines: SplinePath[];
+    placedProps: PlacedProp[];
+    fortTitle: string;
+    builderName: string;
+    templateId: string;
+    paintColor?: string;
+    waterMode?: 'reflective' | 'tarpaulin';
+  };
+}
+
+const STORAGE_KEY = 'killa_saved_projects_v1';
+const STARTUP_PREF_KEY = 'killa_dont_show_startup';
+
 interface EditorState {
   // Active Tool & Brush State
   activeTool: ToolType;
@@ -61,16 +80,40 @@ interface EditorState {
   locale: 'en' | 'mr' | 'hi';
   setLocale: (locale: 'en' | 'mr' | 'hi') => void;
 
-  // Modals & Drawers Visibility
+  // Modals & Panels Visibility
+  showLeftToolbar: boolean;
+  toggleLeftToolbar: () => void;
+  showContextualDock: boolean;
+  toggleContextualDock: () => void;
+  showBottomStatusBar: boolean;
+  toggleBottomStatusBar: () => void;
+
   isPropDrawerOpen: boolean;
   isPosterModalOpen: boolean;
   isModeSelectModalOpen: boolean;
   isShortcutsModalOpen: boolean;
   isResetConfirmOpen: boolean;
+  isStartupModalOpen: boolean;
+  dontShowStartupModal: boolean;
+
+  // Local Saved Projects Vault
+  savedProjects: SavedProject[];
+  loadSavedProjects: () => void;
+  saveProjectLocally: (name?: string) => string;
+  loadProjectLocally: (id: string) => boolean;
+  deleteProjectLocally: (id: string) => void;
+  importProjectData: (jsonStr: string) => boolean;
+  exportProjectData: () => string;
+
+  // Notification Toast
+  toastMessage: string | null;
+  setToastMessage: (msg: string | null) => void;
 
   // Camera & Navigation
   cameraResetTrigger: number;
   triggerCameraReset: () => void;
+  cameraViewPreset: 'top' | 'front' | 'side' | 'reset' | null;
+  setCameraViewPreset: (view: 'top' | 'front' | 'side' | 'reset' | null) => void;
 
   // Actions
   setActiveTool: (tool: ToolType) => void;
@@ -113,10 +156,32 @@ interface EditorState {
   setModeSelectModalOpen: (open: boolean) => void;
   setShortcutsModalOpen: (open: boolean) => void;
   setResetConfirmOpen: (open: boolean) => void;
+  setStartupModalOpen: (open: boolean) => void;
+  setDontShowStartupModal: (dontShow: boolean) => void;
 
   // Reset
   resetScene: () => void;
 }
+
+const getInitialSavedProjects = (): SavedProject[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+};
+
+const getInitialStartupPref = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(STARTUP_PREF_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   locale: 'en',
@@ -145,14 +210,153 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   builderName: 'Mavala Builder',
   templateId: 'raigad',
 
+  // Visibility States
+  showLeftToolbar: true,
+  toggleLeftToolbar: () => set((state) => ({ showLeftToolbar: !state.showLeftToolbar })),
+  showContextualDock: true,
+  toggleContextualDock: () => set((state) => ({ showContextualDock: !state.showContextualDock })),
+  showBottomStatusBar: true,
+  toggleBottomStatusBar: () => set((state) => ({ showBottomStatusBar: !state.showBottomStatusBar })),
+
   isPropDrawerOpen: false,
   isPosterModalOpen: false,
   isModeSelectModalOpen: false,
   isShortcutsModalOpen: false,
   isResetConfirmOpen: false,
+  isStartupModalOpen: true, // Opened on initial visit
+  dontShowStartupModal: false,
+
+  savedProjects: [],
+  toastMessage: null,
+  setToastMessage: (msg) => set({ toastMessage: msg }),
 
   cameraResetTrigger: 0,
   triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 })),
+  cameraViewPreset: null,
+  setCameraViewPreset: (v) => set({ cameraViewPreset: v }),
+
+  loadSavedProjects: () => {
+    const projects = getInitialSavedProjects();
+    const dontShow = getInitialStartupPref();
+    set({
+      savedProjects: projects,
+      dontShowStartupModal: dontShow,
+      isStartupModalOpen: !dontShow,
+    });
+  },
+
+  saveProjectLocally: (name) => {
+    const { splines, placedProps, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
+    const projectName = name?.trim() || fortTitle || 'Untitled Killa';
+    const projectId = `killa_${Date.now()}`;
+    const newProject: SavedProject = {
+      id: projectId,
+      name: projectName,
+      templateId,
+      updatedAt: Date.now(),
+      data: {
+        splines,
+        placedProps,
+        fortTitle: projectName,
+        builderName,
+        templateId,
+        paintColor,
+        waterMode,
+      },
+    };
+
+    const existingIndex = savedProjects.findIndex((p) => p.name.toLowerCase() === projectName.toLowerCase());
+    let updatedProjects: SavedProject[];
+    if (existingIndex >= 0) {
+      updatedProjects = [...savedProjects];
+      updatedProjects[existingIndex] = newProject;
+    } else {
+      updatedProjects = [newProject, ...savedProjects];
+    }
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProjects));
+      } catch (err) {
+        console.error('Failed to save to localStorage:', err);
+      }
+    }
+
+    set({ savedProjects: updatedProjects, fortTitle: projectName });
+    return projectId;
+  },
+
+  loadProjectLocally: (id) => {
+    const { savedProjects } = get();
+    const proj = savedProjects.find((p) => p.id === id);
+    if (!proj || !proj.data) return false;
+
+    set({
+      splines: proj.data.splines || [],
+      placedProps: proj.data.placedProps || [],
+      fortTitle: proj.data.fortTitle || proj.name,
+      builderName: proj.data.builderName || 'Mavala Builder',
+      templateId: proj.data.templateId || 'raigad',
+      paintColor: proj.data.paintColor || COLORS.basalt,
+      waterMode: proj.data.waterMode || 'tarpaulin',
+      isStartupModalOpen: false,
+    });
+    return true;
+  },
+
+  deleteProjectLocally: (id) => {
+    const { savedProjects } = get();
+    const updated = savedProjects.filter((p) => p.id !== id);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (err) {
+        console.error('Failed to update localStorage:', err);
+      }
+    }
+    set({ savedProjects: updated });
+  },
+
+  exportProjectData: () => {
+    const { splines, placedProps, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const payload = {
+      version: '1.0.0',
+      exportedAt: new Date().toISOString(),
+      fortTitle,
+      builderName,
+      templateId,
+      paintColor,
+      waterMode,
+      splines,
+      placedProps,
+    };
+    return JSON.stringify(payload, null, 2);
+  },
+
+  importProjectData: (jsonStr) => {
+    try {
+      const data = JSON.parse(jsonStr);
+      if (!data || typeof data !== 'object') return false;
+
+      set({
+        fortTitle: data.fortTitle || 'Imported Killa',
+        builderName: data.builderName || 'Mavala Builder',
+        templateId: data.templateId || 'raigad',
+        paintColor: data.paintColor || COLORS.basalt,
+        waterMode: data.waterMode || 'tarpaulin',
+        splines: Array.isArray(data.splines) ? data.splines : [],
+        placedProps: Array.isArray(data.placedProps) ? data.placedProps : [],
+        isStartupModalOpen: false,
+      });
+
+      // Also auto-save into local projects list
+      get().saveProjectLocally(data.fortTitle || 'Imported Killa');
+      return true;
+    } catch (err) {
+      console.error('Failed to parse project JSON:', err);
+      return false;
+    }
+  },
 
   setActiveTool: (tool) => {
     set({
@@ -238,6 +442,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setModeSelectModalOpen: (open) => set({ isModeSelectModalOpen: open }),
   setShortcutsModalOpen: (open) => set({ isShortcutsModalOpen: open }),
   setResetConfirmOpen: (open) => set({ isResetConfirmOpen: open }),
+  setStartupModalOpen: (open) => set({ isStartupModalOpen: open }),
+  setDontShowStartupModal: (dontShow) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STARTUP_PREF_KEY, dontShow ? 'true' : 'false');
+      } catch (err) {
+        console.error('Failed to set startup pref:', err);
+      }
+    }
+    set({ dontShowStartupModal: dontShow });
+  },
 
   resetScene: () =>
     set({

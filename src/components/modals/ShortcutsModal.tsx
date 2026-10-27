@@ -21,11 +21,11 @@ export const ShortcutsModal: React.FC = () => {
               <TbKeyboard className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-[#2B1E16] font-sans">
+              <h2 className="text-lg font-bold text-[#2B1E16] font-yatra tracking-wide">
                 {t.shortcutsModal.title}
               </h2>
               <p className="text-xs text-[#8D7666]">
-                Blender-standard mouse & keyboard diorama controls
+                Tactile 3D diorama navigation & sculpting keys
               </p>
             </div>
           </div>

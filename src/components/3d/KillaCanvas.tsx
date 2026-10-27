@@ -186,10 +186,10 @@ interface KillaCanvasProps {
 }
 
 export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
-  const { nightMode } = useEditorStore();
+  const { nightMode, cameraViewPreset, setCameraViewPreset } = useEditorStore();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
 
-  // Set preset camera view from gizmo
+  // Set preset camera view from gizmo or menu bar
   const handleSetCameraView = useCallback((view: 'top' | 'front' | 'side' | 'reset') => {
     if (!controlsRef.current) return;
     const controls = controlsRef.current;
@@ -210,6 +210,14 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     }
     controls.update();
   }, []);
+
+  // Listen for view changes from store (e.g. from AppMenuBar)
+  useEffect(() => {
+    if (cameraViewPreset) {
+      handleSetCameraView(cameraViewPreset);
+      setCameraViewPreset(null);
+    }
+  }, [cameraViewPreset, handleSetCameraView, setCameraViewPreset]);
 
   // Zoom delta handler from gizmo
   const handleZoom = useCallback((delta: number) => {

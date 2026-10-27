@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Modak&family=Yatra+One&family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -32,15 +33,15 @@
   --color-muted: #8D7666;
   --color-muted-soft: #B29E8E;
 
-  --font-yatra: var(--font-yatra);
-  --font-modak: var(--font-modak);
-  --font-inter: var(--font-inter);
+  --font-yatra: 'Yatra One', cursive, serif;
+  --font-modak: 'Modak', cursive;
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 :root {
   background-color: #F9F6F0;
   color: #2B1E16;
-  font-family: var(--font-inter), system-ui, sans-serif;
+  font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -62,13 +63,13 @@
   background: rgba(75, 56, 44, 0.7);
 }
 
-/* Devanagari text rendering optimizations */
+/* Devanagari & Marathi Display Fonts */
 .font-yatra {
-  font-family: var(--font-yatra), cursive, serif;
+  font-family: var(--font-yatra), 'Yatra One', cursive, serif !important;
 }
 .font-modak {
-  font-family: var(--font-modak), cursive;
+  font-family: var(--font-modak), 'Modak', cursive !important;
 }
-.font-sans {
-  font-family: var(--font-inter), system-ui, sans-serif;
+.font-sans, body, button, input, select {
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
 }

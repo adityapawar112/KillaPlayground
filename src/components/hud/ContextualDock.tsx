@@ -32,12 +32,15 @@ export const ContextualDock: React.FC = () => {
     setWaterMode,
     mudLocked,
     setMudLocked,
+    showContextualDock,
   } = useEditorStore();
 
   const { t } = useTranslation();
 
+  if (!showContextualDock) return null;
+
   return (
-    <div className="fixed bottom-22 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#F2EBE1]/94 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-xl transition-all select-none">
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#F2EBE1]/94 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-xl transition-all select-none">
       {/* SOIL TOOL CONTROLS */}
       {activeTool === 'soil' && (
         <div className="flex items-center gap-4">

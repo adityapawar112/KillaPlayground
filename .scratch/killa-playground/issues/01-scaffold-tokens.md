@@ -5,11 +5,11 @@ Initial project structure with Next.js 15 (App Router), React 19, TypeScript, an
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** completed
 
-- [ ] Next.js 15 + TypeScript + Tailwind CSS initialized in root
-- [ ] 3D dependencies installed (`three`, `@react-three/fiber`, `@react-three/drei`, `three-mesh-bvh`, `three-custom-shader-material`, `fflate`, `zustand`, `zod`, `lucide-react`, `lazy-brush`, `canvas-confetti`)
-- [ ] Design tokens configured in Tailwind (`colors.canvas`, `colors.dark-brown`, `colors.terracotta`, `colors.burnt-clay`, `colors.sand`, `colors.camel`, `colors.olive`, `colors.bhagwa`, `colors.chuna`, `colors.basalt`, `colors.sea-blue`, `colors.diya-amber`)
-- [ ] Google Fonts `Yatra One`, `Modak`, `Inter` preloaded in layout with zero FOUT
-- [ ] Responsive full-screen diorama layout shell with HUD mounting points
-- [ ] Application compiles and runs with `npm run dev` at `http://localhost:3000`
+- [x] Next.js 15 + TypeScript + Tailwind CSS initialized in root
+- [x] 3D dependencies installed (`three`, `@react-three/fiber`, `@react-three/drei`, `three-mesh-bvh`, `three-custom-shader-material`, `fflate`, `zustand`, `zod`, `lucide-react`, `lazy-brush`, `canvas-confetti`)
+- [x] Design tokens configured in Tailwind (`colors.canvas`, `colors.dark-brown`, `colors.terracotta`, `colors.burnt-clay`, `colors.sand`, `colors.camel`, `colors.olive`, `colors.bhagwa`, `colors.chuna`, `colors.basalt`, `colors.sea-blue`, `colors.diya-amber`)
+- [x] Google Fonts `Yatra One`, `Modak`, `Inter` preloaded in layout with zero FOUT
+- [x] Responsive full-screen diorama layout shell with HUD mounting points
+- [x] Application compiles and runs with `npm run dev` at `http://localhost:3000`

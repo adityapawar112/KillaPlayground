@@ -28,7 +28,7 @@ This document serves as the master roadmap and tracker for building **Killa Play
 
 ## Ticket 01: Project Foundation, Design System Tokens & Responsive Shell
 
-- **Status**: `in-progress`
+- **Status**: `completed`
 - **Blocked by**: None (can start immediately)
 - **Delivers**:
   - Initialized Next.js 15 (App Router) + TypeScript + Tailwind CSS application.
@@ -41,10 +41,10 @@ This document serves as the master roadmap and tracker for building **Killa Play
   - Full-bleed responsive diorama canvas shell with non-blocking floating HUD mounts.
 
 ### Acceptance Criteria
-- [ ] Application compiles and runs with `npm run dev` at `http://localhost:3000`.
-- [ ] Canvas viewport expands to 100vw × 100vh with `#F9F6F0` foundation.
-- [ ] Fonts `Yatra One`, `Modak`, and `Inter` load cleanly with zero FOUT.
-- [ ] Tailwind tokens configured and verified with test elements.
+- [x] Application compiles and runs with `npm run dev` at `http://localhost:3000`.
+- [x] Canvas viewport expands to 100vw × 100vh with `#F9F6F0` foundation.
+- [x] Fonts `Yatra One`, `Modak`, and `Inter` load cleanly with zero FOUT.
+- [x] Tailwind tokens configured and verified with test elements.
 
 ---
 

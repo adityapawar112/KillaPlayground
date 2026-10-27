@@ -38,31 +38,56 @@ export const BaseTerrainContent: React.FC = () => {
   const { invalidate } = useThree();
   const { stateTexture, stateBuffer, lastUpdated, setTerrainMesh } = useTerrainStore();
 
-  // Load dry and wet 1K PBR textures from public directory
+  // Load PBR texture maps per user specifications:
+  // - walkable: red_laterite_soil_stones_1k (flat/walkable surfaces)
+  // - cliff: rocks_ground_06_1k (slopes steeper than walkable surface)
+  // - cracked: cracked_red_ground_1k (wet soil / reshaped dry soil)
+  // - path: muddy_tracks_1k (foliage paths)
+  // - grass: rocky_terrain_02_1k (foliage grass / moss)
   const textures = useTexture({
-    dryDiff: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_diff_1k.jpg',
-    dryArm: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_arm_1k.jpg',
-    wetDiff: '/textures/red_mud_stones_1k/textures/red_mud_stones_diff_1k.jpg',
-    wetArm: '/textures/red_mud_stones_1k/textures/red_mud_stones_arm_1k.jpg',
+    walkableDiff: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_diff_1k.jpg',
+    walkableArm: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_arm_1k.jpg',
+    cliffDiff: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_diff_1k.jpg',
+    cliffArm: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_arm_1k.jpg',
+    crackedDiff: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_diff_1k.jpg',
+    crackedArm: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_arm_1k.jpg',
+    pathDiff: '/textures/muddy_tracks_1k/textures/muddy_tracks_diff_1k.jpg',
+    pathArm: '/textures/muddy_tracks_1k/textures/muddy_tracks_arm_1k.jpg',
+    grassDiff: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_diff_1k.jpg',
+    grassArm: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_arm_1k.jpg',
   });
 
   // Configure texture wrap and color space
   useEffect(() => {
     if (!textures) return;
-    textures.dryDiff.wrapS = textures.dryDiff.wrapT = THREE.RepeatWrapping;
-    textures.dryArm.wrapS = textures.dryArm.wrapT = THREE.RepeatWrapping;
-    textures.wetDiff.wrapS = textures.wetDiff.wrapT = THREE.RepeatWrapping;
-    textures.wetArm.wrapS = textures.wetArm.wrapT = THREE.RepeatWrapping;
 
-    textures.dryDiff.colorSpace = THREE.SRGBColorSpace;
-    textures.wetDiff.colorSpace = THREE.SRGBColorSpace;
-    textures.dryArm.colorSpace = THREE.NoColorSpace;
-    textures.wetArm.colorSpace = THREE.NoColorSpace;
+    const diffMaps = [
+      textures.walkableDiff,
+      textures.cliffDiff,
+      textures.crackedDiff,
+      textures.pathDiff,
+      textures.grassDiff,
+    ];
 
-    textures.dryDiff.needsUpdate = true;
-    textures.dryArm.needsUpdate = true;
-    textures.wetDiff.needsUpdate = true;
-    textures.wetArm.needsUpdate = true;
+    const armMaps = [
+      textures.walkableArm,
+      textures.cliffArm,
+      textures.crackedArm,
+      textures.pathArm,
+      textures.grassArm,
+    ];
+
+    diffMaps.forEach((tex) => {
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+    });
+
+    armMaps.forEach((tex) => {
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.NoColorSpace;
+      tex.needsUpdate = true;
+    });
 
     invalidate();
   }, [textures, invalidate]);
@@ -82,15 +107,22 @@ export const BaseTerrainContent: React.FC = () => {
     invalidate();
   }, [lastUpdated, stateBuffer, geometry, invalidate]);
 
-  // Create CustomShaderMaterial blending dry laterite and wet mud based on stateTexture
+  // Create slope-aware CustomShaderMaterial
   const material = useMemo(() => {
     return createTerrainMaterial({
       stateTexture,
-      dryDiff: textures.dryDiff,
-      dryArm: textures.dryArm,
-      wetDiff: textures.wetDiff,
-      wetArm: textures.wetArm,
+      walkableDiff: textures.walkableDiff,
+      walkableArm: textures.walkableArm,
+      cliffDiff: textures.cliffDiff,
+      cliffArm: textures.cliffArm,
+      crackedDiff: textures.crackedDiff,
+      crackedArm: textures.crackedArm,
+      pathDiff: textures.pathDiff,
+      pathArm: textures.pathArm,
+      grassDiff: textures.grassDiff,
+      grassArm: textures.grassArm,
       textureRepeat: 8.0,
+      cliffRepeat: 6.0,
     });
   }, [stateTexture, textures]);
 

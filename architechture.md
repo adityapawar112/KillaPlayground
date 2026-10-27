@@ -71,64 +71,54 @@ The system is 95% client-computed. The backend is a dumb persistence pipe that o
 
 ---
 
-## 4. Low-Level Design (LLD) — How Every Mechanics Feature Works
+## 4. Low-Level Design (LLD) — Architecture & Tool Breakdown
 
-### 4.1 The Terrain & Mud Physics State Machine (No Voxels Needed)
-Instead of complex 3D voxel chunks, the terrain is a single `THREE.PlaneGeometry(10, 10, 255, 255)` (`65,536` vertices) backed by two CPU/GPU synchronized buffers:
+### 4.1 Slope-Aware Terrain Material & Dual-Level Geometry Architecture
+The diorama is divided into two distinct physical and architectural layers:
 
-1. **`stateBuffer` (`Float32Array` of size `256 * 256 * 4` wrapped in `THREE.DataTexture`):**
-   * **Channel R (`height`):** Current elevation of the mud at `(u, v)`.
-   * **Channel G (`wetness`):** `0.0` (dry crumbly soil) to `1.0` (wet glossy malleable mud).
-   * **Channel B (`lockState`):** `0.0` (active mud) or `1.0` ("Let Mud Set" locked architectural mass).
-   * **Channel A (`grassDensity`):** `0.0` to `1.0` density of sprouted *halim* seeds.
-2. **`paintCanvas` (`HTMLCanvasElement` of size `1024 x 1024` wrapped in `THREE.CanvasTexture`):**
-   * Stores all user brushwork (black charcoal walls, white brick lines, red-ochre paths, blue plastic pond tint).
+1. **The Base Terrain Layer (Mountain & Courtyard):**
+   * A single high-resolution `THREE.PlaneGeometry(10, 10, 255, 255)` (`65,536` vertices) wrapped in `<Bvh firstHitOnly>`.
+   * **Slope-Aware Texture Blending (`three-custom-shader-material`):**
+     * **Steeper than Walkable Surfaces ($N_y < 0.78$):** Textured with `rocks_ground_06_1k` via triplanar projection to render sheer cliffs and crags without vertical UV stretching.
+     * **Walkable Surfaces ($N_y \ge 0.78$):** Textured with `red_laterite_soil_stones_1k` (authentic red laterite soil).
+     * **Foliage Paths:** Directly painted using `muddy_tracks_1k`.
+     * **Foliage Grass / Moss:** Directly painted using `rocky_terrain_02_1k`.
+     * **Moist Soil / Reshaped Soil:** Blends in `cracked_red_ground_1k` with specular gloss when wet.
 
-#### How the 4 Mud-Building Tools Mutate `stateBuffer`
-When the user drags the mouse, `<Bvh>` raycasting returns the exact `uv` intersection `(u, v)` and `face.normal` in `< 0.2ms`. We iterate over a circular brush radius $r$ around `(u * 256, v * 256)`:
-
-| Active Tool | Mathematical Operation on `stateBuffer` at `(x, y)` | Visual Result |
-| :--- | :--- | :--- |
-| **1. Dump Dry Soil** | If `B (lock) == 0`: Add Gaussian falloff $\Delta h$ to `R (height)` and set `G (wetness) = 0.0` + add high-frequency Simplex noise (`simplex-noise` package). | Pours a rough, bumpy mound of matte light-brown dry soil. |
-| **2. Pour Water** | Set `G (wetness) = clamp(G + 0.15, 0, 1)` and apply a $3\times3$ box-blur to `R (height)` to melt away the dry soil noise. | Soil visibly darkens to rich wet *tambdi maati*, gains specular shine (`roughness: mix(0.95, 0.2, wetness)`), and softens. |
-| **3. Top Patting (Level Plane)** | **Requires `G (wetness) > 0.5`.** On `pointerDown`, sample target height $H_{target} = R(u_0, v_0)$. While dragging, `R(x,y) = lerp(R(x,y), H_target, 0.4)`. | Flattens uneven wet mud mounds from above into crisp horizontal plateaus, roofs, and bastion decks. |
-| **4. Side Pushing (Walls & Blocks)** | **Requires `G (wetness) > 0.5`.** Compute pointer drag vector $\vec{d}$. For pixels ahead of $\vec{d}$ inside a rectangular box kernel, clamp elevation to a step function (`R(x,y) = max(R(x,y), H_ridge)`) and zero out the slope gradient behind $\vec{d}$. | Compresses sloped mud walls from the side into sheer vertical faces and solid rectangular/cylindrical blocks. |
-
-> `// ponytail: After mutating stateBuffer inside the brush radius, update PlaneGeometry.attributes.position.array ONLY for indices inside the dirty bounding box [minX..maxX, minY..maxY], then call position.addUpdateRange(offset, count) and computeVertexNormals() before recomputing BVH refit().`
+2. **The Structure Layer (Lumps of Soil Placed on Terrain):**
+   * Structures do NOT deform the underlying mountain terrain. Instead, the user drops a **lump of soil** onto the terrain, which forms a dedicated malleable architectural mass that goes through the craft lifecycle (Soil $\to$ Water $\to$ Shape $\to$ Dry $\to$ Paint).
 
 ---
 
-### 4.2 Triplanar Material & Freehand Brick Painting
-Wait—if we push a heightmap into a vertical $90^\circ$ wall, won't the top-down `1024x1024` paint canvas stretch vertically along the wall face?
-* **The Fix (2 Policies Combined):**
-  1. **For Terrain & Sloped Ramparts:** The `1024x1024` `CanvasTexture` projects with **Triplanar Mapping** inside `three-custom-shader-material` (blending X, Y, and Z planar projections based on `abs(vNormal)`).
-  2. **For Crisp Vertical Walls, Bridges & Spline Blocks:** Every solid block or spline wall created by the user is a distinct low-poly `THREE.Mesh` (box, cylinder bastion, or extruded spline) with automatic non-overlapping box UV unwrapping (`THREE.BoxGeometry` / `ExtrudeGeometry` native UVs).
-  * When the user enters **Paint Mode** and selects a wall or block, `<Bvh>` raycasting returns `intersection.uv` on that mesh's dedicated `512x512` `OffscreenCanvas` texture.
-  * **Steady-Hand Brick Line Stabilizer:** Instead of writing custom bezier smoothing, wrap pointer coordinates in the tiny **`perfect-freehand`** or **`lazy-brush`** npm package (3 KB). When the user drags the fine white brush with "Steady Hand" enabled, `lazy-brush` trails the cursor with a virtual string length of `12px`, producing dead-straight horizontal and vertical white *chuna* mortar lines even with a shaky laptop trackpad.
+### 4.2 The 10 Core Tools & Bundled Tool Taxonomy
 
----
+#### A. Structure Tools (Bundled Together — 5 Tools for Building on Terrain)
+These 5 tools work sequentially to construct solid fort architecture atop the terrain:
+1. **Soil Tool:** Creates a discrete lump of soil placed on the terrain surface (does not affect the underlying mountain terrain).
+2. **Water Tool:** Pours water onto the lump of soil to make it wet, plastic, and malleable for shaping (`cracked_red_ground_1k` wet sheen).
+3. **Shaping Tool:** Models the wet soil lump using three intuitive gestures:
+   * *Push Left:* Compresses the soil mass from the right to form clean vertical wall faces.
+   * *Push Right:* Compresses the soil mass from the left.
+   * *Pat from Top:* Flattens mounds into crisp horizontal building decks, rampart walkways, and bastion roofs.
+4. **Drying Tool:** Dries the shaped wet soil, hardening it into immutable solid mass (`lockState = 1.0`). Once dried, the structure becomes solid, allowing it to be painted, have figurines placed on top, and support crenellations from the spline tool.
+5. **Paint Tool:** Freehand surface painting on dried solid structures using authentic traditional colors (Basalt Charcoal, Chuna White, Geru Red-Ochre).
 
-### 4.3 The Spline Builder (Walkways, Stone Steps & Battlements)
-We use Three.js's built-in `THREE.CatmullRomCurve3` so we write zero curve math:
+#### B. Terrain Manipulation Tool (Mountain & Ponds)
+* **Terrain Tool:** Directly raises, lowers, and shapes the mountain terrain itself.
+  * **Sub-Tool (Pond / Water Body):** Excavates water basins and depressions that automatically fill with reflective pond water or blue plastic tarpaulin.
 
-1. **Drawing the Line:** As the user drags across the mud with the **Spline Tool**, we sample a 3D point every `0.25` world units from the raycaster and feed the points into `new THREE.CatmullRomCurve3(points)`.
-2. **Converting the Curve (1-Click Menu):**
-   * **Option A: Walkway Path:** Iterate along `curve.getSpacedPoints(100)`. Stamp the underlying `stateBuffer` height to match the curve's $Y$ coordinate (flattening a ribbon into the mud) and draw a base coat of *Geru* red-ochre onto `paintCanvas`.
-   * **Option B: Stone Steps (*Payrya*):** Sample the curve length $L$. Divide $L$ by step depth $d = 0.15$. Spawn an `<Instances>` group of beveled rectangular mud-step boxes at each parameter $t_i = i / N$, where position is `curve.getPointAt(t_i)` and Y-rotation is `Math.atan2(tangent.x, tangent.z)`.
-   * **Option C: Rampart Wall + Auto-Bastions:** Pass a rectangular wall cross-section `THREE.Shape` into `<Extrude args={[wallShape, { extrudePath: curve, steps: 64 }]} />`. Calculate angle deltas between consecutive tangents; wherever $\Delta\theta > 35^\circ$, automatically spawn a cylindrical bastion (`THREE.CylinderGeometry`) at that vertex.
-   * **Option D: Crenellated Battlements:** Same as Option B, placing alternating merlon blocks along the top ridge of any spline curve at fixed intervals.
+#### C. Foliage Tool (Grass/Moss & Paths)
+* **Foliage Tool:** Paints directly on the terrain surface:
+  * **Grass / Moss Sub-Tool:** Paints fertile seedling green using `rocky_terrain_02_1k`.
+  * **Path Sub-Tool:** Paints worn walking trails and red-ochre paths using `muddy_tracks_1k`.
 
----
+#### D. Spline Tool (Stairways & Crenellations)
+* **Spline Tool:** Draws 3D curves along the terrain surface using `THREE.CatmullRomCurve3`:
+  * Converts to **Stairways (*Payrya*)** stepping up the mountain slopes.
+  * Converts to **Crenellations (*Kangare*)** running along solid dried wall ridges.
 
-### 4.4 Sprouted *Halim* Grass & Blue Plastic Sheet Water
-* **Greenery (*Halim* Sprouts):**
-  * Pre-allocate a single `THREE.InstancedMesh` of `15,000` tiny two-leaf sprout crosses (4 triangles per sprout = 60k triangles total, rendered in **1 draw call**).
-  * When the user paints with the **Greenery Brush**, we increment `Channel A (grassDensity)` in `stateBuffer` and append an instance transformation matrix at `(x, height, z)` with random Y-rotation and scale `[0.8..1.3]`.
-* **Water Tanks (*Taki*) & Coastal Sea:**
-  * Add a single flat water plane at $Y = 0.08$. Where the user digs terrain below $Y = 0.08$, water naturally appears in the pit.
-  * **"Blue Plastic Sheet" Toggle:** Switches the water plane's `MeshStandardMaterial` between normal reflective water (`roughness: 0.1, color: '#0ea5e9'`) and crinkled blue tarpaulin (`roughness: 0.4, color: '#0284c7'`, normalMap: procedurally crumpled noise texture).
-
----
+#### E. Figurines Tool (3D Historical Assets)
+* **Figurines Tool:** Places 3D historical figurines and fort accessories anywhere on the terrain or on top of solid dried structures (Chhatrapati Shivaji Maharaj, Mavale warriors, Tutari horn players, cannons, saffron flags).
 
 ### 4.5 Client-Side 4-Angle Festive Poster Generator (₹0 Server Cost)
 Do not send screenshots to a backend server. Generate the entire high-res collage inside the user's browser in `< 400ms`:

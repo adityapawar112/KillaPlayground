@@ -2,14 +2,24 @@ import { create } from 'zustand';
 import { COLORS } from '../constants/tokens';
 
 export type ToolType =
+  // 5 Bundled Structure Tools (For building on the terrain)
   | 'soil'
   | 'water'
+  | 'shape'
   | 'shape_top'
   | 'shape_side'
-  | 'spline'
+  | 'dry'
   | 'paint'
+  // Terrain & World Tools
+  | 'terrain'
+  | 'foliage'
   | 'grass'
+  | 'spline'
   | 'prop';
+
+export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
+export type TerrainSubTool = 'elevate' | 'pond';
+export type FoliageSubTool = 'grass' | 'path';
 
 export type SplineConversionType = 'walkway' | 'steps' | 'wall' | 'crenellated';
 
@@ -51,6 +61,12 @@ const STARTUP_PREF_KEY = 'killa_dont_show_startup';
 interface EditorState {
   // Active Tool & Brush State
   activeTool: ToolType;
+  shapeSubTool: ShapeSubTool;
+  setShapeSubTool: (st: ShapeSubTool) => void;
+  terrainSubTool: TerrainSubTool;
+  setTerrainSubTool: (st: TerrainSubTool) => void;
+  foliageSubTool: FoliageSubTool;
+  setFoliageSubTool: (st: FoliageSubTool) => void;
   brushRadius: number; // 0.2 to 2.5
   brushStrength: number; // 0.1 to 1.0
   brushSize: BrushSizeType;
@@ -188,6 +204,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setLocale: (locale) => set({ locale }),
 
   activeTool: 'soil',
+  shapeSubTool: 'pat_top',
+  setShapeSubTool: (shapeSubTool) => set({ shapeSubTool }),
+  terrainSubTool: 'elevate',
+  setTerrainSubTool: (terrainSubTool) => set({ terrainSubTool }),
+  foliageSubTool: 'grass',
+  setFoliageSubTool: (foliageSubTool) => set({ foliageSubTool }),
   brushRadius: 0.8,
   brushStrength: 0.5,
   brushSize: 'medium',

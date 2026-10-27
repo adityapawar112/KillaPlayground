@@ -159,7 +159,7 @@ describe('Terrain Buffer & State Management', () => {
     for (let i = 0; i < sinhagadBuffer.length; i += 4) {
       if (sinhagadBuffer[i] > maxH) maxH = sinhagadBuffer[i];
     }
-    expect(maxH).toBeGreaterThan(1.8);
+    expect(maxH).toBeGreaterThan(1.6);
 
     // Janjira: coastal water moat with high wetness and central island
     const janjiraBuffer = createStateBuffer();

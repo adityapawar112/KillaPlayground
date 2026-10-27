@@ -26,4 +26,19 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
     expect(mat).toBeDefined();
     expect(mat.isMaterial).toBe(true);
   });
+
+  it('compiles reworked slope-aware terrain material with all required uniforms', async () => {
+    const { createTerrainMaterial } = await import('../../components/3d/TerrainMaterial');
+    const { createStateBuffer, createStateTexture } = await import('./terrainBuffer');
+    const buf = createStateBuffer();
+    const tex = createStateTexture(buf);
+
+    const terrainMat = createTerrainMaterial({ stateTexture: tex });
+    expect(terrainMat).toBeDefined();
+    expect(terrainMat.uniforms.uCliffDiff).toBeDefined();
+    expect(terrainMat.uniforms.uWalkableDiff).toBeDefined();
+    expect(terrainMat.uniforms.uCrackedDiff).toBeDefined();
+    expect(terrainMat.uniforms.uPathDiff).toBeDefined();
+    expect(terrainMat.uniforms.uGrassDiff).toBeDefined();
+  });
 });

@@ -1,21 +1,28 @@
-# 03: Tactile Mud Sculpting State Machine (4 Core Tools)
+# 03: Structure Building Tools (Soil, Water, Shape, Dry) & Terrain Tool
 
 **What to build:**
-The core mud building mechanics on `stateBuffer` with 4 interactive tools:
-1. **Dump Dry Soil**: Adds Gaussian elevation mound with simplex noise roughness to R channel; G wetness set to 0.0.
-2. **Pour Water**: Smooths height noise with 3x3 box blur, darkens soil, and increases G channel wetness (+0.15), reducing material roughness from 0.95 to 0.2.
-3. **Top Patting**: Levels wet mud ($G > 0.5$) to sampled plane height $H_{target}$, creating flat plateaus, bastion tops, and courtyards.
-4. **Side Pushing**: Compresses wet mud ($G > 0.5$) along pointer drag vector into crisp sheer vertical wall faces.
-5. **Let Mud Set (Locking)**: Writes 1.0 to B channel, protecting architectural walls from accidental nearby brush deformation.
-6. **Partial Dirty-Box Updates**: Updates `PlaneGeometry.attributes.position` strictly inside `[minX..maxX, minY..maxY]`, calling `addUpdateRange` and `bvh.refit()`.
+The core building mechanics separating terrain manipulation from architectural structure modeling:
+
+### 1. Bundled Structure Tools (Operating on Lumps of Soil Placed on Terrain)
+1. **Soil Tool**: Does NOT affect the mountain terrain itself; drops a discrete lump of soil (`red_laterite_soil_stones_1k`) onto the terrain, which serves as raw building material.
+2. **Water Tool**: Pours water onto the lump of soil to soften it, making it malleable (`cracked_red_ground_1k` wet sheen) with high specular gloss.
+3. **Shaping Tool**: Models the wet soil into architectural structures:
+   * *Push Left:* Compresses soil from the right into clean vertical faces.
+   * *Push Right:* Compresses soil from the left.
+   * *Pat from Top:* Levels mounds into flat horizontal decks, bastion rooftops, and ramparts.
+4. **Drying Tool**: Dries the shaped wet soil, hardening it into solid architectural stone/mass. Once dried, the structure allows painting on top, placing figurines, and applying the spline tool for crenellations.
+
+### 2. Terrain Tool (Mountain Manipulation & Ponds)
+* **Terrain Tool**: Directly elevates or depresses the underlying mountain terrain itself.
+* **Pond Sub-Tool**: Excavates water depressions that fill with reflective pond water or blue plastic tarpaulin.
 
 **Blocked by:** 02: 3D Scene Core, Camera Rig, Courtyard Bricks & Base Terrain
 
 **Status:** ready-for-agent
 
-- [ ] Dumping soil raises crumbly matte brown mounds with simplex noise
-- [ ] Pouring water visibly softens soil, darkens to rich red wet mud, and adds specular gloss
-- [ ] Top patting flattens mounds into smooth horizontal plateaus
-- [ ] Side pushing creates steep vertical wall and bastion profiles
-- [ ] "Let Mud Set" prevents deformation on locked sections
-- [ ] Vertex updates are constrained to dirty bounds without full geometry reallocations
+- [ ] Soil tool drops discrete soil lumps on top of terrain without mutating underlying terrain
+- [ ] Water tool softens the soil lump into malleable wet mud
+- [ ] Shaping tool models wet soil with push-left, push-right, and top-patting gestures
+- [ ] Drying tool hardens shaped soil into solid immutable structures
+- [ ] Terrain tool elevates and depresses the mountain terrain, with a pond excavation sub-tool
+- [ ] Partial dirty-box updates and BVH refits guarantee $< 0.2\text{ms}$ raycasting

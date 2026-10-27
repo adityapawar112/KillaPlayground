@@ -74,7 +74,7 @@ export default function HomePage() {
         return;
       }
 
-      // Tool Switching (1 to 7)
+      // Tool Switching (1 to 9)
       if (e.key === '1') {
         setActiveTool('soil');
         e.preventDefault();
@@ -85,15 +85,21 @@ export default function HomePage() {
         setActiveTool(activeTool === 'shape_side' ? 'shape_top' : 'shape_side');
         e.preventDefault();
       } else if (e.key === '4') {
-        setActiveTool('spline');
+        setActiveTool('dry');
         e.preventDefault();
       } else if (e.key === '5') {
         setActiveTool('paint');
         e.preventDefault();
       } else if (e.key === '6') {
-        setActiveTool('grass');
+        setActiveTool('terrain');
         e.preventDefault();
       } else if (e.key === '7') {
+        setActiveTool('grass');
+        e.preventDefault();
+      } else if (e.key === '8') {
+        setActiveTool('spline');
+        e.preventDefault();
+      } else if (e.key === '9') {
         setActiveTool('prop');
         e.preventDefault();
       }

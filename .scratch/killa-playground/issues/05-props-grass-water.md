@@ -1,16 +1,27 @@
-# 05: Nature, Water Bodies & Figurine Asset Browser
+# 05: Foliage Painting, Water Ponds & Figurine Asset Placement
 
 **What to build:**
-Nature scattering, water bodies, and figurine asset drawer:
-- **Sprouted Halim Grass**: Paints Channel A of `stateBuffer`. Single `THREE.InstancedMesh` rendering 15,000 tiny two-leaf sprout crosses in **1 draw call**.
-- **Water Cisterns & Blue Plastic Sea**: Water plane at $Y = 0.08$. Digging terrain below 0.08 exposes water. Toggle between realistic reflective water and nostalgic crinkled blue plastic tarpaulin sheet.
-- **Figurine & Prop Browser**: Right-side sliding drawer with category tabs: *Royalty & Sinhasan*, *Mavale*, *Artillery*, *Flags & Insignia*, *Festive Props*. Stylized clay diorama models (Chhatrapati Shivaji Maharaj throne, spearman, swordsman, tutari blower, cannons, Bhagwa Dhwaj with swaying vertex shader, paper boats, terracotta diyas). Single draw-call batching per figurine type via `<Instances>`. Drag-and-drop raycast placement, rotation handle, and ground alignment. Night Mode Diya glow: warm additive flame decals at 0.1ms GPU cost.
+Foliage painting, pond water bodies, and figurine asset placement:
 
-**Blocked by:** 03: Tactile Mud Sculpting State Machine (4 Core Tools)
+1. **Foliage Tool:**
+   * **Grass / Moss Sub-Tool:** Paints fertile seedling green and moss directly onto the terrain surface using `rocky_terrain_02_1k` texture and instanced halim seedlings in 1 draw call.
+   * **Path Sub-Tool:** Paints worn walking tracks and red-ochre paths directly onto the terrain surface using `muddy_tracks_1k`.
+
+2. **Ponds & Water Bodies:**
+   * Water plane in terrain depressions and water tanks (*Taki*).
+   * Toggle between realistic reflective water and nostalgic crinkled blue plastic tarpaulin sheet.
+
+3. **Figurines Tool:**
+   * Places 3D historical figurines and fort accessories anywhere on the terrain or on top of solid dried structures.
+   * Categories: *Royalty & Sinhasan* (Chhatrapati Shivaji Maharaj throne), *Mavale* (spearman, swordsman, tutari blower), *Artillery* (cannons), *Flags & Insignia* (saffron Bhagwa Dhwaj), *Festive Props* (paper boats, terracotta diyas).
+   * Drag-and-drop raycast placement, rotation handle, and surface normal alignment.
+   * Night Mode Diya glow: warm flickering oil lamps along battlements and courtyards.
+
+**Blocked by:** 04: Structure Paint Studio & Spline Extrusion (Stairways & Crenellations)
 
 **Status:** ready-for-agent
 
-- [ ] Halim grass brush scatters sprouted two-leaf seedlings at 60 FPS in a single draw call
-- [ ] Water plane appears in depressions with functional blue plastic sheet toggle
-- [ ] Figurine drawer opens smoothly; props can be placed, moved, and rotated onto fort surfaces
-- [ ] Toggling Night Diya Mode dims diorama and renders glowing oil lamps along battlements
+- [ ] Foliage tool paints grass/moss (`rocky_terrain_02_1k`) and paths (`muddy_tracks_1k`) directly onto the terrain
+- [ ] Water appears in excavated terrain pond depressions with blue plastic sheet toggle
+- [ ] Figurines tool places 3D models on both terrain surface and solid dried structures
+- [ ] Toggling Night Diya Mode dims diorama and renders glowing oil lamps

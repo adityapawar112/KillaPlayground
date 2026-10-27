@@ -39,11 +39,15 @@ export const BottomDock: React.FC = () => {
   > = {
     soil: t.tools.soil,
     water: t.tools.water,
+    shape: t.tools.shape,
     shape_side: t.tools.shape,
     shape_top: t.tools.shape,
-    spline: t.tools.spline,
+    dry: (t.tools as any).dry || { label: 'Dry', fullLabel: 'Drying Tool', desc: 'Dries and solidifies shaped wet soil' },
     paint: t.tools.paint,
+    terrain: (t.tools as any).terrain || { label: 'Terrain', fullLabel: 'Terrain Sculpt', desc: 'Manipulate mountain terrain' },
+    foliage: (t.tools as any).foliage || t.tools.grass,
     grass: t.tools.grass,
+    spline: t.tools.spline,
     prop: t.tools.prop,
   };
 

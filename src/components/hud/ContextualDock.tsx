@@ -7,6 +7,12 @@ import {
   TbRipple,
   TbSparkles,
   TbCheck,
+  TbSun,
+  TbMountain,
+  TbPlant2,
+  TbArrowsLeft,
+  TbArrowsRight,
+  TbArrowDownBar,
 } from 'react-icons/tb';
 import { useEditorStore, BrushSizeType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -16,6 +22,12 @@ export const ContextualDock: React.FC = () => {
   const {
     activeTool,
     setActiveTool,
+    shapeSubTool,
+    setShapeSubTool,
+    terrainSubTool,
+    setTerrainSubTool,
+    foliageSubTool,
+    setFoliageSubTool,
     brushRadius,
     setBrushRadius,
     brushStrength,
@@ -41,7 +53,7 @@ export const ContextualDock: React.FC = () => {
 
   return (
     <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#F2EBE1]/94 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-xl transition-all select-none">
-      {/* SOIL TOOL CONTROLS */}
+      {/* 1. SOIL TOOL CONTROLS (Lump of Soil) */}
       {activeTool === 'soil' && (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -75,7 +87,7 @@ export const ContextualDock: React.FC = () => {
         </div>
       )}
 
-      {/* WATER TOOL CONTROLS */}
+      {/* 2. WATER TOOL CONTROLS */}
       {activeTool === 'water' && (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -93,7 +105,6 @@ export const ContextualDock: React.FC = () => {
 
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
-          {/* Water Style: Reflective vs Blue Plastic Sheet */}
           <button
             onClick={() => setWaterMode(waterMode === 'tarpaulin' ? 'reflective' : 'tarpaulin')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
@@ -101,53 +112,50 @@ export const ContextualDock: React.FC = () => {
                 ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-sm'
                 : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
             }`}
-            title="Toggle nostalgic blue plastic sheet pond effect"
+            title="Toggle reflective water vs blue plastic sheet pond effect"
           >
             <TbRipple className="w-3.5 h-3.5" />
             <span>{waterMode === 'tarpaulin' ? t.tools.water.tarpaulin : t.tools.water.reflective}</span>
           </button>
-
-          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
-
-          {/* Mud Lock State */}
-          <button
-            onClick={() => setMudLocked(!mudLocked)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-              mudLocked
-                ? 'bg-[#588157] text-white border-[#588157]'
-                : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
-            }`}
-            title={t.tools.water.lockDesc}
-          >
-            {mudLocked ? <TbLock className="w-3.5 h-3.5" /> : <TbLockOpen className="w-3.5 h-3.5" />}
-            <span>{mudLocked ? t.tools.water.locked : t.tools.water.lockMud}</span>
-          </button>
         </div>
       )}
 
-      {/* SHAPING CONTROLS (TOP PATTING vs SIDE PUSHING) */}
-      {(activeTool === 'shape_side' || activeTool === 'shape_top') && (
+      {/* 3. SHAPING CONTROLS (Push Left, Push Right, Pat from Top) */}
+      {(activeTool === 'shape' || activeTool === 'shape_side' || activeTool === 'shape_top') && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4]">
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
             <button
-              onClick={() => setActiveTool('shape_side')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTool === 'shape_side'
+              onClick={() => setShapeSubTool('push_left')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                shapeSubTool === 'push_left'
                   ? 'bg-[#4B382C] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              {t.tools.shape.sidePush}
+              <TbArrowsLeft className="w-3.5 h-3.5" />
+              <span>Push Left</span>
             </button>
             <button
-              onClick={() => setActiveTool('shape_top')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                activeTool === 'shape_top'
+              onClick={() => setShapeSubTool('push_right')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                shapeSubTool === 'push_right'
                   ? 'bg-[#4B382C] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              {t.tools.shape.topPat}
+              <TbArrowsRight className="w-3.5 h-3.5" />
+              <span>Push Right</span>
+            </button>
+            <button
+              onClick={() => setShapeSubTool('pat_top')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                shapeSubTool === 'pat_top'
+                  ? 'bg-[#4B382C] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <TbArrowDownBar className="w-3.5 h-3.5" />
+              <span>Pat Top</span>
             </button>
           </div>
 
@@ -168,7 +176,27 @@ export const ContextualDock: React.FC = () => {
         </div>
       )}
 
-      {/* PAINT STUDIO CONTROLS */}
+      {/* 4. DRYING TOOL CONTROLS */}
+      {activeTool === 'dry' && (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMudLocked(!mudLocked)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              mudLocked
+                ? 'bg-[#588157] text-white border-[#588157] shadow-sm'
+                : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
+            }`}
+          >
+            {mudLocked ? <TbLock className="w-4 h-4" /> : <TbSun className="w-4 h-4 text-[#F59E0B]" />}
+            <span>{mudLocked ? 'Structure Solidified & Dried' : 'Dry & Solidify Soil'}</span>
+          </button>
+          <span className="text-[11px] text-[#8D7666]">
+            Dries shaped mud to allow painting, figurines, and crenellations
+          </span>
+        </div>
+      )}
+
+      {/* 5. STRUCTURE PAINT STUDIO CONTROLS */}
       {activeTool === 'paint' && (
         <div className="flex items-center gap-3">
           {/* Brush Sizes */}
@@ -238,11 +266,82 @@ export const ContextualDock: React.FC = () => {
         </div>
       )}
 
-      {/* GREENERY / HALIM GRASS CONTROLS */}
-      {activeTool === 'grass' && (
-        <div className="flex items-center gap-4">
+      {/* 6. TERRAIN MANIPULATION CONTROLS */}
+      {activeTool === 'terrain' && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
+            <button
+              onClick={() => setTerrainSubTool('elevate')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                terrainSubTool === 'elevate'
+                  ? 'bg-[#4B382C] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <TbMountain className="w-3.5 h-3.5" />
+              <span>Elevate Mountain</span>
+            </button>
+            <button
+              onClick={() => setTerrainSubTool('pond')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                terrainSubTool === 'pond'
+                  ? 'bg-[#0284C7] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <TbRipple className="w-3.5 h-3.5" />
+              <span>Excavate Pond</span>
+            </button>
+          </div>
+
+          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.grass.radius}:</span>
+            <span className="text-xs font-semibold text-[#4B382C]">Size:</span>
+            <input
+              type="range"
+              min="0.4"
+              max="3.0"
+              step="0.1"
+              value={brushRadius}
+              onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
+              className="w-20 accent-[#4B382C] cursor-pointer"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 7. FOLIAGE CONTROLS (Grass/Moss vs Path) */}
+      {(activeTool === 'foliage' || activeTool === 'grass') && (
+        <div className="flex items-center gap-3">
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
+            <button
+              onClick={() => setFoliageSubTool('grass')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                foliageSubTool === 'grass'
+                  ? 'bg-[#588157] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <TbPlant2 className="w-3.5 h-3.5" />
+              <span>Grass / Moss</span>
+            </button>
+            <button
+              onClick={() => setFoliageSubTool('path')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                foliageSubTool === 'path'
+                  ? 'bg-[#8F4938] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <span>Foliage Path</span>
+            </button>
+          </div>
+
+          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-[#4B382C]">Radius:</span>
             <input
               type="range"
               min="0.3"
@@ -250,42 +349,26 @@ export const ContextualDock: React.FC = () => {
               step="0.1"
               value={brushRadius}
               onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-              className="w-24 accent-[#65A30D] cursor-pointer"
+              className="w-20 accent-[#65A30D] cursor-pointer"
             />
-          </div>
-
-          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.grass.density}:</span>
-            <input
-              type="range"
-              min="0.2"
-              max="1.0"
-              step="0.1"
-              value={grassDensity}
-              onChange={(e) => setGrassDensity(parseFloat(e.target.value))}
-              className="w-24 accent-[#65A30D] cursor-pointer"
-            />
-            <span className="text-xs text-[#8D7666] w-6">{Math.round(grassDensity * 100)}%</span>
           </div>
         </div>
       )}
 
-      {/* SPLINE TOOL HINT */}
+      {/* 8. SPLINE TOOL HINT */}
       {activeTool === 'spline' && (
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-[#4B382C]">
-            {t.tools.spline.hint}
+            Click on terrain or solid structure to draw stairways (Payrya) or crenellations (Kangare)
           </span>
         </div>
       )}
 
-      {/* PROP TOOL HINT */}
+      {/* 9. FIGURINES TOOL HINT */}
       {activeTool === 'prop' && (
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-[#4B382C]">
-            {t.tools.prop.dragHint}
+            Select figurine from right drawer and place on terrain or solid structures
           </span>
         </div>
       )}

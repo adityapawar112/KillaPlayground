@@ -2,86 +2,59 @@
 
 import React from 'react';
 import {
-  Mountain,
-  Droplets,
-  Layers,
-  Route,
-  Paintbrush,
-  Sprout,
-  Users,
-} from 'lucide-react';
+  TbMountain,
+  TbDropletHalf2,
+  TbLayersSubtract,
+  TbRoute,
+  TbBrush,
+  TbPlant2,
+  TbUsersGroup,
+} from 'react-icons/tb';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 interface ToolDef {
   id: ToolType;
-  label: string;
-  marathi: string;
+  key: string;
   icon: React.ElementType;
-  description: string;
 }
 
-const TOOLS: ToolDef[] = [
-  {
-    id: 'soil',
-    label: 'Soil',
-    marathi: 'माती ओता',
-    icon: Mountain,
-    description: 'Dump dry laterite soil mounds',
-  },
-  {
-    id: 'water',
-    label: 'Water',
-    marathi: 'पाणी घाला',
-    icon: Droplets,
-    description: 'Pour water to create wet malleable mud',
-  },
-  {
-    id: 'shape_side',
-    label: 'Shape',
-    marathi: 'भिंती रचा',
-    icon: Layers,
-    description: 'Push sides into vertical walls or pat top level',
-  },
-  {
-    id: 'spline',
-    label: 'Spline',
-    marathi: 'तटबंदी रेषा',
-    icon: Route,
-    description: 'Draw pathways, steps, and rampart walls with bastions',
-  },
-  {
-    id: 'paint',
-    label: 'Paint',
-    marathi: 'रंगकाम',
-    icon: Paintbrush,
-    description: 'Hand-paint basalt stone walls and white mortar lines',
-  },
-  {
-    id: 'grass',
-    label: 'Greenery',
-    marathi: 'हळीव / गवत',
-    icon: Sprout,
-    description: 'Sprout lush green halim cress seedlings',
-  },
-  {
-    id: 'prop',
-    label: 'Figurines',
-    marathi: 'मावळे व तोफा',
-    icon: Users,
-    description: 'Place Chhatrapati Shivaji Maharaj, Mavale, and cannons',
-  },
+const TOOLS_CONFIG: ToolDef[] = [
+  { id: 'soil', key: '1', icon: TbMountain },
+  { id: 'water', key: '2', icon: TbDropletHalf2 },
+  { id: 'shape_side', key: '3', icon: TbLayersSubtract },
+  { id: 'spline', key: '4', icon: TbRoute },
+  { id: 'paint', key: '5', icon: TbBrush },
+  { id: 'grass', key: '6', icon: TbPlant2 },
+  { id: 'prop', key: '7', icon: TbUsersGroup },
 ];
 
 export const BottomDock: React.FC = () => {
   const { activeTool, setActiveTool } = useEditorStore();
+  const { t } = useTranslation();
+
+  const toolDetails: Record<
+    ToolType | 'shape_side',
+    { label: string; fullLabel: string; desc: string }
+  > = {
+    soil: t.tools.soil,
+    water: t.tools.water,
+    shape_side: t.tools.shape,
+    shape_top: t.tools.shape,
+    spline: t.tools.spline,
+    paint: t.tools.paint,
+    grass: t.tools.grass,
+    prop: t.tools.prop,
+  };
 
   return (
     <nav
       aria-label="3D Editing Tools"
-      className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-2 bg-[#F2EBE1]/94 backdrop-blur-xl rounded-[28px] border border-[#D9C9B4] shadow-2xl transition-all"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 bg-[#F2EBE1]/94 backdrop-blur-xl rounded-[24px] border border-[#D9C9B4] shadow-2xl transition-all select-none"
     >
-      {TOOLS.map((tool) => {
+      {TOOLS_CONFIG.map((tool) => {
         const Icon = tool.icon;
+        const details = toolDetails[tool.id];
         const isActive =
           activeTool === tool.id ||
           (tool.id === 'shape_side' &&
@@ -96,8 +69,19 @@ export const BottomDock: React.FC = () => {
                 ? 'bg-[#4B382C] text-white shadow-md shadow-[#4B382C]/30 scale-105'
                 : 'text-[#634E40] hover:bg-[#DFCDBD] hover:text-[#2B1E16]'
             }`}
-            title={`${tool.label} (${tool.marathi}) - ${tool.description}`}
+            title={`${details?.fullLabel || details?.label} (${tool.key}) - ${details?.desc}`}
           >
+            {/* Shortcut Key Badge */}
+            <span
+              className={`absolute top-1 right-1.5 text-[9px] font-mono font-bold leading-none px-1 py-0.5 rounded ${
+                isActive
+                  ? 'bg-black/30 text-[#FAF8F5]'
+                  : 'bg-[#EADECF] text-[#8D7666]'
+              }`}
+            >
+              {tool.key}
+            </span>
+
             <Icon
               className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110 ${
                 isActive ? 'text-[#FAF8F5]' : 'text-[#4B382C]'
@@ -108,12 +92,12 @@ export const BottomDock: React.FC = () => {
                 isActive ? 'text-[#FAF8F5]' : 'text-[#634E40]'
               }`}
             >
-              {tool.marathi}
+              {details?.label}
             </span>
 
-            {/* Tooltip on Hover */}
+            {/* Hover Tooltip */}
             <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-[#23211E] text-[#FAF8F5] text-[11px] font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
-              {tool.label} — {tool.description}
+              {details?.fullLabel} <span className="text-[#F59E0B]">[{tool.key}]</span> — {details?.desc}
             </div>
           </button>
         );

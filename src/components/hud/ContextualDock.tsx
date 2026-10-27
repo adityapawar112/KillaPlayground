@@ -2,17 +2,14 @@
 
 import React from 'react';
 import {
-  Lock,
-  Unlock,
-  ShieldCheck,
-  Paintbrush,
-  Sparkles,
-  Waves,
-  Maximize2,
-  Minimize2,
-  Check,
-} from 'lucide-react';
+  TbLock,
+  TbLockOpen,
+  TbRipple,
+  TbSparkles,
+  TbCheck,
+} from 'react-icons/tb';
 import { useEditorStore, BrushSizeType } from '@/lib/state/useEditorStore';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 import { PAINT_COLORS } from '@/lib/constants/tokens';
 
 export const ContextualDock: React.FC = () => {
@@ -37,13 +34,15 @@ export const ContextualDock: React.FC = () => {
     setMudLocked,
   } = useEditorStore();
 
+  const { t } = useTranslation();
+
   return (
-    <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#F2EBE1]/94 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-xl transition-all">
+    <div className="fixed bottom-22 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#F2EBE1]/94 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-xl transition-all select-none">
       {/* SOIL TOOL CONTROLS */}
       {activeTool === 'soil' && (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">पसरवा (Radius):</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.soil.radius}:</span>
             <input
               type="range"
               min="0.3"
@@ -59,7 +58,7 @@ export const ContextualDock: React.FC = () => {
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">उंची (Height):</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.soil.height}:</span>
             <input
               type="range"
               min="0.1"
@@ -77,7 +76,7 @@ export const ContextualDock: React.FC = () => {
       {activeTool === 'water' && (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">पाण्याचा वेग (Flow):</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.water.flow}:</span>
             <input
               type="range"
               min="0.2"
@@ -92,20 +91,18 @@ export const ContextualDock: React.FC = () => {
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
           {/* Water Style: Reflective vs Blue Plastic Sheet */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setWaterMode(waterMode === 'tarpaulin' ? 'reflective' : 'tarpaulin')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
-                waterMode === 'tarpaulin'
-                  ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-sm'
-                  : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
-              }`}
-              title="Toggle nostalgic blue plastic sheet pond effect"
-            >
-              <Waves className="w-3.5 h-3.5" />
-              <span>{waterMode === 'tarpaulin' ? 'निळी प्लास्टिक (Tarpaulin)' : 'स्वच्छ पाणी (Clean)'}</span>
-            </button>
-          </div>
+          <button
+            onClick={() => setWaterMode(waterMode === 'tarpaulin' ? 'reflective' : 'tarpaulin')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+              waterMode === 'tarpaulin'
+                ? 'bg-[#0284C7] text-white border-[#0284C7] shadow-sm'
+                : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
+            }`}
+            title="Toggle nostalgic blue plastic sheet pond effect"
+          >
+            <TbRipple className="w-3.5 h-3.5" />
+            <span>{waterMode === 'tarpaulin' ? t.tools.water.tarpaulin : t.tools.water.reflective}</span>
+          </button>
 
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
@@ -117,10 +114,10 @@ export const ContextualDock: React.FC = () => {
                 ? 'bg-[#588157] text-white border-[#588157]'
                 : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
             }`}
-            title="Lock mud so nearby sculpting does not distort finished walls"
+            title={t.tools.water.lockDesc}
           >
-            {mudLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-            <span>{mudLocked ? 'माती पक्की झाली (Locked)' : 'माती पक्की करा (Lock)'}</span>
+            {mudLocked ? <TbLock className="w-3.5 h-3.5" /> : <TbLockOpen className="w-3.5 h-3.5" />}
+            <span>{mudLocked ? t.tools.water.locked : t.tools.water.lockMud}</span>
           </button>
         </div>
       )}
@@ -137,7 +134,7 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              उभी भिंत (Side Push)
+              {t.tools.shape.sidePush}
             </button>
             <button
               onClick={() => setActiveTool('shape_top')}
@@ -147,14 +144,14 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              सपाट माथा (Top Pat)
+              {t.tools.shape.topPat}
             </button>
           </div>
 
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">आकार (Size):</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.shape.size}:</span>
             <input
               type="range"
               min="0.3"
@@ -183,7 +180,11 @@ export const ContextualDock: React.FC = () => {
                     : 'text-[#634E40] hover:text-[#2B1E16]'
                 }`}
               >
-                {size === 'large' ? 'मोठा (XL)' : size === 'medium' ? 'मध्यम' : 'बारीक (Fine)'}
+                {size === 'large'
+                  ? t.tools.paint.large
+                  : size === 'medium'
+                  ? t.tools.paint.medium
+                  : t.tools.paint.fine}
               </button>
             ))}
           </div>
@@ -205,7 +206,7 @@ export const ContextualDock: React.FC = () => {
                   title={`${col.name} - ${col.role}`}
                 >
                   {isSelected && (
-                    <Check
+                    <TbCheck
                       className={`w-3 h-3 absolute inset-0 m-auto ${
                         col.id === 'chuna' ? 'text-black' : 'text-white'
                       }`}
@@ -226,10 +227,10 @@ export const ContextualDock: React.FC = () => {
                 ? 'bg-[#4B382C] text-white border-[#4B382C]'
                 : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
             }`}
-            title="Steady-hand stabilizer for drawing dead-straight white mortar lines without jitter"
+            title={t.tools.paint.steadyHandDesc}
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
-            <span>स्थिर हात (Steady Hand)</span>
+            <TbSparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <span>{t.tools.paint.steadyHand}</span>
           </button>
         </div>
       )}
@@ -238,7 +239,7 @@ export const ContextualDock: React.FC = () => {
       {activeTool === 'grass' && (
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">पसरवा (Radius):</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.grass.radius}:</span>
             <input
               type="range"
               min="0.3"
@@ -253,7 +254,7 @@ export const ContextualDock: React.FC = () => {
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">घनता (Density):</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.grass.density}:</span>
             <input
               type="range"
               min="0.2"
@@ -272,7 +273,7 @@ export const ContextualDock: React.FC = () => {
       {activeTool === 'spline' && (
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-[#4B382C]">
-            जमिनीवर क्लिक करून रेषा काढा (Click terrain to draw path)
+            {t.tools.spline.hint}
           </span>
         </div>
       )}
@@ -281,7 +282,7 @@ export const ContextualDock: React.FC = () => {
       {activeTool === 'prop' && (
         <div className="flex items-center gap-3">
           <span className="text-xs font-semibold text-[#4B382C]">
-            उजव्या ड्रॉवरमधून मावळे किंवा तोफा निवडून जमिनीवर ठेवा
+            {t.tools.prop.dragHint}
           </span>
         </div>
       )}

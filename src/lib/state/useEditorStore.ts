@@ -57,10 +57,20 @@ interface EditorState {
   builderName: string;
   templateId: string;
 
+  // Localization
+  locale: 'en' | 'mr' | 'hi';
+  setLocale: (locale: 'en' | 'mr' | 'hi') => void;
+
   // Modals & Drawers Visibility
   isPropDrawerOpen: boolean;
   isPosterModalOpen: boolean;
   isModeSelectModalOpen: boolean;
+  isShortcutsModalOpen: boolean;
+  isResetConfirmOpen: boolean;
+
+  // Camera & Navigation
+  cameraResetTrigger: number;
+  triggerCameraReset: () => void;
 
   // Actions
   setActiveTool: (tool: ToolType) => void;
@@ -101,12 +111,17 @@ interface EditorState {
   setPropDrawerOpen: (open: boolean) => void;
   setPosterModalOpen: (open: boolean) => void;
   setModeSelectModalOpen: (open: boolean) => void;
+  setShortcutsModalOpen: (open: boolean) => void;
+  setResetConfirmOpen: (open: boolean) => void;
 
   // Reset
   resetScene: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
+  locale: 'en',
+  setLocale: (locale) => set({ locale }),
+
   activeTool: 'soil',
   brushRadius: 0.8,
   brushStrength: 0.5,
@@ -126,13 +141,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedPropType: null,
   selectedPropId: null,
 
-  fortTitle: 'आमचा किल्ला',
-  builderName: 'मावळा',
+  fortTitle: 'Our Killa',
+  builderName: 'Mavala Builder',
   templateId: 'raigad',
 
   isPropDrawerOpen: false,
   isPosterModalOpen: false,
   isModeSelectModalOpen: false,
+  isShortcutsModalOpen: false,
+  isResetConfirmOpen: false,
+
+  cameraResetTrigger: 0,
+  triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 })),
 
   setActiveTool: (tool) => {
     set({
@@ -216,6 +236,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setPropDrawerOpen: (open) => set({ isPropDrawerOpen: open }),
   setPosterModalOpen: (open) => set({ isPosterModalOpen: open }),
   setModeSelectModalOpen: (open) => set({ isModeSelectModalOpen: open }),
+  setShortcutsModalOpen: (open) => set({ isShortcutsModalOpen: open }),
+  setResetConfirmOpen: (open) => set({ isResetConfirmOpen: open }),
 
   resetScene: () =>
     set({
@@ -224,5 +246,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedPropId: null,
       selectedPropType: null,
       mudLocked: false,
+      isResetConfirmOpen: false,
     }),
 }));

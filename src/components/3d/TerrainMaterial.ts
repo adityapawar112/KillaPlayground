@@ -49,12 +49,12 @@ export const terrainFragmentShader = /* glsl */ `
   uniform float uCliffRepeat;
 
   void main() {
-    vec3 normal = normalize(vWorldNormal);
+    vec3 worldNorm = normalize(vWorldNormal);
 
     // 1. Walkable vs Steeper-than-walkable Slope Determination:
-    // Flat to walkable slopes: normal.y >= 0.78 (~38 degrees)
-    // Steeper than walkable cliffs: normal.y < 0.72
-    float steepness = 1.0 - smoothstep(0.70, 0.80, normal.y);
+    // Flat to walkable slopes: worldNorm.y >= 0.78 (~38 degrees)
+    // Steeper than walkable cliffs: worldNorm.y < 0.72
+    float steepness = 1.0 - smoothstep(0.70, 0.80, worldNorm.y);
 
     // 2. Walkable horizontal coordinate tiling (red_laterite_soil_stones_1k)
     vec2 tiledUv = vTerrainUv * uTextureRepeat;
@@ -63,7 +63,7 @@ export const terrainFragmentShader = /* glsl */ `
 
     // 3. Steep cliff face triplanar coordinates (rocks_ground_06_1k)
     // Projects on vertical planes to eliminate texture stretching
-    vec3 blendWeights = abs(normal);
+    vec3 blendWeights = abs(worldNorm);
     blendWeights = normalize(max(blendWeights, 0.0001));
     float blendSum = blendWeights.x + blendWeights.y + blendWeights.z;
     blendWeights /= blendSum;

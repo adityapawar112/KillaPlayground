@@ -14,19 +14,21 @@ async function packArm(dir) {
 
   if (!fs.existsSync(aoFile) || !fs.existsSync(roughFile)) return;
 
-  const aoBuf = await sharp(aoFile).resize(128, 128).extractChannel(0).toBuffer();
-  const roughBuf = await sharp(roughFile).resize(128, 128).extractChannel(0).toBuffer();
+  // CRITICAL: Must use .raw() so sharp returns raw uncompressed pixel bytes (16384 bytes for 128x128),
+  // rather than an encoded PNG buffer with compressed zlib chunks!
+  const aoBuf = await sharp(aoFile).resize(128, 128).extractChannel(0).raw().toBuffer();
+  const roughBuf = await sharp(roughFile).resize(128, 128).extractChannel(0).raw().toBuffer();
   
   let metalBuf;
   if (fs.existsSync(metalFile)) {
-    metalBuf = await sharp(metalFile).resize(128, 128).extractChannel(0).toBuffer();
+    metalBuf = await sharp(metalFile).resize(128, 128).extractChannel(0).raw().toBuffer();
   } else {
     metalBuf = Buffer.alloc(128 * 128, 0);
   }
 
   let heightBuf;
   if (fs.existsSync(heightFile)) {
-    heightBuf = await sharp(heightFile).resize(128, 128).extractChannel(0).toBuffer();
+    heightBuf = await sharp(heightFile).resize(128, 128).extractChannel(0).raw().toBuffer();
   } else {
     heightBuf = Buffer.alloc(128 * 128, 128);
   }

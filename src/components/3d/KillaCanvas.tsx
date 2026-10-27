@@ -3,8 +3,7 @@
 import React, { Suspense, useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid, Environment } from '@react-three/drei';
-import { EffectComposer, N8AO } from '@react-three/postprocessing';
+import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { ViewportGizmo } from './ViewportGizmo';
@@ -335,23 +334,6 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         {/* 3D Base Water Level Plane for Coastal Moats & Excavated Ponds */}
         <WaterPlane />
-
-        {/* Real Sky HDRI IBL Reflection Lighting */}
-        <Suspense fallback={null}>
-          <Environment
-            preset={nightMode ? 'night' : 'dawn'}
-            environmentIntensity={nightMode ? 0.35 : 0.75}
-          />
-        </Suspense>
-
-        {/* Game Engine Grounding Screen-Space Ambient Occlusion */}
-        <EffectComposer enableNormalPass={false}>
-          <N8AO
-            aoRadius={1.5}
-            intensity={nightMode ? 1.4 : 2.0}
-            distanceFalloff={1.0}
-          />
-        </EffectComposer>
 
         <Suspense fallback={null}>
           {children}

@@ -74,24 +74,12 @@ export const terrainFragmentShader = /* glsl */ `
     return bb / (ba + bb + 0.0001);
   }
 
-  // Cotangent Frame normal perturbation for arbitrary surface UVs
-  vec3 perturbNormal(vec3 worldNormal, vec3 mapNormal, vec2 uvCoord, vec3 worldPos) {
-    vec3 q0 = dFdx(worldPos);
-    vec3 q1 = dFdy(worldPos);
-    vec2 st0 = dFdx(uvCoord);
-    vec2 st1 = dFdy(uvCoord);
-
-    vec3 N = normalize(worldNormal);
-    vec3 q1perp = cross(q1, N);
-    vec3 q0perp = cross(N, q0);
-
-    vec3 T = q1perp * st0.x + q0perp * st1.x;
-    vec3 B = q1perp * st0.y + q0perp * st1.y;
-
-    float det = max(dot(T, T), dot(B, B));
-    float scale = (det == 0.0) ? 0.0 : inversesqrt(det);
-
-    return normalize(T * (mapNormal.x * scale) + B * (mapNormal.y * scale) + N * mapNormal.z);
+  // Robust, screen-derivative-free TBN terrain normal perturbation (No dFdx/dFdy striping or loops)
+  vec3 computeTerrainNormal(vec3 geomNorm, vec3 mapNor) {
+    vec3 up = abs(geomNorm.y) < 0.999 ? vec3(0.0, 1.0, 0.0) : vec3(0.0, 0.0, 1.0);
+    vec3 tangent = normalize(cross(up, geomNorm));
+    vec3 bitangent = cross(geomNorm, tangent);
+    return normalize(tangent * mapNor.x + bitangent * mapNor.y + geomNorm * mapNor.z);
   }
 
   void main() {
@@ -102,7 +90,7 @@ export const terrainFragmentShader = /* glsl */ `
     triWeights /= (triWeights.x + triWeights.y + triWeights.z + 0.0001);
 
     // 2. Full 3-Axis Triplanar Coordinates for Cliff Rock
-    float cliffScale = uCliffRepeat * 0.12;
+    float cliffScale = uCliffRepeat * 0.1;
     vec2 uvX = vWorldPosition.zy * cliffScale;
     vec2 uvY_cliff = vWorldPosition.xz * cliffScale;
     vec2 uvZ = vWorldPosition.xy * cliffScale;
@@ -148,25 +136,20 @@ export const terrainFragmentShader = /* glsl */ `
     float ao = arm.r;
     float rawRoughness = arm.g;
 
-    // 6. Triplanar Normal Perturbation for Rock Cliff
-    vec3 tnormalX = unpackNormal(texture(uCliffNor, uvX), 1.0);
-    vec3 tnormalY = unpackNormal(texture(uCliffNor, uvY_cliff), 1.0);
-    vec3 tnormalZ = unpackNormal(texture(uCliffNor, uvZ), 1.0);
+    // 6. Triplanar Normal Perturbation for Rock Cliff (Deccan Basalt)
+    vec3 tnormalX = unpackNormal(texture(uCliffNor, uvX), 0.9);
+    vec3 tnormalY = unpackNormal(texture(uCliffNor, uvY_cliff), 0.9);
+    vec3 tnormalZ = unpackNormal(texture(uCliffNor, uvZ), 0.9);
 
-    // Whiteout projection: orient tangent normals to World X, Y, Z axes
-    vec3 cliffNormWorldX = vec3(0.0, tnormalX.yx) + geomNorm;
-    vec3 cliffNormWorldY = vec3(tnormalY.x, 0.0, tnormalY.y) + geomNorm;
-    vec3 cliffNormWorldZ = vec3(tnormalZ.xy, 0.0) + geomNorm;
+    vec3 nX = vec3(tnormalX.z * sign(geomNorm.x), tnormalX.y, tnormalX.x);
+    vec3 nY = vec3(tnormalY.x, tnormalY.z * sign(geomNorm.y), tnormalY.y);
+    vec3 nZ = vec3(tnormalZ.x, tnormalZ.y, tnormalZ.z * sign(geomNorm.z));
 
-    vec3 cliffWorldNormal = normalize(
-      cliffNormWorldX * triWeights.x +
-      cliffNormWorldY * triWeights.y +
-      cliffNormWorldZ * triWeights.z
-    );
+    vec3 cliffWorldNormal = normalize(nX * triWeights.x + nY * triWeights.y + nZ * triWeights.z);
 
-    // Cotangent Frame perturbation for Walkable Retro Soil
-    vec3 walkableNorSample = unpackNormal(texture(uWalkableNor, uvWalkable), 1.0);
-    vec3 walkableWorldNormal = perturbNormal(geomNorm, walkableNorSample, uvWalkable, vWorldPosition);
+    // Robust TBN perturbation for Walkable Retro Soil (Dirt_03)
+    vec3 walkableNorSample = unpackNormal(texture(uWalkableNor, uvWalkable), 0.75);
+    vec3 walkableWorldNormal = computeTerrainNormal(geomNorm, walkableNorSample);
 
     // Blend Walkable vs Cliff normals in World Space
     vec3 blendedWorldNormal = normalize(mix(walkableWorldNormal, cliffWorldNormal, cliffBlend));
@@ -177,16 +160,16 @@ export const terrainFragmentShader = /* glsl */ `
     float locked = clamp(state.b, 0.0, 1.0);
     float grass = clamp(state.a, 0.0, 1.0);
 
-    // Preserve natural micro-roughness contrast (0.40 to 0.95)
-    float dryRoughness = clamp(rawRoughness * 1.05, 0.40, 0.95);
+    // Authentic Matte Roughness: Dry soil is non-reflective matte (0.88 - 0.98), eliminating plastic glare
+    float dryRoughness = mix(0.88, 0.98, rawRoughness);
     float baseRoughness = dryRoughness;
 
-    // Wet Soil (Dirt_02 watered dark mud)
+    // Wet Soil (Dirt_02 watered dark mud) - Glistening highlights ONLY when hydrated!
     if (wetness > 0.0) {
       vec4 crackedDiffSample = texture(uCrackedDiff, uvWalkable);
       vec4 crackedArmSample = texture(uCrackedArm, uvWalkable);
       vec3 wetColor = crackedDiffSample.rgb * vec3(0.68, 0.54, 0.48);
-      float wetRoughness = mix(dryRoughness, 0.15 + crackedArmSample.g * 0.15, wetness);
+      float wetRoughness = mix(dryRoughness, 0.18 + crackedArmSample.g * 0.15, wetness);
       baseColor = mix(baseColor, wetColor, wetness);
       baseRoughness = mix(baseRoughness, wetRoughness, wetness);
       ao = mix(ao, crackedArmSample.r, wetness);
@@ -209,11 +192,11 @@ export const terrainFragmentShader = /* glsl */ `
     }
 
     // Apply Cavity Darkening on diffuse for rich depth in cracks
-    baseColor *= mix(0.68, 1.0, ao);
+    baseColor *= mix(0.72, 1.0, ao);
 
     // Assign to CSM outputs
     csm_DiffuseColor = vec4(baseColor, 1.0);
-    csm_Roughness = clamp(baseRoughness, 0.08, 1.0);
+    csm_Roughness = clamp(baseRoughness, 0.1, 1.0);
     csm_Metalness = 0.0;
     csm_AO = ao;
 
@@ -269,8 +252,8 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
     grassDiff = fallbackGrassDiff,
     grassArm = fallbackArm,
     grassNor = fallbackFlatNormal,
-    textureRepeat = 16.0,
-    cliffRepeat = 12.0,
+    textureRepeat = 8.0,
+    cliffRepeat = 6.0,
   } = options;
 
   return new CustomShaderMaterial({

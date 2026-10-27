@@ -110,7 +110,7 @@ export const terrainFragmentShader = /* glsl */ `
     // Walkable soil planar coordinates (world-space based to prevent UV stretching)
     vec2 uvWalkable = vWorldPosition.xz * (uTextureRepeat * 0.1);
 
-    // 3. Sample Cliff Rock along 3 axes
+    // 3. Sample Cliff Rock along 3 axes (Rock_02 Deccan basalt)
     vec4 cliffDiffX = texture(uCliffDiff, uvX);
     vec4 cliffDiffY = texture(uCliffDiff, uvY_cliff);
     vec4 cliffDiffZ = texture(uCliffDiff, uvZ);
@@ -119,34 +119,39 @@ export const terrainFragmentShader = /* glsl */ `
     vec4 cliffArmX = texture(uCliffArm, uvX);
     vec4 cliffArmY = texture(uCliffArm, uvY_cliff);
     vec4 cliffArmZ = texture(uCliffArm, uvZ);
-    vec3 cliffArm = cliffArmX.rgb * triWeights.x + cliffArmY.rgb * triWeights.y + cliffArmZ.rgb * triWeights.z;
+    vec4 cliffArm = cliffArmX * triWeights.x + cliffArmY * triWeights.y + cliffArmZ * triWeights.z;
 
     vec4 cliffDispX = texture(uCliffDisp, uvX);
     vec4 cliffDispY = texture(uCliffDisp, uvY_cliff);
     vec4 cliffDispZ = texture(uCliffDisp, uvZ);
-    float rockHeight = cliffDispX.r * triWeights.x + cliffDispY.r * triWeights.y + cliffDispZ.r * triWeights.z;
+    float rockDispHeight = cliffDispX.r * triWeights.x + cliffDispY.r * triWeights.y + cliffDispZ.r * triWeights.z;
+    float rockHeight = max(rockDispHeight, cliffArm.a);
 
-    // 4. Sample Walkable Laterite Soil
+    // 4. Sample Walkable Laterite Soil (Dirt_03 retro pixel art)
     vec4 walkableDiffSample = texture(uWalkableDiff, uvWalkable);
     vec4 walkableArmSample = texture(uWalkableArm, uvWalkable);
     vec4 walkableDispSample = texture(uWalkableDisp, uvWalkable);
-    float soilHeight = walkableDispSample.r;
+    float soilHeight = max(walkableDispSample.r, walkableArmSample.a);
 
     // 5. Slope Steepness & Height-Based Transition (Game Engine Splatmap)
     // Walkable vs cliff transition starts at slope ~35 deg (geomNorm.y ~ 0.82)
     float slopeFactor = 1.0 - smoothstep(0.68, 0.82, geomNorm.y);
     float cliffBlend = heightBlend(soilHeight, rockHeight, slopeFactor, 0.18);
 
+    // Sahyadri Tambdi Maati (Red Laterite Soil) warmth calibration on pixel art
+    vec3 soilColor = walkableDiffSample.rgb * vec3(1.24, 0.90, 0.80);
+    vec3 rockColor = cliffColor * vec3(0.96, 0.96, 0.98);
+
     // Blend Diffuse & ARM
-    vec3 baseColor = mix(walkableDiffSample.rgb, cliffColor, cliffBlend);
-    vec3 arm = mix(walkableArmSample.rgb, cliffArm, cliffBlend);
+    vec3 baseColor = mix(soilColor, rockColor, cliffBlend);
+    vec3 arm = mix(walkableArmSample.rgb, cliffArm.rgb, cliffBlend);
     float ao = arm.r;
     float rawRoughness = arm.g;
 
     // 6. Triplanar Normal Perturbation for Rock Cliff
-    vec3 tnormalX = unpackNormal(texture(uCliffNor, uvX), 1.2);
-    vec3 tnormalY = unpackNormal(texture(uCliffNor, uvY_cliff), 1.2);
-    vec3 tnormalZ = unpackNormal(texture(uCliffNor, uvZ), 1.2);
+    vec3 tnormalX = unpackNormal(texture(uCliffNor, uvX), 1.0);
+    vec3 tnormalY = unpackNormal(texture(uCliffNor, uvY_cliff), 1.0);
+    vec3 tnormalZ = unpackNormal(texture(uCliffNor, uvZ), 1.0);
 
     // Whiteout projection: orient tangent normals to World X, Y, Z axes
     vec3 cliffNormWorldX = vec3(0.0, tnormalX.yx) + geomNorm;
@@ -159,8 +164,8 @@ export const terrainFragmentShader = /* glsl */ `
       cliffNormWorldZ * triWeights.z
     );
 
-    // Cotangent Frame perturbation for Walkable Laterite Soil
-    vec3 walkableNorSample = unpackNormal(texture(uWalkableNor, uvWalkable), 1.15);
+    // Cotangent Frame perturbation for Walkable Retro Soil
+    vec3 walkableNorSample = unpackNormal(texture(uWalkableNor, uvWalkable), 1.0);
     vec3 walkableWorldNormal = perturbNormal(geomNorm, walkableNorSample, uvWalkable, vWorldPosition);
 
     // Blend Walkable vs Cliff normals in World Space
@@ -172,27 +177,28 @@ export const terrainFragmentShader = /* glsl */ `
     float locked = clamp(state.b, 0.0, 1.0);
     float grass = clamp(state.a, 0.0, 1.0);
 
-    // Preserve Polyhaven's natural micro-roughness contrast (0.40 to 0.95)
+    // Preserve natural micro-roughness contrast (0.40 to 0.95)
     float dryRoughness = clamp(rawRoughness * 1.05, 0.40, 0.95);
     float baseRoughness = dryRoughness;
 
-    // Wet Soil (cracked_red_ground_1k)
+    // Wet Soil (Dirt_02 watered dark mud)
     if (wetness > 0.0) {
       vec4 crackedDiffSample = texture(uCrackedDiff, uvWalkable);
       vec4 crackedArmSample = texture(uCrackedArm, uvWalkable);
-      vec3 wetColor = crackedDiffSample.rgb * 0.72;
-      float wetRoughness = mix(dryRoughness, 0.18 + crackedArmSample.g * 0.15, wetness);
+      vec3 wetColor = crackedDiffSample.rgb * vec3(0.68, 0.54, 0.48);
+      float wetRoughness = mix(dryRoughness, 0.15 + crackedArmSample.g * 0.15, wetness);
       baseColor = mix(baseColor, wetColor, wetness);
       baseRoughness = mix(baseRoughness, wetRoughness, wetness);
       ao = mix(ao, crackedArmSample.r, wetness);
     }
 
-    // Foliage Grass (rocky_terrain_02_1k)
+    // Sprouting Mustard Foliage Grass (Grass_01 retro pixel sprigs)
     if (grass > 0.0) {
-      vec4 grassDiffSample = texture(uGrassDiff, uvWalkable * 1.5);
-      vec4 grassArmSample = texture(uGrassArm, uvWalkable * 1.5);
-      baseColor = mix(baseColor, grassDiffSample.rgb, grass * 0.88);
-      baseRoughness = mix(baseRoughness, mix(0.75, 0.95, grassArmSample.g), grass * 0.8);
+      vec4 grassDiffSample = texture(uGrassDiff, uvWalkable * 1.2);
+      vec4 grassArmSample = texture(uGrassArm, uvWalkable * 1.2);
+      vec3 sproutColor = grassDiffSample.rgb * vec3(1.10, 1.24, 0.95);
+      baseColor = mix(baseColor, sproutColor, grass * 0.92);
+      baseRoughness = mix(baseRoughness, mix(0.70, 0.90, grassArmSample.g), grass * 0.85);
       ao = mix(ao, grassArmSample.r, grass * 0.5);
     }
 
@@ -241,7 +247,7 @@ export interface CreateTerrainMaterialOptions {
 
 /**
  * Creates a CustomShaderMaterial instance extending MeshStandardMaterial with slope-aware
- * PBR texture blending (height-blended triplanar rock cliffs, view-space normal perturbation, wet mud, and foliage).
+ * retro PBR texture blending (height-blended triplanar basalt rock cliffs, view-space normal perturbation, wet mud, and sprouting foliage).
  */
 export function createTerrainMaterial(options: CreateTerrainMaterialOptions): CustomShaderMaterial {
   const {
@@ -263,8 +269,8 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
     grassDiff = fallbackGrassDiff,
     grassArm = fallbackArm,
     grassNor = fallbackFlatNormal,
-    textureRepeat = 8.0,
-    cliffRepeat = 6.0,
+    textureRepeat = 16.0,
+    cliffRepeat = 12.0,
   } = options;
 
   return new CustomShaderMaterial({

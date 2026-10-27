@@ -18,6 +18,10 @@ Component voltage is driven by **saturated earth-tone tool and feature cards** i
 - **Devanagari Display Typeface Voice:** `Yatra One` and `Modak` bring authentic cultural soul to headlines, fort title placards, and generated festive posters, while `Inter` provides high-legibility UI micro-copy.
 - **Generous Border Radii:** `{rounded.md}` (12px) for input fields and buttons, `{rounded.lg}` (16px) for property sheets and tool groups, `{rounded.xl}` (24px) for prominent mode selection and showcase cards. Soft curves mirror hand-molded clay.
 - **Tactile Courtyard Brick Base:** Base perimeter retaining border rendered with red terracotta brick geometry, anchoring the 3D mud hill just like real neighborhood society builds.
+- **Modern Retro / PS1 3D Art Direction (Flavor A):** 
+  - Uses authentic 128×128 pixel-art retro textures (Binbun Retroground) sampled with `THREE.NearestFilter` (no mipmap blur) for crisp, crunchy tactile miniature terrain.
+  - Combines classic 90s console nostalgia (PS1 / *Valheim* style) with modern dynamic PBR lighting, real-time shadow casting, Screen-Space Ambient Occlusion (N8AO), and warm festive Diya radiance.
+  - Texture roles: *Tambdi Maati* (Dirt_03 warm red laterite), *Deccan Basalt* (Rock_02 dark rugged cliff escarpments), *Hydrated Mud* (Dirt_02 dark glistening mud), and *Sprouted Mohari* (Grass_01 vibrant green mustard sprigs).
 - **Section Rhythm & Floating HUD:** `{spacing.section}` (96px) rhythm for promotional/landing flows; floating ergonomic docks (`{spacing.md}` inset) for in-app 3D creation.
 - **Warm Textured Footer & Pre-Footer:** Closes with warm plaster tones (`{colors.surface-soft}`) rather than cold black.
 

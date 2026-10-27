@@ -256,13 +256,19 @@ Do not sculpt historical forts by hand. Extract their real 30-meter satellite el
 
 
 
-### C. PBR Mud, Brick & Stone Textures (100% CC0 Public Domain)
+### C. Retro Pixel-Art Ground, Rock & Stone Textures (Flavor A: Modern Retro / PS1)
 
-* **Dry Red Laterite Soil (*Tambdi Maati*):** **PolyHaven (`polyhaven.com/textures`)** — *Red Mud Stones* or *Brown Mud Dry 01* (download `1K` JPG/WebP diffuse + normal map).
-* **Wet Glossy Clay:** Same texture—just drive `roughness` down from `0.9` to `0.15` and darken `color` by `40%` inside the shader using the `wetness` channel! (Saves downloading a second texture).
-* **Base Courtyard Red Bricks:** **AmbientCG (`ambientcg.com`)** — *Bricks075* or *Clay002* (for the perimeter containment bricks around the mud pile).
+* **Art Direction Philosophy:** Rather than fighting photorealistic PBR uncanny valley, the diorama uses stylized 128×128 pixel-art textures sampled with `THREE.NearestFilter` (no mipmaps) under dynamic PBR lighting, creating an authentic, nostalgic miniature courtyard diorama (*Valheim* / PS1 aesthetic).
+* **Retro Texture Pack Source:** **Binbun3D Retroground Free** ([binbun3d.itch.io/retroground-free](https://binbun3d.itch.io/retroground-free)):
+  * **Walkable Courtyard Soil (*Tambdi Maati*):** `Dirt/Dirt_03` — chunky reddish-brown laterite earth with embedded stone specks.
+  * **Steep Basalt Escarpments:** `Rock/Rock_02` — dark blocky Sahyadri basalt rock face with triplanar projection.
+  * **Watered Wet Mud:** `Dirt/Dirt_02` — darkened, glossy wet mud when hydrated with the Water Tool.
+  * **Pathway & Masonry Steps:** `Gravel/Gravel_06` — stone gravel and step trails.
+  * **Sprouted Mustard Greens (*Mohari* / *Halim*):** `Grass/Grass_01` — chunky, vibrant green sprouting shoots.
+  * **Texture Optimization:** Single packed `_arm.png` per set (R = Ambient Occlusion, G = Roughness, B = Metallic, A = Height Displacement) for single-fetch splatmap execution.
+* **Base Courtyard Red Bricks:** Procedural red clay retaining masonry encircling the 10m × 10m perimeter.
 * **Marathi Festive Display Fonts:** **Google Fonts (100% Free OFL):**
-* **`Yatra One`** and **`Modak`** for bold, traditional Marathi/Devanagari fort titles on the generated poster.
+  * **`Yatra One`** and **`Modak`** for bold, traditional Marathi/Devanagari fort titles on the generated poster.
 
 
 

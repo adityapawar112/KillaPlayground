@@ -38,37 +38,62 @@ export const BaseTerrainContent: React.FC = () => {
   const { gl, invalidate } = useThree();
   const { stateTexture, stateBuffer, lastUpdated, setTerrainMesh } = useTerrainStore();
 
-  // Load PBR texture maps per user specifications:
-  // - walkable: red_laterite_soil_stones_1k (flat/walkable surfaces)
-  // - cliff: rocks_ground_06_1k (slopes steeper than walkable surface)
-  // - cracked: cracked_red_ground_1k (wet soil / reshaped dry soil)
-  // - path: muddy_tracks_1k (foliage paths)
-  // - grass: rocky_terrain_02_1k (foliage grass / moss)
+  // Load retro pixel-art PBR texture maps (Flavor A: Crisp PS1 / Valheim modern retro diorama):
+  // - walkable: Dirt_03 (chunky reddish-brown soil with pebbles)
+  // - cliff: Rock_02 (Deccan basalt rock with blocky cliff escarpments)
+  // - cracked: Dirt_02 (dark glistening wet mud when watered)
+  // - path: Gravel_06 (stone gravel pathways)
+  // - grass: Grass_01 (chunky sprouting mustard greens / halim)
   const textures = useTexture({
-    walkableDiff: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_diff_1k.jpg',
-    walkableArm: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_arm_1k.jpg',
-    walkableNor: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_nor_gl_1k.png',
-    walkableDisp: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_disp_1k.png',
-    cliffDiff: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_diff_1k.jpg',
-    cliffArm: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_arm_1k.jpg',
-    cliffNor: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_nor_gl_1k.png',
-    cliffDisp: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_disp_1k.png',
-    crackedDiff: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_diff_1k.jpg',
-    crackedArm: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_arm_1k.jpg',
-    crackedNor: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_nor_gl_1k.png',
-    pathDiff: '/textures/muddy_tracks_1k/textures/muddy_tracks_diff_1k.jpg',
-    pathArm: '/textures/muddy_tracks_1k/textures/muddy_tracks_arm_1k.jpg',
-    pathNor: '/textures/muddy_tracks_1k/textures/muddy_tracks_nor_gl_1k.png',
-    grassDiff: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_diff_1k.jpg',
-    grassArm: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_arm_1k.jpg',
-    grassNor: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_nor_gl_1k.png',
+    walkableDiff: '/textures/Dirt/Dirt_03/Dirt_03_basecolor.png',
+    walkableArm: '/textures/Dirt/Dirt_03/Dirt_03_arm.png',
+    walkableNor: '/textures/Dirt/Dirt_03/Dirt_03_normal.png',
+    walkableDisp: '/textures/Dirt/Dirt_03/Dirt_03_height.png',
+    cliffDiff: '/textures/Rock/Rock_02/Rock_02_basecolor.png',
+    cliffArm: '/textures/Rock/Rock_02/Rock_02_arm.png',
+    cliffNor: '/textures/Rock/Rock_02/Rock_02_normal.png',
+    cliffDisp: '/textures/Rock/Rock_02/Rock_02_height.png',
+    crackedDiff: '/textures/Dirt/Dirt_02/Dirt_02_basecolor.png',
+    crackedArm: '/textures/Dirt/Dirt_02/Dirt_02_arm.png',
+    crackedNor: '/textures/Dirt/Dirt_02/Dirt_02_normal.png',
+    pathDiff: '/textures/Gravel/Gravel_06/Gravel_06_basecolor.png',
+    pathArm: '/textures/Gravel/Gravel_06/Gravel_06_arm.png',
+    pathNor: '/textures/Gravel/Gravel_06/Gravel_06_normal.png',
+    grassDiff: '/textures/Grass/Grass_01/Grass_01_basecolor.png',
+    grassArm: '/textures/Grass/Grass_01/Grass_01_arm.png',
+    grassNor: '/textures/Grass/Grass_01/Grass_01_normal.png',
   });
 
-  // Configure texture wrap, color space, and maximum anisotropic filtering (eliminates oblique camera blur)
+  // Configure retro texture filtering: NearestFilter + no mipmaps for crisp, pixel-perfect PS1/Valheim aesthetic
   useEffect(() => {
     if (!textures) return;
 
-    const maxAnisotropy = gl?.capabilities?.getMaxAnisotropy?.() || 16;
+    const allTextures = [
+      textures.walkableDiff,
+      textures.walkableArm,
+      textures.walkableNor,
+      textures.walkableDisp,
+      textures.cliffDiff,
+      textures.cliffArm,
+      textures.cliffNor,
+      textures.cliffDisp,
+      textures.crackedDiff,
+      textures.crackedArm,
+      textures.crackedNor,
+      textures.pathDiff,
+      textures.pathArm,
+      textures.pathNor,
+      textures.grassDiff,
+      textures.grassArm,
+      textures.grassNor,
+    ];
+
+    allTextures.forEach((tex) => {
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      tex.generateMipmaps = false;
+    });
 
     const diffMaps = [
       textures.walkableDiff,
@@ -94,21 +119,17 @@ export const BaseTerrainContent: React.FC = () => {
     ];
 
     diffMaps.forEach((tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = maxAnisotropy;
       tex.needsUpdate = true;
     });
 
     linearMaps.forEach((tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.colorSpace = THREE.NoColorSpace;
-      tex.anisotropy = maxAnisotropy;
       tex.needsUpdate = true;
     });
 
     invalidate();
-  }, [textures, gl, invalidate]);
+  }, [textures, invalidate]);
 
   // Create high-res 10m x 10m plane geometry (65,536 vertices) initialized with current terrain height
   const geometry = useMemo(() => {
@@ -146,8 +167,8 @@ export const BaseTerrainContent: React.FC = () => {
       grassDiff: textures.grassDiff,
       grassArm: textures.grassArm,
       grassNor: textures.grassNor,
-      textureRepeat: 8.0,
-      cliffRepeat: 6.0,
+      textureRepeat: 16.0,
+      cliffRepeat: 12.0,
     });
   }, [stateTexture, textures]);
 

@@ -435,7 +435,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setFortTitle: (title) => set({ fortTitle: title }),
   setBuilderName: (name) => set({ builderName: name }),
-  setTemplateId: (templateId) => set({ templateId }),
+  setTemplateId: (templateId) => {
+    set({ templateId });
+    try {
+      // Lazy import/call terrain store to avoid circular dependency
+      import('../terrain/terrainStore').then((m) => {
+        m.useTerrainStore.getState().loadTemplate(templateId);
+      });
+    } catch (e) {
+      console.warn('Failed to load terrain template:', e);
+    }
+  },
 
   setPropDrawerOpen: (open) => set({ isPropDrawerOpen: open }),
   setPosterModalOpen: (open) => set({ isPosterModalOpen: open }),
@@ -454,7 +464,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ dontShowStartupModal: dontShow });
   },
 
-  resetScene: () =>
+  resetScene: () => {
+    try {
+      import('../terrain/terrainStore').then((m) => {
+        m.useTerrainStore.getState().resetTerrain();
+      });
+    } catch (e) {
+      console.warn('Failed to reset terrain:', e);
+    }
     set({
       splines: [],
       placedProps: [],
@@ -462,5 +479,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedPropType: null,
       mudLocked: false,
       isResetConfirmOpen: false,
-    }),
+    });
+  },
 }));

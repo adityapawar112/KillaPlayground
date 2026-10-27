@@ -134,4 +134,39 @@ describe('Terrain Buffer & State Management', () => {
     // Assert that average raycast time is strictly under 0.2ms
     expect(avgTimePerRaycast).toBeLessThan(0.2);
   });
+
+  it('generates 3D fort elevation profiles for scratch, raigad, sinhagad, and janjira', async () => {
+    const { generateTerrainBlueprint } = await import('./terrainGenerators');
+
+    // Scratch: produces hill peak > 0.8m and tapered edges ~ 0m
+    const scratchBuffer = createStateBuffer();
+    generateTerrainBlueprint('scratch', scratchBuffer);
+    const centerTexel = getTexel(scratchBuffer, 128, 128);
+    const edgeTexel = getTexel(scratchBuffer, 5, 5);
+    expect(centerTexel.height).toBeGreaterThan(0.8);
+    expect(edgeTexel.height).toBeLessThan(0.15);
+
+    // Raigad: high plateau > 1.5m
+    const raigadBuffer = createStateBuffer();
+    generateTerrainBlueprint('raigad', raigadBuffer);
+    const raigadCenter = getTexel(raigadBuffer, 138, 133);
+    expect(raigadCenter.height).toBeGreaterThan(1.5);
+
+    // Sinhagad: rugged mountain ridge
+    const sinhagadBuffer = createStateBuffer();
+    generateTerrainBlueprint('sinhagad', sinhagadBuffer);
+    let maxH = 0;
+    for (let i = 0; i < sinhagadBuffer.length; i += 4) {
+      if (sinhagadBuffer[i] > maxH) maxH = sinhagadBuffer[i];
+    }
+    expect(maxH).toBeGreaterThan(1.8);
+
+    // Janjira: coastal water moat with high wetness and central island
+    const janjiraBuffer = createStateBuffer();
+    generateTerrainBlueprint('janjira', janjiraBuffer);
+    const janjiraCenter = getTexel(janjiraBuffer, 128, 128);
+    const janjiraMoat = getTexel(janjiraBuffer, 220, 220);
+    expect(janjiraCenter.height).toBeGreaterThan(0.7);
+    expect(janjiraMoat.wetness).toBeGreaterThan(0.8);
+  });
 });

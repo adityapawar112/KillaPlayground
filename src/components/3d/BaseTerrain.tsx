@@ -4,12 +4,17 @@ import React, { useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 import { useTexture, Bvh } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
-import { createBaseTerrainGeometry } from '@/lib/terrain/terrainBuffer';
+import { createBaseTerrainGeometry, syncStateToGeometry } from '@/lib/terrain/terrainBuffer';
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 
 export const BaseTerrainFallback: React.FC = () => {
-  const geometry = useMemo(() => createBaseTerrainGeometry(), []);
+  const geometry = useMemo(() => {
+    const geo = createBaseTerrainGeometry();
+    const { stateBuffer } = useTerrainStore.getState();
+    syncStateToGeometry(stateBuffer, geo);
+    return geo;
+  }, []);
 
   return (
     <mesh
@@ -31,7 +36,7 @@ export const BaseTerrainFallback: React.FC = () => {
 export const BaseTerrainContent: React.FC = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   const { invalidate } = useThree();
-  const { stateTexture, setTerrainMesh } = useTerrainStore();
+  const { stateTexture, stateBuffer, lastUpdated, setTerrainMesh } = useTerrainStore();
 
   // Load dry and wet 1K PBR textures from public directory
   const textures = useTexture({
@@ -62,10 +67,20 @@ export const BaseTerrainContent: React.FC = () => {
     invalidate();
   }, [textures, invalidate]);
 
-  // Create high-res 10m x 10m plane geometry (65,536 vertices)
+  // Create high-res 10m x 10m plane geometry (65,536 vertices) initialized with current terrain height
   const geometry = useMemo(() => {
-    return createBaseTerrainGeometry();
-  }, []);
+    const geo = createBaseTerrainGeometry();
+    syncStateToGeometry(stateBuffer, geo);
+    return geo;
+  }, [stateBuffer]);
+
+  // Sync geometry and refit BVH whenever state buffer changes (blueprint load or sculpt)
+  useEffect(() => {
+    syncStateToGeometry(stateBuffer, geometry);
+    const bvh = (geometry as unknown as { boundsTree?: { refit: () => void } }).boundsTree;
+    if (bvh) bvh.refit();
+    invalidate();
+  }, [lastUpdated, stateBuffer, geometry, invalidate]);
 
   // Create CustomShaderMaterial blending dry laterite and wet mud based on stateTexture
   const material = useMemo(() => {

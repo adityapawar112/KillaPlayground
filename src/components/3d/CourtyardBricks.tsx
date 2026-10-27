@@ -198,16 +198,6 @@ export const CourtyardBricks: React.FC<CourtyardBricksProps> = ({ nightMode = fa
           bumpScale={0.002}
         />
       </instancedMesh>
-
-      {/* Dark courtyard foundation baseboard rim underneath perimeter bricks */}
-      <mesh position={[0, -0.005, 0]} receiveShadow>
-        <boxGeometry args={[10.36, 0.01, 10.36]} />
-        <meshStandardMaterial
-          color={nightMode ? '#1e1b18' : '#3d312a'}
-          roughness={0.95}
-          metalness={0.0}
-        />
-      </mesh>
     </group>
   );
 };

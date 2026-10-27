@@ -16,24 +16,26 @@ const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
     color: nightMode ? '#ef4444' : '#dc2626',
     linewidth: 1.5,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.6,
+    depthWrite: false,
   });
 
   const lineMatZ = new THREE.LineBasicMaterial({
     color: nightMode ? '#22c55e' : '#16a34a',
     linewidth: 1.5,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.6,
+    depthWrite: false,
   });
 
   const geoX = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-100, 0.001, 0),
-    new THREE.Vector3(100, 0.001, 0),
+    new THREE.Vector3(-100, -0.002, 0),
+    new THREE.Vector3(100, -0.002, 0),
   ]);
 
   const geoZ = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, 0.001, -100),
-    new THREE.Vector3(0, 0.001, 100),
+    new THREE.Vector3(0, -0.002, -100),
+    new THREE.Vector3(0, -0.002, 100),
   ]);
 
   return (
@@ -237,7 +239,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
       onContextMenu={(e) => e.preventDefault()} // CRITICAL: Prevent browser context menu so right-click orbits freely!
     >
       <Canvas
-        shadows
+        shadows="percentage"
         frameloop="demand"
         gl={{
           antialias: true,
@@ -274,7 +276,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         <CameraKeyboardController controlsRef={controlsRef} />
 
-        {/* Courtyard Lighting Rig */}
+        {/* Courtyard Lighting Rig with Calibrated NormalBias to Eliminate Shadow Acne */}
         <ambientLight intensity={nightMode ? 0.2 : 0.65} color={nightMode ? '#38bdf8' : '#fffbeb'} />
         <directionalLight
           position={nightMode ? [-8, 12, -6] : [10, 15, 8]}
@@ -283,13 +285,14 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
-          shadow-camera-near={0.5}
-          shadow-camera-far={35}
-          shadow-camera-left={-8}
-          shadow-camera-right={8}
-          shadow-camera-top={8}
-          shadow-camera-bottom={-8}
-          shadow-bias={-0.0005}
+          shadow-camera-near={1.0}
+          shadow-camera-far={28}
+          shadow-camera-left={-7.5}
+          shadow-camera-right={7.5}
+          shadow-camera-top={7.5}
+          shadow-camera-bottom={-7.5}
+          shadow-bias={-0.0001}
+          shadow-normalBias={0.035}
         />
         {/* Secondary Warm Courtyard Ground Bounce Light */}
         <directionalLight
@@ -307,7 +310,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         {/* Blender-Style Infinite Fading Grid */}
         <Grid
-          position={[0, -0.001, 0]}
+          position={[0, -0.0025, 0]}
           infiniteGrid
           cellSize={0.5}
           cellThickness={0.6}

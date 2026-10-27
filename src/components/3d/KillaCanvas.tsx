@@ -7,6 +7,8 @@ import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { ViewportGizmo } from './ViewportGizmo';
+import { BaseTerrain } from './BaseTerrain';
+import { CourtyardBricks } from './CourtyardBricks';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -260,6 +262,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           dampingFactor={0.08}
           minDistance={2.5}
           maxDistance={30}
+          minPolarAngle={0.05} // Constrain camera from flipping over top
           maxPolarAngle={Math.PI / 2 - 0.05} // Constrain polar angle above floor
           target={[0, 0.5, 0]}
           mouseButtons={{
@@ -271,7 +274,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         <CameraKeyboardController controlsRef={controlsRef} />
 
-        {/* Lighting Rig */}
+        {/* Courtyard Lighting Rig */}
         <ambientLight intensity={nightMode ? 0.2 : 0.65} color={nightMode ? '#38bdf8' : '#fffbeb'} />
         <directionalLight
           position={nightMode ? [-8, 12, -6] : [10, 15, 8]}
@@ -287,6 +290,12 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           shadow-camera-top={8}
           shadow-camera-bottom={-8}
           shadow-bias={-0.0005}
+        />
+        {/* Secondary Warm Courtyard Ground Bounce Light */}
+        <directionalLight
+          position={nightMode ? [8, 6, 8] : [-8, 6, -8]}
+          intensity={nightMode ? 0.15 : 0.4}
+          color={nightMode ? '#1e3a8a' : '#fed7aa'}
         />
         <hemisphereLight
           args={[
@@ -312,6 +321,12 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         {/* Blender Red X-Axis & Green Y/Z-Depth Axis */}
         <BlenderAxisLines nightMode={nightMode} />
+
+        {/* Retaining Courtyard Red Clay Brick Perimeter */}
+        <CourtyardBricks nightMode={nightMode} />
+
+        {/* Base Terrain with StateBuffer DataTexture & BVH Acceleration */}
+        <BaseTerrain />
 
         <Suspense fallback={null}>
           {children}

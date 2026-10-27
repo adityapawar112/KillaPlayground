@@ -5,11 +5,11 @@ Three.js scene graph with R3F `<Canvas frameloop="demand">` and diorama `<OrbitC
 
 **Blocked by:** 01: Project Foundation, Design System Tokens & Responsive Shell
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] `<Canvas frameloop="demand">` configured with `<OrbitControls>` bounded polar angles
-- [ ] Courtyard diorama lighting rig with directional sunlight, warm ambient ground bounce, and night moonlight
-- [ ] Retaining red clay perimeter brick wall encircling diorama base
-- [ ] Terrain `PlaneGeometry(10, 10, 255, 255)` with `stateBuffer` DataTexture
-- [ ] `<Bvh>` raycasting integration yielding $< 0.2\text{ms}$ raycasts
-- [ ] PBR texture loader connecting `red_laterite_soil_stones_1k` and `red_mud_stones_1k`
+- [x] `<Canvas frameloop="demand">` configured with `<OrbitControls>` bounded polar angles
+- [x] Courtyard diorama lighting rig with directional sunlight, warm ambient ground bounce, and night moonlight
+- [x] Retaining red clay perimeter brick wall encircling diorama base
+- [x] Terrain `PlaneGeometry(10, 10, 255, 255)` with `stateBuffer` DataTexture
+- [x] `<Bvh>` raycasting integration yielding $< 0.2\text{ms}$ raycasts
+- [x] PBR texture loader connecting `red_laterite_soil_stones_1k` and `red_mud_stones_1k`

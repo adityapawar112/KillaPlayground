@@ -54,6 +54,25 @@ export const terrainFragmentShader = /* glsl */ `
   uniform float uTextureRepeat;
   uniform float uCliffRepeat;
 
+  vec3 perturbNormal(vec3 worldNormal, vec3 mapNormal, vec2 uvCoord, vec3 worldPos) {
+    vec3 q0 = dFdx(worldPos);
+    vec3 q1 = dFdy(worldPos);
+    vec2 st0 = dFdx(uvCoord);
+    vec2 st1 = dFdy(uvCoord);
+
+    vec3 N = normalize(worldNormal);
+    vec3 q1perp = cross(q1, N);
+    vec3 q0perp = cross(N, q0);
+
+    vec3 T = q1perp * st0.x + q0perp * st1.x;
+    vec3 B = q1perp * st0.y + q0perp * st1.y;
+
+    float det = max(dot(T, T), dot(B, B));
+    float scale = (det == 0.0) ? 0.0 : inversesqrt(det);
+
+    return normalize(T * (mapNormal.x * scale) + B * (mapNormal.y * scale) + N * mapNormal.z);
+  }
+
   void main() {
     vec3 geomNorm = normalize(vWorldNormal);
 
@@ -99,10 +118,12 @@ export const terrainFragmentShader = /* glsl */ `
     float baseRoughness = mix(walkableRoughness, cliffRoughness, steepness);
     float baseAO = mix(walkableArmSample.r, cliffArm.r, steepness);
 
-    // Tangent to World Normal Transformation
-    // Horizontal plane: normal is UP (+Y), tangent is RIGHT (+X), bitangent is OUT (+Z)
-    vec3 walkableNormalWorld = normalize(vec3(walkableNorSample.x * 0.8, walkableNorSample.z, -walkableNorSample.y * 0.8));
-    vec3 cliffNormalWorld = normalize(geomNorm + vec3(cliffNor.x * 0.75, cliffNor.y * 0.75, cliffNor.z * 0.75));
+    // Industry standard Cotangent Frame normal perturbation for walkable laterite soil
+    vec3 walkableNormalWorld = perturbNormal(geomNorm, walkableNorSample, tiledUv, vWorldPosition);
+
+    // Triplanar normal perturbation for steep basalt rock cliffs
+    vec3 cliffNormalWorld = normalize(geomNorm + cliffNor * 0.85);
+
     vec3 finalNormal = normalize(mix(walkableNormalWorld, cliffNormalWorld, steepness));
 
     // 4. Sample State Buffer

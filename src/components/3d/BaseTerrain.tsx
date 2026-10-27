@@ -35,7 +35,7 @@ export const BaseTerrainFallback: React.FC = () => {
 
 export const BaseTerrainContent: React.FC = () => {
   const meshRef = useRef<THREE.Mesh>(null);
-  const { invalidate } = useThree();
+  const { gl, invalidate } = useThree();
   const { stateTexture, stateBuffer, lastUpdated, setTerrainMesh } = useTerrainStore();
 
   // Load PBR texture maps per user specifications:
@@ -48,9 +48,11 @@ export const BaseTerrainContent: React.FC = () => {
     walkableDiff: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_diff_1k.jpg',
     walkableArm: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_arm_1k.jpg',
     walkableNor: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_nor_gl_1k.png',
+    walkableDisp: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_disp_1k.png',
     cliffDiff: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_diff_1k.jpg',
     cliffArm: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_arm_1k.jpg',
     cliffNor: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_nor_gl_1k.png',
+    cliffDisp: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_disp_1k.png',
     crackedDiff: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_diff_1k.jpg',
     crackedArm: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_arm_1k.jpg',
     crackedNor: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_nor_gl_1k.png',
@@ -62,9 +64,11 @@ export const BaseTerrainContent: React.FC = () => {
     grassNor: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_nor_gl_1k.png',
   });
 
-  // Configure texture wrap and color space
+  // Configure texture wrap, color space, and maximum anisotropic filtering (eliminates oblique camera blur)
   useEffect(() => {
     if (!textures) return;
+
+    const maxAnisotropy = gl?.capabilities?.getMaxAnisotropy?.() || 16;
 
     const diffMaps = [
       textures.walkableDiff,
@@ -77,8 +81,10 @@ export const BaseTerrainContent: React.FC = () => {
     const linearMaps = [
       textures.walkableArm,
       textures.walkableNor,
+      textures.walkableDisp,
       textures.cliffArm,
       textures.cliffNor,
+      textures.cliffDisp,
       textures.crackedArm,
       textures.crackedNor,
       textures.pathArm,
@@ -90,17 +96,19 @@ export const BaseTerrainContent: React.FC = () => {
     diffMaps.forEach((tex) => {
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
       tex.needsUpdate = true;
     });
 
     linearMaps.forEach((tex) => {
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.colorSpace = THREE.NoColorSpace;
+      tex.anisotropy = maxAnisotropy;
       tex.needsUpdate = true;
     });
 
     invalidate();
-  }, [textures, invalidate]);
+  }, [textures, gl, invalidate]);
 
   // Create high-res 10m x 10m plane geometry (65,536 vertices) initialized with current terrain height
   const geometry = useMemo(() => {
@@ -117,16 +125,18 @@ export const BaseTerrainContent: React.FC = () => {
     invalidate();
   }, [lastUpdated, stateBuffer, geometry, invalidate]);
 
-  // Create slope-aware CustomShaderMaterial
+  // Create slope-aware CustomShaderMaterial with height blending and view-space normals
   const material = useMemo(() => {
     return createTerrainMaterial({
       stateTexture,
       walkableDiff: textures.walkableDiff,
       walkableArm: textures.walkableArm,
       walkableNor: textures.walkableNor,
+      walkableDisp: textures.walkableDisp,
       cliffDiff: textures.cliffDiff,
       cliffArm: textures.cliffArm,
       cliffNor: textures.cliffNor,
+      cliffDisp: textures.cliffDisp,
       crackedDiff: textures.crackedDiff,
       crackedArm: textures.crackedArm,
       crackedNor: textures.crackedNor,

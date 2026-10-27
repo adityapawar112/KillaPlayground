@@ -20,6 +20,8 @@ import {
   TbHelp,
   TbCheck,
   TbLanguage,
+  TbBuildingCastle,
+  TbAdjustmentsHorizontal,
 } from 'react-icons/tb';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -59,6 +61,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     setResetConfirmOpen,
     setShortcutsModalOpen,
     setStartupModalOpen,
+    setTerrainDrawerOpen,
     saveProjectLocally,
     exportProjectData,
     importProjectData,
@@ -197,6 +200,27 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   </span>
                   <kbd className="text-[10px] text-[#8D7666] font-mono">Ctrl+N</kbd>
                 </button>
+                <button
+                  onClick={() => {
+                    setTerrainDrawerOpen(true, 'historical');
+                    setActiveMenu(null);
+                  }}
+                  className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                >
+                  <TbBuildingCastle className="w-4 h-4 text-[#4B382C]" />
+                  <span>Historical Forts (किल्ले)...</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setTerrainDrawerOpen(true, 'freeform');
+                    setActiveMenu(null);
+                  }}
+                  className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                >
+                  <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
+                  <span>Terrain Generation Settings...</span>
+                </button>
+                <div className="my-1 border-t border-[#D9C9B4]" />
                 <button
                   onClick={handleSave}
                   className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
@@ -595,20 +619,23 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
       </header>
 
       {/* Webpage Title Just Below Menu Bar in the Middle */}
-      {/* Requirement: "Add the webpage title just below this in the middle 'The Killa Playground'" */}
       <div className="flex flex-col items-center justify-center mt-2 pointer-events-none select-none text-center">
         <h1 className="font-yatra text-2xl sm:text-3xl text-[#2B1E16] drop-shadow-sm tracking-wide leading-tight">
           The Killa Playground
         </h1>
-        <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] sm:text-[11px] font-sans font-medium text-[#8D7666] tracking-wider uppercase">
+        <button
+          onClick={() => setTerrainDrawerOpen(true)}
+          className="flex items-center gap-2 mt-0.5 pointer-events-auto cursor-pointer hover:bg-[#EADECF]/60 px-2 py-0.5 rounded-full transition-colors group"
+          title="Click to open Terrain Studio & Fort Selection"
+        >
+          <span className="text-[10px] sm:text-[11px] font-sans font-medium text-[#8D7666] group-hover:text-[#4B382C] tracking-wider uppercase underline decoration-dotted">
             {fortTitle}
           </span>
           <span className="w-1 h-1 rounded-full bg-[#E85D04]" />
-          <span className="text-[10px] sm:text-[11px] font-sans font-medium text-[#777A57]">
+          <span className="text-[10px] sm:text-[11px] font-sans font-medium text-[#777A57] group-hover:text-[#4B382C]">
             दिवाळी मातीचा किल्ला कार्यशाळा
           </span>
-        </div>
+        </button>
       </div>
 
       {/* Transient Toast Notification */}

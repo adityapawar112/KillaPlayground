@@ -21,7 +21,7 @@ interface TerrainState {
 
   // Actions
   setTerrainMesh: (mesh: THREE.Mesh | null, geometry: THREE.BufferGeometry | null) => void;
-  loadTemplate: (templateId: string) => void;
+  loadTemplate: (templateId: string, freeformOpts?: import('./terrainGenerators').FreeformOptions) => void;
   markTextureNeedsUpdate: () => void;
   resetTerrain: () => void;
   applyDirtyRegion: (minX: number, maxX: number, minZ: number, maxZ: number) => void;
@@ -51,9 +51,9 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     set({ terrainMesh: mesh, terrainGeometry: geometry, lastUpdated: Date.now() });
   },
 
-  loadTemplate: (templateId: string) => {
+  loadTemplate: (templateId: string, freeformOpts?: import('./terrainGenerators').FreeformOptions) => {
     const { stateBuffer, stateTexture, terrainGeometry } = get();
-    generateTerrainBlueprint(templateId, stateBuffer);
+    generateTerrainBlueprint(templateId, stateBuffer, freeformOpts);
     stateTexture.needsUpdate = true;
 
     if (terrainGeometry) {

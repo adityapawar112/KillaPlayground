@@ -9,6 +9,7 @@ import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
 import { StartupModal } from '@/components/modals/StartupModal';
+import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 
 const KillaCanvas = dynamic(
@@ -169,6 +170,9 @@ export default function HomePage() {
 
       {/* Blender-Style Startup Splash / Project Hub */}
       <StartupModal />
+
+      {/* Left-Half Screen Terrain Studio Drawer */}
+      <TerrainStudioDrawer />
 
       {/* Helper Modals */}
       <ShortcutsModal />

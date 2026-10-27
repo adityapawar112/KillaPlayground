@@ -47,14 +47,19 @@ export const BaseTerrainContent: React.FC = () => {
   const textures = useTexture({
     walkableDiff: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_diff_1k.jpg',
     walkableArm: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_arm_1k.jpg',
+    walkableNor: '/textures/red_laterite_soil_stones_1k/textures/red_laterite_soil_stones_nor_gl_1k.png',
     cliffDiff: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_diff_1k.jpg',
     cliffArm: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_arm_1k.jpg',
+    cliffNor: '/textures/rocks_ground_06_1k/textures/rocks_ground_06_nor_gl_1k.png',
     crackedDiff: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_diff_1k.jpg',
     crackedArm: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_arm_1k.jpg',
+    crackedNor: '/textures/cracked_red_ground_1k/textures/cracked_red_ground_nor_gl_1k.png',
     pathDiff: '/textures/muddy_tracks_1k/textures/muddy_tracks_diff_1k.jpg',
     pathArm: '/textures/muddy_tracks_1k/textures/muddy_tracks_arm_1k.jpg',
+    pathNor: '/textures/muddy_tracks_1k/textures/muddy_tracks_nor_gl_1k.png',
     grassDiff: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_diff_1k.jpg',
     grassArm: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_arm_1k.jpg',
+    grassNor: '/textures/rocky_terrain_02_1k/textures/rocky_terrain_02_nor_gl_1k.png',
   });
 
   // Configure texture wrap and color space
@@ -69,12 +74,17 @@ export const BaseTerrainContent: React.FC = () => {
       textures.grassDiff,
     ];
 
-    const armMaps = [
+    const linearMaps = [
       textures.walkableArm,
+      textures.walkableNor,
       textures.cliffArm,
+      textures.cliffNor,
       textures.crackedArm,
+      textures.crackedNor,
       textures.pathArm,
+      textures.pathNor,
       textures.grassArm,
+      textures.grassNor,
     ];
 
     diffMaps.forEach((tex) => {
@@ -83,7 +93,7 @@ export const BaseTerrainContent: React.FC = () => {
       tex.needsUpdate = true;
     });
 
-    armMaps.forEach((tex) => {
+    linearMaps.forEach((tex) => {
       tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
       tex.colorSpace = THREE.NoColorSpace;
       tex.needsUpdate = true;
@@ -113,14 +123,19 @@ export const BaseTerrainContent: React.FC = () => {
       stateTexture,
       walkableDiff: textures.walkableDiff,
       walkableArm: textures.walkableArm,
+      walkableNor: textures.walkableNor,
       cliffDiff: textures.cliffDiff,
       cliffArm: textures.cliffArm,
+      cliffNor: textures.cliffNor,
       crackedDiff: textures.crackedDiff,
       crackedArm: textures.crackedArm,
+      crackedNor: textures.crackedNor,
       pathDiff: textures.pathDiff,
       pathArm: textures.pathArm,
+      pathNor: textures.pathNor,
       grassDiff: textures.grassDiff,
       grassArm: textures.grassArm,
+      grassNor: textures.grassNor,
       textureRepeat: 8.0,
       cliffRepeat: 6.0,
     });

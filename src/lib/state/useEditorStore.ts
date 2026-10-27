@@ -111,6 +111,25 @@ interface EditorState {
   isResetConfirmOpen: boolean;
   isStartupModalOpen: boolean;
   dontShowStartupModal: boolean;
+  isTerrainDrawerOpen: boolean;
+  terrainDrawerTab: 'historical' | 'freeform';
+
+  // Base Water Level State
+  waterLevel: number; // 0.0 to 0.45
+  waterLevelActive: boolean;
+  setWaterLevel: (lvl: number) => void;
+  setWaterLevelActive: (active: boolean) => void;
+
+  // Freeform Procedural Generation Settings
+  freeformSettings: {
+    elevation: number;
+    tablelandWidth: number;
+    cliffSteepness: number;
+    roughness: number;
+    seed: number;
+  };
+  setFreeformSetting: (key: 'elevation' | 'tablelandWidth' | 'cliffSteepness' | 'roughness' | 'seed', val: number) => void;
+  randomizeFreeformSeed: () => void;
 
   // Local Saved Projects Vault
   savedProjects: SavedProject[];
@@ -174,6 +193,8 @@ interface EditorState {
   setResetConfirmOpen: (open: boolean) => void;
   setStartupModalOpen: (open: boolean) => void;
   setDontShowStartupModal: (dontShow: boolean) => void;
+  setTerrainDrawerOpen: (open: boolean, tab?: 'historical' | 'freeform') => void;
+  setTerrainDrawerTab: (tab: 'historical' | 'freeform') => void;
 
   // Reset
   resetScene: () => void;
@@ -247,6 +268,38 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isResetConfirmOpen: false,
   isStartupModalOpen: true, // Opened on initial visit
   dontShowStartupModal: false,
+  isTerrainDrawerOpen: false,
+  terrainDrawerTab: 'historical',
+
+  // Water Level Defaults
+  waterLevel: 0.12,
+  waterLevelActive: true,
+  setWaterLevel: (waterLevel) => set({ waterLevel }),
+  setWaterLevelActive: (waterLevelActive) => set({ waterLevelActive }),
+
+  // Freeform procedural defaults
+  freeformSettings: {
+    elevation: 1.45,
+    tablelandWidth: 3.4,
+    cliffSteepness: 5.5,
+    roughness: 0.5,
+    seed: 42,
+  },
+  setFreeformSetting: (key, val) => {
+    set((state) => {
+      const updated = { ...state.freeformSettings, [key]: val };
+      if (state.templateId === 'scratch') {
+        import('../terrain/terrainStore').then((m) => {
+          m.useTerrainStore.getState().loadTemplate('scratch', updated);
+        });
+      }
+      return { freeformSettings: updated };
+    });
+  },
+  randomizeFreeformSeed: () => {
+    const newSeed = Math.floor(Math.random() * 1000000);
+    get().setFreeformSetting('seed', newSeed);
+  },
 
   savedProjects: [],
   toastMessage: null,
@@ -475,6 +528,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setShortcutsModalOpen: (open) => set({ isShortcutsModalOpen: open }),
   setResetConfirmOpen: (open) => set({ isResetConfirmOpen: open }),
   setStartupModalOpen: (open) => set({ isStartupModalOpen: open }),
+  setTerrainDrawerOpen: (open, tab) =>
+    set((state) => ({
+      isTerrainDrawerOpen: open,
+      terrainDrawerTab: tab || state.terrainDrawerTab,
+    })),
+  setTerrainDrawerTab: (terrainDrawerTab) => set({ terrainDrawerTab }),
   setDontShowStartupModal: (dontShow) => {
     if (typeof window !== 'undefined') {
       try {

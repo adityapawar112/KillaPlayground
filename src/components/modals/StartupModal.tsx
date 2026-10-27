@@ -73,6 +73,7 @@ export const StartupModal: React.FC = () => {
   const {
     isStartupModalOpen,
     setStartupModalOpen,
+    setTerrainDrawerOpen,
     templateId,
     setTemplateId,
     setFortTitle,
@@ -165,89 +166,80 @@ export const StartupModal: React.FC = () => {
 
         {/* Two-Column Body */}
         <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#D9C9B4] flex-1 overflow-y-auto">
-          {/* LEFT COLUMN: Start New Creation, Import, Settings */}
-          <div className="p-5 sm:p-6 space-y-5">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85F45] mb-2.5 flex items-center gap-1.5 font-sans">
-                <TbMountain className="w-4 h-4" />
-                {t.startupModal.blueprints}
-              </h3>
-              <div className="space-y-2">
-                {BLUEPRINTS.map((bp) => {
-                  const Icon = bp.icon;
-                  const isSelected = templateId === bp.id;
-                  const nameLabel = bp.name[locale] || bp.name.en;
-                  const descLabel = bp.desc[locale] || bp.desc.en;
+          {/* LEFT COLUMN: Single Buttons for Blueprints & From Scratch */}
+          <div className="p-5 sm:p-6 space-y-4 flex flex-col justify-between">
+            <div className="space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#B85F45] block font-sans">
+                Choose Fort Architecture
+              </span>
 
-                  return (
-                    <button
-                      key={bp.id}
-                      onClick={() => handleSelectBlueprint(bp.id, nameLabel)}
-                      className={`w-full p-3 rounded-2xl border text-left transition-all flex items-start gap-3 cursor-pointer group ${
-                        isSelected
-                          ? 'bg-[#EADECF] border-[#4B382C] shadow-sm'
-                          : 'bg-[#F2EBE1]/70 border-[#D9C9B4] hover:bg-[#DFCDBD] hover:border-[#BFA892]'
-                      }`}
-                    >
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 mt-0.5 transition-colors ${
-                          isSelected ? 'bg-[#4B382C] text-white' : 'bg-[#EADECF] text-[#634E40] group-hover:bg-[#4B382C] group-hover:text-white'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-sm text-[#2B1E16] font-yatra tracking-wide">
-                            {nameLabel}
-                          </span>
-                          {isSelected && (
-                            <span className="text-[10px] font-bold text-[#4B382C] bg-[#DFCDBD] px-2 py-0.5 rounded-full">
-                              Active
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-[#634E40] line-clamp-2 mt-0.5">
-                          {descLabel}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+              {/* Single Button 1: Historical Fort Blueprints */}
+              <button
+                onClick={() => {
+                  setStartupModalOpen(false);
+                  setTerrainDrawerOpen(true, 'historical');
+                }}
+                className="w-full p-4 rounded-2xl bg-[#F2EBE1]/90 border-2 border-[#D9C9B4] hover:border-[#4B382C] hover:bg-[#EADECF] text-left transition-all cursor-pointer group shadow-xs hover:shadow-md flex items-start gap-3.5"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-[#4B382C] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                  <TbBuildingCastle className="w-6 h-6 text-[#FAF8F5]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-base text-[#2B1E16] font-yatra tracking-wide">
+                      {t.startupModal.blueprints}
+                    </h3>
+                    <span className="text-[10px] font-bold text-[#4B382C] bg-[#DFCDBD] px-2 py-0.5 rounded-full uppercase">
+                      5 Forts
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
+                    Select authentic Sahyadri hill & sea fort blueprints (Raigad, Murud-Janjira, Sinhagad, Pratapgad, Vijaydurg) with expansive flat tablelands.
+                  </p>
+                </div>
+              </button>
 
-            {/* From Scratch & Import Options */}
-            <div className="pt-2 border-t border-[#D9C9B4]/60 space-y-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85F45] mb-2 font-sans">
-                {t.startupModal.fromScratch}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleSelectBlueprint('scratch', 'Custom Fort')}
-                  className="p-3 rounded-2xl bg-[#F2EBE1]/70 border border-[#D9C9B4] hover:bg-[#DFCDBD] text-left transition-all cursor-pointer group"
-                >
-                  <span className="font-bold text-xs text-[#2B1E16] block font-yatra">
-                    {t.startupModal.fromScratch}
-                  </span>
-                  <span className="text-[10px] text-[#8D7666] block mt-0.5">
-                    Blank canvas & procedural hill
-                  </span>
-                </button>
+              {/* Single Button 2: From Scratch / Freeform Terrain */}
+              <button
+                onClick={() => {
+                  setStartupModalOpen(false);
+                  setTerrainDrawerOpen(true, 'freeform');
+                }}
+                className="w-full p-4 rounded-2xl bg-[#F2EBE1]/90 border-2 border-[#D9C9B4] hover:border-[#4B382C] hover:bg-[#EADECF] text-left transition-all cursor-pointer group shadow-xs hover:shadow-md flex items-start gap-3.5"
+              >
+                <div className="w-12 h-12 rounded-2xl bg-[#8F4938] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                  <TbMountain className="w-6 h-6 text-[#FAF8F5]" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-base text-[#2B1E16] font-yatra tracking-wide">
+                      {t.startupModal.fromScratch}
+                    </h3>
+                    <span className="text-[10px] font-bold text-[#8F4938] bg-orange-100 px-2 py-0.5 rounded-full uppercase">
+                      Custom
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
+                    Procedural terrain generator with custom summit tableland width, peak elevation, cliff drops, and base water level.
+                  </p>
+                </div>
+              </button>
 
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="p-3 rounded-2xl bg-[#F2EBE1]/70 border border-[#D9C9B4] hover:bg-[#DFCDBD] text-left transition-all cursor-pointer group flex flex-col justify-between"
-                >
-                  <span className="font-bold text-xs text-[#2B1E16] flex items-center gap-1.5 font-yatra">
-                    <TbFolderOpen className="w-4 h-4 text-[#0284C7]" />
+              {/* Open / Import Project File Button */}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full p-3 rounded-2xl bg-[#F2EBE1]/60 border border-[#D9C9B4] hover:bg-[#DFCDBD] text-left transition-all cursor-pointer group flex items-center justify-between"
+              >
+                <div className="flex items-center gap-2.5">
+                  <TbFolderOpen className="w-5 h-5 text-[#0284C7]" />
+                  <span className="font-bold text-xs text-[#2B1E16] font-yatra">
                     {t.startupModal.importFile}
                   </span>
-                  <span className="text-[10px] text-[#8D7666] block mt-0.5">
-                    Load .killa or .json file
-                  </span>
-                </button>
-              </div>
+                </div>
+                <span className="text-[10px] text-[#8D7666]">
+                  .killa / .json
+                </span>
+              </button>
             </div>
 
             {/* Quick Preferences */}

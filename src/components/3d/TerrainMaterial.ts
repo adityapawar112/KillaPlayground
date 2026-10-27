@@ -14,7 +14,8 @@ export const fallbackCliffDiff = createColorTexture(85, 75, 68);     // #554B44 
 export const fallbackCrackedDiff = createColorTexture(140, 52, 28);   // #8C341C cracked mud
 export const fallbackPathDiff = createColorTexture(115, 68, 45);     // #73442D muddy tracks
 export const fallbackGrassDiff = createColorTexture(75, 110, 40);    // #4B6E28 foliage grass
-export const fallbackArm = createColorTexture(255, 220, 0);          // AO=1.0, Roughness=0.86, Metal=0
+export const fallbackArm = createColorTexture(255, 230, 0);          // AO=1.0, Roughness=0.90, Metal=0
+export const fallbackFlatNormal = createColorTexture(128, 128, 255); // Flat tangent-space normal (0, 0, 1)
 
 export const terrainVertexShader = /* glsl */ `
   varying vec2 vTerrainUv;
@@ -37,33 +38,38 @@ export const terrainFragmentShader = /* glsl */ `
   uniform sampler2D uStateTexture;
   uniform sampler2D uWalkableDiff;
   uniform sampler2D uWalkableArm;
+  uniform sampler2D uWalkableNor;
   uniform sampler2D uCliffDiff;
   uniform sampler2D uCliffArm;
+  uniform sampler2D uCliffNor;
   uniform sampler2D uCrackedDiff;
   uniform sampler2D uCrackedArm;
+  uniform sampler2D uCrackedNor;
   uniform sampler2D uPathDiff;
   uniform sampler2D uPathArm;
+  uniform sampler2D uPathNor;
   uniform sampler2D uGrassDiff;
   uniform sampler2D uGrassArm;
+  uniform sampler2D uGrassNor;
   uniform float uTextureRepeat;
   uniform float uCliffRepeat;
 
   void main() {
-    vec3 worldNorm = normalize(vWorldNormal);
+    vec3 geomNorm = normalize(vWorldNormal);
 
     // 1. Walkable vs Steeper-than-walkable Slope Determination:
-    // Flat to walkable slopes: worldNorm.y >= 0.78 (~38 degrees)
-    // Steeper than walkable cliffs: worldNorm.y < 0.72
-    float steepness = 1.0 - smoothstep(0.70, 0.80, worldNorm.y);
+    // Flat to walkable slopes: geomNorm.y >= 0.78 (~38 degrees)
+    // Steeper than walkable cliffs: geomNorm.y < 0.70
+    float steepness = 1.0 - smoothstep(0.70, 0.80, geomNorm.y);
 
     // 2. Walkable horizontal coordinate tiling (red_laterite_soil_stones_1k)
     vec2 tiledUv = vTerrainUv * uTextureRepeat;
     vec4 walkableDiffSample = texture(uWalkableDiff, tiledUv);
     vec4 walkableArmSample = texture(uWalkableArm, tiledUv);
+    vec3 walkableNorSample = texture(uWalkableNor, tiledUv).rgb * 2.0 - 1.0;
 
     // 3. Steep cliff face triplanar coordinates (rocks_ground_06_1k)
-    // Projects on vertical planes to eliminate texture stretching
-    vec3 blendWeights = abs(worldNorm);
+    vec3 blendWeights = abs(geomNorm);
     blendWeights = normalize(max(blendWeights, 0.0001));
     float blendSum = blendWeights.x + blendWeights.y + blendWeights.z;
     blendWeights /= blendSum;
@@ -79,10 +85,25 @@ export const terrainFragmentShader = /* glsl */ `
     vec4 cliffArmZ = texture(uCliffArm, cliffUvZ);
     vec3 cliffArm = (cliffArmX.rgb * blendWeights.x + cliffArmZ.rgb * blendWeights.z) / (blendWeights.x + blendWeights.z + 0.0001);
 
+    vec3 cliffNorX = texture(uCliffNor, cliffUvX).rgb * 2.0 - 1.0;
+    vec3 cliffNorZ = texture(uCliffNor, cliffUvZ).rgb * 2.0 - 1.0;
+    vec3 cliffNor = (cliffNorX * blendWeights.x + cliffNorZ * blendWeights.z) / (blendWeights.x + blendWeights.z + 0.0001);
+
     // Blend base walkable terrain with steep rock cliffs
     vec3 baseColor = mix(walkableDiffSample.rgb, cliffColor, steepness);
-    float baseRoughness = mix(walkableArmSample.g * 0.92 + 0.05, cliffArm.g * 0.95 + 0.05, steepness);
+
+    // Realistic Matte Roughness for Natural Soil & Basalt (Eliminates glossy plastic look)
+    // Walkable soil is earthy and rough (0.90 to 0.98), rock is (0.86 to 0.95)
+    float walkableRoughness = mix(0.90, 0.98, walkableArmSample.g);
+    float cliffRoughness = mix(0.86, 0.95, cliffArm.g);
+    float baseRoughness = mix(walkableRoughness, cliffRoughness, steepness);
     float baseAO = mix(walkableArmSample.r, cliffArm.r, steepness);
+
+    // Tangent to World Normal Transformation
+    // Horizontal plane: normal is UP (+Y), tangent is RIGHT (+X), bitangent is OUT (+Z)
+    vec3 walkableNormalWorld = normalize(vec3(walkableNorSample.x * 0.8, walkableNorSample.z, -walkableNorSample.y * 0.8));
+    vec3 cliffNormalWorld = normalize(geomNorm + vec3(cliffNor.x * 0.75, cliffNor.y * 0.75, cliffNor.z * 0.75));
+    vec3 finalNormal = normalize(mix(walkableNormalWorld, cliffNormalWorld, steepness));
 
     // 4. Sample State Buffer
     vec4 state = texture(uStateTexture, vTerrainUv);
@@ -96,9 +117,9 @@ export const terrainFragmentShader = /* glsl */ `
     vec4 crackedArmSample = texture(uCrackedArm, tiledUv);
 
     if (wetness > 0.0) {
-      // Darkened moist wet red soil with specular highlights
-      vec3 wetColor = crackedDiffSample.rgb * 0.78;
-      float wetRoughness = crackedArmSample.g * 0.32 + 0.06;
+      // Darkened moist wet red soil with specular highlights ONLY when watered
+      vec3 wetColor = crackedDiffSample.rgb * 0.74;
+      float wetRoughness = mix(0.85, 0.18 + crackedArmSample.g * 0.18, wetness);
       baseColor = mix(baseColor, wetColor, wetness);
       baseRoughness = mix(baseRoughness, wetRoughness, wetness);
       baseAO = mix(baseAO, crackedArmSample.r, wetness);
@@ -106,22 +127,23 @@ export const terrainFragmentShader = /* glsl */ `
 
     // 6. Foliage Grass (rocky_terrain_02_1k)
     if (grass > 0.0) {
-      vec4 grassDiffSample = texture(uGrassDiff, tiledUv * 1.4);
-      vec4 grassArmSample = texture(uGrassArm, tiledUv * 1.4);
-      baseColor = mix(baseColor, grassDiffSample.rgb, grass * 0.85);
-      baseRoughness = mix(baseRoughness, grassArmSample.g * 0.85, grass * 0.7);
+      vec4 grassDiffSample = texture(uGrassDiff, tiledUv * 1.5);
+      vec4 grassArmSample = texture(uGrassArm, tiledUv * 1.5);
+      baseColor = mix(baseColor, grassDiffSample.rgb, grass * 0.88);
+      baseRoughness = mix(baseRoughness, mix(0.88, 0.98, grassArmSample.g), grass * 0.8);
     }
 
     // 7. Mud set / locked mass compaction
     if (locked > 0.5) {
-      baseColor *= 0.96;
-      baseRoughness = clamp(baseRoughness + 0.06, 0.0, 1.0);
+      baseColor *= 0.95;
+      baseRoughness = clamp(baseRoughness + 0.04, 0.0, 1.0);
     }
 
     csm_DiffuseColor = vec4(baseColor, 1.0);
-    csm_Roughness = clamp(baseRoughness, 0.04, 1.0);
+    csm_Roughness = clamp(baseRoughness, 0.08, 1.0);
     csm_Metalness = 0.0;
     csm_AO = baseAO;
+    csm_FragNormal = finalNormal;
   }
 `;
 
@@ -129,40 +151,50 @@ export interface CreateTerrainMaterialOptions {
   stateTexture: THREE.DataTexture;
   walkableDiff?: THREE.Texture | null;
   walkableArm?: THREE.Texture | null;
+  walkableNor?: THREE.Texture | null;
   cliffDiff?: THREE.Texture | null;
   cliffArm?: THREE.Texture | null;
+  cliffNor?: THREE.Texture | null;
   crackedDiff?: THREE.Texture | null;
   crackedArm?: THREE.Texture | null;
+  crackedNor?: THREE.Texture | null;
   pathDiff?: THREE.Texture | null;
   pathArm?: THREE.Texture | null;
+  pathNor?: THREE.Texture | null;
   grassDiff?: THREE.Texture | null;
   grassArm?: THREE.Texture | null;
+  grassNor?: THREE.Texture | null;
   textureRepeat?: number;
   cliffRepeat?: number;
 }
 
 /**
  * Creates a CustomShaderMaterial instance extending MeshStandardMaterial with slope-aware
- * PBR texture blending (walkable soil vs steep cliffs, wet mud, and foliage).
+ * PBR texture blending (walkable soil vs steep cliffs, normal maps, wet mud, and foliage).
  */
 export function createTerrainMaterial(options: CreateTerrainMaterialOptions): CustomShaderMaterial {
   const {
     stateTexture,
     walkableDiff = fallbackWalkableDiff,
     walkableArm = fallbackArm,
+    walkableNor = fallbackFlatNormal,
     cliffDiff = fallbackCliffDiff,
     cliffArm = fallbackArm,
+    cliffNor = fallbackFlatNormal,
     crackedDiff = fallbackCrackedDiff,
     crackedArm = fallbackArm,
+    crackedNor = fallbackFlatNormal,
     pathDiff = fallbackPathDiff,
     pathArm = fallbackArm,
+    pathNor = fallbackFlatNormal,
     grassDiff = fallbackGrassDiff,
     grassArm = fallbackArm,
-    textureRepeat = 8.0,
-    cliffRepeat = 6.0,
+    grassNor = fallbackFlatNormal,
+    textureRepeat = 6.0,
+    cliffRepeat = 4.0,
   } = options;
 
-  const material = new CustomShaderMaterial({
+  return new CustomShaderMaterial({
     baseMaterial: THREE.MeshStandardMaterial,
     vertexShader: terrainVertexShader,
     fragmentShader: terrainFragmentShader,
@@ -170,20 +202,24 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
       uStateTexture: { value: stateTexture },
       uWalkableDiff: { value: walkableDiff || fallbackWalkableDiff },
       uWalkableArm: { value: walkableArm || fallbackArm },
+      uWalkableNor: { value: walkableNor || fallbackFlatNormal },
       uCliffDiff: { value: cliffDiff || fallbackCliffDiff },
       uCliffArm: { value: cliffArm || fallbackArm },
+      uCliffNor: { value: cliffNor || fallbackFlatNormal },
       uCrackedDiff: { value: crackedDiff || fallbackCrackedDiff },
       uCrackedArm: { value: crackedArm || fallbackArm },
+      uCrackedNor: { value: crackedNor || fallbackFlatNormal },
       uPathDiff: { value: pathDiff || fallbackPathDiff },
       uPathArm: { value: pathArm || fallbackArm },
+      uPathNor: { value: pathNor || fallbackFlatNormal },
       uGrassDiff: { value: grassDiff || fallbackGrassDiff },
       uGrassArm: { value: grassArm || fallbackArm },
+      uGrassNor: { value: grassNor || fallbackFlatNormal },
       uTextureRepeat: { value: textureRepeat },
       uCliffRepeat: { value: cliffRepeat },
     },
-    roughness: 0.9,
+    roughness: 0.95,
     metalness: 0.0,
+    side: THREE.FrontSide,
   });
-
-  return material;
 }

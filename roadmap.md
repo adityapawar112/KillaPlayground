@@ -46,12 +46,23 @@ graph TD
     - Festive Accents: Bhagwa Saffron (`#E85D04`), Chuna White (`#FAF8F5`), Sprouted Halim Green (`#65A30D`), Crinkled Sea Blue (`#0284C7`), Diya Amber (`#F59E0B`).
   - Google Fonts preloaded in `<head>`: `Yatra One`, `Modak`, and `Inter`.
   - Full-bleed responsive diorama canvas shell with non-blocking floating HUD mounts.
+  - **Comprehensive Responsive HUD & Viewport Ergonomics**:
+    - **In-Flow Branding**: Fixed brand title collision with Help menu dropdown by moving "The Killa Playground" into natural toolbar flex flow beside the shield logo.
+    - **Responsive Hamburger Navigation Drawer**: On screens `< 1280px` (`< xl`), collapses horizontal menus into a hamburger button with slide-over drawer rendered below the top bar (`top-[41px]`), featuring a dynamic hamburger-to-X toggle.
+    - **Camera Viewport Relocation**: Moved Top (Z), Front (Y), Side (X), Center (Home), and Zoom In/Out controls from the sidebar into the secondary top bar.
+    - **2-Row Symbols-Only Toolbar**: On `< xl` viewports (mobile, tablet, and windowed desktop), secondary toolbar automatically renders 2 rows of symbol buttons (Row 1: 10 Tools; Row 2: Camera presets & zoom), eliminating all horizontal scrollbars and cutoffs.
+    - **Symmetric Minimized HUD Toggles**: "Tools & Views" minimized button is pinned to the right edge (`right-2`), while "Properties" minimized button is pinned to the left edge (`left-2`) and dynamically hangs off the secondary toolbar when expanded.
+    - **100% Properties-Dedicated Sidebar**: Removed camera box and horizontal splitter from the left sidebar, giving tool properties and sliders full vertical scrolling space.
+    - **Bottom Instructions Auto-Hide**: Viewport navigation tip strip hidden on smaller screens (`hidden md:flex`).
+    - **Decluttering**: Stripped verbose info cards, guidance blurbs, and redundant labels from tool properties, terrain drawer, and startup modals.
 
 ### Acceptance Criteria
 - [x] Application compiles and runs with `npm run dev` at `http://localhost:3000`.
 - [x] Canvas viewport expands to 100vw × 100vh with `#F9F6F0` foundation.
 - [x] Fonts `Yatra One`, `Modak`, and `Inter` load cleanly with zero FOUT.
 - [x] Tailwind tokens configured and verified with test elements.
+- [x] Responsive layout adapts cleanly across mobile (375px/390px), tablet/windowed (820px/1032px), and wide desktop (1280px+) with zero visual overlaps or clipped toolbars.
+- [x] Camera controls relocated to secondary toolbar, leaving left sidebar 100% for tool properties.
 
 ---
 

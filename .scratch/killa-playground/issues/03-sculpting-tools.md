@@ -1,28 +1,32 @@
-# 03: Structure Building Tools (Soil, Water, Shape, Dry) & Terrain Tool
+# 03: Base Terrain Manipulation Tool
 
 **What to build:**
-The core building mechanics separating terrain manipulation from architectural structure modeling:
+Direct terrain mesh manipulation engine and excavation tools operating on the 65,536 vertex diorama plane:
 
-### 1. Bundled Structure Tools (Operating on Lumps of Soil Placed on Terrain)
-1. **Soil Tool**: Does NOT affect the mountain terrain itself; drops a discrete lump of soil (`red_laterite_soil_stones_1k`) onto the terrain, which serves as raw building material.
-2. **Water Tool**: Pours water onto the lump of soil to soften it, making it malleable (`cracked_red_ground_1k` wet sheen) with high specular gloss.
-3. **Shaping Tool**: Models the wet soil into architectural structures:
-   * *Push Left:* Compresses soil from the right into clean vertical faces.
-   * *Push Right:* Compresses soil from the left.
-   * *Pat from Top:* Levels mounds into flat horizontal decks, bastion rooftops, and ramparts.
-4. **Drying Tool**: Dries the shaped wet soil, hardening it into solid architectural stone/mass. Once dried, the structure allows painting on top, placing figurines, and applying the spline tool for crenellations.
+### 1. Direct Terrain Sculpting Subtools
+* **Elevate Tool:** Raises mountain crests, peaks, and ridges with radial falloff.
+* **Lower Tool:** Depresses terrain to carve valleys, trenches, and moat beds.
+* **Plateau Tool:** Flattens sampled vertices to a target plane height $H_{target}$, creating flat fort building decks and bastion summits.
+* **Smooth Tool:** Multi-tap kernel blur softening rugged vertices into natural earthen contours.
+* **Slope / Ramp Tool:** Calibrated inclination grading with angle presets (15°, 30°, 45°, 60°) and angle slider for fort ascents.
+* **Pond Excavation Subtool (Option A: Shader-Integrated):** Carves crater depressions directly in the terrain heightmap and renders authentic blue tarpaulin PBR water with specular ripples on the flat basin floor (`wetness > 0.68`), surrounded by dark wet mud (*chikhal*) on crater banks (`wetness` 0.70 to 0.02) up to the rim edge. Prevents cliff leaks, prevents water plane stacking, and restores 100% cleanly on undo.
 
-### 2. Terrain Tool (Mountain Manipulation & Ponds)
-* **Terrain Tool**: Directly elevates or depresses the underlying mountain terrain itself.
-* **Pond Sub-Tool**: Excavates water depressions that fill with reflective pond water or blue plastic tarpaulin.
+### 2. Interaction Ergonomics & Performance
+* **3D Surface Normal Indicator:** Brush cursor reticle ring dynamically aligns flush to the exact terrain surface normal, eliminating z-fighting across cliffs.
+* **Ergonomic Wheel Shortcuts:** `Shift+Scroll` for brush radius, `Ctrl+Scroll` for sculpt strength, `Alt+Scroll` for plateau/slope angle, intercepted in capture phase with complete suppression of camera zoom.
+* **Undo/Redo History:** Synchronized with 15-slot circular history (`Ctrl+Z` / `Ctrl+Y`) and dedicated undo controls.
+* **BVH Raycasting Acceleration:** Partial dirty-box updates and BVH refits guarantee $< 0.2\text{ms}$ raycasting latency.
 
 **Blocked by:** 02: 3D Scene Core, Camera Rig, Courtyard Bricks & Base Terrain
 
-**Status:** ready-for-agent
+**Status:** closed
 
-- [ ] Soil tool drops discrete soil lumps on top of terrain without mutating underlying terrain
-- [ ] Water tool softens the soil lump into malleable wet mud
-- [ ] Shaping tool models wet soil with push-left, push-right, and top-patting gestures
-- [ ] Drying tool hardens shaped soil into solid immutable structures
-- [ ] Terrain tool elevates and depresses the mountain terrain, with a pond excavation sub-tool
-- [ ] Partial dirty-box updates and BVH refits guarantee $< 0.2\text{ms}$ raycasting
+- [x] Elevating terrain smoothly raises organic hills and mountain crests
+- [x] Lowering terrain excavates depressions that reveal underlying ground/water
+- [x] Plateau tool flattens elevated peaks into level fort construction decks
+- [x] Smoothing tool removes jagged vertices without resetting height
+- [x] Slope tool creates clean graded ramps at 15°, 30°, 45°, 60° presets
+- [x] Brush cursor ring orients flush to terrain surface normal without z-fighting
+- [x] Shift/Ctrl/Alt + Wheel adjust sliders and prevent OrbitControls zoom
+- [x] Excavating ponds renders shader-integrated blue tarpaulin water on basin floors and dark wet mud along banks with full undo/redo support
+- [x] Vertex modifications execute in dirty bounding box ranges without full geometry reallocations

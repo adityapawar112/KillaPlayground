@@ -146,16 +146,24 @@ Component voltage is driven by **saturated earth-tone tool and feature cards** i
 1. **The 3D Canvas Viewport (Full Bleed):**
    * The WebGL `<Canvas>` spans 100vw × 100vh.
    * Surrounding user interface components float cleanly on top as non-blocking HUD overlays.
-2. **Top Navigation Bar (`{component.top-nav-bar}`):**
-   * Anchored to the top, height 56px, centered logo & killa title, right-side cluster for Undo/Redo, Night Mode, and "Finish & Share".
-3. **Bottom Tool Dock (`{component.bottom-floating-dock}`):**
-   * Floats horizontally centered at the bottom, 20px above edge.
-   * Houses the primary construction steps: **Terrain**, **Walls**, **Spline**, **Terrain Paint**, **Foliage Paint**, **Figurines & Buildings**.
-4. **Contextual Sub-Toolbar (`{component.contextual-dock}`):**
-   * Appears immediately above the bottom dock when a tool is selected (e.g. Wall Height, Tower toggles, Texture swatches, Scatter radius, Figurine transforms).
-5. **Right Drawer / Asset Browser (`{component.prop-drawer}`):**
-   * Slides in smoothly from the right edge (width 360px on desktop, full-width bottom sheet on mobile) to display the library of *Mavale*, pre-built buildings, cannons, flags, and shrines.
-6. **Multi-Angle Poster Studio Modal:**
+2. **Top Application Desktop Menu Bar (`{component.app-menu-bar}`):**
+   * Anchored to the top edge (height 41px, `z-50`).
+   * Left cluster: Shield logo + in-flow brand title ("The Killa Playground") + Fort Blueprint selector + Menus (`File`, `Edit`, `View`, `Language`, `Help`).
+   * Right cluster: Quick language switcher, Undo/Redo/Reset cluster, Diwali Night Diya toggle, and "Finish Killa" CTA.
+   * On screens `< 1280px` (`< xl`), horizontal menus collapse into a Hamburger menu drawer starting below the bar (`top-[41px]`) with dynamic `X` toggle icon.
+3. **Secondary Tool Modes & Camera Sub-Bar (`{component.top-tool-bar}`):**
+   * Pinned immediately below the menu bar at `top-[41px]`.
+   * On wide screens (`>= 1280px`): Single-row layout housing 6 Primary Killa Tools (`Terrain`, `Walls`, `Spline`, `Paint`, `Foliage`, `Figurines`), Soil Pipeline Tools (`Soil`, `Water`, `Shape`, `Dry`), and dedicated Camera Viewport controls (`Top Z`, `Front Y`, `Side X`, `Center`, `Zoom In/Out`).
+   * On screens `< 1280px` (`< xl`): Automatically switches to a 2-row symbols-only layout with right-pinned minimize toggle (`Tools & Views ▾` at `right-2 top-[41px]`), preventing horizontal scrollbars and cutoffs.
+4. **Left Tool Properties Sidebar (`{component.left-tool-sidebar}`):**
+   * Anchored to the left edge with resizable width (default 290px). Dedicated 100% to active tool properties, sliders, sculpt modes, and earth pigments with full vertical scrolling height.
+   * On screens `< 1280px` (`< xl`): Supports one-tap minimize (`-translate-x-full`) with a left-pinned toggle tab (`Properties ▾` at `left-2`) hanging off the top bar when minimized or off the secondary toolbar when expanded.
+5. **Bottom Viewport Navigation Strip (`{component.bottom-status-bar}`):**
+   * Centered floating pill displaying active mouse/pen gesture tips (`Left Click: Action • Right Drag: Orbit • Scroll: Zoom`).
+   * Automatically hidden on mobile and tablet viewports (`hidden md:flex`) to conserve screen space.
+6. **Right Drawer / Asset Browser (`{component.prop-drawer}`):**
+   * Slides in smoothly from the right edge (width 360px on desktop, full-width sheet on mobile) to display the library of *Mavale*, cannons, flags, and shrines.
+7. **Multi-Angle Poster Studio Modal:**
    * Centered 9:16 or 4:5 preview frame surrounded by angle selectors, custom title inputs, and download buttons.
 
 ### Whitespace Philosophy
@@ -372,17 +380,16 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 
 ## Responsive Behavior
 
-### Breakpoints
+### Breakpoints & Multi-Device HUD Modes
 
-| Name | Viewport Width | Layout Adaptations |
+| Viewport Profile | Width | Layout Adaptations |
 |---|---|---|
-| **Mobile** | `< 768px` | Bottom dock becomes compact horizontal scrolling bar; tool submenus slide up as bottom sheets; top-nav hides fort title, shows icon menu; poster studio defaults to 9:16 vertical view; touch targets expand to 48px minimum. |
-| **Tablet** | `768px – 1024px` | Bottom dock fits all 7 tools; right asset drawer opens over canvas with swipe-to-dismiss; top nav displays full title pill and action cluster. |
-| **Desktop** | `1024px – 1440px` | Full floating HUD docks with parameter sliders; side drawer pins alongside 3D viewport; 4-angle poster preview displays side-by-side with composition tools. |
-| **Wide** | `> 1440px` | Maximum content width for showcase sheets 1280px centered; extra breathing room for dual-viewport blueprint reference mode. |
+| **Mobile & Windowed / Tablet** | `< 1280px` (`< xl`) | **Primary Bar:** Brand title in-flow; horizontal menus collapse into a Hamburger menu drawer (`top-[41px]`) with dynamic `X` toggle icon.<br>**Secondary Bar:** Automatically switches to a 2-row symbols-only layout (Row 1: 10 Tools; Row 2: Camera presets & zoom) with right-pinned minimize toggle (`Tools & Views ▾` at `right-2 top-[41px]`), preventing all horizontal scrollbars and cutoffs.<br>**Left Sidebar:** 100% properties height; supports one-tap minimize (`-translate-x-full`) with a left-pinned toggle tab (`Properties ▾` at `left-2`) hanging off the top bar when minimized or off the secondary toolbar when expanded.<br>**Bottom Strip:** Viewport navigation tips strip hidden (`hidden md:flex`). |
+| **Full Desktop** | `≥ 1280px` (`xl+`) | **Primary Bar:** Full horizontal menus (`File`, `Edit`, `View`, `Language`, `Help`), fort blueprint selector, in-flow branding next to logo (zero collisions).<br>**Secondary Bar:** Single-row toolbar with tool keys, icons, full names, and segmented camera controls on the right.<br>**Left Sidebar:** Full-height property panel with smooth vertical scrolling.<br>**Bottom Strip:** Visible centered floating pill. |
 
 ### Touch & Pointer Targets
-- Master tool buttons are minimum **52px × 52px** on desktop and **48px × 48px** on mobile.
+- Tool symbol buttons are minimum **32px × 32px** touch targets on mobile/tablet and **40px × 32px** on desktop.
+- Both HUD sections provide one-tap minimize toggles that hang symmetrically off the top bar (`left-2` and `right-2`), freeing 100% of the screen for the 3D viewport canvas.
 - Touch orbit controls use two-finger rotation and pinch-zoom to prevent accidental soil sculpting during camera repositioning.
 - Color swatches have a hit radius of **36px** with 8px padding.
 

@@ -234,7 +234,6 @@ export const TerrainStudioDrawer: React.FC = () => {
             <div className="space-y-3">
               <div className="text-xs font-bold uppercase tracking-wider text-[#8F4938] flex items-center justify-between mb-1">
                 <span>Iconic Fort Blueprints ({HISTORICAL_FORTS.length})</span>
-                <span className="text-[10px] text-[#8D7666] normal-case">Live 3D updates on click</span>
               </div>
 
               {HISTORICAL_FORTS.map((fort) => {
@@ -270,15 +269,6 @@ export const TerrainStudioDrawer: React.FC = () => {
                             <h3 className="font-yatra text-base sm:text-lg text-[#2B1E16] tracking-wide leading-none">
                               {name}
                             </h3>
-                            <span
-                              className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                                fort.type === 'sea' || fort.type === 'naval'
-                                  ? 'bg-cyan-100 text-cyan-800'
-                                  : 'bg-amber-100 text-amber-800'
-                              }`}
-                            >
-                              {fort.type === 'sea' ? 'Sea Island' : fort.type === 'naval' ? 'Naval Fort' : 'Hill Fort'}
-                            </span>
                           </div>
                           <span className="text-[11px] text-[#8D7666] font-sans mt-0.5 block">
                             {region}
@@ -304,7 +294,6 @@ export const TerrainStudioDrawer: React.FC = () => {
 
                     <div className="pt-2 border-t border-[#D9C9B4]/50 flex items-center justify-between text-[11px] text-[#8D7666]">
                       <span>Base Water Level: <strong>{(fort.waterLevel * 100).toFixed(0)}cm</strong></span>
-                      <span>Broad Building Deck</span>
                     </div>
                   </div>
                 );

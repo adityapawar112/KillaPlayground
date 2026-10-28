@@ -139,8 +139,12 @@ interface EditorState {
   // Modals & Panels Visibility
   showLeftToolbar: boolean;
   toggleLeftToolbar: () => void;
+  isMobileSidebarMinimized: boolean;
+  toggleMobileSidebar: () => void;
   showContextualDock: boolean;
   toggleContextualDock: () => void;
+  isMobileTopBarMinimized: boolean;
+  toggleMobileTopBar: () => void;
   showBottomStatusBar: boolean;
   toggleBottomStatusBar: () => void;
 
@@ -324,8 +328,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Visibility States
   showLeftToolbar: true,
   toggleLeftToolbar: () => set((state) => ({ showLeftToolbar: !state.showLeftToolbar })),
+  isMobileSidebarMinimized: false,
+  toggleMobileSidebar: () => set((state) => ({ isMobileSidebarMinimized: !state.isMobileSidebarMinimized })),
   showContextualDock: true,
   toggleContextualDock: () => set((state) => ({ showContextualDock: !state.showContextualDock })),
+  isMobileTopBarMinimized: false,
+  toggleMobileTopBar: () => set((state) => ({ isMobileTopBarMinimized: !state.isMobileTopBarMinimized })),
   showBottomStatusBar: true,
   toggleBottomStatusBar: () => set((state) => ({ showBottomStatusBar: !state.showBottomStatusBar })),
 

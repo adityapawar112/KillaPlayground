@@ -84,7 +84,7 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 * **Lower Tool:** Depresses terrain to carve defensive ditches, moats, and natural valleys.
 * **Plateau / Leveling Tool:** Flattens sampled vertices to a target plane height $H_{target}$, creating flat fort building decks, courtyards, and bastion foundations.
 * **Smooth Tool:** Applies a 3x3 box blur filter to soften rugged peaks and create natural rolling terrain.
-* **Pond / Water Body Sub-Tool:** Excavates depressions below water level ($Y < 0.08$) that automatically fill with reflective pond water or nostalgic crinkled blue plastic tarpaulin.
+* **Pond / Water Body Sub-Tool:** Shader-integrated basin excavation carving depressions directly in the terrain heightmap and rendering authentic blue tarpaulin PBR water on the flat floor with glistening wet mud (*chikhal*) on crater banks up to the rim edge, restoring cleanly on undo.
 
 ---
 

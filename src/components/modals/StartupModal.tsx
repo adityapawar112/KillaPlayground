@@ -194,7 +194,7 @@ export const StartupModal: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
-                    Select authentic Sahyadri hill & sea fort blueprints (Raigad, Murud-Janjira, Sinhagad, Pratapgad, Vijaydurg) with expansive flat tablelands.
+                    Choose an authentic Sahyadri fortress blueprint to build upon.
                   </p>
                 </div>
               </button>
@@ -220,7 +220,7 @@ export const StartupModal: React.FC = () => {
                     </span>
                   </div>
                   <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
-                    Procedural terrain generator with custom summit tableland width, peak elevation, cliff drops, and base water level.
+                    Custom terrain generator with adjustable summit width, elevation, and cliffs.
                   </p>
                 </div>
               </button>

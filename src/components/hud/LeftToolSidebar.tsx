@@ -1,19 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  TbCamera,
-  TbZoomIn,
-  TbZoomOut,
-  TbFocus2,
-  TbFlame,
   TbMountain,
   TbTrendingDown,
   TbMinus,
   TbWaveSine,
   TbRipple,
   TbArrowUpRight,
-  TbShovel,
   TbBrush,
   TbCheck,
   TbSparkles,
@@ -28,13 +22,15 @@ import {
   TbUsersGroup,
   TbDropletHalf2,
   TbLayersSubtract,
+  TbAdjustmentsHorizontal,
+  TbChevronLeft,
+  TbChevronDown,
 } from 'react-icons/tb';
 import { useEditorStore, BrushSizeType, ToolType, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { PAINT_COLORS } from '@/lib/constants/tokens';
 
 const STORAGE_WIDTH_KEY = 'killa_sidebar_width_v1';
-const STORAGE_HEIGHT_KEY = 'killa_sidebar_camera_h_v1';
 
 export const LeftToolSidebar: React.FC = () => {
   const {
@@ -68,25 +64,19 @@ export const LeftToolSidebar: React.FC = () => {
     setWaterMode,
     mudLocked,
     setMudLocked,
-    nightMode,
-    toggleNightMode,
-    setCameraViewPreset,
     showLeftToolbar,
     showContextualDock,
+    isMobileSidebarMinimized,
+    toggleMobileSidebar,
+    isMobileTopBarMinimized,
     setPropDrawerOpen,
   } = useEditorStore();
 
   const { t } = useTranslation();
 
-  // 1. Adjustable Width State (default: 290px, min: 230px, max: 460px)
+  // Adjustable Width State (default: 290px, min: 230px, max: 460px)
   const [sidebarWidth, setSidebarWidth] = useState<number>(290);
   const isDraggingWidthRef = useRef(false);
-
-  // 2. Adjustable Top Camera Height Splitter State (default: 195px, min: 140px, max: 320px)
-  const [cameraHeight, setCameraHeight] = useState<number>(195);
-  const isDraggingHeightRef = useRef(false);
-  const startDragYRef = useRef(0);
-  const startHeightRef = useRef(195);
 
   // Load user saved layout preferences from localStorage
   useEffect(() => {
@@ -96,11 +86,6 @@ export const LeftToolSidebar: React.FC = () => {
         if (savedW) {
           const parsedW = parseInt(savedW, 10);
           if (parsedW >= 230 && parsedW <= 460) setSidebarWidth(parsedW);
-        }
-        const savedH = localStorage.getItem(STORAGE_HEIGHT_KEY);
-        if (savedH) {
-          const parsedH = parseInt(savedH, 10);
-          if (parsedH >= 140 && parsedH <= 320) setCameraHeight(parsedH);
         }
       } catch {
         // Fallback to defaults
@@ -139,192 +124,67 @@ export const LeftToolSidebar: React.FC = () => {
     window.addEventListener('mouseup', onMouseUp);
   };
 
-  // Handle Height Splitter Resize
-  const handleHeightMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    isDraggingHeightRef.current = true;
-    startDragYRef.current = e.clientY;
-    startHeightRef.current = cameraHeight;
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
-
-    const onMouseMove = (moveEvent: MouseEvent) => {
-      if (!isDraggingHeightRef.current) return;
-      const deltaY = moveEvent.clientY - startDragYRef.current;
-      const newHeight = Math.max(140, Math.min(320, startHeightRef.current + deltaY));
-      setCameraHeight(newHeight);
-    };
-
-    const onMouseUp = () => {
-      isDraggingHeightRef.current = false;
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-      try {
-        setCameraHeight((curr) => {
-          localStorage.setItem(STORAGE_HEIGHT_KEY, curr.toString());
-          return curr;
-        });
-      } catch {}
-    };
-
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-  };
-
   if (!showLeftToolbar) return null;
 
   return (
-    <aside
-      aria-label="Editor Sidebar"
-      style={{ width: `${sidebarWidth}px` }}
-      className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-lg select-none pointer-events-auto transition-[top] duration-150 ${
-        showContextualDock ? 'top-[81px]' : 'top-[41px]'
-      }`}
-    >
-      {/* ============================================================ */}
-      {/* 1. TOP SECTION: BLENDER-STYLE CAMERA & VIEWPORT CONTROLS     */}
-      {/* ============================================================ */}
-      <div
-        style={{ height: `${cameraHeight}px` }}
-        className="flex flex-col p-3 overflow-hidden shrink-0 border-b border-[#D8C7B5] bg-[#ECE2D5]/70"
+    <>
+      {/* Minimized Properties Button (< xl): Pinned to the LEFT side, hanging off top bar or secondary toolbar */}
+      {isMobileSidebarMinimized && (
+        <div
+          className={`xl:hidden fixed left-2 z-30 pointer-events-auto transition-all duration-200 ${
+            !showContextualDock || isMobileTopBarMinimized ? 'top-[41px]' : 'top-[112px]'
+          }`}
+        >
+          <button
+            onClick={toggleMobileSidebar}
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
+            title="Open Tool Properties"
+          >
+            <TbAdjustmentsHorizontal className="w-3.5 h-3.5 text-[#8F4938]" />
+            <span className="text-[11px] font-bold">Properties</span>
+            <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
+          </button>
+        </div>
+      )}
+
+      <aside
+        aria-label="Editor Sidebar"
+        style={{ width: `${sidebarWidth}px` }}
+        className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
+          isMobileSidebarMinimized ? '-translate-x-full xl:translate-x-0' : 'translate-x-0'
+        } ${
+          !showContextualDock
+            ? 'top-[41px]'
+            : isMobileTopBarMinimized
+            ? 'top-[41px]'
+            : 'top-[112px] xl:top-[81px]'
+        }`}
       >
-        {/* Section Header */}
-        <div className="flex items-center justify-between mb-2">
+        {/* Tool Header (Top of Sidebar) */}
+        <div className="flex items-center justify-between p-3 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
           <div className="flex items-center gap-1.5 text-[#4B382C]">
-            <TbCamera className="w-4 h-4 text-[#8F4938]" />
+            <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
             <span className="text-[11px] font-bold uppercase tracking-wider">
-              Camera & Viewport
+              Tool Properties
             </span>
           </div>
-          <span className="text-[10px] font-mono text-[#8D7666] bg-[#E2D5C7] px-1.5 py-0.5 rounded">
-            Blender Nav
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#E4D8CB] text-[#5C4638] uppercase">
+              {activeTool}
+            </span>
+            {/* Minimize Option (< xl) */}
+            <button
+              onClick={toggleMobileSidebar}
+              className="xl:hidden p-1 rounded-md bg-[#FAF8F5] text-[#5C4638] hover:bg-[#DCCEC0] border border-[#D9C9B4] cursor-pointer"
+              title="Minimize Properties"
+            >
+              <TbChevronLeft className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Blender-Style View Axis Preset Buttons (Grid) */}
-        <div className="grid grid-cols-2 gap-1.5 mb-2">
-          {/* Top View (Z - Blue) */}
-          <button
-            onClick={() => setCameraViewPreset('top')}
-            className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B1E16] rounded-lg border border-[#D9C9B4] text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-97 group"
-            title="Top View (Numpad 7)"
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded-full bg-[#0284C7] text-white flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
-                Z
-              </span>
-              <span>Top</span>
-            </div>
-            <kbd className="text-[10px] font-mono text-[#8D7666]">7</kbd>
-          </button>
-
-          {/* Front View (Y - Green) */}
-          <button
-            onClick={() => setCameraViewPreset('front')}
-            className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B1E16] rounded-lg border border-[#D9C9B4] text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-97 group"
-            title="Front View (Numpad 1)"
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
-                Y
-              </span>
-              <span>Front</span>
-            </div>
-            <kbd className="text-[10px] font-mono text-[#8D7666]">1</kbd>
-          </button>
-
-          {/* Side View (X - Red) */}
-          <button
-            onClick={() => setCameraViewPreset('side')}
-            className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B1E16] rounded-lg border border-[#D9C9B4] text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-97 group"
-            title="Side View (Numpad 3)"
-          >
-            <div className="flex items-center gap-1.5">
-              <span className="w-4 h-4 rounded-full bg-[#DC2626] text-white flex items-center justify-center text-[10px] font-black group-hover:scale-110 transition-transform">
-                X
-              </span>
-              <span>Side</span>
-            </div>
-            <kbd className="text-[10px] font-mono text-[#8D7666]">3</kbd>
-          </button>
-
-          {/* Center / Focus View */}
-          <button
-            onClick={() => setCameraViewPreset('reset')}
-            className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B1E16] rounded-lg border border-[#D9C9B4] text-xs font-semibold shadow-2xs transition-all cursor-pointer active:scale-97 group"
-            title="Focus & Center Camera (Home / F)"
-          >
-            <div className="flex items-center gap-1.5">
-              <TbFocus2 className="w-4 h-4 text-[#B85F45] group-hover:scale-110 transition-transform" />
-              <span>Center</span>
-            </div>
-            <kbd className="text-[10px] font-mono text-[#8D7666]">Home</kbd>
-          </button>
-        </div>
-
-        {/* Quick Navigation Actions Row (Zoom, Diya Mode) */}
-        <div className="flex items-center gap-1.5 mt-auto">
-          {/* Zoom In Button */}
-          <button
-            onClick={() => setCameraViewPreset('zoom_in')}
-            className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] rounded-lg border border-[#D9C9B4] text-xs font-semibold transition-colors cursor-pointer"
-            title="Zoom In (+ / Q)"
-          >
-            <TbZoomIn className="w-3.5 h-3.5" />
-            <span>Zoom In</span>
-          </button>
-
-          {/* Zoom Out Button */}
-          <button
-            onClick={() => setCameraViewPreset('zoom_out')}
-            className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] rounded-lg border border-[#D9C9B4] text-xs font-semibold transition-colors cursor-pointer"
-            title="Zoom Out (- / E)"
-          >
-            <TbZoomOut className="w-3.5 h-3.5" />
-            <span>Zoom Out</span>
-          </button>
-
-          {/* Night Diya Mode Toggle */}
-          <button
-            onClick={toggleNightMode}
-            className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
-              nightMode
-                ? 'bg-[#B85F45] text-white border-[#8F4938] shadow-sm'
-                : 'bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#8D7666] border-[#D9C9B4]'
-            }`}
-            title="Toggle Night Diya Illumination (N)"
-          >
-            <TbFlame className={`w-4 h-4 ${nightMode ? 'text-[#F59E0B] animate-pulse' : 'text-[#8D7666]'}`} />
-          </button>
-        </div>
-      </div>
-
-      {/* ============================================================ */}
-      {/* 2. DRAGGABLE HORIZONTAL SPLITTER HANDLE                      */}
-      {/* ============================================================ */}
-      <div
-        onMouseDown={handleHeightMouseDown}
-        className="h-2 w-full cursor-row-resize bg-[#E4D8CB] hover:bg-[#B85F45]/30 active:bg-[#B85F45] border-y border-[#CDBCAB] flex items-center justify-center group transition-colors shrink-0 z-30"
-        title="Drag up or down to resize Camera vs Properties panels"
-      >
-        <div className="w-8 h-[2px] rounded-full bg-[#B39E8C] group-hover:bg-[#B85F45] transition-colors" />
-      </div>
-
-      {/* ============================================================ */}
-      {/* 3. BOTTOM SECTION: SCROLLABLE TOOL PROPERTIES                */}
-      {/* ============================================================ */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-4 overflow-x-hidden min-h-0">
-        {/* Tool Header */}
-        <div className="flex items-center justify-between pb-2 border-b border-[#D8C7B5]">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#4B382C]">
-            Tool Properties
-          </span>
-          <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#E4D8CB] text-[#5C4638] uppercase">
-            {activeTool}
-          </span>
-        </div>
+        {/* Scrollable Tool Properties Section */}
+        <div className="flex-1 overflow-y-auto p-3 space-y-4 overflow-x-hidden min-h-0">
 
         {/* ------------------------------------------------------------ */}
         {/* A. TERRAIN TOOL PROPERTIES                                   */}
@@ -530,22 +390,6 @@ export const LeftToolSidebar: React.FC = () => {
                     className="w-full accent-[#D97706] cursor-pointer mt-1"
                   />
                 </div>
-              </div>
-            )}
-
-            {/* Pond Info Card */}
-            {terrainSubTool === 'pond' && (
-              <div className="p-2.5 rounded-xl bg-[#E0F2FE] border border-[#BAE6FD] text-[11px] text-[#0369A1] space-y-1 leading-relaxed">
-                <span className="font-bold block">Water Basin Excavation:</span>
-                Carves basin depressions and fills them with blue tarpaulin water. To restore dry ground, paint over with the Default Soil brush or use Ctrl+Z.
-              </div>
-            )}
-
-            {/* Soil Brush Info Card */}
-            {terrainSubTool === 'soil' && (
-              <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D9C9B4] text-[11px] text-[#4B382C] space-y-1 leading-relaxed">
-                <span className="font-bold block text-[#588157]">Restore Ground:</span>
-                Paints the default reddish-brown soil texture, clearing out water basins, blue tarpaulins, and wild grass.
               </div>
             )}
           </div>
@@ -842,53 +686,20 @@ export const LeftToolSidebar: React.FC = () => {
               </div>
               <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-[#FAF8F5]">L</kbd>
             </button>
-            <p className="text-[11px] text-[#8D7666] leading-relaxed">
-              Dries shaped mud to solidify walls and allow drawing crenellations, staircases, and placing figurines.
-            </p>
           </div>
         )}
 
         {/* ------------------------------------------------------------ */}
-        {/* H. WALLS / SPLINE / FIGURINES GUIDANCE CARDS                 */}
+        {/* H. WALLS / SPLINE / FIGURINES MINIMAL ACTIONS                */}
         {/* ------------------------------------------------------------ */}
-        {activeTool === 'walls' && (
-          <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D9C9B4] text-xs text-[#4B382C] space-y-2 leading-relaxed">
-            <div className="flex items-center gap-1.5 font-bold text-[#8F4938]">
-              <TbBuildingFortress className="w-4 h-4" />
-              <span>Fort Wall Construction</span>
-            </div>
-            <p className="text-[11px] text-[#634E40]">
-              Click and drag along the crests or plateaus of the mountain to lay perimeter walls, bastions (Buruj), and watchtowers.
-            </p>
-          </div>
-        )}
-
-        {activeTool === 'spline' && (
-          <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D9C9B4] text-xs text-[#4B382C] space-y-2 leading-relaxed">
-            <div className="flex items-center gap-1.5 font-bold text-[#D97706]">
-              <TbRoute className="w-4 h-4" />
-              <span>Spline Pathway</span>
-            </div>
-            <p className="text-[11px] text-[#634E40]">
-              Click consecutive points on terrain to trace mountain staircases (Payrya) or battlements (Kangare).
-            </p>
-          </div>
-        )}
-
         {activeTool === 'prop' && (
-          <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D9C9B4] text-xs text-[#4B382C] space-y-2 leading-relaxed">
-            <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
-              <TbUsersGroup className="w-4 h-4" />
-              <span>Figurine Placement</span>
-            </div>
-            <p className="text-[11px] text-[#634E40]">
-              Select soldiers (Mavale), cannons, Bhagwa Zenda flags, or royal sinhasan to place on your fort.
-            </p>
+          <div className="space-y-2">
             <button
               onClick={() => setPropDrawerOpen(true)}
-              className="w-full py-2 px-3 rounded-lg bg-[#4B382C] text-white text-xs font-bold hover:bg-[#38281E] transition-colors cursor-pointer text-center"
+              className="w-full py-2.5 px-3 rounded-xl bg-[#4B382C] text-white text-xs font-bold hover:bg-[#38281E] transition-colors cursor-pointer text-center flex items-center justify-center gap-2 shadow-sm"
             >
-              Open Figurine Catalog
+              <TbUsersGroup className="w-4 h-4 text-[#F59E0B]" />
+              <span>Open Figurine Catalog</span>
             </button>
           </div>
         )}
@@ -905,5 +716,6 @@ export const LeftToolSidebar: React.FC = () => {
         <div className="w-[1.5px] h-8 rounded-full bg-[#B39E8C] group-hover:bg-[#B85F45] transition-colors" />
       </div>
     </aside>
+  </>
   );
 };

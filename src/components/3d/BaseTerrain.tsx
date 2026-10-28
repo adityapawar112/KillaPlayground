@@ -137,7 +137,7 @@ export const BaseTerrainContent: React.FC = () => {
   const [cursorNormal, setCursorNormal] = useState<[number, number, number]>([0, 1, 0]);
   const [cursorVisible, setCursorVisible] = useState(false);
 
-  const { gl, invalidate } = useThree();
+  const { camera, invalidate } = useThree();
   const rawControls = useThree((state) => state.controls);
   const controls = rawControls as unknown as { enabled: boolean } | null;
 
@@ -305,20 +305,86 @@ export const BaseTerrainContent: React.FC = () => {
     };
   }, [geometry]);
 
+  const getCameraHorizontalDir = useCallback(() => {
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    const len = Math.hypot(dir.x, dir.z);
+    if (len > 0.001) {
+      return { x: dir.x / len, z: dir.z / len };
+    }
+    return { x: 0, z: -1 };
+  }, [camera]);
+
+  const getSlopeDirection = useCallback(
+    (hitX: number, hitZ: number) => {
+      const editor = useEditorStore.getState();
+
+      // 1. If actively dragging beyond deadzone (0.05m), follow drag path
+      if (slopeAnchorRef.current) {
+        const dx = hitX - slopeAnchorRef.current.x;
+        const dz = hitZ - slopeAnchorRef.current.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.05) {
+          return { x: dx / dist, z: dz / dist };
+        }
+      }
+
+      // 2. If alignment is set to terrain normal, align uphill along mountain gradient
+      if (editor.slopeAlignment === 'terrain') {
+        const norm = getTerrainNormalAt(hitX, hitZ, stateBuffer);
+        const gradLen = Math.hypot(norm.x, norm.z);
+        if (gradLen > 0.05) {
+          // Surface normal points downhill; (-nx, -nz) points uphill
+          return { x: -norm.x / gradLen, z: -norm.z / gradLen };
+        }
+      }
+
+      // 3. Default: Align along the horizontal camera view direction (looking up the slope)
+      return getCameraHorizontalDir();
+    },
+    [stateBuffer, getCameraHorizontalDir]
+  );
+
+  const getEffectiveSlopeAngle = useCallback(() => {
+    const editor = useEditorStore.getState();
+    return editor.slopeAngle * (editor.slopeIncline === 'decline' ? -1 : 1);
+  }, []);
+
+  const computeCursorNormal = useCallback(
+    (hitPoint: THREE.Vector3, faceNormal?: THREE.Vector3) => {
+      const editor = useEditorStore.getState();
+      if (editor.activeTool === 'terrain' && editor.terrainSubTool === 'slope') {
+        const sDir = getSlopeDirection(hitPoint.x, hitPoint.z);
+        const angleDeg = getEffectiveSlopeAngle();
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const tanA = Math.tan(angleRad);
+        // Plane normal for slope ascending along sDir: (-tanA*dx, 1, -tanA*dz)
+        const nx = -tanA * sDir.x;
+        const ny = 1.0;
+        const nz = -tanA * sDir.z;
+        const invLen = 1.0 / Math.hypot(nx, ny, nz);
+        return [nx * invLen, ny * invLen, nz * invLen] as [number, number, number];
+      }
+
+      const n = faceNormal
+        ? faceNormal.clone().normalize()
+        : getTerrainNormalAt(hitPoint.x, hitPoint.z, stateBuffer);
+      return [n.x, n.y, n.z] as [number, number, number];
+    },
+    [getSlopeDirection, getEffectiveSlopeAngle, stateBuffer]
+  );
+
   // Execute direct terrain sculpting with smooth radial falloff
   const executeSculpt = useCallback(
     (hitPoint: THREE.Vector3) => {
       const editor = useEditorStore.getState();
       if (editor.mudLocked) return;
 
-      let slopeDir = { x: 0, z: -1 };
-      if (editor.terrainSubTool === 'slope' && slopeAnchorRef.current) {
-        const dx = hitPoint.x - slopeAnchorRef.current.x;
-        const dz = hitPoint.z - slopeAnchorRef.current.z;
-        const dist = Math.hypot(dx, dz);
-        if (dist > 0.04) {
-          slopeDir = { x: dx / dist, z: dz / dist };
-        }
+      let slopeDir: { x: number; z: number } | undefined = undefined;
+      let effectiveAngle = editor.slopeAngle;
+      if (editor.terrainSubTool === 'slope') {
+        slopeDir = getSlopeDirection(hitPoint.x, hitPoint.z);
+        effectiveAngle = getEffectiveSlopeAngle();
       }
 
       const opts: TerrainBrushOptions = {
@@ -333,7 +399,7 @@ export const BaseTerrainContent: React.FC = () => {
         targetHeight: editor.plateauHeight,
         maxHeight: 3.5,
         minHeight: 0.0,
-        slopeAngle: editor.slopeAngle,
+        slopeAngle: effectiveAngle,
         slopeDirection: slopeDir,
         slopeOrigin: slopeAnchorRef.current ?? { x: hitPoint.x, z: hitPoint.z, height: hitPoint.y },
       };
@@ -343,7 +409,7 @@ export const BaseTerrainContent: React.FC = () => {
         invalidate();
       }
     },
-    [sculptTerrain, invalidate]
+    [sculptTerrain, getSlopeDirection, getEffectiveSlopeAngle, invalidate]
   );
 
   const handlePointerDown = useCallback(
@@ -363,12 +429,9 @@ export const BaseTerrainContent: React.FC = () => {
         controls.enabled = false;
       }
 
-      const n = e.face?.normal
-        ? e.face.normal.clone().normalize()
-        : getTerrainNormalAt(e.point.x, e.point.z, stateBuffer);
-
+      const norm = computeCursorNormal(e.point, e.face?.normal);
       setCursorPos([e.point.x, e.point.y, e.point.z]);
-      setCursorNormal([n.x, n.y, n.z]);
+      setCursorNormal(norm);
       setCursorVisible(true);
 
       if (editor.terrainSubTool === 'slope') {
@@ -380,7 +443,7 @@ export const BaseTerrainContent: React.FC = () => {
 
       executeSculpt(e.point);
     },
-    [controls, executeSculpt, pushUndo, stateBuffer]
+    [controls, executeSculpt, pushUndo, computeCursorNormal]
   );
 
   const handlePointerMove = useCallback(
@@ -391,12 +454,9 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
-      const n = e.face?.normal
-        ? e.face.normal.clone().normalize()
-        : getTerrainNormalAt(e.point.x, e.point.z, stateBuffer);
-
+      const norm = computeCursorNormal(e.point, e.face?.normal);
       setCursorPos([e.point.x, e.point.y, e.point.z]);
-      setCursorNormal([n.x, n.y, n.z]);
+      setCursorNormal(norm);
       if (!cursorVisible) setCursorVisible(true);
 
       if (isSculptingRef.current) {
@@ -404,7 +464,7 @@ export const BaseTerrainContent: React.FC = () => {
         executeSculpt(e.point);
       }
     },
-    [cursorVisible, executeSculpt, stateBuffer]
+    [cursorVisible, executeSculpt, computeCursorNormal]
   );
 
   const handlePointerUp = useCallback(() => {

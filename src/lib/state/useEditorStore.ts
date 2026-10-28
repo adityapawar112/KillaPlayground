@@ -93,6 +93,10 @@ interface EditorState {
   setPlateauHeight: (h: number) => void;
   slopeAngle: number; // 5 to 75 deg (default 30)
   setSlopeAngle: (angle: number) => void;
+  slopeAlignment: 'camera' | 'terrain';
+  setSlopeAlignment: (align: 'camera' | 'terrain') => void;
+  slopeIncline: 'incline' | 'decline';
+  setSlopeIncline: (incline: 'incline' | 'decline') => void;
   foliageSubTool: FoliageSubTool;
   setFoliageSubTool: (st: FoliageSubTool) => void;
   brushRadius: number; // 0.2 to 2.5
@@ -269,6 +273,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setPlateauHeight: (plateauHeight) => set({ plateauHeight }),
   slopeAngle: 30,
   setSlopeAngle: (slopeAngle) => set({ slopeAngle }),
+  slopeAlignment: 'camera',
+  setSlopeAlignment: (slopeAlignment) => set({ slopeAlignment }),
+  slopeIncline: 'incline',
+  setSlopeIncline: (slopeIncline) => set({ slopeIncline }),
   foliageSubTool: 'grass',
   setFoliageSubTool: (foliageSubTool) => set({ foliageSubTool }),
   brushRadius: 0.8,

@@ -356,6 +356,8 @@ export function applyTerrainBrush(
 
   let modified = false;
   const radiusSq = radius * radius;
+  const centerGrid = worldToGrid(centerX, centerZ);
+  const defaultCenterHeight = getTexel(buffer, centerGrid.ix, centerGrid.iz).height;
 
   for (let iz = minZ; iz <= maxZ; iz++) {
     for (let ix = minX; ix <= maxX; ix++) {
@@ -425,7 +427,7 @@ export function applyTerrainBrush(
         const dirZ = options.slopeDirection?.z ?? 1;
         const origX = options.slopeOrigin?.x ?? centerX;
         const origZ = options.slopeOrigin?.z ?? centerZ;
-        const origH = options.slopeOrigin?.height ?? buffer[idx + 0];
+        const origH = options.slopeOrigin?.height ?? defaultCenterHeight;
 
         // Signed projection of vertex along slope direction relative to origin
         const proj = (x - origX) * dirX + (z - origZ) * dirZ;

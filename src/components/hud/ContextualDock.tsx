@@ -36,6 +36,10 @@ export const ContextualDock: React.FC = () => {
     setPlateauHeight,
     slopeAngle,
     setSlopeAngle,
+    slopeAlignment,
+    setSlopeAlignment,
+    slopeIncline,
+    setSlopeIncline,
     pondWaterFeatures,
     undoLastPondWater,
     clearPondWater,
@@ -417,10 +421,64 @@ export const ContextualDock: React.FC = () => {
             </>
           )}
 
-          {/* Slope Angle Presets & Slider if Slope Tool Active */}
+          {/* Slope Angle Presets, Alignment & Slider if Slope Tool Active */}
           {terrainSubTool === 'slope' && (
             <>
               <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+
+              {/* Incline vs Decline Toggle */}
+              <div className="flex items-center gap-0.5 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
+                <button
+                  onClick={() => setSlopeIncline('incline')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                    slopeIncline === 'incline'
+                      ? 'bg-[#D97706] text-white shadow-xs'
+                      : 'text-[#634E40] hover:text-[#2B1E16]'
+                  }`}
+                  title="Slope inclines upwards in view/drag direction"
+                >
+                  ▲ Up
+                </button>
+                <button
+                  onClick={() => setSlopeIncline('decline')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                    slopeIncline === 'decline'
+                      ? 'bg-[#D97706] text-white shadow-xs'
+                      : 'text-[#634E40] hover:text-[#2B1E16]'
+                  }`}
+                  title="Slope declines downwards in view/drag direction"
+                >
+                  ▼ Down
+                </button>
+              </div>
+
+              {/* Alignment Mode: Camera View vs Terrain Gradient */}
+              <div className="flex items-center gap-0.5 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
+                <button
+                  onClick={() => setSlopeAlignment('camera')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                    slopeAlignment === 'camera'
+                      ? 'bg-[#4B382C] text-white shadow-xs'
+                      : 'text-[#634E40] hover:text-[#2B1E16]'
+                  }`}
+                  title="Align slope normal and incline with camera view direction"
+                >
+                  View
+                </button>
+                <button
+                  onClick={() => setSlopeAlignment('terrain')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
+                    slopeAlignment === 'terrain'
+                      ? 'bg-[#4B382C] text-white shadow-xs'
+                      : 'text-[#634E40] hover:text-[#2B1E16]'
+                  }`}
+                  title="Align slope normal with natural mountain slope normal"
+                >
+                  Terrain
+                </button>
+              </div>
+
+              {/* Angle Presets */}
               <div className="flex items-center gap-1 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
                 {[15, 30, 45, 60].map((deg) => (
                   <button
@@ -437,6 +495,7 @@ export const ContextualDock: React.FC = () => {
                   </button>
                 ))}
               </div>
+
               <div className="flex items-center gap-1.5">
                 <span className="text-xs font-semibold text-[#D97706]">Angle:</span>
                 <input
@@ -447,7 +506,7 @@ export const ContextualDock: React.FC = () => {
                   step="5"
                   value={slopeAngle}
                   onChange={(e) => setSlopeAngle(parseInt(e.target.value, 10))}
-                  className="w-16 sm:w-20 accent-[#D97706] cursor-pointer"
+                  className="w-14 sm:w-16 accent-[#D97706] cursor-pointer"
                 />
                 <span className="text-[11px] font-mono text-[#8D7666] w-6">{slopeAngle}°</span>
               </div>

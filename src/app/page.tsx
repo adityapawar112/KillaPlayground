@@ -40,6 +40,13 @@ export default function HomePage() {
   const canUndo = useTerrainStore.getState().canUndo();
   const canRedo = useTerrainStore.getState().canRedo();
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__killa_terrainStore = useTerrainStore;
+      (window as any).__killa_editorStore = useEditorStore;
+    }
+  }, []);
+
   // Global Keyboard Shortcuts (Tool keys 1-9, Brush size, Night mode, Reset, etc.)
   // shortcut: Read live store state via getState() to attach single permanent listener with zero re-renders
   useEffect(() => {

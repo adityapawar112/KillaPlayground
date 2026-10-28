@@ -12,13 +12,10 @@ function createColorTexture(r: number, g: number, b: number): THREE.DataTexture 
 export const fallbackWalkableDiff = createColorTexture(184, 85, 54);  // #B85536 red laterite soil
 export const fallbackCliffDiff = createColorTexture(85, 75, 68);     // #554B44 basalt rocks
 export const fallbackCrackedDiff = createColorTexture(140, 52, 28);   // #8C341C cracked mud
-export const fallbackPathDiff = createColorTexture(115, 68, 45);     // #73442D muddy tracks
 export const fallbackGrassDiff = createColorTexture(75, 110, 40);    // #4B6E28 foliage grass
 export const fallbackWaterDiff = createColorTexture(2, 132, 199);    // #0284C7 blue tarpaulin water
-export const fallbackWaterArm = createColorTexture(255, 60, 20);     // AO=1.0, Roughness=0.24, Metal=0.08
 export const fallbackArm = createColorTexture(255, 230, 0);          // AO=1.0, Roughness=0.90, Metal=0
 export const fallbackFlatNormal = createColorTexture(128, 128, 255); // Flat tangent-space normal (0, 0, 1)
-export const fallbackDisp = createColorTexture(128, 128, 128);       // Midpoint height (0.5)
 
 export const terrainVertexShader = /* glsl */ `
   varying vec2 vTerrainUv;
@@ -38,26 +35,17 @@ export const terrainFragmentShader = /* glsl */ `
   varying vec3 vWorldPosition;
   varying vec3 vWorldNormal;
 
+  // Optimized to 11 samplers total (Guarantees <= 16 MAX_TEXTURE_IMAGE_UNITS with Three.js shadow maps & envmap)
   uniform sampler2D uStateTexture;
   uniform sampler2D uWalkableDiff;
   uniform sampler2D uWalkableArm;
   uniform sampler2D uWalkableNor;
-  uniform sampler2D uWalkableDisp;
   uniform sampler2D uCliffDiff;
   uniform sampler2D uCliffArm;
   uniform sampler2D uCliffNor;
-  uniform sampler2D uCliffDisp;
   uniform sampler2D uCrackedDiff;
-  uniform sampler2D uCrackedArm;
-  uniform sampler2D uCrackedNor;
-  uniform sampler2D uPathDiff;
-  uniform sampler2D uPathArm;
-  uniform sampler2D uPathNor;
   uniform sampler2D uGrassDiff;
-  uniform sampler2D uGrassArm;
-  uniform sampler2D uGrassNor;
   uniform sampler2D uWaterDiff;
-  uniform sampler2D uWaterArm;
   uniform sampler2D uWaterNor;
   uniform float uTextureRepeat;
   uniform float uCliffRepeat;
@@ -113,18 +101,12 @@ export const terrainFragmentShader = /* glsl */ `
     vec4 cliffArmY = texture(uCliffArm, uvY_cliff);
     vec4 cliffArmZ = texture(uCliffArm, uvZ);
     vec4 cliffArm = cliffArmX * triWeights.x + cliffArmY * triWeights.y + cliffArmZ * triWeights.z;
-
-    vec4 cliffDispX = texture(uCliffDisp, uvX);
-    vec4 cliffDispY = texture(uCliffDisp, uvY_cliff);
-    vec4 cliffDispZ = texture(uCliffDisp, uvZ);
-    float rockDispHeight = cliffDispX.r * triWeights.x + cliffDispY.r * triWeights.y + cliffDispZ.r * triWeights.z;
-    float rockHeight = max(rockDispHeight, cliffArm.a);
+    float rockHeight = cliffArm.a > 0.01 ? cliffArm.a : (cliffColor.r * 0.8);
 
     // 4. Sample Walkable Laterite Soil (Dirt_03 retro pixel art)
     vec4 walkableDiffSample = texture(uWalkableDiff, uvWalkable);
     vec4 walkableArmSample = texture(uWalkableArm, uvWalkable);
-    vec4 walkableDispSample = texture(uWalkableDisp, uvWalkable);
-    float soilHeight = max(walkableDispSample.r, walkableArmSample.a);
+    float soilHeight = walkableArmSample.a > 0.01 ? walkableArmSample.a : (walkableDiffSample.r * 0.8);
 
     // 5. State Buffer Sampling (Wetness, Mud Locking, Sprouting Grass)
     vec4 state = texture(uStateTexture, vTerrainUv);
@@ -178,12 +160,11 @@ export const terrainFragmentShader = /* glsl */ `
     float soilWetness = smoothstep(0.02, 0.70, wetness);
     if (soilWetness > 0.001) {
       vec4 crackedDiffSample = texture(uCrackedDiff, uvWalkable);
-      vec4 crackedArmSample = texture(uCrackedArm, uvWalkable);
       vec3 wetColor = crackedDiffSample.rgb * vec3(0.60, 0.46, 0.38);
-      float wetRoughness = mix(dryRoughness, mix(0.24, 0.48, crackedArmSample.g), soilWetness);
+      float wetRoughness = mix(dryRoughness, 0.32, soilWetness);
       baseColor = mix(baseColor, wetColor, soilWetness);
       baseRoughness = mix(baseRoughness, wetRoughness, soilWetness);
-      ao = mix(ao, crackedArmSample.r, soilWetness);
+      ao = mix(ao, 0.95, soilWetness);
     }
 
     // Blue Tarpaulin Pond Basin Water (Option A: Shader-Integrated)
@@ -193,27 +174,25 @@ export const terrainFragmentShader = /* glsl */ `
       vec2 uvWater = vWorldPosition.xz * 2.5; // Blue tarp scale
       vec4 waterDiffSample = texture(uWaterDiff, uvWater);
       vec4 waterNorSample = texture(uWaterNor, uvWater);
-      vec4 waterArmSample = texture(uWaterArm, uvWater);
 
       // Crisp blue plastic tarpaulin sheet lining
       baseColor = mix(baseColor, waterDiffSample.rgb, waterFactor);
-      baseRoughness = mix(baseRoughness, mix(0.08, 0.22, waterArmSample.g), waterFactor);
+      baseRoughness = mix(baseRoughness, 0.14, waterFactor);
 
       // Perturb surface normal with blue tarp wrinkles
       vec3 waterNor = unpackNormal(waterNorSample, 0.85);
       vec3 waterWorldNormal = computeTerrainNormal(geomNorm, waterNor);
       blendedWorldNormal = normalize(mix(blendedWorldNormal, waterWorldNormal, waterFactor));
-      ao = mix(ao, waterArmSample.r, waterFactor);
+      ao = mix(ao, 1.0, waterFactor);
     }
 
     // Sprouting Mustard Foliage Grass (Grass_01 retro pixel sprigs)
     if (grass > 0.0) {
       vec4 grassDiffSample = texture(uGrassDiff, uvWalkable * 1.2);
-      vec4 grassArmSample = texture(uGrassArm, uvWalkable * 1.2);
       vec3 sproutColor = grassDiffSample.rgb * vec3(1.10, 1.24, 0.95);
       baseColor = mix(baseColor, sproutColor, grass * 0.92);
-      baseRoughness = mix(baseRoughness, mix(0.70, 0.90, grassArmSample.g), grass * 0.85);
-      ao = mix(ao, grassArmSample.r, grass * 0.5);
+      baseRoughness = mix(baseRoughness, 0.82, grass * 0.85);
+      ao = mix(ao, 0.75, grass * 0.5);
     }
 
     // Locked mud compaction
@@ -241,30 +220,32 @@ export interface CreateTerrainMaterialOptions {
   walkableDiff?: THREE.Texture | null;
   walkableArm?: THREE.Texture | null;
   walkableNor?: THREE.Texture | null;
-  walkableDisp?: THREE.Texture | null;
   cliffDiff?: THREE.Texture | null;
   cliffArm?: THREE.Texture | null;
   cliffNor?: THREE.Texture | null;
-  cliffDisp?: THREE.Texture | null;
   crackedDiff?: THREE.Texture | null;
+  grassDiff?: THREE.Texture | null;
+  waterDiff?: THREE.Texture | null;
+  waterNor?: THREE.Texture | null;
+  textureRepeat?: number;
+  cliffRepeat?: number;
+  // Deprecated/backward-compatible optional fields (ignored in shader)
+  walkableDisp?: THREE.Texture | null;
+  cliffDisp?: THREE.Texture | null;
   crackedArm?: THREE.Texture | null;
   crackedNor?: THREE.Texture | null;
   pathDiff?: THREE.Texture | null;
   pathArm?: THREE.Texture | null;
   pathNor?: THREE.Texture | null;
-  grassDiff?: THREE.Texture | null;
   grassArm?: THREE.Texture | null;
   grassNor?: THREE.Texture | null;
-  waterDiff?: THREE.Texture | null;
   waterArm?: THREE.Texture | null;
-  waterNor?: THREE.Texture | null;
-  textureRepeat?: number;
-  cliffRepeat?: number;
 }
 
 /**
  * Creates a CustomShaderMaterial instance extending MeshStandardMaterial with slope-aware
- * retro PBR texture blending (height-blended triplanar basalt rock cliffs, view-space normal perturbation, wet mud, and sprouting foliage).
+ * retro PBR texture blending (height-blended triplanar basalt rock cliffs, view-space normal perturbation, wet mud, and blue tarp water).
+ * Uses strictly 11 samplers to guarantee compliance with MAX_TEXTURE_IMAGE_UNITS(16).
  */
 export function createTerrainMaterial(options: CreateTerrainMaterialOptions): CustomShaderMaterial {
   const {
@@ -272,22 +253,12 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
     walkableDiff = fallbackWalkableDiff,
     walkableArm = fallbackArm,
     walkableNor = fallbackFlatNormal,
-    walkableDisp = fallbackDisp,
     cliffDiff = fallbackCliffDiff,
     cliffArm = fallbackArm,
     cliffNor = fallbackFlatNormal,
-    cliffDisp = fallbackDisp,
     crackedDiff = fallbackCrackedDiff,
-    crackedArm = fallbackArm,
-    crackedNor = fallbackFlatNormal,
-    pathDiff = fallbackPathDiff,
-    pathArm = fallbackArm,
-    pathNor = fallbackFlatNormal,
     grassDiff = fallbackGrassDiff,
-    grassArm = fallbackArm,
-    grassNor = fallbackFlatNormal,
     waterDiff = fallbackWaterDiff,
-    waterArm = fallbackWaterArm,
     waterNor = fallbackFlatNormal,
     textureRepeat = 8.0,
     cliffRepeat = 6.0,
@@ -302,22 +273,12 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
       uWalkableDiff: { value: walkableDiff || fallbackWalkableDiff },
       uWalkableArm: { value: walkableArm || fallbackArm },
       uWalkableNor: { value: walkableNor || fallbackFlatNormal },
-      uWalkableDisp: { value: walkableDisp || fallbackDisp },
       uCliffDiff: { value: cliffDiff || fallbackCliffDiff },
       uCliffArm: { value: cliffArm || fallbackArm },
       uCliffNor: { value: cliffNor || fallbackFlatNormal },
-      uCliffDisp: { value: cliffDisp || fallbackDisp },
       uCrackedDiff: { value: crackedDiff || fallbackCrackedDiff },
-      uCrackedArm: { value: crackedArm || fallbackArm },
-      uCrackedNor: { value: crackedNor || fallbackFlatNormal },
-      uPathDiff: { value: pathDiff || fallbackPathDiff },
-      uPathArm: { value: pathArm || fallbackArm },
-      uPathNor: { value: pathNor || fallbackFlatNormal },
       uGrassDiff: { value: grassDiff || fallbackGrassDiff },
-      uGrassArm: { value: grassArm || fallbackArm },
-      uGrassNor: { value: grassNor || fallbackFlatNormal },
       uWaterDiff: { value: waterDiff || fallbackWaterDiff },
-      uWaterArm: { value: waterArm || fallbackWaterArm },
       uWaterNor: { value: waterNor || fallbackFlatNormal },
       uTextureRepeat: { value: textureRepeat },
       uCliffRepeat: { value: cliffRepeat },

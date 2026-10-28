@@ -147,31 +147,22 @@ export const BaseTerrainContent: React.FC = () => {
   const brushRadius = useEditorStore((s) => s.brushRadius);
 
   // Load retro pixel-art PBR texture maps (Flavor A: Crisp PS1 / Valheim modern retro diorama):
+  // Load authentic Binbun Retroground PBR textures (10 essential maps, strictly <= 16 WebGL texture units budget):
   // - walkable: Dirt_03 (chunky reddish-brown soil with pebbles)
   // - cliff: Rock_02 (Deccan basalt rock with blocky cliff escarpments)
   // - cracked: Dirt_02 (dark glistening wet mud when watered)
-  // - path: Gravel_06 (stone gravel pathways)
   // - grass: Grass_01 (chunky sprouting mustard greens / halim)
+  // - water: blue_tarp (authentic Diwali Killa blue plastic tarpaulin sheet lining)
   const textures = useTexture({
     walkableDiff: '/textures/Dirt/Dirt_03/Dirt_03_basecolor.png',
     walkableArm: '/textures/Dirt/Dirt_03/Dirt_03_arm.png',
     walkableNor: '/textures/Dirt/Dirt_03/Dirt_03_normal.png',
-    walkableDisp: '/textures/Dirt/Dirt_03/Dirt_03_height.png',
     cliffDiff: '/textures/Rock/Rock_02/Rock_02_basecolor.png',
     cliffArm: '/textures/Rock/Rock_02/Rock_02_arm.png',
     cliffNor: '/textures/Rock/Rock_02/Rock_02_normal.png',
-    cliffDisp: '/textures/Rock/Rock_02/Rock_02_height.png',
     crackedDiff: '/textures/Dirt/Dirt_02/Dirt_02_basecolor.png',
-    crackedArm: '/textures/Dirt/Dirt_02/Dirt_02_arm.png',
-    crackedNor: '/textures/Dirt/Dirt_02/Dirt_02_normal.png',
-    pathDiff: '/textures/Gravel/Gravel_06/Gravel_06_basecolor.png',
-    pathArm: '/textures/Gravel/Gravel_06/Gravel_06_arm.png',
-    pathNor: '/textures/Gravel/Gravel_06/Gravel_06_normal.png',
     grassDiff: '/textures/Grass/Grass_01/Grass_01_basecolor.png',
-    grassArm: '/textures/Grass/Grass_01/Grass_01_arm.png',
-    grassNor: '/textures/Grass/Grass_01/Grass_01_normal.png',
     waterDiff: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_basecolor.png',
-    waterArm: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_roughness.png',
     waterNor: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_normal.png',
   });
 
@@ -183,22 +174,12 @@ export const BaseTerrainContent: React.FC = () => {
       textures.walkableDiff,
       textures.walkableArm,
       textures.walkableNor,
-      textures.walkableDisp,
       textures.cliffDiff,
       textures.cliffArm,
       textures.cliffNor,
-      textures.cliffDisp,
       textures.crackedDiff,
-      textures.crackedArm,
-      textures.crackedNor,
-      textures.pathDiff,
-      textures.pathArm,
-      textures.pathNor,
       textures.grassDiff,
-      textures.grassArm,
-      textures.grassNor,
       textures.waterDiff,
-      textures.waterArm,
       textures.waterNor,
     ];
 
@@ -213,7 +194,6 @@ export const BaseTerrainContent: React.FC = () => {
       textures.walkableDiff,
       textures.cliffDiff,
       textures.crackedDiff,
-      textures.pathDiff,
       textures.grassDiff,
       textures.waterDiff,
     ];
@@ -221,17 +201,8 @@ export const BaseTerrainContent: React.FC = () => {
     const linearMaps = [
       textures.walkableArm,
       textures.walkableNor,
-      textures.walkableDisp,
       textures.cliffArm,
       textures.cliffNor,
-      textures.cliffDisp,
-      textures.crackedArm,
-      textures.crackedNor,
-      textures.pathArm,
-      textures.pathNor,
-      textures.grassArm,
-      textures.grassNor,
-      textures.waterArm,
       textures.waterNor,
     ];
 
@@ -271,22 +242,12 @@ export const BaseTerrainContent: React.FC = () => {
       walkableDiff: textures.walkableDiff,
       walkableArm: textures.walkableArm,
       walkableNor: textures.walkableNor,
-      walkableDisp: textures.walkableDisp,
       cliffDiff: textures.cliffDiff,
       cliffArm: textures.cliffArm,
       cliffNor: textures.cliffNor,
-      cliffDisp: textures.cliffDisp,
       crackedDiff: textures.crackedDiff,
-      crackedArm: textures.crackedArm,
-      crackedNor: textures.crackedNor,
-      pathDiff: textures.pathDiff,
-      pathArm: textures.pathArm,
-      pathNor: textures.pathNor,
       grassDiff: textures.grassDiff,
-      grassArm: textures.grassArm,
-      grassNor: textures.grassNor,
       waterDiff: textures.waterDiff,
-      waterArm: textures.waterArm,
       waterNor: textures.waterNor,
       textureRepeat: 16.0,
       cliffRepeat: 12.0,

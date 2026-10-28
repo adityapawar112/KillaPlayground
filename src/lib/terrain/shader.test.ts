@@ -27,7 +27,7 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
     expect(mat.isMaterial).toBe(true);
   });
 
-  it('compiles reworked slope-aware terrain material with all required uniforms', async () => {
+  it('compiles reworked slope-aware terrain material with all required uniforms within MAX_TEXTURE_IMAGE_UNITS', async () => {
     const { createTerrainMaterial } = await import('../../components/3d/TerrainMaterial');
     const { createStateBuffer, createStateTexture } = await import('./terrainBuffer');
     const buf = createStateBuffer();
@@ -35,13 +35,23 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
 
     const terrainMat = createTerrainMaterial({ stateTexture: tex });
     expect(terrainMat).toBeDefined();
+    // Exactly 11 texture samplers to guarantee compliance with MAX_TEXTURE_IMAGE_UNITS (16)
+    expect(terrainMat.uniforms.uStateTexture).toBeDefined();
     expect(terrainMat.uniforms.uCliffDiff).toBeDefined();
+    expect(terrainMat.uniforms.uCliffArm).toBeDefined();
+    expect(terrainMat.uniforms.uCliffNor).toBeDefined();
     expect(terrainMat.uniforms.uWalkableDiff).toBeDefined();
+    expect(terrainMat.uniforms.uWalkableArm).toBeDefined();
+    expect(terrainMat.uniforms.uWalkableNor).toBeDefined();
     expect(terrainMat.uniforms.uCrackedDiff).toBeDefined();
-    expect(terrainMat.uniforms.uPathDiff).toBeDefined();
     expect(terrainMat.uniforms.uGrassDiff).toBeDefined();
     expect(terrainMat.uniforms.uWaterDiff).toBeDefined();
-    expect(terrainMat.uniforms.uWaterArm).toBeDefined();
     expect(terrainMat.uniforms.uWaterNor).toBeDefined();
+
+    // Verify sampler count is strictly <= 12 to leave margin for Three.js internal lights/shadows
+    const samplerUniformCount = Object.values(terrainMat.uniforms).filter(
+      (u: any) => u.value && (u.value.isTexture || u.value.isDataTexture)
+    ).length;
+    expect(samplerUniformCount).toBeLessThanOrEqual(11);
   });
 });

@@ -17,6 +17,7 @@ import {
 } from './terrainBuffer';
 import { generateTerrainBlueprint } from './terrainGenerators';
 import { useEditorStore, PondWaterFeature } from '../state/useEditorStore';
+import { WallPath } from '../walls/wallTypes';
 
 interface TerrainState {
   stateBuffer: Float32Array;
@@ -46,6 +47,8 @@ const undoStack: Float32Array[] = [];
 const redoStack: Float32Array[] = [];
 const pondUndoStack: PondWaterFeature[][] = [];
 const pondRedoStack: PondWaterFeature[][] = [];
+const wallUndoStack: WallPath[][] = [];
+const wallRedoStack: WallPath[][] = [];
 
 // Generate organic starter mud hill by default
 const initialBuffer = createStateBuffer(0.0, 0.0);
@@ -135,28 +138,39 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     if (undoStack.length >= MAX_UNDO_SLOTS) {
       undoStack.shift();
       pondUndoStack.shift();
+      wallUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
     pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
+    wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
     redoStack.length = 0;
     pondRedoStack.length = 0;
+    wallRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
-  canUndo: () => undoStack.length > 0,
-  canRedo: () => redoStack.length > 0,
+  canUndo: () => undoStack.length > 0 || wallUndoStack.length > 0,
+  canRedo: () => redoStack.length > 0 || wallRedoStack.length > 0,
 
   undo: () => {
-    if (undoStack.length === 0) return false;
+    if (undoStack.length === 0 && wallUndoStack.length === 0) return false;
     const { stateBuffer, stateTexture, terrainGeometry } = get();
-    const prevSnapshot = undoStack.pop()!;
-    redoStack.push(stateBuffer.slice());
-    stateBuffer.set(prevSnapshot);
+    if (undoStack.length > 0) {
+      const prevSnapshot = undoStack.pop()!;
+      redoStack.push(stateBuffer.slice());
+      stateBuffer.set(prevSnapshot);
+    }
 
     if (pondUndoStack.length > 0) {
       const prevPonds = pondUndoStack.pop()!;
       pondRedoStack.push([...useEditorStore.getState().pondWaterFeatures]);
       useEditorStore.getState().setPondWaterFeatures(prevPonds);
+    }
+
+    if (wallUndoStack.length > 0) {
+      const prevWalls = wallUndoStack.pop()!;
+      wallRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
+      useEditorStore.getState().setWalls(prevWalls);
     }
 
     stateTexture.needsUpdate = true;
@@ -169,16 +183,24 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   },
 
   redo: () => {
-    if (redoStack.length === 0) return false;
+    if (redoStack.length === 0 && wallRedoStack.length === 0) return false;
     const { stateBuffer, stateTexture, terrainGeometry } = get();
-    const nextSnapshot = redoStack.pop()!;
-    undoStack.push(stateBuffer.slice());
-    stateBuffer.set(nextSnapshot);
+    if (redoStack.length > 0) {
+      const nextSnapshot = redoStack.pop()!;
+      undoStack.push(stateBuffer.slice());
+      stateBuffer.set(nextSnapshot);
+    }
 
     if (pondRedoStack.length > 0) {
       const nextPonds = pondRedoStack.pop()!;
       pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
       useEditorStore.getState().setPondWaterFeatures(nextPonds);
+    }
+
+    if (wallRedoStack.length > 0) {
+      const nextWalls = wallRedoStack.pop()!;
+      wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
+      useEditorStore.getState().setWalls(nextWalls);
     }
 
     stateTexture.needsUpdate = true;

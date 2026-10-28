@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { z } from 'zod';
 import { COLORS } from '../constants/tokens';
+import {
+  WallPath,
+  WallPoint,
+  WallSettings,
+  DEFAULT_WALL_SETTINGS,
+  WallGate,
+  WallSubTool,
+} from '../walls/wallTypes';
 
 export const SavedProjectSchema = z.object({
   id: z.string().optional(),
@@ -10,6 +18,7 @@ export const SavedProjectSchema = z.object({
   paintColor: z.string().optional().default(COLORS.basalt),
   waterMode: z.string().optional().default('tarpaulin'),
   splines: z.array(z.any()).default([]),
+  walls: z.array(z.any()).optional().default([]),
   placedProps: z.array(z.any()).default([]),
   pondWaterFeatures: z.array(z.any()).optional().default([]),
   timestamp: z.number().optional(),
@@ -69,6 +78,7 @@ export interface SavedProject {
   updatedAt: number;
   data: {
     splines: SplinePath[];
+    walls?: WallPath[];
     placedProps: PlacedProp[];
     pondWaterFeatures?: PondWaterFeature[];
     fortTitle: string;
@@ -116,6 +126,26 @@ interface EditorState {
   clearPondWater: () => void;
   undoLastPondWater: () => void;
   setPondWaterFeatures: (features: PondWaterFeature[]) => void;
+
+  // Parametric Fort Walls State
+  walls: WallPath[];
+  activeWallDraft: WallPoint[];
+  wallSettings: WallSettings;
+  wallSubTool: WallSubTool;
+  selectedWallId: string | null;
+
+  setWallSettings: (settings: Partial<WallSettings>) => void;
+  setWallSubTool: (subTool: WallSubTool) => void;
+  setSelectedWallId: (id: string | null) => void;
+  addWallDraftPoint: (point: WallPoint) => void;
+  finishCurrentWall: (isClosed?: boolean) => string | null;
+  cancelCurrentWall: () => void;
+  removeWall: (id: string) => void;
+  clearAllWalls: () => void;
+  toggleBastionOnNode: (wallId: string, nodeIndex: number) => void;
+  addGateToWall: (wallId: string, segmentIndex: number, t?: number) => void;
+  removeGateFromWall: (wallId: string, gateId: string) => void;
+  setWalls: (walls: WallPath[]) => void;
 
   // Spline Drawing State
   isDrawingSpline: boolean;
@@ -313,6 +343,119 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })),
   setPondWaterFeatures: (pondWaterFeatures) => set({ pondWaterFeatures }),
 
+  // Parametric Fort Walls Implementation
+  walls: [],
+  activeWallDraft: [],
+  wallSettings: { ...DEFAULT_WALL_SETTINGS },
+  wallSubTool: 'draw',
+  selectedWallId: null,
+
+  setWallSettings: (newSettings) =>
+    set((state) => {
+      const updated = { ...state.wallSettings, ...newSettings };
+      const targetId = state.selectedWallId ?? (state.walls.length === 1 ? state.walls[0].id : null);
+      const updatedWalls = targetId
+        ? state.walls.map((w) => (w.id === targetId ? { ...w, settings: { ...w.settings, ...newSettings } } : w))
+        : state.walls;
+      return { wallSettings: updated, walls: updatedWalls };
+    }),
+  setWallSubTool: (wallSubTool) => set({ wallSubTool }),
+  setSelectedWallId: (selectedWallId) => set({ selectedWallId }),
+  addWallDraftPoint: (point) =>
+    set((state) => ({ activeWallDraft: [...state.activeWallDraft, point] })),
+  finishCurrentWall: (isClosed = false) => {
+    const { activeWallDraft, wallSettings, walls } = get();
+    if (activeWallDraft.length < 2) return null;
+
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+
+    const id = `wall_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newWall: WallPath = {
+      id,
+      points: [...activeWallDraft],
+      isClosed,
+      manualBastionIndices: [],
+      gates: [],
+      settings: { ...wallSettings },
+      createdAt: Date.now(),
+    };
+
+    set({
+      walls: [...walls, newWall],
+      activeWallDraft: [],
+      selectedWallId: id,
+    });
+    return id;
+  },
+  cancelCurrentWall: () => set({ activeWallDraft: [] }),
+  removeWall: (id) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set((state) => ({
+      walls: state.walls.filter((w) => w.id !== id),
+      selectedWallId: state.selectedWallId === id ? null : state.selectedWallId,
+    }));
+  },
+  clearAllWalls: () => {
+    if (get().walls.length === 0) return;
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set({ walls: [], activeWallDraft: [], selectedWallId: null });
+  },
+  toggleBastionOnNode: (wallId, nodeIndex) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        const current = new Set(w.manualBastionIndices || []);
+        if (current.has(nodeIndex)) {
+          current.delete(nodeIndex);
+        } else {
+          current.add(nodeIndex);
+        }
+        return { ...w, manualBastionIndices: Array.from(current).sort((a, b) => a - b) };
+      }),
+    }));
+  },
+  addGateToWall: (wallId, segmentIndex, t = 0.5) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    const gateId = `gate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        const newGate: WallGate = {
+          id: gateId,
+          segmentIndex,
+          t,
+          width: 1.4,
+          height: 2.2,
+          hasGatehouse: true,
+        };
+        return { ...w, gates: [...(w.gates || []), newGate] };
+      }),
+    }));
+  },
+  removeGateFromWall: (wallId, gateId) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return { ...w, gates: (w.gates || []).filter((g) => g.id !== gateId) };
+      }),
+    }));
+  },
+  setWalls: (walls) => set({ walls }),
+
   isDrawingSpline: false,
   currentSplinePoints: [],
   splines: [],
@@ -396,7 +539,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   saveProjectLocally: (name) => {
-    const { splines, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
+    const { splines, walls, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
     const projectName = name?.trim() || fortTitle || 'Untitled Killa';
     const projectId = `killa_${Date.now()}`;
     const newProject: SavedProject = {
@@ -406,6 +549,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       updatedAt: Date.now(),
       data: {
         splines,
+        walls,
         placedProps,
         pondWaterFeatures,
         fortTitle: projectName,
@@ -444,6 +588,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     set({
       splines: proj.data.splines || [],
+      walls: proj.data.walls || [],
       placedProps: proj.data.placedProps || [],
       pondWaterFeatures: proj.data.pondWaterFeatures || [],
       fortTitle: proj.data.fortTitle || proj.name,
@@ -470,7 +615,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   exportProjectData: () => {
-    const { splines, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const { splines, walls, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode } = get();
     const payload = {
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
@@ -480,6 +625,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       paintColor,
       waterMode,
       splines,
+      walls,
       placedProps,
       pondWaterFeatures,
     };
@@ -503,6 +649,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         paintColor: data.paintColor,
         waterMode: data.waterMode as any,
         splines: data.splines,
+        walls: (data as any).walls || [],
         placedProps: data.placedProps,
         pondWaterFeatures: data.pondWaterFeatures || [],
         isStartupModalOpen: false,
@@ -639,6 +786,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
     set({
       splines: [],
+      walls: [],
+      activeWallDraft: [],
+      selectedWallId: null,
       placedProps: [],
       pondWaterFeatures: [],
       selectedPropId: null,
@@ -648,3 +798,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
 }));
+
+if (typeof window !== 'undefined') {
+  (window as any).__editorStore = useEditorStore;
+}

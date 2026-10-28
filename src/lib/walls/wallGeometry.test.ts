@@ -1,0 +1,283 @@
+import { describe, it, expect } from 'vitest';
+import * as THREE from 'three';
+import {
+  sampleBilinearHeight,
+  computeCornerAngle,
+  detectBastionLocations,
+  resampleWallPointsAlongTerrain,
+  generateWallBufferGeometry,
+  calculateWallTotalLength,
+} from './wallGeometry';
+import { createStateBuffer, TERRAIN_SIZE, HALF_TERRAIN_SIZE } from '../terrain/terrainBuffer';
+import { WallPath, DEFAULT_WALL_SETTINGS } from './wallTypes';
+
+describe('Wall Geometry & Algorithmic Pipeline', () => {
+  describe('sampleBilinearHeight', () => {
+    it('samples height accurately from flat terrain buffer', () => {
+      const buffer = createStateBuffer(1.25, 0.0);
+      const hCenter = sampleBilinearHeight(buffer, 0, 0);
+      expect(hCenter).toBeCloseTo(1.25, 3);
+
+      const hEdge = sampleBilinearHeight(buffer, -3.5, 2.5);
+      expect(hEdge).toBeCloseTo(1.25, 3);
+    });
+
+    it('interpolates smoothly between varying height values', () => {
+      const buffer = createStateBuffer(0.0, 0.0);
+      // Set center point to 2.0
+      const centerIdx = (128 * 256 + 128) * 4;
+      buffer[centerIdx + 0] = 2.0;
+
+      const hAtCenter = sampleBilinearHeight(buffer, 0, 0);
+      expect(hAtCenter).toBeCloseTo(0.5, 3);
+
+      // Height should safely clamp and not throw when query is outside terrain boundary
+      const hOut = sampleBilinearHeight(buffer, 100, 100);
+      expect(Number.isFinite(hOut)).toBe(true);
+    });
+  });
+
+  describe('computeCornerAngle', () => {
+    it('returns near 0 degrees for collinear straight line', () => {
+      const p1 = { x: 0, y: 0, z: 0 };
+      const p2 = { x: 2, y: 0, z: 0 };
+      const p3 = { x: 4, y: 0, z: 0 };
+      const angle = computeCornerAngle(p1, p2, p3);
+      expect(angle).toBeCloseTo(0, 1);
+    });
+
+    it('returns ~90 degrees for perpendicular right-angle turn', () => {
+      const p1 = { x: 0, y: 0, z: 0 };
+      const p2 = { x: 2, y: 0, z: 0 };
+      const p3 = { x: 2, y: 0, z: 2 };
+      const angle = computeCornerAngle(p1, p2, p3);
+      expect(angle).toBeCloseTo(90, 1);
+    });
+
+    it('handles duplicate or overlapping points gracefully without NaN', () => {
+      const p1 = { x: 1, y: 0, z: 1 };
+      const p2 = { x: 1, y: 0, z: 1 };
+      const p3 = { x: 2, y: 0, z: 1 };
+      const angle = computeCornerAngle(p1, p2, p3);
+      expect(Number.isFinite(angle)).toBe(true);
+    });
+  });
+
+  describe('detectBastionLocations', () => {
+    it('identifies sharp corner bastions (>35 deg) on a polygonal wall loop', () => {
+      // 4 corners forming a rectangle (all 90 degrees)
+      const points = [
+        { x: -2, y: 0, z: -2 },
+        { x: 2, y: 0, z: -2 },
+        { x: 2, y: 0, z: 2 },
+        { x: -2, y: 0, z: 2 },
+      ];
+      const bastions = detectBastionLocations(points, true, true);
+      // For a closed loop rectangle, all 4 corners are 90 deg (>35 deg)
+      expect(bastions.length).toBe(4);
+    });
+
+    it('identifies terminal bastions at start and end of open wall path', () => {
+      const points = [
+        { x: 0, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+        { x: 4, y: 0, z: 0 },
+      ];
+      const bastions = detectBastionLocations(points, false, true);
+      // Open straight path: start and end should have terminal watchtowers / bastions
+      expect(bastions).toContain(0);
+      expect(bastions).toContain(2);
+      expect(bastions).not.toContain(1); // middle point is straight (0 deg)
+    });
+
+    it('includes user manual bastions even if angle is <35 deg', () => {
+      const points = [
+        { x: 0, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+        { x: 4, y: 0, z: 0 },
+      ];
+      const bastions = detectBastionLocations(points, false, false, [1]);
+      expect(bastions).toContain(1);
+    });
+  });
+
+  describe('resampleWallPointsAlongTerrain', () => {
+    it('subdivides long segments and updates ground elevation', () => {
+      const buffer = createStateBuffer(0.5, 0.0);
+      const points = [
+        { x: -2, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+      ];
+      const resampled = resampleWallPointsAlongTerrain(points, buffer, 0.25);
+      expect(resampled.length).toBeGreaterThan(10);
+      // All resampled points should sample ground height 0.5 from buffer
+      for (const p of resampled) {
+        expect(p.y).toBeCloseTo(0.5, 2);
+      }
+    });
+  });
+
+  describe('calculateWallTotalLength', () => {
+    it('computes cumulative path length accurately', () => {
+      const points = [
+        { x: 0, y: 0, z: 0 },
+        { x: 3, y: 0, z: 0 },
+        { x: 3, y: 0, z: 4 },
+      ];
+      const lengthOpen = calculateWallTotalLength(points, false);
+      expect(lengthOpen).toBeCloseTo(7.0, 2);
+
+      const lengthClosed = calculateWallTotalLength(points, true);
+      // Closed loop adds hypotenuse from (3, 0, 4) back to (0, 0, 0) = 5.0 -> total 12.0
+      expect(lengthClosed).toBeCloseTo(12.0, 2);
+    });
+  });
+
+  describe('generateWallBufferGeometry', () => {
+    it('generates valid BufferGeometry with position, normal, and uv', () => {
+      const buffer = createStateBuffer(0.2, 0.0);
+      const wall: WallPath = {
+        id: 'test_wall_1',
+        points: [
+          { x: -1, y: 0.2, z: -1 },
+          { x: 1, y: 0.2, z: -1 },
+          { x: 1, y: 0.2, z: 1 },
+        ],
+        isClosed: false,
+        gates: [],
+        settings: { ...DEFAULT_WALL_SETTINGS },
+        createdAt: Date.now(),
+      };
+
+      const geo = generateWallBufferGeometry(wall, buffer);
+      expect(geo).toBeInstanceOf(THREE.BufferGeometry);
+
+      const pos = geo.getAttribute('position');
+      const nor = geo.getAttribute('normal');
+      const uvs = geo.getAttribute('uv');
+
+      expect(pos).toBeDefined();
+      expect(nor).toBeDefined();
+      expect(uvs).toBeDefined();
+      expect(pos.count).toBeGreaterThan(0);
+
+      // Check for finite, non-NaN values
+      for (let i = 0; i < pos.count; i++) {
+        expect(Number.isFinite(pos.getX(i))).toBe(true);
+        expect(Number.isFinite(pos.getY(i))).toBe(true);
+        expect(Number.isFinite(pos.getZ(i))).toBe(true);
+      }
+
+      // Check bounding box validity
+      geo.computeBoundingBox();
+      expect(geo.boundingBox).not.toBeNull();
+      expect(geo.boundingBox!.min.y).toBeLessThan(geo.boundingBox!.max.y);
+
+      // Clean disposal
+      geo.dispose();
+    });
+
+    it('scales UV coordinates proportionally when uvScale is modified', () => {
+      const buffer = createStateBuffer(0.0, 0.0);
+      const wallA: WallPath = {
+        id: 'wall_uv_1',
+        points: [
+          { x: 0, y: 0, z: 0 },
+          { x: 4, y: 0, z: 0 },
+        ],
+        isClosed: false,
+        gates: [],
+        settings: { ...DEFAULT_WALL_SETTINGS, uvScale: 1.0, crenellations: false, autoBastions: false },
+        createdAt: Date.now(),
+      };
+
+      const wallB: WallPath = {
+        ...wallA,
+        settings: { ...wallA.settings, uvScale: 2.5 },
+      };
+
+      const geoA = generateWallBufferGeometry(wallA, buffer);
+      const geoB = generateWallBufferGeometry(wallB, buffer);
+
+      const uvA = geoA.getAttribute('uv');
+      const uvB = geoB.getAttribute('uv');
+
+      // Maximum U coordinate in B should be 2.5x that of A
+      let maxU_A = 0;
+      let maxU_B = 0;
+      for (let i = 0; i < uvA.count; i++) {
+        maxU_A = Math.max(maxU_A, uvA.getX(i));
+      }
+      for (let i = 0; i < uvB.count; i++) {
+        maxU_B = Math.max(maxU_B, uvB.getX(i));
+      }
+
+      expect(maxU_B / maxU_A).toBeCloseTo(2.5, 1);
+
+      geoA.dispose();
+      geoB.dispose();
+    });
+
+    it('generates crenellations on top parapet when crenellations is enabled', () => {
+      const buffer = createStateBuffer(0.0, 0.0);
+      const baseWall: WallPath = {
+        id: 'wall_cren',
+        points: [
+          { x: -3, y: 0, z: 0 },
+          { x: 3, y: 0, z: 0 },
+        ],
+        isClosed: false,
+        gates: [],
+        settings: { ...DEFAULT_WALL_SETTINGS, autoBastions: false, crenellations: false },
+        createdAt: Date.now(),
+      };
+
+      const geoNoCren = generateWallBufferGeometry(baseWall, buffer);
+      const geoWithCren = generateWallBufferGeometry(
+        { ...baseWall, settings: { ...baseWall.settings, crenellations: true } },
+        buffer
+      );
+
+      // Crenellated wall should produce extra triangles for the battlements
+      expect(geoWithCren.getAttribute('position').count).toBeGreaterThan(
+        geoNoCren.getAttribute('position').count
+      );
+
+      geoNoCren.dispose();
+      geoWithCren.dispose();
+    });
+
+    it('generates arched gateway and gatehouse bastions when a gate is present', () => {
+      const buffer = createStateBuffer(0.0, 0.0);
+      const wallWithGate: WallPath = {
+        id: 'wall_gate',
+        points: [
+          { x: -4, y: 0, z: 0 },
+          { x: 4, y: 0, z: 0 },
+        ],
+        isClosed: false,
+        gates: [
+          {
+            id: 'maha_darwaza_1',
+            segmentIndex: 0,
+            t: 0.5,
+            width: 1.4,
+            height: 2.2,
+            hasGatehouse: true,
+          },
+        ],
+        settings: { ...DEFAULT_WALL_SETTINGS, autoBastions: false, crenellations: false },
+        createdAt: Date.now(),
+      };
+
+      const geoGate = generateWallBufferGeometry(wallWithGate, buffer);
+      expect(geoGate.getAttribute('position').count).toBeGreaterThan(0);
+
+      // Bounding box should enclose the gate height
+      geoGate.computeBoundingBox();
+      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(1.8);
+
+      geoGate.dispose();
+    });
+  });
+});

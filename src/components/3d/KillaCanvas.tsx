@@ -9,6 +9,7 @@ import { useEditorStore } from '@/lib/state/useEditorStore';
 import { BaseTerrain } from './BaseTerrain';
 import { CourtyardBricks } from './CourtyardBricks';
 import { WaterPlane } from './WaterPlane';
+import { FortWalls } from './FortWalls';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -436,6 +437,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         {/* Base Terrain with StateBuffer DataTexture & BVH Acceleration */}
         <BaseTerrain />
+
+        {/* Parametric Fort Ramparts, Bastions & Arched Gates */}
+        <FortWalls />
 
         {/* 3D Base Water Level Plane for Coastal Moats & Excavated Ponds */}
         <WaterPlane />

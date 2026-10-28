@@ -124,7 +124,7 @@ graph TD
 
 ## Ticket 04: Parametric Fort Walls Construction Tool
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
   - **Direct Wall Generation**:
@@ -140,12 +140,12 @@ graph TD
   - **Geometry Pipeline**: Efficient extruded wall geometry with UV mapping for mossy stone brick textures.
 
 ### Acceptance Criteria
-- [ ] User can click and drag to draw a wall that follows terrain contours.
-- [ ] Wall height updates interactively via slider.
-- [ ] Round bastions (*buruj*) automatically or manually spawn at corners.
-- [ ] Fort gates (*Maha Darwaza*) can be inserted cleanly along wall segments.
-- [ ] Crenellations (*kangare*) render alternating battlements along wall tops.
-- [ ] Brick texture scale adjusts stone tile density without visual distortion.
+- [x] User can click and drag to draw a wall that follows terrain contours.
+- [x] Wall height updates interactively via slider.
+- [x] Round bastions (*buruj*) automatically or manually spawn at corners.
+- [x] Fort gates (*Maha Darwaza*) can be inserted cleanly along wall segments.
+- [x] Crenellations (*kangare*) render alternating battlements along wall tops.
+- [x] Brick texture scale adjusts stone tile density without visual distortion.
 
 ---
 

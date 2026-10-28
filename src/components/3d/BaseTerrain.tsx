@@ -133,6 +133,8 @@ export const BaseTerrainFallback: React.FC = () => {
 export const BaseTerrainContent: React.FC = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   const isSculptingRef = useRef(false);
+  const isDrawingWallRef = useRef(false);
+  const lastWallPointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
   const pondOriginRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const [cursorPos, setCursorPos] = useState<[number, number, number]>([0, 0, 0]);
@@ -395,6 +397,99 @@ export const BaseTerrainContent: React.FC = () => {
   const handlePointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
+
+      // Handle Walls Tool Drawing & Insertion
+      if (editor.activeTool === 'walls') {
+        if (e.button !== 0 || e.altKey) return;
+        e.stopPropagation();
+
+        if (editor.wallSubTool === 'gate') {
+          // Find closest wall segment to insert Maha Darwaza
+          let closestDist = Infinity;
+          let targetWallId: string | null = null;
+          let targetSegIdx = 0;
+          let targetT = 0.5;
+
+          for (const wall of editor.walls) {
+            const pts = wall.points;
+            for (let i = 0; i < pts.length - 1; i++) {
+              const pA = pts[i];
+              const pB = pts[i + 1];
+              const segDx = pB.x - pA.x;
+              const segDz = pB.z - pA.z;
+              const segLenSq = segDx * segDx + segDz * segDz;
+              if (segLenSq < 1e-4) continue;
+              const t = Math.max(0.15, Math.min(0.85, ((e.point.x - pA.x) * segDx + (e.point.z - pA.z) * segDz) / segLenSq));
+              const projX = pA.x + segDx * t;
+              const projZ = pA.z + segDz * t;
+              const d = Math.hypot(e.point.x - projX, e.point.z - projZ);
+              if (d < closestDist) {
+                closestDist = d;
+                targetWallId = wall.id;
+                targetSegIdx = i;
+                targetT = t;
+              }
+            }
+          }
+
+          if (targetWallId && closestDist < 1.4) {
+            editor.addGateToWall(targetWallId, targetSegIdx, targetT);
+            editor.setToastMessage('Maha Darwaza arched gateway inserted!');
+          } else {
+            editor.setToastMessage('Click closer to a fort wall segment to insert Maha Darwaza.');
+          }
+          return;
+        }
+
+        if (editor.wallSubTool === 'bastion') {
+          // Find closest wall vertex to toggle bastion
+          let closestDist = Infinity;
+          let targetWallId: string | null = null;
+          let targetNodeIdx = 0;
+
+          for (const wall of editor.walls) {
+            wall.points.forEach((pt, idx) => {
+              const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
+              if (d < closestDist) {
+                closestDist = d;
+                targetWallId = wall.id;
+                targetNodeIdx = idx;
+              }
+            });
+          }
+
+          if (targetWallId && closestDist < 1.4) {
+            editor.toggleBastionOnNode(targetWallId, targetNodeIdx);
+            editor.setToastMessage('Round bastion toggled on vertex!');
+          } else {
+            editor.setToastMessage('Click closer to a fort wall vertex to toggle bastion.');
+          }
+          return;
+        }
+
+        // Standard 'draw' subtool:
+        // Check if user clicked near start node of current draft to close loop
+        const draft = editor.activeWallDraft;
+        if (draft.length >= 3) {
+          const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
+          if (dStart < 0.65) {
+            editor.finishCurrentWall(true);
+            editor.setToastMessage('Fort perimeter wall closed into defensive circuit!');
+            invalidate();
+            return;
+          }
+        }
+
+        if (controls) {
+          controls.enabled = false;
+        }
+        isDrawingWallRef.current = true;
+        editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
+        lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+        invalidate();
+        return;
+      }
+
       if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
         return;
       }
@@ -423,12 +518,29 @@ export const BaseTerrainContent: React.FC = () => {
 
       executeSculpt(e.point);
     },
-    [controls, executeSculpt, pushUndo, computeCursorNormal]
+    [controls, executeSculpt, pushUndo, computeCursorNormal, invalidate]
   );
 
   const handlePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
+
+      if (editor.activeTool === 'walls') {
+        if (cursorVisible) setCursorVisible(false);
+        if (isDrawingWallRef.current && lastWallPointRef.current) {
+          e.stopPropagation();
+          const dx = e.point.x - lastWallPointRef.current.x;
+          const dz = e.point.z - lastWallPointRef.current.z;
+          const dist = Math.hypot(dx, dz);
+          if (dist >= 0.45) {
+            editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
+            lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+            invalidate();
+          }
+        }
+        return;
+      }
+
       if (editor.activeTool !== 'terrain') {
         if (cursorVisible) setCursorVisible(false);
         return;
@@ -444,10 +556,19 @@ export const BaseTerrainContent: React.FC = () => {
         executeSculpt(e.point);
       }
     },
-    [cursorVisible, executeSculpt, computeCursorNormal]
+    [cursorVisible, executeSculpt, computeCursorNormal, invalidate]
   );
 
   const handlePointerUp = useCallback(() => {
+    if (isDrawingWallRef.current) {
+      isDrawingWallRef.current = false;
+      lastWallPointRef.current = null;
+      if (controls) {
+        controls.enabled = true;
+      }
+      invalidate();
+    }
+
     if (isSculptingRef.current) {
       pondOriginRef.current = null;
       slopeAnchorRef.current = null;
@@ -468,6 +589,15 @@ export const BaseTerrainContent: React.FC = () => {
   // Global window pointerup to catch pointer released outside mesh
   useEffect(() => {
     const handleGlobalPointerUp = () => {
+      if (isDrawingWallRef.current) {
+        isDrawingWallRef.current = false;
+        lastWallPointRef.current = null;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
+      }
+
       if (isSculptingRef.current) {
         pondOriginRef.current = null;
         slopeAnchorRef.current = null;

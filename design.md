@@ -150,11 +150,11 @@ Component voltage is driven by **saturated earth-tone tool and feature cards** i
    * Anchored to the top, height 56px, centered logo & killa title, right-side cluster for Undo/Redo, Night Mode, and "Finish & Share".
 3. **Bottom Tool Dock (`{component.bottom-floating-dock}`):**
    * Floats horizontally centered at the bottom, 20px above edge.
-   * Houses the primary construction steps: **Soil**, **Water**, **Shape Mud**, **Splines**, **Paint**, **Grass**, **Figurines**.
+   * Houses the primary construction steps: **Terrain**, **Walls**, **Spline**, **Terrain Paint**, **Foliage Paint**, **Figurines & Buildings**.
 4. **Contextual Sub-Toolbar (`{component.contextual-dock}`):**
-   * Appears immediately above the bottom dock when a tool is selected (e.g. Brush Size, Wetness indicator, Stencil picker).
+   * Appears immediately above the bottom dock when a tool is selected (e.g. Wall Height, Tower toggles, Texture swatches, Scatter radius, Figurine transforms).
 5. **Right Drawer / Asset Browser (`{component.prop-drawer}`):**
-   * Slides in smoothly from the right edge (width 360px on desktop, full-width bottom sheet on mobile) to display the library of *Mavale*, cannons, flags, and shrines.
+   * Slides in smoothly from the right edge (width 360px on desktop, full-width bottom sheet on mobile) to display the library of *Mavale*, pre-built buildings, cannons, flags, and shrines.
 6. **Multi-Angle Poster Studio Modal:**
    * Centered 9:16 or 4:5 preview frame surrounded by angle selectors, custom title inputs, and download buttons.
 
@@ -217,14 +217,14 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 - Floats centered horizontally, 20px above bottom edge. Height: 68px.
 - Background: `{colors.surface-soft}` (92% alpha, blur 16px), 1px `{colors.hairline}` border, radius: `{rounded.xl}`.
 - Internal layout: Horizontal flex row with `{spacing.xs}` (8px) gap.
-- Houses 7 master tool buttons:
-  1. **Soil Pour** (Mound icon)
-  2. **Water Sprinkler** (Water jug icon)
-  3. **Shape Mud** (Hand/Trowel icon)
-  4. **Splines** (Winding wall curve icon)
-  5. **Paint Studio** (Paint brush & mortar icon)
-  6. **Greenery** (*Halim* seedling sprout icon)
-  7. **Figurines** (Mavala guard icon)
+- Houses 6 primary fort construction tool buttons:
+  1. **Terrain** (Mountain / Elevation icon)
+  2. **Walls** (Fort Wall / Ramparts icon)
+  3. **Spline** (Curved Steps / Path icon)
+  4. **Terrain Paint** (Texture brush / Palette icon)
+  5. **Foliage Paint** (Tree / Shrub scatter icon)
+  6. **Figurines & Buildings** (Mavala / Temple icon)
+*(Advanced Tactile Soil Pipeline tools are accessed via secondary workflow mode).*
 
 **`tool-button`**
 - Size: 52px × 52px square, rounded `{rounded.md}`.
@@ -235,12 +235,13 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 
 **`contextual-subdock`**
 - Floats directly above the active master tool button. Radius: `{rounded.lg}`.
-- Displays tool-specific parameter sliders:
-  - **Soil:** Pile spread radius slider + Height flow rate.
-  - **Water:** Water flow density + "Lock Mud / Let Set" button.
-  - **Shape:** Mode toggle (`Top Patting` vs. `Side Pushing`).
-  - **Paint:** Brush size slider, steady-hand stabilizer toggle, color swatch row.
-  - **Greenery:** Sprout density slider (*Halim* / Mustard seeds).
+- Displays tool-specific parameter sliders and toggles:
+  - **Terrain:** Mode pills (`Elevate`, `Lower`, `Plateau`, `Smooth`, `Pond`) + Radius & Strength sliders.
+  - **Walls:** Wall Height slider (0.5m–4.0m), Towers/Bastions toggle & corner auto-spawn, Fort Gates (*Maha Darwaza*) selector, Gatehouse toggle, Crenellations (*Kangare*) toggle, and Brick Texture Scale slider.
+  - **Spline:** Structure conversion pills (`Stone Steps / Payrya`, `Bhagwa Saffron Flags`, `Glowing Divas`), spacing slider, and size slider. *(Note: Walking paths are painted using Terrain Paint).*
+  - **Terrain Paint:** Texture swatches (`Dirt / Tambdi Maati`, `Sand`, `Grass`, `Gravel`, `Rock / Basalt`, `Rocky Ground`) + Brush Radius & Opacity/Strength sliders.
+  - **Foliage Paint:** Asset selector (`Trees`, `Rocks`, `Shrubs`, `3D Grass Models`) + Scatter Radius, Density, and Scale Jitter sliders.
+  - **Figurines & Buildings:** Trigger for the sliding Prop Drawer + Rotation angle wheel & Ground Alignment toggle.
 
 ### Buttons
 
@@ -260,7 +261,7 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 
 **`button-earth-terracotta`**
 - Background: `{colors.terracotta}` (`#B85F45`), text: `#FFFFFF`, radius: `{rounded.md}`.
-- Used for soil locking, stamp approvals, and spline conversion triggers.
+- Used for stamp approvals, wall conversions, and spline placement triggers.
 
 ### Cards & Drawers
 
@@ -287,38 +288,45 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 - Right-anchored sliding sheet (width: 360px). Background: `{colors.surface-soft}`.
 - Category tabs at top:
   1. *Royalty & Sinhasan* (Maharaj, throne, canopy)
-  2. *Mavale* (Swordsmen, spearmen, tutari horn blowers)
-  3. *Artillery* (Cannons, cannonballs)
-  4. *Insignia & Flags* (Bhagwa Dhwaj, fort nameboards)
-  5. *Festive Props* (Terracotta diyas, paper boats, marigold garlands)
+  2. *Mavale* (Swordsmen, spearmen, sentries)
+  3. *Musicians* (Tutari blowers, dhol drummers)
+  4. *Buildings & Fort Architecture* (Watchtowers, stone bastions, temple shrines, fort houses, stone arches)
+  5. *Artillery & Yard Props* (Cannons, cannonballs, bullock carts, wooden barrels, paper boats, terracotta diyas)
 - Grid: 2-column list of 3D asset thumbnail preview cards. Drag-and-drop enabled.
 
 **`prop-item-card`**
 - Dimensions: 140px × 140px, radius: `{rounded.lg}`, background: `{colors.surface-card}`.
 - Interactive 3D preview on hover, asset title in `{typography.title-sm}`, polycount badge (`< 500 tris`).
 
-### Spline Context Menu
+### Spline & Walls Controls
+
+**`walls-context-dock`**
+- Floating parameters when drawing or selecting walls:
+  - Wall Height: 0.5m to 4.0m
+  - Towers / Bastions: Toggle on/off + Spacing slider
+  - Gates: Insert *Maha Darwaza* at clicked segment
+  - Gatehouse: Toggle fortified entry pavilion
+  - Crenellations: Toggle alternating stone merlons along wall ridge
+  - Brick Scale: UV repetition slider for stone masonry tiling
 
 **`spline-context-menu`**
-- Floating pill-panel anchored to the end of the user's drawn spline curve.
-- 4 quick conversion buttons with icons:
-  1. **Walkway Path** (*Geru* red-ochre path stamp)
-  2. **Stone Steps** (*Payrya* stepped terracing)
-  3. **Rampart Wall** (Extruded mud wall with auto-bastions at > 35° corners)
-  4. **Crenellated Battlements** (Notched fort teeth along the ridge)
+- Floating pill-panel anchored to the drawn spline path:
+  1. **Stone Steps** (*Payrya* stepped terracing ascending slopes)
+  2. **Bhagwa Flags** (Uniformly spaced waving swallowtail saffron flags)
+  3. **Glowing Divas** (Festive terracotta oil lamps lining the curve)
 
-### Paint Studio Palette
+### Terrain Texture Palette
 
-**`paint-palette-dock`**
-- Floating color swatch dock when Paint Mode is active.
-- Color Swatches (28px circle buttons with 2px white ring):
-  - **Charcoal Basalt Black** (`#23211E`) — Wall base coat
-  - **Chuna White** (`#FAF8F5`) — Brick divider mortar lines
-  - **Geru Red-Ochre** (`#B85F45`) — Temple & pathway coat
-  - **Tarpaulin Blue** (`#0284C7`) — Sea & water tanks
-  - **Earthy Mud Stone** (`#B58B63`) — Rock touches
-  - **Marigold Yellow** (`#FBBF24`) — Festive detailing
-- **Steady-Hand Toggle:** Pill button with `lazy-brush` virtual trailing string indicator (12px stabilizer string).
+**`terrain-paint-palette-dock`**
+- Floating texture swatch dock when Terrain Paint Mode is active.
+- Texture Swatches (36px circular preview cards with 2px white ring):
+  - **Dirt (*Tambdi Maati*)** — Red laterite soil
+  - **Sand** — Sun-baked courtyard silt
+  - **Grass** — Fresh hillside greenery
+  - **Gravel** — Crushed stone for walking trails
+  - **Rock** — Deccan Basalt cliff face
+  - **Rocky Ground** — Pebble & hillside terrain
+- Sliders: Brush Radius (0.2m–3.0m) and Brush Strength/Opacity.
 
 ### Multi-Angle Poster Studio & Showcase
 

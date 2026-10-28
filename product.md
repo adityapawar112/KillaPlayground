@@ -3,7 +3,9 @@
 ## 1. Product Vision & Overview
 **Diwali Killa Sandbox** is an interactive, tactile 3D browser experience that lets anyone participate in the traditional Maharashtrian Diwali custom of building miniature mud forts (*Diwali Killa*)[cite: 1, 2]. 
 
-Rather than snapping pre-made 3D castle blocks together like a generic level editor, this product replicates the authentic backyard craft experience: dumping raw soil, pouring water to turn it into workable wet mud, hand-shaping walls and bastions by pushing and patting the mud from the top and sides, hand-painting black basalt stones with white lime mortar lines, sprouting green cress (*halim*) grass, and arranging colorful miniature clay figurines[cite: 1, 2].
+Rather than requiring tedious, complex soil physics just to get started, the product offers a fast, creative **Killa-First** toolset: sculpt terrain, draw customizable fort walls with towers and gates, place stone steps and flag lines with splines, paint ground textures (dirt, sand, grass, gravel, rock), scatter 3D trees and shrubs, and place clay figurines and pre-built fort buildings. 
+
+For purists seeking the authentic backyard craft experience, an organic **Tactile Soil Pipeline** is available as an advanced simulation layer (dumping raw soil, pouring water to turn it into workable wet mud, hand-shaping walls, and drying/locking mud).
 
 It is designed for both nostalgic adults who never got to build a killa growing up (or now live in apartments without access to soil and courtyard space) and younger players who want to craft, paint, and share their own tribute fort with friends and family.
 
@@ -12,43 +14,46 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ## 2. Target Audience & Core Value Proposition
 * **First-Time & Nostalgic Builders:** Adults who watched neighborhood kids build killas and want to experience the tactile joy of shaping mud and decorating a fort from their browser[cite: 1].
 * **Apartment & Diaspora Families:** People who want to celebrate the tradition during Diwali without hauling sacks of red soil and bricks up an elevator.
+* **Instant Fort Creation for Busy Users:** Pre-built fort buildings, parametric walls, and multi-texture brushes allow completing an entire killa in minutes.
 * **Zero-Friction Creative Play:** No sign-ups, no complex CAD controls, and no interior architectural headaches—just pure exterior diorama sculpting, hand-painting, and festive staging.
 
 ---
 
 ## 3. End-to-End User Journey
 
-
 ```
-
 [1. Mode Selection]
 ├── A. Historical Killa Blueprint (Pre-made Terrain + Chalk Wall Outlines)
 └── B. Freeform / From Scratch (Random Terrain Generator + Blank Ground)
 │
 ▼
-[2. Soil, Water & Mud Shaping]
-└── Dump Dry Soil -> Pour Water -> Push/Flatten from Top & Sides -> Solid Exterior Blocks
+[2. Base Terrain Sculpting]
+└── Elevate Hills -> Carve Valleys -> Flatten Plateaus -> Smooth Slopes -> Dig Ponds
 │
 ▼
-[3. Spline Pathing & Battlements]
-└── Draw Line on Terrain -> Convert to Walkways, Stone Steps, or Battlement Walls
+[3. Walls & Spline Structures]
+├── Parametric Walls: Height, Bastions/Towers, Gates, Gatehouse, Crenellations, Brick Scale
+└── Spline Structures: Stepped Stairs (Payrya), Saffron Flag Lines, Glowing Diya Rows
 │
 ▼
-[4. Freehand Surface Painting]
-└── Base Coat (Large Brush: Charcoal/Stone/Red Ochre) -> Detail Coat (Thin Brush: White Brick Lines)
+[4. Terrain Painting Studio]
+└── Multi-Texture Brush: Dirt (Tambdi Maati), Sand, Grass, Gravel (Walkways), Rock (Basalt), Rocky
 │
 ▼
-[5. Greenery & Water Bodies]
-└── Paint Sprouted Grass (Halim) on Slopes -> Carve/Tint Water Tanks & Sea Borders
+[5. Foliage Paint & 3D Nature Scatter]
+└── 3D Nature Scatter: Trees, Rocks, Shrubs, Grass Clumps with Radius & Density Controls
 │
 ▼
-[6. Figurine & Prop Placement]
-└── Drag & Drop from Asset Browser (Maharaj Throne, Mavale, Cannons, Flags, Paper Boats, Diyas)
+[6. Figurine & Architecture Asset Browser]
+└── Place & Rotate: Warriors (Mavale), Shivaji Maharaj Throne, Musicians, Buildings, Carts, Barrels, Cannons
 │
 ▼
 [7. Showcase, Multi-Angle Poster & Share]
 └── Interactive 3D Link OR Auto-Captured Multi-Angle Festive Poster with Marathi/English Title Header
-
+│
+▼
+[8. Optional / Advanced: Tactile Soil Crafting Pipeline]
+└── Dump Dry Soil -> Pour Water -> Push/Flatten from Top & Sides -> Dry/Lock Mud -> Freehand Mud Paint
 ```
 
 ---
@@ -73,120 +78,121 @@ Upon opening the tool, the user starts inside a cozy backyard/courtyard diorama 
 
 ---
 
-### Phase 2: Tactile Mud & Block Construction (No Interiors)
-All structures—walls, towers, gates, bridges, and buildings—are **solid exterior mud masses** with no hollow interiors. Construction mimics real backyard mud-building physics in three sequential steps:
-
-#### Step 2.1: Dumping Dry Soil
-* **Soil Pour Tool:** Clicking and holding on the ground pours mounds of loose, dry brown/red soil onto the target area.
-* Holding longer increases the height and spread of the loose pile.
-
-#### Step 2.2: Adding Water
-* **Water Sprinkler / Jug Tool:** Users pour water over the dry soil mound.
-* **Visual & Tactile State Change:** Dry, crumbly soil visibly darkens and turns glossy, transitioning into **Malleable Wet Mud**. Only wet mud can be shaped into crisp architectural forms.
-
-#### Step 2.3: Pushing & Patting (Top & Side Manipulation)
-Once soil is wet, the user switches to the **Hand / Trowel Shaper Tool** to mold the mud into solid blocks, walls, and platforms:
-* **Side Pushing (Vertical Wall Formation):** Pushing against the sides of a wet mud mound compresses and flattens the sloped sides into sheer vertical faces—turning a sloppy mound into a crisp wall segment, rectangular building block, or cylindrical bastion (*buruj*)[cite: 2].
-* **Top Patting (Leveling Planes):** Pressing or dragging across the top of a mud mass flattens it into a smooth horizontal plane—creating plateau courtyards, flat roof blocks, bastion tops, or bridge decks.
-* **Pinch & Pull Bridges/Gates:** Users can shape solid rectangular blocks across gaps to act as bridges or thick gateway arches (*Darwaza*)[cite: 2].
-* **Drying / Locking State:** Users can click **"Let Mud Set"** on a finished section (or simply select it for painting) so accidental brushes don't deform finished walls while working nearby.
+### Phase 2: Base Terrain Sculpting (Mountain & Ponds)
+Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneous GPU-accelerated feedback:
+* **Elevate Tool:** Raises organic hills, mountain crests, and ridges with adjustable brush radius and height flow rate.
+* **Lower Tool:** Depresses terrain to carve defensive ditches, moats, and natural valleys.
+* **Plateau / Leveling Tool:** Flattens sampled vertices to a target plane height $H_{target}$, creating flat fort building decks, courtyards, and bastion foundations.
+* **Smooth Tool:** Applies a 3x3 box blur filter to soften rugged peaks and create natural rolling terrain.
+* **Pond / Water Body Sub-Tool:** Excavates depressions below water level ($Y < 0.08$) that automatically fill with reflective pond water or nostalgic crinkled blue plastic tarpaulin.
 
 ---
 
-### Phase 3: The Spline Builder Tool (Paths, Stairs & Battlements)
-To prevent tedious repetitive sculpting over long distances, users can select the **Spline Tool** and draw a continuous curved or straight line directly across the terrain or along the top ridge of a mud wall.
+### Phase 3: Parametric Fort Walls & Spline Placement Tools
 
-Once a spline line is drawn, a floating context menu lets the user convert that path into one of four solid structures that automatically conform to the underlying slope:
+#### 3.1 Parametric Walls Tool
+Enables users to draw continuous wall curves or multi-segment fort ramparts conforming directly to the underlying terrain elevation. This provides an express path to building fortified killas without requiring manual soil sculpting:
+* **Wall Height Slider:** Interactively adjust rampart height (0.5m to 4.0m).
+* **Towers / Bastions (*Buruj*):** Toggle rounded stone bastions at path vertices or automatically at sharp corners ($> 35^\circ$), with custom bastion radius.
+* **Gates (*Maha Darwaza*):** Insert fortified arched gates into wall segments.
+* **Gatehouse:** Toggle fortified entry chambers flanking the main entrance.
+* **Crenellations (*Kangare*):** Add alternating notched stone merlons along the top ridge.
+* **Brick Texture Scale:** Slider adjusting the UV tiling and resolution of the stone/brick masonry texture.
 
-| Spline Conversion Type | Visual & Functional Behavior |
-| :--- | :--- |
-| **1. Walkway / Road Path** | Flattens a smooth ribbon along the terrain and slightly indents it so users can paint red-ochre walkways connecting the main gate to the throne[cite: 2]. |
-| **2. Stone Steps (*Payrya*)** | Generates stepped horizontal mud terraces climbing up a slope from a lower plateau to a higher peak (e.g., steps leading up to the *Balekilla* or throne)[cite: 2]. |
-| **3. Continuous Rampart Wall** | Extrudes a uniform, solid mud wall along the drawn line with rounded bastions automatically placed at sharp corner vertices[cite: 2]. |
-| **4. Crenellated Battlements** | Adds classic notched fort teeth (merlons and crenels) along the top edge of any existing wall or spline wall[cite: 2]. |
-
----
-
-### Phase 4: Freehand Surface Painting Studio
-Once a mud structure or block is shaped, the user selects it to enter **Paint Mode**. Just like real Diwali killas where kids paint dried mud using poster colors and chalk/lime (*chuna*), all stone textures are achieved through user brushwork rather than photo-realistic 3D shaders[cite: 1, 2].
-
-#### Brush Controls
-* **Variable Brush Sizes:**
-  * **XL / Large Flat Brush:** For rapidly base-coating entire walls, bastions, buildings, or water beds in a single sweep.
-  * **Medium Round Brush:** For painting pathway borders, archways, doors, and roof tiles.
-  * **Fine / Detail Liner Brush:** Specifically designed for hand-drawing crisp white horizontal and vertical **brick/stone divider lines** over dark walls[cite: 1, 2].
-* **Stroke Stabilization Toggle:** Optional "steady-hand" smoothing so mouse and trackpad users can draw clean, straight horizontal and vertical white brick grids around curved bastions without jitter[cite: 2].
-
-#### Authentic Festive Color Palette
-* **Charcoal Black / Dark Basalt Grey:** The classic base coat for Maratha fort walls and bastions[cite: 1, 2].
-* **Chuna / Chalk White:** For drawing individual stone blocks, brick dividers, step edges, and archway outlines[cite: 1, 2].
-* **Geru / Terracotta Red-Ochre:** For painting royal pathways, temple roofs, and throne platforms[cite: 2].
-* **Vibrant Royal Blue / Cyan:** For painting the flooraround coastal forts (to mimic the Arabian Sea) or lining plastic-sheet water tanks (*taki*) dug into the mud[cite: 1, 2].
-* **Earthy Mud & Ochre Tones:** For touching up exposed cliffs and natural rocks.
+#### 3.2 Spline Structure Placement Tool
+Draws smooth 3D curves across the terrain surface using `THREE.CatmullRomCurve3` and places specialized structures along the drawn path:
+* **Stone Steps (*Payrya*):** Generates stepped horizontal mud/stone boxes ascending slopes from lower courtyards to high fort plateaus[cite: 2].
+* **Bhagwa Saffron Flags:** Plants fluttering swallowtail saffron flags at uniform intervals along paths or ridges.
+* **Festive Divas (Diyas):** Arranges warm glowing oil lamps along path curves for evening illumination.
+* *(Note: Walking paths and trails are painted directly with the Terrain Paint Tool rather than generated via splines).*
 
 ---
 
-### Phase 5: Greenery, Water Tanks & Yard Details
-After the mud and paint dry, users bring the landscape to life using the **Nature & Environment Brush**:
-
-* **Greenery / Sprouted *Halim* Grass Brush:**
-  * Painting on bare mud slopes grows dense patches of tiny, bright-green two-leaf sprouts (replicating real *halim* / garden cress and mustard seeds sprouted on wet mud)[cite: 1, 2].
-  * Includes a brush density slider (from sparse mountain scrub to lush green courtyard lawns)[cite: 2].
-* **Water Cisterns (*Taki*) & Sea Plastic Effect:**
-  * Users can depress circular or rectangular pits into the terrain and fill them with water, or toggle the nostalgic **"Blue Plastic Sheet Pond"** look seen in backyard builds[cite: 1, 2].
-* **Crushed Stone / Gravel Scatter Brush:**
-  * Sprinkles fine grey/black crushed gravel along the base of the outer walls and shoreline[cite: 2].
+### Phase 4: Terrain Painting Studio
+Allows painting surface textures directly onto the terrain mesh without affecting walls, splines, or placed figurines:
+* **Authentic Texture Palette:**
+  * **Dirt (*Tambdi Maati*):** Rich red laterite soil characteristic of Deccan hill forts.
+  * **Sand:** Courtyard silt and beach sand for coastal forts like *Murud-Janjira*.
+  * **Grass:** Lush green ground cover on slopes.
+  * **Gravel:** Crushed stone and dirt trails for walking paths and roads.
+  * **Rock:** Dark Deccan Basalt escarpments and crags.
+  * **Rocky Ground:** Mixed gravelly hillside texture.
+* **Brush Controls:** Variable brush radius, opacity/strength, and soft falloff edge.
 
 ---
 
-### Phase 6: Figurine & Festive Asset Browser
-A categorized visual drawer lets users drag, drop, rotate, and scale miniature clay-painted figurines (*Mavale*) and festive props directly onto their fort plateaus, steps, and battlements[cite: 1, 2]:
+### Phase 5: 3D Foliage Paint & Nature Scatter
+Interactive scatter brush that populates the diorama landscape with stylized 3D nature props in batched draw calls:
+* **Asset Library:**
+  * **Trees:** Deccan banyan, neem, and mountain acacia trees.
+  * **Rocks:** Scattered basalt boulders and pebbles.
+  * **Shrubs:** Hardy mountain bushes and scrub.
+  * **Grass Models:** 3D sprouted mustard/*halim* seedling sprout clusters.
+* **Scatter Controls:**
+  * Scatter radius slider.
+  * Density slider (instances placed per second/drag).
+  * Scale and rotation jitter for natural, organic distribution.
+
+---
+
+### Phase 6: Figurine & Architecture Asset Browser
+A categorized visual drawer lets users drag, drop, rotate, and scale miniature clay figurines, festive props, and pre-built fort buildings:
 
 1. **Royalty & Leadership:**
    * **Chhatrapati Shivaji Maharaj on the Royal Throne (*Sinhasan*):** Complete with ornate golden/red canopy (*Meghdambari*), steps, and pedestal[cite: 1, 2].
    * **Equestrian Statue:** Maharaj on horseback.
 2. **Garrison & Citizens (*Mavale* Figurines):**
    * Standing spearman and swordsman guards in colorful bright tunics (yellow, green, blue, orange, red) and traditional *pagdis*[cite: 1, 2].
-   * Horn/Tutari blowers and Dhol/Tasha drummers standing near the main gate.
    * Sentries aiming muskets/bows along the bastion walls[cite: 1, 2].
-   * Traditional village women carrying water pots and fort blacksmiths/citizens.
-3. **Artillery & Insignia:**
-   * Black iron cannons (*Toph*) mounted on wheeled carriages to place atop circular bastions[cite: 2].
-   * Towering saffron **Bhagwa Dhwaj** (swallowtail flags) on tall poles that gently sway[cite: 1, 2].
-   * Miniature fort nameplates (e.g., hand-painted white signboards reading the fort's name in Marathi/Devanagari or English)[cite: 2].
-4. **Shrines & Landmarks:**
-   * Miniature Shiva Lingam shrine / Bhavani Mata temple block[cite: 2].
-   * Deepstambh (stone lamp pillar).
-5. **Nostalgic Yard Extras:**
-   * **Origami Paper Boats (*Hodi*):** Colorful orange, white, and blue folded paper boats to place on the blue painted sea around coastal forts like *Murud-Janjira* or *Sindhudurg*[cite: 2].
-   * **Terracotta Diyas (Oil Lamps):** Glowing festive lamps that illuminate the fort walls and steps when toggled to **Diwali Evening / Night Mode**.
+   * Traditional village citizens and flag bearers.
+3. **Musicians:**
+   * Horn/Tutari blowers sounding the royal fanfare.
+   * Dhol/Tasha drummers standing near the main gate.
+4. **Buildings & Fort Architecture (Instant Architecture):**
+   * Pre-built **Watchtowers**, **Stone Bastions**, **Temple Shrines** (Bhavani Mata / Shiva Lingam), **Fort Houses**, and **Stone Archways**.
+   * *Purpose:* Enables users with limited time to immediately place iconic fort buildings without sculpting soil from scratch.
+5. **Artillery, Carts & Yard Props:**
+   * Black iron cannons (*Toph*) mounted on wheeled carriages[cite: 2].
+   * Bullock carts, wooden barrels, and supply crates.
+   * Tall swaying saffron flags (*Bhagwa Dhwaj*)[cite: 1, 2].
+   * Origami paper boats (*Hodi*) for water cisterns or sea areas[cite: 2].
+   * Terracotta diyas (oil lamps) with warm amber flames.
 
 ---
 
-### Phase 7: Finalization, Multi-Angle Poster Studio & Sharing
+### Phase 7: Showcase, Multi-Angle Poster Studio & Sharing
 Once the user clicks **"Finish Killa"**, the tool transitions into the **Showcase & Poster Studio**:
 
 #### 1. Automated Multi-Angle Poster Generator
-Inspired by festive community greeting posters, the app automatically captures high-resolution snapshots of the user's finished killa from **4 cinematic angles**[cite: 1, 2]:
+Captures high-resolution snapshots of the user's finished killa from **4 cinematic angles** in $< 400\text{ms}$[cite: 1, 2]:
 * **Hero Bird's-Eye Overview:** Full isometric view showing the entire fort layout, lawns, and walls[cite: 1, 2].
-* **The *Maha Darwaza* & Bastion Low-Angle:** Looking up at the painted black-and-white brick ramparts, cannons, and guards[cite: 1, 2].
-* **The *Balekilla* Throne Close-Up:** Focusing on Chhatrapati Shivaji Maharaj, the saffron flag, and the red-ochre pathways[cite: 2].
+* **The *Maha Darwaza* & Bastion Low-Angle:** Looking up at the stone ramparts, cannons, and guards[cite: 1, 2].
+* **The *Balekilla* Throne & Buildings Close-Up:** Focusing on Chhatrapati Shivaji Maharaj, the saffron flag, and courtyard buildings[cite: 2].
 * **Golden-Hour / Diwali Night Diya View:** Warm festive lighting with glowing diyas along the battlements.
 
 #### 2. Custom Poster Composition & Typography
-* Consolidates the multi-angle views into a single, ready-to-share **Festive Collage Poster** (available in **9:16 Instagram Story / WhatsApp Status** and **4:5 Social Feed** aspect ratios)[cite: 2].
-* **Custom Calligraphic Header:** Users can type their fort's name (e.g., *"मुरुड जंजिरा"*, *"विजयदुर्ग"*, *"रायगड"*, or their custom fort name) and their own name/team name, styled with classic Marathi decorative typography and a festive Diwali greeting (*"दिवाळीच्या हार्दिक शुभेच्छा"* / *"Happy Diwali"*)[cite: 2].
+* Consolidates the multi-angle views into a single, ready-to-share **Festive Collage Poster** (**9:16 Instagram Story / WhatsApp Status** and **4:5 Social Feed** aspect ratios)[cite: 2].
+* **Custom Calligraphic Header:** Custom fort name and builder name styled with Marathi decorative typography (`Yatra One`) and festive greeting (`Modak`): *"दिवाळीच्या हार्दिक शुभेच्छा"*[cite: 2].
 
 #### 3. Instant Sharing Options
 * **Download Festive Poster (PNG/JPG):** One-tap download for WhatsApp family groups, Instagram Stories, X, and LinkedIn.
-* **Share Interactive 3D Link:** Generates a permanent, zero-login view-only link where friends can orbit, zoom in, and inspect every hand-painted brick and figurine in 3D right in their browser.
+* **Share Interactive 3D Link:** Generates a permanent, zero-login view-only link for friends to inspect in 3D.
+
+---
+
+### Phase 8: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
+For builders desiring the authentic organic mud craft simulation:
+* **Soil Pour Tool:** Dumps loose dry soil mounds onto the terrain with simplex noise roughness.
+* **Water Sprinkler Tool:** Hydrates soil, turning it dark and malleable with specular wet sheen (`cracked_red_ground_1k`).
+* **Hand Shaper Tool:**
+  * *Top Patting:* Levels mounds into smooth horizontal plateaus.
+  * *Side Pushing:* Compresses wet mud into vertical wall faces.
+* **Drying & Mud Locking:** Sets lock state to 1.0, protecting finished structures from accidental brush deformation.
+* **Freehand Mud Paint:** Detail liner brush with `lazy-brush` stabilizer for hand-painting dark basalt base coats and white lime (*chuna*) brick divider lines over dried mud masses[cite: 1, 2].
 
 ---
 
 ## 5. Scope Boundaries & Non-Goals
-To keep the experience focused, authentic, and fast to use:
 * **No Building Interiors:** All forts, palaces, and towers are solid exterior mud forms. Users never enter rooms or manage indoor furniture.
-* **No Photo-Realistic Auto-Texturing:** Walls do not automatically receive photorealistic castle shaders; the charm comes from the user painting the black base coat and white brick lines by hand (with optional stencil/brush assistance)[cite: 1, 2].
 * **No Combat or RTS Gameplay:** This is a creative festive diorama and craft sandbox, not a tower-defense or strategy battle game.
 * **No Mandatory Account Creation:** Users can sculpt, paint, generate their multi-angle poster, and share a link without hitting a login wall.
-

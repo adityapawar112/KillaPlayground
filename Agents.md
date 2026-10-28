@@ -68,10 +68,11 @@ Work proceeds through a disciplined tracer-bullet pipeline:
 ```
 
 ### Domain Documentation Layout:
-- [product.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/product.md): Core user journey, 7 feature phases, cultural lore, and non-goals.
-- [architechture.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/architechture.md): Zero-cost tech stack, terrain heightmap state machine, triplanar shader architecture, spline extrusion, 4-angle poster generator, and binary serialization.
+- [roadmap.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/roadmap.md): Master dependency graph and 12 tracer-bullet tickets ordered Killa-first.
+- [product.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/product.md): Core user journey, Killa-first feature phases, cultural lore, and non-goals.
+- [architechture.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/architechture.md): Zero-cost tech stack, terrain heightmap state machine, multi-texture blending, walls/spline extrusion, 4-angle poster generator, and binary serialization.
 - [design.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/design.md): Sun-baked courtyard canvas (`#F9F6F0`), 6 earth-tone palette, Devanagari typography (`Yatra One`, `Modak`), and HUD component specifications.
-- [credits.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/credits.md): CC0 PolyHaven texture sources.
+- [credits.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/credits.md): Binbun Retroground texture pack & asset attributions.
 
 ### Triage Labels:
 - `bug`: Defects breaking functionality, WebGL rendering, or state persistence.

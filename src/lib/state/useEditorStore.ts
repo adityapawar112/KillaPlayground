@@ -266,7 +266,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isModeSelectModalOpen: false,
   isShortcutsModalOpen: false,
   isResetConfirmOpen: false,
-  isStartupModalOpen: true, // Opened on initial visit
+  isStartupModalOpen: false, // Default to false so user immediately accesses the 3D diorama
   dontShowStartupModal: false,
   isTerrainDrawerOpen: false,
   terrainDrawerTab: 'historical',
@@ -316,7 +316,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       savedProjects: projects,
       dontShowStartupModal: dontShow,
-      isStartupModalOpen: !dontShow,
     });
   },
 

@@ -26,7 +26,7 @@ export const ResetConfirmModal: React.FC<ResetConfirmModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-150">
       <div className="relative w-full max-w-md bg-[#F9F6F0] rounded-2xl border border-[#D9C9B4] shadow-2xl p-6">
         <div className="flex items-start gap-4">
           <div className="w-11 h-11 rounded-xl bg-[#B85F45]/15 text-[#B85F45] flex items-center justify-center shrink-0">

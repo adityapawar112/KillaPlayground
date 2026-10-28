@@ -61,6 +61,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     setResetConfirmOpen,
     setShortcutsModalOpen,
     setStartupModalOpen,
+    isTerrainDrawerOpen,
     setTerrainDrawerOpen,
     saveProjectLocally,
     exportProjectData,
@@ -618,24 +619,44 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
         </div>
       </header>
 
-      {/* Webpage Title Just Below Menu Bar in the Middle */}
-      <div className="flex flex-col items-center justify-center mt-2 pointer-events-none select-none text-center">
-        <h1 className="font-yatra text-2xl sm:text-3xl text-[#2B1E16] drop-shadow-sm tracking-wide leading-tight">
-          The Killa Playground
-        </h1>
-        <button
-          onClick={() => setTerrainDrawerOpen(true)}
-          className="flex items-center gap-2 mt-0.5 pointer-events-auto cursor-pointer hover:bg-[#EADECF]/60 px-2 py-0.5 rounded-full transition-colors group"
-          title="Click to open Terrain Studio & Fort Selection"
-        >
-          <span className="text-[10px] sm:text-[11px] font-sans font-medium text-[#8D7666] group-hover:text-[#4B382C] tracking-wider uppercase underline decoration-dotted">
-            {fortTitle}
-          </span>
-          <span className="w-1 h-1 rounded-full bg-[#E85D04]" />
-          <span className="text-[10px] sm:text-[11px] font-sans font-medium text-[#777A57] group-hover:text-[#4B382C]">
-            दिवाळी मातीचा किल्ला कार्यशाळा
-          </span>
-        </button>
+      {/* Banner Row: Centered "The Killa Playground" Title + Left-Aligned Subtitle & Fort Dropdown Trigger */}
+      <div className="relative w-full px-4 mt-2 flex items-center justify-between pointer-events-none select-none">
+        {/* Left Side: Fort Selector Subtitle Dropdown Trigger (Moved to the left!) */}
+        <div className="pointer-events-auto z-30">
+          <button
+            onClick={() => setTerrainDrawerOpen(!isTerrainDrawerOpen)}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all cursor-pointer shadow-sm group active:scale-95 ${
+              isTerrainDrawerOpen
+                ? 'bg-[#4B382C] text-white border-[#38281E] shadow-md ring-2 ring-[#4B382C]/20'
+                : 'bg-[#F2EBE1]/92 hover:bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
+            }`}
+            title="Click to choose Historical Forts or Freeform Terrain"
+          >
+            <TbBuildingCastle className={`w-4 h-4 ${isTerrainDrawerOpen ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+            <span className="text-xs font-bold font-sans tracking-wide uppercase">
+              {fortTitle}
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#E85D04]" />
+            <span className={`text-[11px] font-sans font-medium hidden sm:inline ${
+              isTerrainDrawerOpen ? 'text-white/85' : 'text-[#777A57]'
+            }`}>
+              दिवाळी मातीचा किल्ला कार्यशाळा
+            </span>
+            <TbChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
+              isTerrainDrawerOpen ? 'rotate-180 text-[#F59E0B]' : 'text-[#8D7666]'
+            }`} />
+          </button>
+        </div>
+
+        {/* Center: "The Killa Playground" Website Title (Always centered) */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none text-center">
+          <h1 className="font-yatra text-2xl sm:text-3xl text-[#2B1E16] drop-shadow-sm tracking-wide leading-tight">
+            The Killa Playground
+          </h1>
+        </div>
+
+        {/* Right side spacer to balance layout */}
+        <div className="w-24 hidden md:block" />
       </div>
 
       {/* Transient Toast Notification */}

@@ -12,7 +12,7 @@ export const ShortcutsModal: React.FC = () => {
   if (!isShortcutsModalOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl bg-[#F9F6F0] rounded-2xl border border-[#D9C9B4] shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#D9C9B4]">

@@ -252,11 +252,11 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
       >
         <PerspectiveCamera makeDefault position={[7, 7, 7]} fov={45} />
 
-        {/* OrbitControls configured per exact prompt requirement:
-            - RIGHT click to orbit
-            - MIDDLE click to shift / pan
-            - SCROLL wheel to zoom in / out
-            - LEFT click for primary interaction (not intercepted by OrbitControls!)
+        {/* OrbitControls configured for normal intuitive 3D camera navigation:
+            - LEFT click drag: Rotate / orbit camera around the killa
+            - RIGHT click drag: Pan / shift camera
+            - MIDDLE click drag: Pan camera
+            - SCROLL wheel: Zoom / dolly in & out
         */}
         <OrbitControls
           ref={controlsRef}
@@ -269,9 +269,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           maxPolarAngle={Math.PI / 2 - 0.05} // Constrain polar angle above floor
           target={[0, 0.5, 0]}
           mouseButtons={{
-            LEFT: undefined as unknown as THREE.MOUSE, // Left click is untouched for 3D drawing / sculpting / placing!
-            MIDDLE: THREE.MOUSE.PAN,                   // Middle click to shift/pan
-            RIGHT: THREE.MOUSE.ROTATE,                 // Right click to orbit
+            LEFT: THREE.MOUSE.ROTATE,
+            MIDDLE: THREE.MOUSE.PAN,
+            RIGHT: THREE.MOUSE.PAN,
           }}
         />
 

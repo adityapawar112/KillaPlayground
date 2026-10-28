@@ -124,7 +124,7 @@ export const StartupModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/65 animate-in fade-in duration-200 select-none">
       <input
         ref={fileInputRef}
         type="file"
@@ -137,7 +137,7 @@ export const StartupModal: React.FC = () => {
         {/* Blender-Style Splash Header */}
         <div className="relative bg-gradient-to-r from-[#4B382C] via-[#8F4938] to-[#B85F45] px-6 py-5 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-inner">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg">
               <TbShield className="w-7 h-7 text-[#FAF8F5]" />
             </div>
             <div>

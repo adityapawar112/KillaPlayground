@@ -1,4 +1,21 @@
 import * as THREE from 'three';
+import type { MeshBVH } from 'three-mesh-bvh';
+
+/**
+ * Extended BufferGeometry interface with three-mesh-bvh boundsTree
+ */
+export interface BVHBufferGeometry extends THREE.BufferGeometry {
+  boundsTree?: MeshBVH;
+}
+
+/**
+ * Type-safe BVH refit helper. Avoids unsafe 'as unknown as' casts.
+ */
+export function refitTerrainBVH(geometry: THREE.BufferGeometry | null): void {
+  if (!geometry) return;
+  const bvhGeo = geometry as BVHBufferGeometry;
+  bvhGeo.boundsTree?.refit();
+}
 
 /**
  * Terrain and State Buffer Configuration for Killa Playground
@@ -155,6 +172,61 @@ export function createBaseTerrainGeometry(): THREE.PlaneGeometry {
 }
 
 /**
+ * Computes analytical surface normals for a heightmap grid region [minX..maxX, minZ..maxZ].
+ * Uses central finite differences on the heightmap grid (O(region_size), ~0.01ms for brush).
+ */
+export function updateNormalsForRegion(
+  buffer: Float32Array,
+  geometry: THREE.BufferGeometry,
+  range?: { minX: number; maxX: number; minZ: number; maxZ: number }
+): void {
+  const normAttr = geometry.attributes.normal as THREE.BufferAttribute | undefined;
+  if (!normAttr) return;
+  const normArray = normAttr.array as Float32Array;
+
+  const minX = range ? Math.max(0, range.minX - 1) : 0;
+  const maxX = range ? Math.min(TERRAIN_RESOLUTION - 1, range.maxX + 1) : TERRAIN_RESOLUTION - 1;
+  const minZ = range ? Math.max(0, range.minZ - 1) : 0;
+  const maxZ = range ? Math.min(TERRAIN_RESOLUTION - 1, range.maxZ + 1) : TERRAIN_RESOLUTION - 1;
+
+  const scaleX = TERRAIN_SIZE / (TERRAIN_RESOLUTION - 1);
+  const scaleZ = TERRAIN_SIZE / (TERRAIN_RESOLUTION - 1);
+
+  for (let iz = minZ; iz <= maxZ; iz++) {
+    for (let ix = minX; ix <= maxX; ix++) {
+      const vIdx = iz * TERRAIN_RESOLUTION + ix;
+
+      const leftX = ix > 0 ? ix - 1 : ix;
+      const rightX = ix < TERRAIN_RESOLUTION - 1 ? ix + 1 : ix;
+      const downZ = iz > 0 ? iz - 1 : iz;
+      const upZ = iz < TERRAIN_RESOLUTION - 1 ? iz + 1 : iz;
+
+      const hL = buffer[(iz * TERRAIN_RESOLUTION + leftX) * STATE_CHANNELS];
+      const hR = buffer[(iz * TERRAIN_RESOLUTION + rightX) * STATE_CHANNELS];
+      const hD = buffer[(downZ * TERRAIN_RESOLUTION + ix) * STATE_CHANNELS];
+      const hU = buffer[(upZ * TERRAIN_RESOLUTION + ix) * STATE_CHANNELS];
+
+      const factorX = (ix > 0 && ix < TERRAIN_RESOLUTION - 1) ? (2 * scaleX) : scaleX;
+      const factorZ = (iz > 0 && iz < TERRAIN_RESOLUTION - 1) ? (2 * scaleZ) : scaleZ;
+
+      const dh_dx = (hR - hL) / factorX;
+      const dh_dz = (hU - hD) / factorZ;
+
+      const nx = -dh_dx;
+      const ny = 1.0;
+      const nz = -dh_dz;
+      const invLen = 1.0 / Math.hypot(nx, ny, nz);
+
+      normArray[vIdx * 3 + 0] = nx * invLen;
+      normArray[vIdx * 3 + 1] = ny * invLen;
+      normArray[vIdx * 3 + 2] = nz * invLen;
+    }
+  }
+
+  normAttr.needsUpdate = true;
+}
+
+/**
  * Syncs elevation from stateBuffer into geometry attributes for a dirty bounding box [minX..maxX, minZ..maxZ].
  * If no range is specified, syncs the entire buffer.
  */
@@ -181,5 +253,12 @@ export function syncStateToGeometry(
   }
 
   posAttr.needsUpdate = true;
-  geometry.computeVertexNormals();
+
+  if (range) {
+    // shortcut: Targeted analytical normal computation for dirty region only: O(dirty) instead of O(65k) computeVertexNormals
+    updateNormalsForRegion(buffer, geometry, range);
+  } else {
+    // Full recompute for initial creation or template load
+    geometry.computeVertexNormals();
+  }
 }

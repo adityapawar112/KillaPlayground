@@ -5,6 +5,7 @@ import {
   createStateTexture,
   createBaseTerrainGeometry,
   syncStateToGeometry,
+  refitTerrainBVH,
   TERRAIN_RESOLUTION,
   VERTEX_COUNT,
   STATE_BUFFER_SIZE,
@@ -45,8 +46,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     if (geometry) {
       // Sync initial state buffer into geometry immediately
       syncStateToGeometry(stateBuffer, geometry);
-      const bvh = (geometry as unknown as { boundsTree?: { refit: () => void } }).boundsTree;
-      if (bvh) bvh.refit();
+      refitTerrainBVH(geometry);
     }
     set({ terrainMesh: mesh, terrainGeometry: geometry, lastUpdated: Date.now() });
   },
@@ -58,8 +58,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
 
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
-      const bvh = (terrainGeometry as unknown as { boundsTree?: { refit: () => void } }).boundsTree;
-      if (bvh) bvh.refit();
+      refitTerrainBVH(terrainGeometry);
     }
 
     set({ activeTemplateId: templateId, lastUpdated: Date.now() });
@@ -79,8 +78,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
 
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
-      const bvh = (terrainGeometry as unknown as { boundsTree?: { refit: () => void } }).boundsTree;
-      if (bvh) bvh.refit();
+      refitTerrainBVH(terrainGeometry);
     }
 
     set({ lastUpdated: Date.now() });
@@ -92,8 +90,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
 
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry, { minX, maxX, minZ, maxZ });
-      const bvh = (terrainGeometry as unknown as { boundsTree?: { refit: () => void } }).boundsTree;
-      if (bvh) bvh.refit();
+      refitTerrainBVH(terrainGeometry);
     }
 
     set({ lastUpdated: Date.now() });

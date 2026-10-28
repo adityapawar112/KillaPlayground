@@ -1,5 +1,18 @@
 import { create } from 'zustand';
+import { z } from 'zod';
 import { COLORS } from '../constants/tokens';
+
+export const SavedProjectSchema = z.object({
+  id: z.string().optional(),
+  fortTitle: z.string().min(1).max(100).default('Imported Killa'),
+  builderName: z.string().min(1).max(100).default('Mavala Builder'),
+  templateId: z.string().default('raigad'),
+  paintColor: z.string().optional().default(COLORS.basalt),
+  waterMode: z.string().optional().default('tarpaulin'),
+  splines: z.array(z.any()).default([]),
+  placedProps: z.array(z.any()).default([]),
+  timestamp: z.number().optional(),
+});
 
 export type ToolType =
   // 5 Bundled Structure Tools (For building on the terrain)
@@ -409,22 +422,27 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   importProjectData: (jsonStr) => {
     try {
-      const data = JSON.parse(jsonStr);
-      if (!data || typeof data !== 'object') return false;
+      const raw = JSON.parse(jsonStr);
+      const parsed = SavedProjectSchema.safeParse(raw);
+      if (!parsed.success) {
+        console.warn('Invalid project format:', parsed.error);
+        return false;
+      }
+      const data = parsed.data;
 
       set({
-        fortTitle: data.fortTitle || 'Imported Killa',
-        builderName: data.builderName || 'Mavala Builder',
-        templateId: data.templateId || 'raigad',
-        paintColor: data.paintColor || COLORS.basalt,
-        waterMode: data.waterMode || 'tarpaulin',
-        splines: Array.isArray(data.splines) ? data.splines : [],
-        placedProps: Array.isArray(data.placedProps) ? data.placedProps : [],
+        fortTitle: data.fortTitle,
+        builderName: data.builderName,
+        templateId: data.templateId,
+        paintColor: data.paintColor,
+        waterMode: data.waterMode as any,
+        splines: data.splines,
+        placedProps: data.placedProps,
         isStartupModalOpen: false,
       });
 
       // Also auto-save into local projects list
-      get().saveProjectLocally(data.fortTitle || 'Imported Killa');
+      get().saveProjectLocally(data.fortTitle);
       return true;
     } catch (err) {
       console.error('Failed to parse project JSON:', err);

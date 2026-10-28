@@ -31,25 +31,11 @@ const KillaCanvas = dynamic(
 );
 
 export default function HomePage() {
-  const {
-    nightMode,
-    activeTool,
-    setActiveTool,
-    brushRadius,
-    setBrushRadius,
-    toggleNightMode,
-    mudLocked,
-    setMudLocked,
-    setShortcutsModalOpen,
-    isShortcutsModalOpen,
-    isResetConfirmOpen,
-    setResetConfirmOpen,
-    isStartupModalOpen,
-    setStartupModalOpen,
-    setCameraViewPreset,
-  } = useEditorStore();
+  const nightMode = useEditorStore((s) => s.nightMode);
+  const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
 
-  // Global Keyboard Shortcuts (Tool keys 1-7, Brush size, Night mode, Reset, etc.)
+  // Global Keyboard Shortcuts (Tool keys 1-9, Brush size, Night mode, Reset, etc.)
+  // shortcut: Read live store state via getState() to attach single permanent listener with zero re-renders
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
       // Ignore if typing inside text fields
@@ -60,90 +46,79 @@ export default function HomePage() {
         return;
       }
 
+      const store = useEditorStore.getState();
+
       // Close modal on Escape
       if (e.key === 'Escape') {
-        if (isStartupModalOpen) setStartupModalOpen(false);
-        if (isShortcutsModalOpen) setShortcutsModalOpen(false);
-        if (isResetConfirmOpen) setResetConfirmOpen(false);
+        if (store.isStartupModalOpen) store.setStartupModalOpen(false);
+        if (store.isShortcutsModalOpen) store.setShortcutsModalOpen(false);
+        if (store.isResetConfirmOpen) store.setResetConfirmOpen(false);
+        if (store.isTerrainDrawerOpen) store.setTerrainDrawerOpen(false);
         return;
       }
 
       // Open Shortcuts Help with ?
       if (e.key === '?' || (e.shiftKey && e.key === '/')) {
-        setShortcutsModalOpen(true);
+        store.setShortcutsModalOpen(true);
         e.preventDefault();
         return;
       }
 
       // Tool Switching (1 to 9)
       if (e.key === '1') {
-        setActiveTool('soil');
+        store.setActiveTool('soil');
         e.preventDefault();
       } else if (e.key === '2') {
-        setActiveTool('water');
+        store.setActiveTool('water');
         e.preventDefault();
       } else if (e.key === '3') {
-        setActiveTool(activeTool === 'shape_side' ? 'shape_top' : 'shape_side');
+        store.setActiveTool(store.activeTool === 'shape_side' ? 'shape_top' : 'shape_side');
         e.preventDefault();
       } else if (e.key === '4') {
-        setActiveTool('dry');
+        store.setActiveTool('dry');
         e.preventDefault();
       } else if (e.key === '5') {
-        setActiveTool('paint');
+        store.setActiveTool('paint');
         e.preventDefault();
       } else if (e.key === '6') {
-        setActiveTool('terrain');
+        store.setActiveTool('terrain');
         e.preventDefault();
       } else if (e.key === '7') {
-        setActiveTool('grass');
+        store.setActiveTool('grass');
         e.preventDefault();
       } else if (e.key === '8') {
-        setActiveTool('spline');
+        store.setActiveTool('spline');
         e.preventDefault();
       } else if (e.key === '9') {
-        setActiveTool('prop');
+        store.setActiveTool('prop');
         e.preventDefault();
       }
 
       // Brush radius adjustment ([ and ])
       else if (e.key === '[') {
-        setBrushRadius(Math.max(0.2, brushRadius - 0.15));
+        store.setBrushRadius(Math.max(0.2, store.brushRadius - 0.15));
         e.preventDefault();
       } else if (e.key === ']') {
-        setBrushRadius(Math.min(2.5, brushRadius + 0.15));
+        store.setBrushRadius(Math.min(2.5, store.brushRadius + 0.15));
         e.preventDefault();
       }
 
       // Toggle Night Diya Mode (N)
       else if (e.key.toLowerCase() === 'n' && !e.ctrlKey && !e.metaKey) {
-        toggleNightMode();
+        store.toggleNightMode();
         e.preventDefault();
       }
 
       // Toggle Lock Mud (L)
       else if (e.key.toLowerCase() === 'l' && !e.ctrlKey && !e.metaKey) {
-        setMudLocked(!mudLocked);
+        store.setMudLocked(!store.mudLocked);
         e.preventDefault();
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [
-    activeTool,
-    setActiveTool,
-    brushRadius,
-    setBrushRadius,
-    toggleNightMode,
-    mudLocked,
-    setMudLocked,
-    setShortcutsModalOpen,
-    isShortcutsModalOpen,
-    isResetConfirmOpen,
-    setResetConfirmOpen,
-    isStartupModalOpen,
-    setStartupModalOpen,
-  ]);
+  }, []);
 
   return (
     <main

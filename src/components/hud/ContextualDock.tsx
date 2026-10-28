@@ -60,6 +60,7 @@ export const ContextualDock: React.FC = () => {
             <span className="text-xs font-semibold text-[#4B382C]">{t.tools.soil.radius}:</span>
             <input
               type="range"
+              aria-label={t.tools.soil.radius}
               min="0.3"
               max="2.2"
               step="0.1"
@@ -76,6 +77,7 @@ export const ContextualDock: React.FC = () => {
             <span className="text-xs font-semibold text-[#4B382C]">{t.tools.soil.height}:</span>
             <input
               type="range"
+              aria-label={t.tools.soil.height}
               min="0.1"
               max="1.0"
               step="0.05"
@@ -94,6 +96,7 @@ export const ContextualDock: React.FC = () => {
             <span className="text-xs font-semibold text-[#4B382C]">{t.tools.water.flow}:</span>
             <input
               type="range"
+              aria-label={t.tools.water.flow}
               min="0.2"
               max="2.0"
               step="0.1"
@@ -165,6 +168,7 @@ export const ContextualDock: React.FC = () => {
             <span className="text-xs font-semibold text-[#4B382C]">{t.tools.shape.size}:</span>
             <input
               type="range"
+              aria-label={t.tools.shape.size}
               min="0.3"
               max="2.0"
               step="0.1"
@@ -300,6 +304,7 @@ export const ContextualDock: React.FC = () => {
             <span className="text-xs font-semibold text-[#4B382C]">Size:</span>
             <input
               type="range"
+              aria-label="Terrain Brush Size"
               min="0.4"
               max="3.0"
               step="0.1"
@@ -344,6 +349,7 @@ export const ContextualDock: React.FC = () => {
             <span className="text-xs font-semibold text-[#4B382C]">Radius:</span>
             <input
               type="range"
+              aria-label="Foliage Radius"
               min="0.3"
               max="2.0"
               step="0.1"

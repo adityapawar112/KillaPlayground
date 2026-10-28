@@ -2,27 +2,20 @@
 
 import React, { useRef, useMemo } from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 
-export const WaterPlane: React.FC = () => {
-  const { waterLevel, waterLevelActive, nightMode } = useEditorStore();
+interface WaterMeshProps {
+  waterLevel: number;
+  nightMode: boolean;
+}
+
+const WaterMesh: React.FC<WaterMeshProps> = ({ waterLevel, nightMode }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const materialRef = useRef<THREE.MeshPhysicalMaterial>(null);
-
-  // Animate gentle water ripples
-  useFrame(({ clock }) => {
-    if (!materialRef.current) return;
-    const t = clock.getElapsedTime();
-    // Subtle opacity wave oscillation
-    materialRef.current.opacity = (nightMode ? 0.78 : 0.82) + Math.sin(t * 1.5) * 0.03;
-  });
 
   const waterColor = useMemo(() => {
     return nightMode ? '#072736' : '#146072';
   }, [nightMode]);
-
-  if (!waterLevelActive || waterLevel <= 0.001) return null;
 
   return (
     <mesh
@@ -32,8 +25,8 @@ export const WaterPlane: React.FC = () => {
       name="DioramaWaterPlane"
       receiveShadow
     >
-      {/* 9.98m x 9.98m plane nestled just inside the courtyard brick retaining border */}
-      <planeGeometry args={[9.96, 9.96, 64, 64]} />
+      {/* 9.96m x 9.96m plane nestled just inside the courtyard brick retaining border */}
+      <planeGeometry args={[9.96, 9.96, 32, 32]} />
       <meshPhysicalMaterial
         ref={materialRef}
         color={waterColor}
@@ -48,4 +41,14 @@ export const WaterPlane: React.FC = () => {
       />
     </mesh>
   );
+};
+
+export const WaterPlane: React.FC = () => {
+  const waterLevel = useEditorStore((s) => s.waterLevel);
+  const waterLevelActive = useEditorStore((s) => s.waterLevelActive);
+  const nightMode = useEditorStore((s) => s.nightMode);
+
+  if (!waterLevelActive || waterLevel <= 0.001) return null;
+
+  return <WaterMesh waterLevel={waterLevel} nightMode={nightMode} />;
 };

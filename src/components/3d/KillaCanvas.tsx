@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useEffect, useCallback } from 'react';
+import React, { Suspense, useRef, useEffect, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
@@ -13,36 +13,56 @@ import { WaterPlane } from './WaterPlane';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
-  const lineMatX = new THREE.LineBasicMaterial({
-    color: nightMode ? '#ef4444' : '#dc2626',
-    linewidth: 1.5,
-    transparent: true,
-    opacity: 0.6,
-    depthWrite: false,
-  });
+  const { lineX, lineZ, geoX, geoZ, matX, matZ } = useMemo(() => {
+    const matX = new THREE.LineBasicMaterial({
+      color: nightMode ? '#ef4444' : '#dc2626',
+      linewidth: 1.5,
+      transparent: true,
+      opacity: 0.6,
+      depthWrite: false,
+    });
 
-  const lineMatZ = new THREE.LineBasicMaterial({
-    color: nightMode ? '#22c55e' : '#16a34a',
-    linewidth: 1.5,
-    transparent: true,
-    opacity: 0.6,
-    depthWrite: false,
-  });
+    const matZ = new THREE.LineBasicMaterial({
+      color: nightMode ? '#22c55e' : '#16a34a',
+      linewidth: 1.5,
+      transparent: true,
+      opacity: 0.6,
+      depthWrite: false,
+    });
 
-  const geoX = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-100, -0.002, 0),
-    new THREE.Vector3(100, -0.002, 0),
-  ]);
+    const geoX = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-100, -0.002, 0),
+      new THREE.Vector3(100, -0.002, 0),
+    ]);
 
-  const geoZ = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, -0.002, -100),
-    new THREE.Vector3(0, -0.002, 100),
-  ]);
+    const geoZ = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, -0.002, -100),
+      new THREE.Vector3(0, -0.002, 100),
+    ]);
+
+    return {
+      lineX: new THREE.Line(geoX, matX),
+      lineZ: new THREE.Line(geoZ, matZ),
+      geoX,
+      geoZ,
+      matX,
+      matZ,
+    };
+  }, [nightMode]);
+
+  useEffect(() => {
+    return () => {
+      geoX.dispose();
+      geoZ.dispose();
+      matX.dispose();
+      matZ.dispose();
+    };
+  }, [geoX, geoZ, matX, matZ]);
 
   return (
     <group>
-      <primitive object={new THREE.Line(geoX, lineMatX)} />
-      <primitive object={new THREE.Line(geoZ, lineMatZ)} />
+      <primitive object={lineX} />
+      <primitive object={lineZ} />
     </group>
   );
 };
@@ -160,16 +180,17 @@ const CameraKeyboardController: React.FC<{
         e.preventDefault();
       }
 
-      // Blender Numpad Presets: 7 (Top), 1 (Front), 3 (Side), Home/F (Center)
-      else if (e.key === '7' || e.code === 'Numpad7') {
+      // Blender Numpad Presets: Numpad 7 (Top), Numpad 1 (Front), Numpad 3 (Side), Home/F (Center)
+      // Note: Must check e.code === 'NumpadX' or Alt+X to avoid colliding with top-row tool keys (1 to 9)
+      else if (e.code === 'Numpad7' || (e.altKey && e.key === '7')) {
         camera.position.set(0, 14, 0.001);
         controls.target.set(0, 0, 0);
         controls.update();
-      } else if (e.key === '1' || e.code === 'Numpad1') {
+      } else if (e.code === 'Numpad1' || (e.altKey && e.key === '1')) {
         camera.position.set(0, 3, 11);
         controls.target.set(0, 0.8, 0);
         controls.update();
-      } else if (e.key === '3' || e.code === 'Numpad3') {
+      } else if (e.code === 'Numpad3' || (e.altKey && e.key === '3')) {
         camera.position.set(11, 3, 0);
         controls.target.set(0, 0.8, 0);
         controls.update();

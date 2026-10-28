@@ -16,6 +16,12 @@ export const BaseTerrainFallback: React.FC = () => {
     return geo;
   }, []);
 
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
+
   return (
     <mesh
       geometry={geometry}
@@ -120,11 +126,17 @@ export const BaseTerrainContent: React.FC = () => {
 
     diffMaps.forEach((tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.NearestFilter;
+      tex.magFilter = THREE.NearestFilter;
+      tex.generateMipmaps = false;
       tex.needsUpdate = true;
     });
 
     linearMaps.forEach((tex) => {
       tex.colorSpace = THREE.NoColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      tex.generateMipmaps = false;
       tex.needsUpdate = true;
     });
 
@@ -133,18 +145,13 @@ export const BaseTerrainContent: React.FC = () => {
 
   // Create high-res 10m x 10m plane geometry (65,536 vertices) initialized with current terrain height
   const geometry = useMemo(() => {
-    const geo = createBaseTerrainGeometry();
-    syncStateToGeometry(stateBuffer, geo);
-    return geo;
-  }, [stateBuffer]);
+    return createBaseTerrainGeometry();
+  }, []);
 
-  // Sync geometry and refit BVH whenever state buffer changes (blueprint load or sculpt)
+  // Request render when terrain state updates (state sync and BVH refit are handled by terrainStore)
   useEffect(() => {
-    syncStateToGeometry(stateBuffer, geometry);
-    const bvh = (geometry as unknown as { boundsTree?: { refit: () => void } }).boundsTree;
-    if (bvh) bvh.refit();
     invalidate();
-  }, [lastUpdated, stateBuffer, geometry, invalidate]);
+  }, [lastUpdated, invalidate]);
 
   // Create slope-aware CustomShaderMaterial with height blending and view-space normals
   const material = useMemo(() => {
@@ -182,13 +189,19 @@ export const BaseTerrainContent: React.FC = () => {
     };
   }, [geometry, setTerrainMesh]);
 
-  // Clean disposal of custom material and geometry on unmount
+  // Clean disposal of custom material on material swap / unmount
   useEffect(() => {
     return () => {
       material.dispose();
+    };
+  }, [material]);
+
+  // Clean disposal of terrain geometry strictly on unmount
+  useEffect(() => {
+    return () => {
       geometry.dispose();
     };
-  }, [material, geometry]);
+  }, [geometry]);
 
   return (
     <Bvh firstHitOnly>

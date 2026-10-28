@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useLayoutEffect } from 'react';
+import React, { useMemo, useRef, useLayoutEffect, useEffect } from 'react';
 import * as THREE from 'three';
 import { RoundedBox } from '@react-three/drei';
 
@@ -182,6 +182,13 @@ export const CourtyardBricks: React.FC<CourtyardBricksProps> = ({ nightMode = fa
     const shape = new THREE.BoxGeometry(brickL, brickH, brickW, 2, 2, 2);
     return shape;
   }, [brickL, brickH, brickW]);
+
+  // Clean disposal of brick geometry on unmount
+  useEffect(() => {
+    return () => {
+      roundedBrickGeometry.dispose();
+    };
+  }, [roundedBrickGeometry]);
 
   return (
     <group name="CourtyardRetainingBricks">

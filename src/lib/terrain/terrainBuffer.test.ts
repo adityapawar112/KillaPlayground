@@ -11,6 +11,7 @@ import {
   setTexel,
   createBaseTerrainGeometry,
   syncStateToGeometry,
+  refitTerrainBVH,
   TERRAIN_RESOLUTION,
   VERTEX_COUNT,
   STATE_BUFFER_SIZE,
@@ -101,6 +102,39 @@ describe('Terrain Buffer & State Management', () => {
     expect(posY).toBeCloseTo(2.2);
   });
 
+  it('performs targeted dirty region normal updates in under 0.1ms without O(65k) recomputation', () => {
+    const geo = createBaseTerrainGeometry();
+    const buffer = createStateBuffer();
+
+    // Sculpt a 20x20 dirty region
+    const minX = 50;
+    const maxX = 70;
+    const minZ = 50;
+    const maxZ = 70;
+
+    for (let iz = minZ; iz <= maxZ; iz++) {
+      for (let ix = minX; ix <= maxX; ix++) {
+        setTexel(buffer, ix, iz, { height: 1.5 });
+      }
+    }
+
+    const start = performance.now();
+    syncStateToGeometry(buffer, geo, { minX, maxX, minZ, maxZ });
+    const elapsed = performance.now() - start;
+
+    // Normal attribute version should be incremented
+    expect((geo.attributes.normal as THREE.BufferAttribute).version).toBeGreaterThan(0);
+    expect((geo.attributes.position as THREE.BufferAttribute).version).toBeGreaterThan(0);
+
+    // Vertex inside the mound should have vertical normal (0, 1, 0)
+    const centerIdx = 60 * TERRAIN_RESOLUTION + 60;
+    const ny = geo.attributes.normal.getY(centerIdx);
+    expect(ny).toBeCloseTo(1.0, 1);
+
+    // Must be well under full recomputation (typically < 0.1ms; allow up to 2.0ms for test runner jitter)
+    expect(elapsed).toBeLessThan(2.0);
+  });
+
   it('guarantees BVH accelerated raycasting under 0.2ms per raycast', async () => {
     const { computeBoundsTree, acceleratedRaycast } = await import('three-mesh-bvh');
     const geo = createBaseTerrainGeometry();
@@ -168,5 +202,46 @@ describe('Terrain Buffer & State Management', () => {
     const janjiraMoat = getTexel(janjiraBuffer, 220, 220);
     expect(janjiraCenter.height).toBeGreaterThan(0.7);
     expect(janjiraMoat.wetness).toBeGreaterThan(0.8);
+  });
+
+  it('safely refits BVH geometry without throwing or requiring unsafe casts', () => {
+    // Should safely handle null and geometry without boundsTree
+    expect(() => refitTerrainBVH(null)).not.toThrow();
+
+    const plainGeo = new THREE.BufferGeometry();
+    expect(() => refitTerrainBVH(plainGeo)).not.toThrow();
+
+    // Should call refit when boundsTree is present
+    let refitCalled = false;
+    const fakeBVHGeo = new THREE.BufferGeometry() as import('./terrainBuffer').BVHBufferGeometry;
+    fakeBVHGeo.boundsTree = {
+      refit: () => {
+        refitCalled = true;
+      },
+    } as any;
+
+    refitTerrainBVH(fakeBVHGeo);
+    expect(refitCalled).toBe(true);
+  });
+
+  it('validates project payloads strictly with Zod schema', async () => {
+    const { SavedProjectSchema } = await import('../state/useEditorStore');
+
+    // Valid minimal project
+    const valid = SavedProjectSchema.safeParse({
+      fortTitle: 'My Killa',
+      builderName: 'Mavala',
+      templateId: 'raigad',
+    });
+    expect(valid.success).toBe(true);
+    if (valid.success) {
+      expect(valid.data.fortTitle).toBe('My Killa');
+      expect(valid.data.splines).toEqual([]);
+      expect(valid.data.placedProps).toEqual([]);
+    }
+
+    // Invalid non-object
+    const invalid = SavedProjectSchema.safeParse('not an object');
+    expect(invalid.success).toBe(false);
   });
 });

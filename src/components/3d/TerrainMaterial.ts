@@ -14,6 +14,8 @@ export const fallbackCliffDiff = createColorTexture(85, 75, 68);     // #554B44 
 export const fallbackCrackedDiff = createColorTexture(140, 52, 28);   // #8C341C cracked mud
 export const fallbackPathDiff = createColorTexture(115, 68, 45);     // #73442D muddy tracks
 export const fallbackGrassDiff = createColorTexture(75, 110, 40);    // #4B6E28 foliage grass
+export const fallbackWaterDiff = createColorTexture(2, 132, 199);    // #0284C7 blue tarpaulin water
+export const fallbackWaterArm = createColorTexture(255, 60, 20);     // AO=1.0, Roughness=0.24, Metal=0.08
 export const fallbackArm = createColorTexture(255, 230, 0);          // AO=1.0, Roughness=0.90, Metal=0
 export const fallbackFlatNormal = createColorTexture(128, 128, 255); // Flat tangent-space normal (0, 0, 1)
 export const fallbackDisp = createColorTexture(128, 128, 128);       // Midpoint height (0.5)
@@ -54,6 +56,9 @@ export const terrainFragmentShader = /* glsl */ `
   uniform sampler2D uGrassDiff;
   uniform sampler2D uGrassArm;
   uniform sampler2D uGrassNor;
+  uniform sampler2D uWaterDiff;
+  uniform sampler2D uWaterArm;
+  uniform sampler2D uWaterNor;
   uniform float uTextureRepeat;
   uniform float uCliffRepeat;
 
@@ -121,22 +126,31 @@ export const terrainFragmentShader = /* glsl */ `
     vec4 walkableDispSample = texture(uWalkableDisp, uvWalkable);
     float soilHeight = max(walkableDispSample.r, walkableArmSample.a);
 
-    // 5. Slope Steepness & Height-Based Transition (Game Engine Splatmap)
+    // 5. State Buffer Sampling (Wetness, Mud Locking, Sprouting Grass)
+    vec4 state = texture(uStateTexture, vTerrainUv);
+    float wetness = clamp(state.g, 0.0, 1.0);
+    float locked = clamp(state.b, 0.0, 1.0);
+    float grass = clamp(state.a, 0.0, 1.0);
+
+    // 6. Slope Steepness & Height-Based Transition (Game Engine Splatmap)
     // Walkable vs cliff transition starts at slope ~35 deg (geomNorm.y ~ 0.82)
     float slopeFactor = 1.0 - smoothstep(0.68, 0.82, geomNorm.y);
     float cliffBlend = heightBlend(soilHeight, rockHeight, slopeFactor, 0.18);
+
+    // Suppress cliff rock inside excavated pond depressions so crater banks remain earthy mud
+    float effectiveCliffBlend = cliffBlend * (1.0 - smoothstep(0.05, 0.40, wetness));
 
     // Sahyadri Tambdi Maati (Red Laterite Soil) warmth calibration on pixel art
     vec3 soilColor = walkableDiffSample.rgb * vec3(1.24, 0.90, 0.80);
     vec3 rockColor = cliffColor * vec3(0.96, 0.96, 0.98);
 
     // Blend Diffuse & ARM
-    vec3 baseColor = mix(soilColor, rockColor, cliffBlend);
-    vec3 arm = mix(walkableArmSample.rgb, cliffArm.rgb, cliffBlend);
+    vec3 baseColor = mix(soilColor, rockColor, effectiveCliffBlend);
+    vec3 arm = mix(walkableArmSample.rgb, cliffArm.rgb, effectiveCliffBlend);
     float ao = arm.r;
     float rawRoughness = arm.g;
 
-    // 6. Triplanar Normal Perturbation for Rock Cliff (Deccan Basalt)
+    // 7. Triplanar Normal Perturbation for Rock Cliff (Deccan Basalt)
     vec3 tnormalX = unpackNormal(texture(uCliffNor, uvX), 0.9);
     vec3 tnormalY = unpackNormal(texture(uCliffNor, uvY_cliff), 0.9);
     vec3 tnormalZ = unpackNormal(texture(uCliffNor, uvZ), 0.9);
@@ -152,29 +166,44 @@ export const terrainFragmentShader = /* glsl */ `
     vec3 walkableWorldNormal = computeTerrainNormal(geomNorm, walkableNorSample);
 
     // Blend Walkable vs Cliff normals in World Space
-    vec3 blendedWorldNormal = normalize(mix(walkableWorldNormal, cliffWorldNormal, cliffBlend));
+    vec3 blendedWorldNormal = normalize(mix(walkableWorldNormal, cliffWorldNormal, effectiveCliffBlend));
 
-    // 7. State Buffer Interaction (Water, Wet Mud, Grass, Locked)
-    vec4 state = texture(uStateTexture, vTerrainUv);
-    float wetness = clamp(state.g, 0.0, 1.0);
-    float locked = clamp(state.b, 0.0, 1.0);
-    float grass = clamp(state.a, 0.0, 1.0);
-
+    // 8. Surface Shading & Hydration States (Wet Mud, Tarpaulin Water, Grass, Compaction)
     // Authentic Matte Roughness: Dry soil is non-reflective matte (0.88 - 0.98), eliminating plastic glare
     float dryRoughness = mix(0.88, 0.98, rawRoughness);
     float baseRoughness = dryRoughness;
 
-    // Wet Soil (Dirt_02 watered dark mud) - Glistening highlights ONLY when hydrated on walkable ground!
-    // Sheer basalt rock cliffs do not pool mud (soilWetness falls to 0 on cliffs)
-    float soilWetness = wetness * (1.0 - smoothstep(0.15, 0.65, cliffBlend));
-    if (soilWetness > 0.005) {
+    // Wet Soil (Dirt_02 watered dark mud / chikhal) - Glistening highlights when hydrated.
+    // Retains rich wet mud up to the rim edge of the depression.
+    float soilWetness = smoothstep(0.02, 0.70, wetness);
+    if (soilWetness > 0.001) {
       vec4 crackedDiffSample = texture(uCrackedDiff, uvWalkable);
       vec4 crackedArmSample = texture(uCrackedArm, uvWalkable);
-      vec3 wetColor = crackedDiffSample.rgb * vec3(0.72, 0.58, 0.50);
-      float wetRoughness = mix(dryRoughness, mix(0.48, 0.68, crackedArmSample.g), soilWetness);
+      vec3 wetColor = crackedDiffSample.rgb * vec3(0.60, 0.46, 0.38);
+      float wetRoughness = mix(dryRoughness, mix(0.24, 0.48, crackedArmSample.g), soilWetness);
       baseColor = mix(baseColor, wetColor, soilWetness);
       baseRoughness = mix(baseRoughness, wetRoughness, soilWetness);
       ao = mix(ao, crackedArmSample.r, soilWetness);
+    }
+
+    // Blue Tarpaulin Pond Basin Water (Option A: Shader-Integrated)
+    // Renders strictly within excavated crater basins (wetness > 0.68)
+    float waterFactor = smoothstep(0.68, 0.90, wetness);
+    if (waterFactor > 0.001) {
+      vec2 uvWater = vWorldPosition.xz * 2.5; // Blue tarp scale
+      vec4 waterDiffSample = texture(uWaterDiff, uvWater);
+      vec4 waterNorSample = texture(uWaterNor, uvWater);
+      vec4 waterArmSample = texture(uWaterArm, uvWater);
+
+      // Crisp blue plastic tarpaulin sheet lining
+      baseColor = mix(baseColor, waterDiffSample.rgb, waterFactor);
+      baseRoughness = mix(baseRoughness, mix(0.08, 0.22, waterArmSample.g), waterFactor);
+
+      // Perturb surface normal with blue tarp wrinkles
+      vec3 waterNor = unpackNormal(waterNorSample, 0.85);
+      vec3 waterWorldNormal = computeTerrainNormal(geomNorm, waterNor);
+      blendedWorldNormal = normalize(mix(blendedWorldNormal, waterWorldNormal, waterFactor));
+      ao = mix(ao, waterArmSample.r, waterFactor);
     }
 
     // Sprouting Mustard Foliage Grass (Grass_01 retro pixel sprigs)
@@ -226,6 +255,9 @@ export interface CreateTerrainMaterialOptions {
   grassDiff?: THREE.Texture | null;
   grassArm?: THREE.Texture | null;
   grassNor?: THREE.Texture | null;
+  waterDiff?: THREE.Texture | null;
+  waterArm?: THREE.Texture | null;
+  waterNor?: THREE.Texture | null;
   textureRepeat?: number;
   cliffRepeat?: number;
 }
@@ -254,6 +286,9 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
     grassDiff = fallbackGrassDiff,
     grassArm = fallbackArm,
     grassNor = fallbackFlatNormal,
+    waterDiff = fallbackWaterDiff,
+    waterArm = fallbackWaterArm,
+    waterNor = fallbackFlatNormal,
     textureRepeat = 8.0,
     cliffRepeat = 6.0,
   } = options;
@@ -281,6 +316,9 @@ export function createTerrainMaterial(options: CreateTerrainMaterialOptions): Cu
       uGrassDiff: { value: grassDiff || fallbackGrassDiff },
       uGrassArm: { value: grassArm || fallbackArm },
       uGrassNor: { value: grassNor || fallbackFlatNormal },
+      uWaterDiff: { value: waterDiff || fallbackWaterDiff },
+      uWaterArm: { value: waterArm || fallbackWaterArm },
+      uWaterNor: { value: waterNor || fallbackFlatNormal },
       uTextureRepeat: { value: textureRepeat },
       uCliffRepeat: { value: cliffRepeat },
     },

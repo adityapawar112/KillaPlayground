@@ -21,10 +21,13 @@ import {
   TbTrash,
 } from 'react-icons/tb';
 import { useEditorStore, BrushSizeType } from '@/lib/state/useEditorStore';
+import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { PAINT_COLORS } from '@/lib/constants/tokens';
 
 export const ContextualDock: React.FC = () => {
+  const canUndoTerrain = useTerrainStore((s) => s.canUndo());
+  const undoTerrain = useTerrainStore((s) => s.undo);
   const {
     activeTool,
     setActiveTool,
@@ -40,9 +43,6 @@ export const ContextualDock: React.FC = () => {
     setSlopeAlignment,
     slopeIncline,
     setSlopeIncline,
-    pondWaterFeatures,
-    undoLastPondWater,
-    clearPondWater,
     foliageSubTool,
     setFoliageSubTool,
     brushRadius,
@@ -513,34 +513,24 @@ export const ContextualDock: React.FC = () => {
             </>
           )}
 
-          {/* Pond Plane Undo / Clear Controls if Pond Tool Active */}
+          {/* Pond Basin Controls if Pond Tool Active */}
           {terrainSubTool === 'pond' && (
             <>
               <div className="w-[1px] h-5 bg-[#D9C9B4]" />
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button
-                  onClick={undoLastPondWater}
-                  disabled={pondWaterFeatures.length === 0}
+                  onClick={() => undoTerrain()}
+                  disabled={!canUndoTerrain}
                   className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                    pondWaterFeatures.length > 0
+                    canUndoTerrain
                       ? 'bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4] cursor-pointer shadow-xs'
                       : 'opacity-40 cursor-not-allowed bg-transparent text-[#A8988B] border-transparent'
                   }`}
-                  title="Undo and remove the most recently excavated pond water plane"
+                  title="Undo last excavated pond basin and restore terrain"
                 >
                   <TbArrowBackUp className="w-3.5 h-3.5" />
-                  <span>Undo Pond {pondWaterFeatures.length > 0 ? `(${pondWaterFeatures.length})` : ''}</span>
+                  <span>Undo Pond</span>
                 </button>
-                {pondWaterFeatures.length > 0 && (
-                  <button
-                    onClick={clearPondWater}
-                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-[#8F4938] hover:bg-[#EADECF] border border-[#D9C9B4] transition-all cursor-pointer"
-                    title="Remove all placed pond water planes"
-                  >
-                    <TbTrash className="w-3.5 h-3.5" />
-                    <span>Clear</span>
-                  </button>
-                )}
               </div>
             </>
           )}

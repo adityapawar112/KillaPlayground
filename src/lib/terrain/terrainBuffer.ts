@@ -411,12 +411,33 @@ export function applyTerrainBrush(
         buffer[idx + 0] = currentHeight + (avg - currentHeight) * factor;
         modified = true;
       } else if (operation === 'pond') {
-        // Depress to 0.0 or targetHeight and boost wetness
-        const pondTarget = options.targetHeight ?? 0.0;
+        // Option A: Basin excavation with flat floor & smooth wet mud rim
+        // Calculate crater target height relative to terrain rim at center
+        const rimHeight = options.targetHeight ?? defaultCenterHeight;
+        const basinDepth = 0.22; // 22cm depth
+        const floorHeight = Math.max(minHeight, rimHeight - basinDepth);
+
+        // Within core (d <= 0.55): flat basin floor lined with blue tarp water
+        // From 0.55 to 1.0: smooth banks rising from floorHeight to rimHeight
+        const coreRadius = 0.55;
+        let targetH: number;
+        let targetWetness: number;
+
+        if (d <= coreRadius) {
+          targetH = floorHeight;
+          targetWetness = 1.0; // 100% blue tarp water
+        } else {
+          const t = (d - coreRadius) / (1.0 - coreRadius);
+          // Hermite curve from floor to rim
+          const curve = t * t * (3.0 - 2.0 * t);
+          targetH = floorHeight + (rimHeight - floorHeight) * curve;
+          // Smooth wet mud tapering from 0.75 down to 0.1 at the rim
+          targetWetness = (1.0 - curve) * 0.75;
+        }
+
         const factor = Math.min(1.0, strength * 2.5 * falloff);
-        buffer[idx + 0] = Math.max(minHeight, currentHeight + (pondTarget - currentHeight) * factor);
-        // Boost wetness channel (G)
-        buffer[idx + 1] = Math.min(1.0, buffer[idx + 1] + 0.85 * falloff);
+        buffer[idx + 0] = currentHeight + (targetH - currentHeight) * factor;
+        buffer[idx + 1] = Math.max(buffer[idx + 1], targetWetness);
         modified = true;
       } else if (operation === 'slope') {
         const angleDeg = options.slopeAngle ?? 30;

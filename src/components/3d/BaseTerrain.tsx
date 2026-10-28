@@ -170,6 +170,9 @@ export const BaseTerrainContent: React.FC = () => {
     grassDiff: '/textures/Grass/Grass_01/Grass_01_basecolor.png',
     grassArm: '/textures/Grass/Grass_01/Grass_01_arm.png',
     grassNor: '/textures/Grass/Grass_01/Grass_01_normal.png',
+    waterDiff: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_basecolor.png',
+    waterArm: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_roughness.png',
+    waterNor: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_normal.png',
   });
 
   // Configure retro texture filtering: NearestFilter + no mipmaps for crisp, pixel-perfect PS1/Valheim aesthetic
@@ -194,6 +197,9 @@ export const BaseTerrainContent: React.FC = () => {
       textures.grassDiff,
       textures.grassArm,
       textures.grassNor,
+      textures.waterDiff,
+      textures.waterArm,
+      textures.waterNor,
     ];
 
     allTextures.forEach((tex) => {
@@ -209,6 +215,7 @@ export const BaseTerrainContent: React.FC = () => {
       textures.crackedDiff,
       textures.pathDiff,
       textures.grassDiff,
+      textures.waterDiff,
     ];
 
     const linearMaps = [
@@ -224,6 +231,8 @@ export const BaseTerrainContent: React.FC = () => {
       textures.pathNor,
       textures.grassArm,
       textures.grassNor,
+      textures.waterArm,
+      textures.waterNor,
     ];
 
     diffMaps.forEach((tex) => {
@@ -276,6 +285,9 @@ export const BaseTerrainContent: React.FC = () => {
       grassDiff: textures.grassDiff,
       grassArm: textures.grassArm,
       grassNor: textures.grassNor,
+      waterDiff: textures.waterDiff,
+      waterArm: textures.waterArm,
+      waterNor: textures.waterNor,
       textureRepeat: 16.0,
       cliffRepeat: 12.0,
     });
@@ -396,7 +408,12 @@ export const BaseTerrainContent: React.FC = () => {
             : editor.terrainSubTool === 'slope'
             ? editor.brushStrength * 0.4
             : editor.brushStrength * 0.15,
-        targetHeight: editor.plateauHeight,
+        targetHeight:
+          editor.terrainSubTool === 'plateau'
+            ? editor.plateauHeight
+            : editor.terrainSubTool === 'pond' && pondOriginRef.current
+            ? pondOriginRef.current.y
+            : undefined,
         maxHeight: 3.5,
         minHeight: 0.0,
         slopeAngle: effectiveAngle,
@@ -469,18 +486,7 @@ export const BaseTerrainContent: React.FC = () => {
 
   const handlePointerUp = useCallback(() => {
     if (isSculptingRef.current) {
-      const editor = useEditorStore.getState();
-      if (editor.terrainSubTool === 'pond' && pondOriginRef.current) {
-        const rimH = pondOriginRef.current.y;
-        const waterY = Math.max(0.04, rimH - 0.04);
-        editor.addPondWater({
-          x: pondOriginRef.current.x,
-          y: waterY,
-          z: pondOriginRef.current.z,
-          radius: Math.max(0.2, editor.brushRadius * 0.92),
-        });
-        pondOriginRef.current = null;
-      }
+      pondOriginRef.current = null;
       slopeAnchorRef.current = null;
       isSculptingRef.current = false;
       if (controls) {
@@ -500,18 +506,7 @@ export const BaseTerrainContent: React.FC = () => {
   useEffect(() => {
     const handleGlobalPointerUp = () => {
       if (isSculptingRef.current) {
-        const editor = useEditorStore.getState();
-        if (editor.terrainSubTool === 'pond' && pondOriginRef.current) {
-          const rimH = pondOriginRef.current.y;
-          const waterY = Math.max(0.04, rimH - 0.04);
-          editor.addPondWater({
-            x: pondOriginRef.current.x,
-            y: waterY,
-            z: pondOriginRef.current.z,
-            radius: Math.max(0.2, editor.brushRadius * 0.92),
-          });
-          pondOriginRef.current = null;
-        }
+        pondOriginRef.current = null;
         slopeAnchorRef.current = null;
         isSculptingRef.current = false;
         if (controls) {

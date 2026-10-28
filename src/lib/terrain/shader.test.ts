@@ -40,5 +40,8 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
     expect(terrainMat.uniforms.uCrackedDiff).toBeDefined();
     expect(terrainMat.uniforms.uPathDiff).toBeDefined();
     expect(terrainMat.uniforms.uGrassDiff).toBeDefined();
+    expect(terrainMat.uniforms.uWaterDiff).toBeDefined();
+    expect(terrainMat.uniforms.uWaterArm).toBeDefined();
+    expect(terrainMat.uniforms.uWaterNor).toBeDefined();
   });
 });

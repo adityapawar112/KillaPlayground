@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
-import { useEditorStore, PondWaterFeature } from '@/lib/state/useEditorStore';
+import { useEditorStore } from '@/lib/state/useEditorStore';
 
 interface WaterTextures {
   baseColor: THREE.Texture;
@@ -50,46 +50,12 @@ const BaseWaterMesh: React.FC<BaseWaterMeshProps> = ({ waterLevel, nightMode, te
   );
 };
 
-interface LocalPondMeshProps {
-  feature: PondWaterFeature;
-  nightMode: boolean;
-  textures: WaterTextures;
-}
-
-const LocalPondMesh: React.FC<LocalPondMeshProps> = ({ feature, nightMode, textures }) => {
-  return (
-    <mesh
-      position={[feature.x, feature.y, feature.z]}
-      rotation={[-Math.PI / 2, 0, 0]}
-      name={`PondWaterPlane_${feature.id}`}
-      receiveShadow
-    >
-      <circleGeometry args={[feature.radius, 32]} />
-      <meshStandardMaterial
-        map={textures.baseColor}
-        normalMap={textures.normal}
-        roughnessMap={textures.roughness}
-        aoMap={textures.ao}
-        metalnessMap={textures.metallic}
-        color={nightMode ? '#3A6073' : '#FFFFFF'}
-        roughness={nightMode ? 0.2 : 0.35}
-        metalness={0.08}
-        transparent
-        opacity={0.94}
-        side={THREE.DoubleSide}
-        depthWrite={true}
-      />
-    </mesh>
-  );
-};
-
 export const WaterPlane: React.FC = () => {
   const waterLevel = useEditorStore((s) => s.waterLevel);
   const waterLevelActive = useEditorStore((s) => s.waterLevelActive);
   const nightMode = useEditorStore((s) => s.nightMode);
-  const pondWaterFeatures = useEditorStore((s) => s.pondWaterFeatures);
 
-  // Load authentic Diwali Killa blue plastic tarpaulin PBR textures for all water
+  // Load authentic Diwali Killa blue plastic tarpaulin PBR textures for base moat water
   const rawTextures = useTexture({
     baseColor: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_basecolor.png',
     normal: '/textures/Water/blue_tarp_texture_128x128_pbr/blue_tarp_texture_128x128_normal.png',
@@ -120,71 +86,16 @@ export const WaterPlane: React.FC = () => {
     });
   }, [rawTextures]);
 
-  // Setup Pond Water textures (3x3 repeat over small pond disc)
-  const pondTextures = useMemo(() => {
-    if (!rawTextures) return null;
-    const baseColor = rawTextures.baseColor.clone();
-    const normal = rawTextures.normal.clone();
-    const roughness = rawTextures.roughness.clone();
-    const ao = rawTextures.ao.clone();
-    const metallic = rawTextures.metallic.clone();
-
-    [baseColor, normal, roughness, ao, metallic].forEach((t) => {
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.repeat.set(3, 3);
-      t.generateMipmaps = false;
-    });
-
-    baseColor.colorSpace = THREE.SRGBColorSpace;
-    baseColor.minFilter = THREE.NearestFilter;
-    baseColor.magFilter = THREE.NearestFilter;
-    baseColor.needsUpdate = true;
-
-    [normal, roughness, ao, metallic].forEach((t) => {
-      t.colorSpace = THREE.NoColorSpace;
-      t.minFilter = THREE.LinearFilter;
-      t.magFilter = THREE.LinearFilter;
-      t.needsUpdate = true;
-    });
-
-    return { baseColor, normal, roughness, ao, metallic };
-  }, [rawTextures]);
-
-  // Clean disposal of cloned textures on unmount
-  useEffect(() => {
-    return () => {
-      if (pondTextures) {
-        pondTextures.baseColor.dispose();
-        pondTextures.normal.dispose();
-        pondTextures.roughness.dispose();
-        pondTextures.ao.dispose();
-        pondTextures.metallic.dispose();
-      }
-    };
-  }, [pondTextures]);
-
   const showBaseWater = waterLevelActive && waterLevel > 0.001;
-  const hasPonds = pondWaterFeatures.length > 0;
-
-  if (!showBaseWater && !hasPonds) return null;
+  if (!showBaseWater) return null;
 
   return (
-    <group name="WaterSystem">
-      {showBaseWater && (
-        <BaseWaterMesh
-          waterLevel={waterLevel}
-          nightMode={nightMode}
-          textures={rawTextures}
-        />
-      )}
-      {hasPonds && pondTextures && pondWaterFeatures.map((pond) => (
-        <LocalPondMesh
-          key={pond.id}
-          feature={pond}
-          nightMode={nightMode}
-          textures={pondTextures}
-        />
-      ))}
+    <group name="DioramaWaterSystem">
+      <BaseWaterMesh
+        waterLevel={waterLevel}
+        nightMode={nightMode}
+        textures={rawTextures}
+      />
     </group>
   );
 };

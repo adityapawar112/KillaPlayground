@@ -86,27 +86,27 @@ graph TD
     - **Plateau / Level**: Flattens sampled vertices to a target plane height $H_{target}$, creating flat courtyards and fort hilltops.
     - **Smooth**: Multi-tap adaptive kernel blur that effectively softens sharp terraces and jagged spikes into rolling earthen curves.
     - **Slope / Ramps**: Calibrated inclination subtool with angle presets (15°, 30°, 45°, 60°) and angle slider for grading smooth ghat paths and fort ascents.
-    - **Pond Excavation & Water Planes**: Excavates crater basins and places local circular water planes with blue tarpaulin PBR textures nestled inside the pond.
+    - **Pond Excavation (Option A: Shader-Integrated)**: Excavates crater basins directly in the terrain heightmap and renders authentic blue tarpaulin PBR water with specular ripples directly on the flat basin floor (`wetness > 0.68`), surrounded by dark glistening wet mud (*chikhal*) on crater banks (`wetness` tapering from 0.70 to 0.02) all the way up to the depression rim edge. Eliminates separate meshes, prevents cliff leaks, prevents water plane stacking, and restores 100% cleanly on undo.
   - **3D Surface Normal Indicator**: Brush cursor reticle ring dynamically aligns with the exact surface normal of the terrain under the cursor, eliminating z-fighting and rendering flush across hillsides and cliffs.
-  - **Authentic Blue Tarpaulin Water Pipeline**: Uses PBR textures (`basecolor`, `normal`, `roughness`, `ao`, `metallic`) from `/textures/Water/blue_tarp_texture_128x128_pbr` for all water (diorama moat + local pond planes).
+  - **Authentic Blue Tarpaulin Water Pipeline**: Uses PBR textures (`basecolor`, `normal`, `roughness`, `ao`, `metallic`) from `/textures/Water/blue_tarp_texture_128x128_pbr` for all water (diorama moat + pond basin floors).
   - **Ergonomic Wheel Shortcuts**:
     - `Shift + Scroll Wheel`: Increase / decrease brush size.
     - `Ctrl + Scroll Wheel`: Adjust sculpt speed / secondary slider.
     - `Alt + Scroll Wheel`: Adjust plateau height / slope angle (tertiary slider).
     - Intercepted in capture phase with complete suppression of camera zoom.
-  - **Pond Water Undo/Redo Engine**:
+  - **Pond Basin Undo/Redo Engine**:
     - Synchronized with 15-slot circular history (`Ctrl+Z` / `Ctrl+Y`).
-    - Dedicated "Undo Last Pond" and "Clear Ponds" buttons in Contextual Dock.
+    - Dedicated "Undo Pond" button in Contextual Dock restores both terrain elevation and clears wet mud/water texels without residual artifacts.
 
 ### Acceptance Criteria
 - [x] Elevating terrain smoothly raises organic hills and hilltops.
-- [x] Lowering terrain excavates ponds that reveal the underlying water plane.
+- [x] Lowering terrain excavates depressions that reveal the underlying water plane.
 - [x] Plateau tool flattens elevated peaks into level fort construction decks.
 - [x] Smoothing tool removes jagged vertices without resetting height.
 - [x] Slope tool creates clean graded ramps at 15°, 30°, 45°, 60° presets.
 - [x] Brush cursor ring orients flush to terrain surface normal without z-fighting.
 - [x] Shift/Ctrl/Alt + Wheel adjust sliders and prevent OrbitControls zoom.
-- [x] Excavating ponds adds blue tarpaulin water planes with full undo/redo support.
+- [x] Excavating ponds renders shader-integrated blue tarpaulin water on basin floors and dark wet mud along banks with full undo/redo support.
 - [x] Vertex modifications execute in dirty bounding box ranges without full geometry reallocations.
 
 ---

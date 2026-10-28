@@ -347,10 +347,19 @@ describe('Terrain Buffer & State Management', () => {
       const pondGrid = worldToGrid(1.0, 1.0);
       const pondTexel = getTexel(buffer, pondGrid.ix, pondGrid.iz);
 
-      // Depth should be depressed below 0.08
-      expect(pondTexel.height).toBeLessThan(0.08);
-      // Wetness should be marked for glistening mud/water
-      expect(pondTexel.wetness).toBeGreaterThan(0.5);
+      // Basin floor should be depressed by 0.22m relative to rim (0.6 - 0.22 = 0.38)
+      expect(pondTexel.height).toBeCloseTo(0.38, 2);
+      // Floor wetness should be marked for blue tarpaulin water (1.0)
+      expect(pondTexel.wetness).toBeGreaterThanOrEqual(1.0);
+
+      // Bank texel (distance ~0.9m from center, within 1.2m radius)
+      const bankGrid = worldToGrid(1.0, 1.9);
+      const bankTexel = getTexel(buffer, bankGrid.ix, bankGrid.iz);
+      // Bank height should be between floor (0.38) and rim (0.60)
+      expect(bankTexel.height).toBeGreaterThan(pondTexel.height);
+      expect(bankTexel.height).toBeLessThanOrEqual(0.60);
+      // Bank should have dark glistening wet mud (wetness between 0.05 and 0.85)
+      expect(bankTexel.wetness).toBeGreaterThan(0.05);
     });
 
     it('respects locked vertices and does not modify locked regions', () => {
@@ -520,6 +529,45 @@ describe('Terrain Buffer & State Management', () => {
       // Redo -> should restore to 2 ponds
       terrainStore.redo();
       expect(useEditorStore.getState().pondWaterFeatures.length).toBe(2);
+    });
+
+    it('synchronizes shader-integrated pond excavation and wet mud with undo/redo stack', async () => {
+      const { useTerrainStore } = await import('./terrainStore');
+      const terrainStore = useTerrainStore.getState();
+      terrainStore.resetTerrain();
+
+      const initialTexel = getTexel(useTerrainStore.getState().stateBuffer, 128, 128);
+      const initialHeight = initialTexel.height;
+      const initialWetness = initialTexel.wetness;
+
+      // Push undo snapshot before pond excavation
+      terrainStore.pushUndo();
+
+      // Sculpt pond at center
+      const modified = terrainStore.sculptTerrain(0, 0, {
+        operation: 'pond',
+        radius: 1.0,
+        strength: 0.8,
+      });
+      expect(modified).toBe(true);
+
+      const pondTexel = getTexel(useTerrainStore.getState().stateBuffer, 128, 128);
+      expect(pondTexel.height).toBeLessThan(initialHeight);
+      expect(pondTexel.wetness).toBeGreaterThanOrEqual(1.0);
+
+      // Undo pond excavation -> both crater height and wet mud are restored!
+      const undoOk = terrainStore.undo();
+      expect(undoOk).toBe(true);
+      const restoredTexel = getTexel(useTerrainStore.getState().stateBuffer, 128, 128);
+      expect(restoredTexel.height).toBeCloseTo(initialHeight, 2);
+      expect(restoredTexel.wetness).toBeCloseTo(initialWetness, 2);
+
+      // Redo pond excavation -> both crater height and wet mud are re-applied!
+      const redoOk = terrainStore.redo();
+      expect(redoOk).toBe(true);
+      const redoneTexel = getTexel(useTerrainStore.getState().stateBuffer, 128, 128);
+      expect(redoneTexel.height).toBeCloseTo(pondTexel.height, 2);
+      expect(redoneTexel.wetness).toBeCloseTo(pondTexel.wetness, 2);
     });
   });
 });

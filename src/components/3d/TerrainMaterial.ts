@@ -164,15 +164,17 @@ export const terrainFragmentShader = /* glsl */ `
     float dryRoughness = mix(0.88, 0.98, rawRoughness);
     float baseRoughness = dryRoughness;
 
-    // Wet Soil (Dirt_02 watered dark mud) - Glistening highlights ONLY when hydrated!
-    if (wetness > 0.0) {
+    // Wet Soil (Dirt_02 watered dark mud) - Glistening highlights ONLY when hydrated on walkable ground!
+    // Sheer basalt rock cliffs do not pool mud (soilWetness falls to 0 on cliffs)
+    float soilWetness = wetness * (1.0 - smoothstep(0.15, 0.65, cliffBlend));
+    if (soilWetness > 0.005) {
       vec4 crackedDiffSample = texture(uCrackedDiff, uvWalkable);
       vec4 crackedArmSample = texture(uCrackedArm, uvWalkable);
-      vec3 wetColor = crackedDiffSample.rgb * vec3(0.68, 0.54, 0.48);
-      float wetRoughness = mix(dryRoughness, 0.18 + crackedArmSample.g * 0.15, wetness);
-      baseColor = mix(baseColor, wetColor, wetness);
-      baseRoughness = mix(baseRoughness, wetRoughness, wetness);
-      ao = mix(ao, crackedArmSample.r, wetness);
+      vec3 wetColor = crackedDiffSample.rgb * vec3(0.72, 0.58, 0.50);
+      float wetRoughness = mix(dryRoughness, mix(0.48, 0.68, crackedArmSample.g), soilWetness);
+      baseColor = mix(baseColor, wetColor, soilWetness);
+      baseRoughness = mix(baseRoughness, wetRoughness, soilWetness);
+      ao = mix(ao, crackedArmSample.r, soilWetness);
     }
 
     // Sprouting Mustard Foliage Grass (Grass_01 retro pixel sprigs)

@@ -3,8 +3,8 @@
 import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { AppMenuBar } from '@/components/hud/AppMenuBar';
-import { LeftToolShelf } from '@/components/hud/LeftToolShelf';
-import { ContextualDock } from '@/components/hud/ContextualDock';
+import { TopToolBar } from '@/components/hud/TopToolBar';
+import { LeftToolSidebar } from '@/components/hud/LeftToolSidebar';
 import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
@@ -168,11 +168,11 @@ export default function HomePage() {
         onSetCameraView={(view) => setCameraViewPreset(view)}
       />
 
-      {/* Left Vertical Tool Shelf (Tooltips expand cleanly to the right) */}
-      <LeftToolShelf />
+      {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
+      <TopToolBar />
 
-      {/* Secondary Contextual Settings Bar */}
-      <ContextualDock />
+      {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
+      <LeftToolSidebar />
 
       {/* Unobtrusive Bottom Controls Strip */}
       <BottomStatusBar />

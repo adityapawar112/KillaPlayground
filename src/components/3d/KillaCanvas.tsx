@@ -6,7 +6,6 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useEditorStore } from '@/lib/state/useEditorStore';
-import { ViewportGizmo } from './ViewportGizmo';
 import { BaseTerrain } from './BaseTerrain';
 import { CourtyardBricks } from './CourtyardBricks';
 import { WaterPlane } from './WaterPlane';
@@ -295,8 +294,18 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     };
   }, []);
 
-  // Set preset camera view from gizmo or menu bar
-  const handleSetCameraView = useCallback((view: 'top' | 'front' | 'side' | 'reset') => {
+  // Zoom delta handler
+  const handleZoom = useCallback((delta: number) => {
+    if (!controlsRef.current) return;
+    const controls = controlsRef.current;
+    const camera = controls.object;
+    const dir = new THREE.Vector3().subVectors(controls.target, camera.position).normalize();
+    camera.position.addScaledVector(dir, -delta);
+    controls.update();
+  }, []);
+
+  // Set preset camera view from gizmo, sidebar, or menu bar
+  const handleSetCameraView = useCallback((view: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out') => {
     if (!controlsRef.current) return;
     const controls = controlsRef.current;
     const camera = controls.object;
@@ -313,27 +322,21 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     } else if (view === 'reset') {
       camera.position.set(7, 7, 7);
       controls.target.set(0, 0.5, 0);
+    } else if (view === 'zoom_in') {
+      handleZoom(-1.5);
+    } else if (view === 'zoom_out') {
+      handleZoom(1.5);
     }
     controls.update();
-  }, []);
+  }, [handleZoom]);
 
-  // Listen for view changes from store (e.g. from AppMenuBar)
+  // Listen for view changes from store (e.g. from LeftToolSidebar or AppMenuBar)
   useEffect(() => {
     if (cameraViewPreset) {
       handleSetCameraView(cameraViewPreset);
       setCameraViewPreset(null);
     }
   }, [cameraViewPreset, handleSetCameraView, setCameraViewPreset]);
-
-  // Zoom delta handler from gizmo
-  const handleZoom = useCallback((delta: number) => {
-    if (!controlsRef.current) return;
-    const controls = controlsRef.current;
-    const camera = controls.object;
-    const dir = new THREE.Vector3().subVectors(controls.target, camera.position).normalize();
-    camera.position.addScaledVector(dir, -delta);
-    controls.update();
-  }, []);
 
   return (
     <div
@@ -441,12 +444,6 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           {children}
         </Suspense>
       </Canvas>
-
-      {/* Blender-Style Viewport Gizmo & Navigation Cluster */}
-      <ViewportGizmo
-        onSetCameraView={handleSetCameraView}
-        onZoom={handleZoom}
-      />
     </div>
   );
 };

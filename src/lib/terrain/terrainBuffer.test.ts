@@ -569,5 +569,33 @@ describe('Terrain Buffer & State Management', () => {
       expect(redoneTexel.height).toBeCloseTo(pondTexel.height, 2);
       expect(redoneTexel.wetness).toBeCloseTo(pondTexel.wetness, 2);
     });
+
+    it('paints default terrain texture and clears water when soil operation is applied', async () => {
+      const { useTerrainStore } = await import('./terrainStore');
+      const terrainStore = useTerrainStore.getState();
+      terrainStore.resetTerrain();
+
+      // First excavate a pond at (0, 0)
+      terrainStore.sculptTerrain(0, 0, {
+        operation: 'pond',
+        radius: 1.0,
+        strength: 1.0,
+      });
+
+      const pondTexel = getTexel(useTerrainStore.getState().stateBuffer, 128, 128);
+      expect(pondTexel.wetness).toBeGreaterThan(0.5);
+
+      // Now use the 'soil' brush to paint default dry soil over the pond
+      const modified = terrainStore.sculptTerrain(0, 0, {
+        operation: 'soil',
+        radius: 1.2,
+        strength: 1.0,
+      });
+      expect(modified).toBe(true);
+
+      const dryTexel = getTexel(useTerrainStore.getState().stateBuffer, 128, 128);
+      // Wetness is cleared back to 0 (default dry soil texture)
+      expect(dryTexel.wetness).toBe(0.0);
+    });
   });
 });

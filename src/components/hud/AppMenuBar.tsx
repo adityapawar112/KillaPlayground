@@ -35,6 +35,15 @@ interface AppMenuBarProps {
   onSetCameraView?: (view: 'top' | 'front' | 'side' | 'reset') => void;
 }
 
+const FORT_NAMES: Record<string, Record<Locale, string>> = {
+  raigad: { en: 'Raigad Fort', mr: 'किल्ले रायगड', hi: 'रायगड किला' },
+  janjira: { en: 'Murud-Janjira Sea Fort', mr: 'मुरुड-जंजिरा जलदुर्ग', hi: 'मुरुड-जंजीरा जलदुर्ग' },
+  sinhagad: { en: 'Sinhagad Fort', mr: 'किल्ले सिंहगड', hi: 'सिंहगड किला' },
+  pratapgad: { en: 'Pratapgad Fort', mr: 'किल्ले प्रतापगड', hi: 'प्रतापगड किला' },
+  vijaydurg: { en: 'Vijaydurg Naval Fort', mr: 'विजयदुर्ग जलदुर्ग', hi: 'विजयदुर्ग नौसेना किला' },
+  scratch: { en: 'Custom Fort', mr: 'स्वतःचा किल्ला', hi: 'कस्टम किला' },
+};
+
 type ActiveMenu = 'file' | 'edit' | 'view' | 'language' | 'help' | null;
 
 export const AppMenuBar: React.FC<AppMenuBarProps> = ({
@@ -71,6 +80,16 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
   } = useEditorStore();
 
   const { t, locale, setLocale } = useTranslation();
+  const displayFortTitle =
+    FORT_NAMES[templateId]?.[locale] ||
+    (templateId === 'scratch'
+      ? locale === 'mr'
+        ? 'स्वतःचा किल्ला'
+        : locale === 'hi'
+        ? 'कस्टम किला'
+        : 'Custom Fort'
+      : fortTitle);
+
   const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
   const menuBarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -158,20 +177,44 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
       {/* Top Application Desktop Menu Bar */}
       <header
         ref={menuBarRef}
-        className="w-full bg-[#F2EBE1]/96 backdrop-blur-md border-b border-[#D9C9B4] px-4 py-1.5 flex items-center justify-between pointer-events-auto shadow-sm"
+        className="w-full bg-[#F2EBE1]/96 backdrop-blur-md border-b border-[#D9C9B4] px-4 py-1.5 flex items-center justify-between pointer-events-auto shadow-sm relative z-50"
       >
-        {/* Left cluster: Application Menus (File, Edit, View, Language, Help) */}
+        {/* Left cluster: Application Menus & Fort Selector */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Logo Icon */}
           <button
             onClick={() => setStartupModalOpen(true)}
-            className="flex items-center gap-1.5 mr-2 px-2 py-1 rounded-lg hover:bg-[#DFCDBD] transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 mr-1 px-1.5 py-1 rounded-lg hover:bg-[#DFCDBD] transition-colors cursor-pointer group"
             title="The Killa Playground - Open Hub"
           >
             <div className="w-6 h-6 rounded-lg bg-[#B85F45] text-white flex items-center justify-center font-bold text-xs shadow-inner group-hover:scale-105 transition-transform">
               <TbShield className="w-3.5 h-3.5 text-[#FAF8F5]" />
             </div>
           </button>
+
+          {/* Fort Selector Header Button */}
+          <button
+            onClick={() => {
+              setActiveMenu(null);
+              setTerrainDrawerOpen(!isTerrainDrawerOpen);
+            }}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
+              isTerrainDrawerOpen
+                ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
+                : 'bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4]'
+            }`}
+            title={t.modeModal.subtitle}
+          >
+            <TbBuildingCastle className={`w-3.5 h-3.5 ${isTerrainDrawerOpen ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+            <span className="tracking-wide uppercase font-sans">
+              {displayFortTitle}
+            </span>
+            <TbChevronDown className={`w-3 h-3 transition-transform duration-200 ${
+              isTerrainDrawerOpen ? 'rotate-180 text-[#F59E0B]' : 'text-[#8D7666]'
+            }`} />
+          </button>
+
+          <div className="w-[1px] h-4 bg-[#D9C9B4] mx-1" />
 
           {/* FILE MENU */}
           <div className="relative">
@@ -209,7 +252,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
                 >
                   <TbBuildingCastle className="w-4 h-4 text-[#4B382C]" />
-                  <span>Historical Forts (किल्ले)...</span>
+                  <span>{t.modeModal.historicalTab}...</span>
                 </button>
                 <button
                   onClick={() => {
@@ -219,7 +262,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
                 >
                   <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
-                  <span>Terrain Generation Settings...</span>
+                  <span>{t.modeModal.freeformTab}...</span>
                 </button>
                 <div className="my-1 border-t border-[#D9C9B4]" />
                 <button
@@ -476,10 +519,10 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   >
                     <span>
                       {lang === 'en'
-                        ? 'English (EN)'
+                        ? 'English'
                         : lang === 'mr'
-                        ? 'मराठी (MR)'
-                        : 'हिन्दी (HI)'}
+                        ? 'मराठी'
+                        : 'हिन्दी'}
                     </span>
                     {locale === lang && <TbCheck className="w-4 h-4 text-[#F59E0B]" />}
                   </button>
@@ -542,6 +585,11 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             )}
           </div>
         </div>
+
+        {/* Center: "The Killa Playground" Website Title in Top Bar */}
+        <h1 className="hidden md:block absolute left-1/2 -translate-x-1/2 font-yatra text-lg sm:text-xl text-[#2B1E16] tracking-wide pointer-events-none select-none">
+          The Killa Playground
+        </h1>
 
         {/* Right cluster: Quick Action Pills */}
         <div className="flex items-center gap-2">
@@ -618,46 +666,6 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
           </button>
         </div>
       </header>
-
-      {/* Banner Row: Centered "The Killa Playground" Title + Left-Aligned Subtitle & Fort Dropdown Trigger */}
-      <div className="relative w-full px-4 mt-2 flex items-center justify-between pointer-events-none select-none">
-        {/* Left Side: Fort Selector Subtitle Dropdown Trigger (Moved to the left!) */}
-        <div className="pointer-events-auto z-30">
-          <button
-            onClick={() => setTerrainDrawerOpen(!isTerrainDrawerOpen)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all cursor-pointer shadow-sm group active:scale-95 ${
-              isTerrainDrawerOpen
-                ? 'bg-[#4B382C] text-white border-[#38281E] shadow-md ring-2 ring-[#4B382C]/20'
-                : 'bg-[#F2EBE1]/92 hover:bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
-            }`}
-            title="Click to choose Historical Forts or Freeform Terrain"
-          >
-            <TbBuildingCastle className={`w-4 h-4 ${isTerrainDrawerOpen ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-            <span className="text-xs font-bold font-sans tracking-wide uppercase">
-              {fortTitle}
-            </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#E85D04]" />
-            <span className={`text-[11px] font-sans font-medium hidden sm:inline ${
-              isTerrainDrawerOpen ? 'text-white/85' : 'text-[#777A57]'
-            }`}>
-              दिवाळी मातीचा किल्ला कार्यशाळा
-            </span>
-            <TbChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${
-              isTerrainDrawerOpen ? 'rotate-180 text-[#F59E0B]' : 'text-[#8D7666]'
-            }`} />
-          </button>
-        </div>
-
-        {/* Center: "The Killa Playground" Website Title (Always centered) */}
-        <div className="absolute left-1/2 -translate-x-1/2 top-0 pointer-events-none text-center">
-          <h1 className="font-yatra text-2xl sm:text-3xl text-[#2B1E16] drop-shadow-sm tracking-wide leading-tight">
-            The Killa Playground
-          </h1>
-        </div>
-
-        {/* Right side spacer to balance layout */}
-        <div className="w-24 hidden md:block" />
-      </div>
 
       {/* Transient Toast Notification */}
       {toastMessage && (

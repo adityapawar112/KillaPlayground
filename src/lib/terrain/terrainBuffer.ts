@@ -302,7 +302,7 @@ export function syncStateToGeometry(
 }
 
 export interface TerrainBrushOptions {
-  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope';
+  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope' | 'soil';
   radius: number;       // in world units (meters)
   strength: number;     // delta / speed multiplier
   targetHeight?: number;
@@ -381,6 +381,9 @@ export function applyTerrainBrush(
       if (operation === 'elevate') {
         const delta = strength * falloff;
         buffer[idx + 0] = Math.min(maxHeight, currentHeight + delta);
+        if (buffer[idx + 1] > 0.0) {
+          buffer[idx + 1] = Math.max(0.0, buffer[idx + 1] - delta * 3.0);
+        }
         modified = true;
       } else if (operation === 'lower') {
         const delta = strength * falloff;
@@ -389,6 +392,9 @@ export function applyTerrainBrush(
       } else if (operation === 'plateau') {
         const factor = Math.min(1.0, strength * 2.0 * falloff);
         buffer[idx + 0] = currentHeight + (targetHeight - currentHeight) * factor;
+        if (buffer[idx + 1] > 0.0) {
+          buffer[idx + 1] = Math.max(0.0, buffer[idx + 1] - factor);
+        }
         modified = true;
       } else if (operation === 'smooth') {
         // Multi-tap adaptive neighborhood kernel based on brush radius
@@ -458,6 +464,17 @@ export function applyTerrainBrush(
         const factor = Math.min(1.0, strength * 2.5 * falloff);
         buffer[idx + 0] = currentHeight + (clampedTarget - currentHeight) * factor;
         modified = true;
+      } else if (operation === 'soil') {
+        // Paint default terrain texture: clears wetness (removes blue tarp & wet mud) and foliage
+        const eraseFactor = Math.min(1.0, strength * 3.0 * falloff);
+        if (buffer[idx + 1] > 0.0) {
+          buffer[idx + 1] = Math.max(0.0, buffer[idx + 1] - eraseFactor);
+          modified = true;
+        }
+        if (buffer[idx + 3] > 0.0) {
+          buffer[idx + 3] = Math.max(0.0, buffer[idx + 3] - eraseFactor);
+          modified = true;
+        }
       }
     }
   }

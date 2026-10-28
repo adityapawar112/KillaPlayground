@@ -160,10 +160,10 @@ export const TerrainStudioDrawer: React.FC = () => {
   };
 
   return (
-    /* Big Left-Side Dropdown Panel (Anchored directly under Custom Fort button on the left) */
+    /* Big Left-Side Dropdown Panel (Anchored directly under Top Menu Bar) */
     <div
       onPointerDown={(e) => e.stopPropagation()}
-      className={`fixed left-4 top-[5.25rem] z-40 w-[420px] sm:w-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-6.5rem)] bg-[#F9F6F0] rounded-2xl sm:rounded-3xl border-2 border-[#D9C9B4] shadow-2xl shadow-black/25 flex flex-col transition-all duration-200 select-none animate-in fade-in slide-in-from-top-3 ${
+      className={`fixed left-4 top-[3.25rem] z-40 w-[420px] sm:w-[480px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-4.5rem)] bg-[#F9F6F0] rounded-2xl sm:rounded-3xl border-2 border-[#D9C9B4] shadow-2xl shadow-black/25 flex flex-col transition-all duration-200 select-none animate-in fade-in slide-in-from-top-3 ${
         nightMode ? 'text-[#F9F6F0] bg-[#1E1B18] border-[#4A3E35]' : 'text-[#2B1E16]'
       }`}
       role="dialog"
@@ -181,12 +181,12 @@ export const TerrainStudioDrawer: React.FC = () => {
             </div>
             <div>
               <h2 className="font-yatra text-xl sm:text-2xl tracking-wide text-white leading-tight">
-                {terrainDrawerTab === 'historical' ? 'Historical Forts' : 'Freeform Terrain'}
+                {terrainDrawerTab === 'historical' ? t.modeModal.historicalTab : t.modeModal.freeformTab}
               </h2>
               <p className="text-xs text-[#F2EBE1]/85 font-sans">
                 {terrainDrawerTab === 'historical'
-                  ? 'Select an iconic fort blueprint to sculpt upon'
-                  : 'Procedural generator with custom tableland & water'}
+                  ? (locale === 'mr' ? 'किल्ला बनवण्यासाठी ऐतिहासिक ब्लूप्रिंट निवडा' : locale === 'hi' ? 'किला बनाने के लिए ऐतिहासिक ब्लूप्रिंट चुनें' : 'Select an iconic fort blueprint to sculpt upon')
+                  : (locale === 'mr' ? 'पठार आणि पाण्यासह स्वतःचा प्रदेश बनवा' : locale === 'hi' ? 'पठार और पानी के साथ अपनी जमीन बनाएं' : 'Procedural generator with custom tableland & water')}
               </p>
             </div>
           </div>
@@ -211,7 +211,7 @@ export const TerrainStudioDrawer: React.FC = () => {
             }`}
           >
             <TbBuildingCastle className="w-4 h-4" />
-            <span>Historical Forts (किल्ले)</span>
+            <span>{t.modeModal.historicalTab}</span>
           </button>
 
           <button
@@ -223,7 +223,7 @@ export const TerrainStudioDrawer: React.FC = () => {
             }`}
           >
             <TbAdjustmentsHorizontal className="w-4 h-4" />
-            <span>From Scratch (मोकळी जमीन)</span>
+            <span>{t.modeModal.freeformTab}</span>
           </button>
         </div>
 
@@ -462,7 +462,7 @@ export const TerrainStudioDrawer: React.FC = () => {
             className="px-6 py-2 rounded-xl bg-gradient-to-r from-[#C25E00] to-[#E85D04] hover:from-[#A75000] hover:to-[#D45404] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center gap-2 active:scale-95"
           >
             <TbSparkles className="w-4 h-4" />
-            <span>Start Crafting (तयार करा)</span>
+            <span>{t.modeModal.startBuilding}</span>
           </button>
         </div>
       </div>

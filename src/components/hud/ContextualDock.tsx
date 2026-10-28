@@ -369,10 +369,10 @@ export const ContextualDock: React.FC = () => {
 
           {/* Brush Size Slider */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-[#4B382C]">Size:</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.terrain.radius}:</span>
             <input
               type="range"
-              aria-label="Terrain Brush Size"
+              aria-label={t.tools.terrain.radius}
               min="0.2"
               max="3.0"
               step="0.1"
@@ -387,10 +387,10 @@ export const ContextualDock: React.FC = () => {
 
           {/* Sculpt Strength Slider */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-[#4B382C]">Speed:</span>
+            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.terrain.strength}:</span>
             <input
               type="range"
-              aria-label="Terrain Sculpt Speed"
+              aria-label={t.tools.terrain.strength}
               min="0.05"
               max="1.0"
               step="0.05"
@@ -421,65 +421,31 @@ export const ContextualDock: React.FC = () => {
             </>
           )}
 
-          {/* Slope Angle Presets, Alignment & Slider if Slope Tool Active */}
+          {/* Consolidated Slope Incline, Alignment & Angle Presets if Slope Tool Active */}
           {terrainSubTool === 'slope' && (
             <>
               <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
               {/* Incline vs Decline Toggle */}
-              <div className="flex items-center gap-0.5 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
-                <button
-                  onClick={() => setSlopeIncline('incline')}
-                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                    slopeIncline === 'incline'
-                      ? 'bg-[#D97706] text-white shadow-xs'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                  title="Slope inclines upwards in view/drag direction"
-                >
-                  ▲ Up
-                </button>
-                <button
-                  onClick={() => setSlopeIncline('decline')}
-                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                    slopeIncline === 'decline'
-                      ? 'bg-[#D97706] text-white shadow-xs'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                  title="Slope declines downwards in view/drag direction"
-                >
-                  ▼ Down
-                </button>
-              </div>
+              <button
+                onClick={() => setSlopeIncline(slopeIncline === 'incline' ? 'decline' : 'incline')}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#EADECF] hover:bg-[#DFCDBD] text-[#D97706] border border-[#D9C9B4] flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                title="Click to toggle Incline (Up) vs Decline (Down)"
+              >
+                <span>{slopeIncline === 'incline' ? '▲ Incline' : '▼ Decline'}</span>
+              </button>
 
               {/* Alignment Mode: Camera View vs Terrain Gradient */}
-              <div className="flex items-center gap-0.5 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
-                <button
-                  onClick={() => setSlopeAlignment('camera')}
-                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                    slopeAlignment === 'camera'
-                      ? 'bg-[#4B382C] text-white shadow-xs'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                  title="Align slope normal and incline with camera view direction"
-                >
-                  View
-                </button>
-                <button
-                  onClick={() => setSlopeAlignment('terrain')}
-                  className={`px-2 py-0.5 rounded text-[11px] font-semibold transition-all cursor-pointer ${
-                    slopeAlignment === 'terrain'
-                      ? 'bg-[#4B382C] text-white shadow-xs'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                  title="Align slope normal with natural mountain slope normal"
-                >
-                  Terrain
-                </button>
-              </div>
+              <button
+                onClick={() => setSlopeAlignment(slopeAlignment === 'camera' ? 'terrain' : 'camera')}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border border-[#D9C9B4] flex items-center gap-1 shadow-xs transition-all cursor-pointer"
+                title="Click to toggle View direction vs Mountain slope normal"
+              >
+                <span>{slopeAlignment === 'camera' ? 'View' : 'Terrain'}</span>
+              </button>
 
               {/* Angle Presets */}
-              <div className="flex items-center gap-1 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
+              <div className="flex items-center gap-0.5 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
                 {[15, 30, 45, 60].map((deg) => (
                   <button
                     key={deg}
@@ -495,43 +461,16 @@ export const ContextualDock: React.FC = () => {
                   </button>
                 ))}
               </div>
-
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-[#D97706]">Angle:</span>
-                <input
-                  type="range"
-                  aria-label="Slope Incline Angle"
-                  min="5"
-                  max="75"
-                  step="5"
-                  value={slopeAngle}
-                  onChange={(e) => setSlopeAngle(parseInt(e.target.value, 10))}
-                  className="w-14 sm:w-16 accent-[#D97706] cursor-pointer"
-                />
-                <span className="text-[11px] font-mono text-[#8D7666] w-6">{slopeAngle}°</span>
-              </div>
             </>
           )}
 
-          {/* Pond Basin Controls if Pond Tool Active */}
-          {terrainSubTool === 'pond' && (
+          {/* Default Soil brush indicator */}
+          {terrainSubTool === 'soil' && (
             <>
               <div className="w-[1px] h-5 bg-[#D9C9B4]" />
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => undoTerrain()}
-                  disabled={!canUndoTerrain}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-                    canUndoTerrain
-                      ? 'bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4] cursor-pointer shadow-xs'
-                      : 'opacity-40 cursor-not-allowed bg-transparent text-[#A8988B] border-transparent'
-                  }`}
-                  title="Undo last excavated pond basin and restore terrain"
-                >
-                  <TbArrowBackUp className="w-3.5 h-3.5" />
-                  <span>Undo Pond</span>
-                </button>
-              </div>
+              <span className="text-[11px] font-medium text-[#4B382C]">
+                Paints natural dry soil & erases water/grass
+              </span>
             </>
           )}
         </div>

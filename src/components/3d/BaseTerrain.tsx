@@ -12,7 +12,7 @@ import {
 } from '@/lib/terrain/terrainBuffer';
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
-import { useEditorStore } from '@/lib/state/useEditorStore';
+import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 
 /**
  * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
@@ -21,7 +21,7 @@ interface TerrainBrushCursorProps {
   position: [number, number, number];
   normal: [number, number, number];
   radius: number;
-  subTool: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope';
+  subTool: TerrainSubTool;
   visible: boolean;
 }
 
@@ -46,6 +46,8 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
         return '#0284C7'; // Tarpaulin blue
       case 'slope':
         return '#D97706'; // Terracotta gold
+      case 'soil':
+        return '#4B382C'; // Natural Sahyadri soil
       default:
         return '#E85D04';
     }

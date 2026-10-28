@@ -33,7 +33,7 @@ export type ToolType =
   | 'grass';
 
 export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
-export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope';
+export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope' | 'soil';
 export type FoliageSubTool = 'grass' | 'path';
 
 export type SplineConversionType = 'walkway' | 'steps' | 'wall' | 'crenellated';
@@ -187,8 +187,8 @@ interface EditorState {
   // Camera & Navigation
   cameraResetTrigger: number;
   triggerCameraReset: () => void;
-  cameraViewPreset: 'top' | 'front' | 'side' | 'reset' | null;
-  setCameraViewPreset: (view: 'top' | 'front' | 'side' | 'reset' | null) => void;
+  cameraViewPreset: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out' | null;
+  setCameraViewPreset: (view: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out' | null) => void;
 
   // Actions
   setActiveTool: (tool: ToolType) => void;

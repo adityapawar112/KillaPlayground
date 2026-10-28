@@ -13,6 +13,7 @@ import {
   syncStateToGeometry,
   refitTerrainBVH,
   applyTerrainBrush,
+  getTerrainNormalAt,
   TERRAIN_RESOLUTION,
   VERTEX_COUNT,
   STATE_BUFFER_SIZE,
@@ -366,6 +367,78 @@ describe('Terrain Buffer & State Management', () => {
       const centerTexel = getTexel(buffer, 128, 128);
       expect(centerTexel.height).toBe(1.0); // Unchanged!
     });
+
+    it('computes accurate analytical terrain normals via getTerrainNormalAt', () => {
+      const buffer = createStateBuffer(0.0);
+      // Flat ground normal should be unit vector pointing straight up (0, 1, 0)
+      const flatNormal = getTerrainNormalAt(0, 0, buffer);
+      expect(flatNormal.x).toBeCloseTo(0.0, 2);
+      expect(flatNormal.y).toBeCloseTo(1.0, 2);
+      expect(flatNormal.z).toBeCloseTo(0.0, 2);
+      expect(flatNormal.length()).toBeCloseTo(1.0, 3);
+
+      // Create a linear incline along X: h(x) = 0.5 * x
+      for (let iz = 0; iz < TERRAIN_RESOLUTION; iz++) {
+        for (let ix = 0; ix < TERRAIN_RESOLUTION; ix++) {
+          const { x } = gridToWorld(ix, iz);
+          setTexel(buffer, ix, iz, { height: Math.max(0, x + 2.0) });
+        }
+      }
+
+      // Normal on X-incline should tilt towards -X (nx < 0, ny > 0, nz ~ 0)
+      const slopeNormal = getTerrainNormalAt(0, 0, buffer);
+      expect(slopeNormal.x).toBeLessThan(0);
+      expect(slopeNormal.y).toBeGreaterThan(0);
+      expect(slopeNormal.z).toBeCloseTo(0, 2);
+      expect(slopeNormal.length()).toBeCloseTo(1.0, 3);
+    });
+
+    it('carves a graded slope at specified angle preset with slope subtool', () => {
+      const buffer = createStateBuffer(0.2);
+      // Create a slope of 30 degrees pointing along +Z
+      const dirty = applyTerrainBrush(buffer, 0, 0, {
+        operation: 'slope',
+        radius: 1.2,
+        strength: 1.0,
+        slopeAngle: 30, // 30 degrees incline
+        slopeDirection: { x: 0, z: 1 },
+        slopeOrigin: { x: 0, z: -0.5, height: 0.2 },
+      });
+
+      expect(dirty.modified).toBe(true);
+
+      // Point at origin (z = -0.5) should be near 0.2
+      const origGrid = worldToGrid(0, -0.5);
+      const origTexel = getTexel(buffer, origGrid.ix, origGrid.iz);
+      expect(origTexel.height).toBeCloseTo(0.2, 1);
+
+      // Point ahead (+Z = +0.5) should be elevated higher due to 30 deg incline
+      const aheadGrid = worldToGrid(0, 0.5);
+      const aheadTexel = getTexel(buffer, aheadGrid.ix, aheadGrid.iz);
+      expect(aheadTexel.height).toBeGreaterThan(origTexel.height);
+    });
+
+    it('smooths high-frequency jagged noise effectively across multi-cell kernel', () => {
+      const buffer = createStateBuffer(1.0);
+      // Alternate high and low bumps across a 10x10 patch
+      for (let iz = 124; iz <= 132; iz++) {
+        for (let ix = 124; ix <= 132; ix++) {
+          setTexel(buffer, ix, iz, { height: (ix + iz) % 2 === 0 ? 1.8 : 0.4 });
+        }
+      }
+
+      // Apply smooth brush
+      applyTerrainBrush(buffer, 0, 0, {
+        operation: 'smooth',
+        radius: 0.8,
+        strength: 0.9,
+      });
+
+      // The high spike should be strongly reduced towards the mean (~1.1)
+      const texel = getTexel(buffer, 128, 128);
+      expect(texel.height).toBeLessThan(1.6);
+      expect(texel.height).toBeGreaterThan(0.6);
+    });
   });
 
   describe('Terrain Store State & Undo/Redo System', () => {
@@ -405,6 +478,48 @@ describe('Terrain Buffer & State Management', () => {
       expect(redoSuccess).toBe(true);
       const redoneHeight = getTexel(useTerrainStore.getState().stateBuffer, 128, 128).height;
       expect(redoneHeight).toBeCloseTo(elevatedHeight, 2);
+    });
+
+    it('synchronizes pond water planes with undo/redo stack', async () => {
+      const { useTerrainStore } = await import('./terrainStore');
+      const { useEditorStore } = await import('../state/useEditorStore');
+
+      const terrainStore = useTerrainStore.getState();
+      const editorStore = useEditorStore.getState();
+
+      editorStore.clearPondWater();
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(0);
+
+      // Snapshot 0
+      terrainStore.pushUndo();
+
+      // Add a pond
+      editorStore.addPondWater({ x: 1.0, y: 0.1, z: 2.0, radius: 0.8 });
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(1);
+
+      // Snapshot 1
+      terrainStore.pushUndo();
+
+      // Add second pond
+      editorStore.addPondWater({ x: -1.0, y: 0.2, z: -1.0, radius: 0.5 });
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(2);
+
+      // Undo -> should restore to 1 pond
+      terrainStore.undo();
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(1);
+      expect(useEditorStore.getState().pondWaterFeatures[0].x).toBe(1.0);
+
+      // Undo again -> should restore to 0 ponds
+      terrainStore.undo();
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(0);
+
+      // Redo -> should restore to 1 pond
+      terrainStore.redo();
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(1);
+
+      // Redo -> should restore to 2 ponds
+      terrainStore.redo();
+      expect(useEditorStore.getState().pondWaterFeatures.length).toBe(2);
     });
   });
 });

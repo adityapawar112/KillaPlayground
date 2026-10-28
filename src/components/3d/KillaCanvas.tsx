@@ -214,6 +214,86 @@ interface KillaCanvasProps {
 export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
   const { nightMode, cameraViewPreset, setCameraViewPreset } = useEditorStore();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Wheel shortcut handler: Shift+Scroll (Brush Size), Ctrl+Scroll (Speed/Secondary), Alt+Scroll (Height/Angle/Tertiary)
+  // Crucial: { capture: true, passive: false } intercepts before OrbitControls and cancels default camera zoom!
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.shiftKey || e.ctrlKey || e.altKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        const delta = Math.sign(e.deltaY);
+        const isUp = delta < 0; // scroll up = increase, scroll down = decrease
+        const editor = useEditorStore.getState();
+        const tool = editor.activeTool;
+
+        if (e.shiftKey) {
+          // PRIMARY SLIDER: Brush Size (0.2m to 3.0m in 0.1m increments)
+          const step = 0.1;
+          const newRadius = Math.max(
+            0.2,
+            Math.min(3.0, parseFloat((editor.brushRadius + (isUp ? step : -step)).toFixed(2)))
+          );
+          editor.setBrushRadius(newRadius);
+        } else if (e.ctrlKey) {
+          // SECONDARY SLIDER:
+          if (tool === 'foliage' || tool === 'grass') {
+            const step = 0.05;
+            const newDensity = Math.max(
+              0.1,
+              Math.min(1.0, parseFloat((editor.grassDensity + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setGrassDensity(newDensity);
+          } else if (tool === 'water') {
+            const step = 0.02;
+            const newLevel = Math.max(
+              0.01,
+              Math.min(0.45, parseFloat((editor.waterLevel + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setWaterLevel(newLevel);
+          } else {
+            // Speed / Strength slider (0.05 to 1.0 in 0.05 increments)
+            const step = 0.05;
+            const newStrength = Math.max(
+              0.05,
+              Math.min(1.0, parseFloat((editor.brushStrength + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setBrushStrength(newStrength);
+          }
+        } else if (e.altKey) {
+          // TERTIARY SLIDER:
+          if (tool === 'terrain') {
+            if (editor.terrainSubTool === 'plateau') {
+              const step = 0.1;
+              const newHeight = Math.max(
+                0.1,
+                Math.min(3.0, parseFloat((editor.plateauHeight + (isUp ? step : -step)).toFixed(2)))
+              );
+              editor.setPlateauHeight(newHeight);
+            } else if (editor.terrainSubTool === 'slope') {
+              const step = 5;
+              const newAngle = Math.max(
+                5,
+                Math.min(75, editor.slopeAngle + (isUp ? step : -step))
+              );
+              editor.setSlopeAngle(newAngle);
+            }
+          }
+        }
+      }
+    };
+
+    container.addEventListener('wheel', handleWheel, { capture: true, passive: false });
+    return () => {
+      container.removeEventListener('wheel', handleWheel, { capture: true });
+    };
+  }, []);
 
   // Set preset camera view from gizmo or menu bar
   const handleSetCameraView = useCallback((view: 'top' | 'front' | 'side' | 'reset') => {
@@ -257,6 +337,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
   return (
     <div
+      ref={containerRef}
       className="w-full h-full relative select-none"
       onContextMenu={(e) => e.preventDefault()} // CRITICAL: Prevent browser context menu so right-click orbits freely!
     >

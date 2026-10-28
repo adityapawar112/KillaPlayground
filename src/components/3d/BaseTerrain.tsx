@@ -8,23 +8,26 @@ import {
   createBaseTerrainGeometry,
   syncStateToGeometry,
   TerrainBrushOptions,
+  getTerrainNormalAt,
 } from '@/lib/terrain/terrainBuffer';
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 
 /**
- * 3D Visual Brush Ring Cursor that tracks pointer raycast hit on the terrain surface.
+ * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
  */
 interface TerrainBrushCursorProps {
   position: [number, number, number];
+  normal: [number, number, number];
   radius: number;
-  subTool: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond';
+  subTool: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope';
   visible: boolean;
 }
 
 const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
   position,
+  normal,
   radius,
   subTool,
   visible,
@@ -41,33 +44,51 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
         return '#777A57'; // Olive sage
       case 'pond':
         return '#0284C7'; // Tarpaulin blue
+      case 'slope':
+        return '#D97706'; // Terracotta gold
       default:
         return '#E85D04';
     }
   }, [subTool]);
 
+  const { quat, offsetPos } = useMemo(() => {
+    const q = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 0, 1);
+    const n = new THREE.Vector3(normal[0], normal[1], normal[2]).normalize();
+    if (n.lengthSq() < 0.001) n.set(0, 1, 0);
+    q.setFromUnitVectors(up, n);
+
+    // Offset along surface normal to completely eliminate z-fighting on slopes and cliffs
+    const pos: [number, number, number] = [
+      position[0] + n.x * 0.025,
+      position[1] + n.y * 0.025,
+      position[2] + n.z * 0.025,
+    ];
+    return { quat: q, offsetPos: pos };
+  }, [position[0], position[1], position[2], normal[0], normal[1], normal[2]]);
+
   if (!visible) return null;
 
   return (
-    <group position={[position[0], position[1] + 0.02, position[2]]}>
+    <group position={offsetPos} quaternion={quat}>
       {/* Outer Ring */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+      <mesh renderOrder={999}>
         <ringGeometry args={[Math.max(0.05, radius - 0.04), radius, 48]} />
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.85}
+          opacity={0.88}
           depthTest={false}
           side={THREE.DoubleSide}
         />
       </mesh>
       {/* Center Reticle Point */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+      <mesh renderOrder={999}>
         <circleGeometry args={[0.04, 16]} />
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.9}
+          opacity={0.92}
           depthTest={false}
           side={THREE.DoubleSide}
         />
@@ -110,14 +131,17 @@ export const BaseTerrainFallback: React.FC = () => {
 export const BaseTerrainContent: React.FC = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   const isSculptingRef = useRef(false);
+  const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
+  const pondOriginRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const [cursorPos, setCursorPos] = useState<[number, number, number]>([0, 0, 0]);
+  const [cursorNormal, setCursorNormal] = useState<[number, number, number]>([0, 1, 0]);
   const [cursorVisible, setCursorVisible] = useState(false);
 
   const { gl, invalidate } = useThree();
   const rawControls = useThree((state) => state.controls);
   const controls = rawControls as unknown as { enabled: boolean } | null;
 
-  const { stateTexture, lastUpdated, setTerrainMesh, sculptTerrain, pushUndo } = useTerrainStore();
+  const { stateBuffer, stateTexture, lastUpdated, setTerrainMesh, sculptTerrain, pushUndo } = useTerrainStore();
   const activeTool = useEditorStore((s) => s.activeTool);
   const terrainSubTool = useEditorStore((s) => s.terrainSubTool);
   const brushRadius = useEditorStore((s) => s.brushRadius);
@@ -287,13 +311,31 @@ export const BaseTerrainContent: React.FC = () => {
       const editor = useEditorStore.getState();
       if (editor.mudLocked) return;
 
+      let slopeDir = { x: 0, z: -1 };
+      if (editor.terrainSubTool === 'slope' && slopeAnchorRef.current) {
+        const dx = hitPoint.x - slopeAnchorRef.current.x;
+        const dz = hitPoint.z - slopeAnchorRef.current.z;
+        const dist = Math.hypot(dx, dz);
+        if (dist > 0.04) {
+          slopeDir = { x: dx / dist, z: dz / dist };
+        }
+      }
+
       const opts: TerrainBrushOptions = {
         operation: editor.terrainSubTool,
         radius: editor.brushRadius,
-        strength: editor.brushStrength * 0.15,
+        strength:
+          editor.terrainSubTool === 'smooth'
+            ? editor.brushStrength * 0.7
+            : editor.terrainSubTool === 'slope'
+            ? editor.brushStrength * 0.4
+            : editor.brushStrength * 0.15,
         targetHeight: editor.plateauHeight,
         maxHeight: 3.5,
         minHeight: 0.0,
+        slopeAngle: editor.slopeAngle,
+        slopeDirection: slopeDir,
+        slopeOrigin: slopeAnchorRef.current ?? { x: hitPoint.x, z: hitPoint.z, height: hitPoint.y },
       };
 
       const modified = sculptTerrain(hitPoint.x, hitPoint.z, opts);
@@ -321,11 +363,24 @@ export const BaseTerrainContent: React.FC = () => {
         controls.enabled = false;
       }
 
+      const n = e.face?.normal
+        ? e.face.normal.clone().normalize()
+        : getTerrainNormalAt(e.point.x, e.point.z, stateBuffer);
+
       setCursorPos([e.point.x, e.point.y, e.point.z]);
+      setCursorNormal([n.x, n.y, n.z]);
       setCursorVisible(true);
+
+      if (editor.terrainSubTool === 'slope') {
+        slopeAnchorRef.current = { x: e.point.x, z: e.point.z, height: e.point.y };
+      }
+      if (editor.terrainSubTool === 'pond') {
+        pondOriginRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+      }
+
       executeSculpt(e.point);
     },
-    [controls, executeSculpt, pushUndo]
+    [controls, executeSculpt, pushUndo, stateBuffer]
   );
 
   const handlePointerMove = useCallback(
@@ -336,7 +391,12 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      const n = e.face?.normal
+        ? e.face.normal.clone().normalize()
+        : getTerrainNormalAt(e.point.x, e.point.z, stateBuffer);
+
       setCursorPos([e.point.x, e.point.y, e.point.z]);
+      setCursorNormal([n.x, n.y, n.z]);
       if (!cursorVisible) setCursorVisible(true);
 
       if (isSculptingRef.current) {
@@ -344,11 +404,24 @@ export const BaseTerrainContent: React.FC = () => {
         executeSculpt(e.point);
       }
     },
-    [cursorVisible, executeSculpt]
+    [cursorVisible, executeSculpt, stateBuffer]
   );
 
   const handlePointerUp = useCallback(() => {
     if (isSculptingRef.current) {
+      const editor = useEditorStore.getState();
+      if (editor.terrainSubTool === 'pond' && pondOriginRef.current) {
+        const rimH = pondOriginRef.current.y;
+        const waterY = Math.max(0.04, rimH - 0.04);
+        editor.addPondWater({
+          x: pondOriginRef.current.x,
+          y: waterY,
+          z: pondOriginRef.current.z,
+          radius: Math.max(0.2, editor.brushRadius * 0.92),
+        });
+        pondOriginRef.current = null;
+      }
+      slopeAnchorRef.current = null;
       isSculptingRef.current = false;
       if (controls) {
         controls.enabled = true;
@@ -367,6 +440,19 @@ export const BaseTerrainContent: React.FC = () => {
   useEffect(() => {
     const handleGlobalPointerUp = () => {
       if (isSculptingRef.current) {
+        const editor = useEditorStore.getState();
+        if (editor.terrainSubTool === 'pond' && pondOriginRef.current) {
+          const rimH = pondOriginRef.current.y;
+          const waterY = Math.max(0.04, rimH - 0.04);
+          editor.addPondWater({
+            x: pondOriginRef.current.x,
+            y: waterY,
+            z: pondOriginRef.current.z,
+            radius: Math.max(0.2, editor.brushRadius * 0.92),
+          });
+          pondOriginRef.current = null;
+        }
+        slopeAnchorRef.current = null;
         isSculptingRef.current = false;
         if (controls) {
           controls.enabled = true;
@@ -399,6 +485,7 @@ export const BaseTerrainContent: React.FC = () => {
 
       <TerrainBrushCursor
         position={cursorPos}
+        normal={cursorNormal}
         radius={brushRadius}
         subTool={terrainSubTool}
         visible={cursorVisible && activeTool === 'terrain'}

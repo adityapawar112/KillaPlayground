@@ -227,6 +227,44 @@ export function updateNormalsForRegion(
 }
 
 /**
+ * Computes the analytical surface normal vector at world coordinates (x, z)
+ * using central finite differences on the state heightmap buffer.
+ */
+export function getTerrainNormalAt(
+  x: number,
+  z: number,
+  buffer: Float32Array
+): THREE.Vector3 {
+  const { ix, iz } = worldToGrid(x, z);
+
+  const leftX = ix > 0 ? ix - 1 : ix;
+  const rightX = ix < TERRAIN_RESOLUTION - 1 ? ix + 1 : ix;
+  const downZ = iz > 0 ? iz - 1 : iz;
+  const upZ = iz < TERRAIN_RESOLUTION - 1 ? iz + 1 : iz;
+
+  const scaleX = TERRAIN_SIZE / (TERRAIN_RESOLUTION - 1);
+  const scaleZ = TERRAIN_SIZE / (TERRAIN_RESOLUTION - 1);
+
+  const hL = buffer[(iz * TERRAIN_RESOLUTION + leftX) * STATE_CHANNELS];
+  const hR = buffer[(iz * TERRAIN_RESOLUTION + rightX) * STATE_CHANNELS];
+  const hD = buffer[(downZ * TERRAIN_RESOLUTION + ix) * STATE_CHANNELS];
+  const hU = buffer[(upZ * TERRAIN_RESOLUTION + ix) * STATE_CHANNELS];
+
+  const factorX = (ix > 0 && ix < TERRAIN_RESOLUTION - 1) ? (2 * scaleX) : scaleX;
+  const factorZ = (iz > 0 && iz < TERRAIN_RESOLUTION - 1) ? (2 * scaleZ) : scaleZ;
+
+  const dh_dx = (hR - hL) / factorX;
+  const dh_dz = (hU - hD) / factorZ;
+
+  const nx = -dh_dx;
+  const ny = 1.0;
+  const nz = -dh_dz;
+  const invLen = 1.0 / Math.hypot(nx, ny, nz);
+
+  return new THREE.Vector3(nx * invLen, ny * invLen, nz * invLen);
+}
+
+/**
  * Syncs elevation from stateBuffer into geometry attributes for a dirty bounding box [minX..maxX, minZ..maxZ].
  * If no range is specified, syncs the entire buffer.
  */
@@ -264,12 +302,15 @@ export function syncStateToGeometry(
 }
 
 export interface TerrainBrushOptions {
-  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond';
+  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope';
   radius: number;       // in world units (meters)
   strength: number;     // delta / speed multiplier
   targetHeight?: number;
   maxHeight?: number;   // default 3.5
   minHeight?: number;   // default 0.0
+  slopeAngle?: number;  // in degrees (e.g. 15, 30, 45, 60)
+  slopeDirection?: { x: number; z: number }; // normalized 2D direction vector
+  slopeOrigin?: { x: number; z: number; height: number }; // reference origin
 }
 
 export interface DirtyRegion {
@@ -281,7 +322,7 @@ export interface DirtyRegion {
 }
 
 /**
- * Applies direct terrain brush sculpting (elevate, lower, plateau, smooth, pond)
+ * Applies direct terrain brush sculpting (elevate, lower, plateau, smooth, pond, slope)
  * directly into the stateBuffer with smooth radial falloff.
  * Returns the modified dirty bounding box for targeted GPU buffer sync.
  */
@@ -348,27 +389,51 @@ export function applyTerrainBrush(
         buffer[idx + 0] = currentHeight + (targetHeight - currentHeight) * factor;
         modified = true;
       } else if (operation === 'smooth') {
-        // Sample 3x3 local neighborhood average
+        // Multi-tap adaptive neighborhood kernel based on brush radius
+        const cellMeters = TERRAIN_SIZE / (TERRAIN_RESOLUTION - 1);
+        const radiusInCells = Math.round(radius / cellMeters);
+        const kernel = Math.max(2, Math.min(6, Math.round(radiusInCells * 0.25)));
+        const step = kernel > 3 ? 2 : 1;
+
         let sum = 0;
         let count = 0;
-        for (let nz = Math.max(0, iz - 1); nz <= Math.min(TERRAIN_RESOLUTION - 1, iz + 1); nz++) {
-          for (let nx = Math.max(0, ix - 1); nx <= Math.min(TERRAIN_RESOLUTION - 1, ix + 1); nx++) {
+        for (let nz = Math.max(0, iz - kernel); nz <= Math.min(TERRAIN_RESOLUTION - 1, iz + kernel); nz += step) {
+          for (let nx = Math.max(0, ix - kernel); nx <= Math.min(TERRAIN_RESOLUTION - 1, ix + kernel); nx += step) {
             const nIdx = (nz * TERRAIN_RESOLUTION + nx) * STATE_CHANNELS;
             sum += buffer[nIdx + 0];
             count++;
           }
         }
         const avg = count > 0 ? sum / count : currentHeight;
-        const factor = Math.min(1.0, strength * falloff);
+        const factor = Math.min(1.0, strength * 2.5 * falloff);
         buffer[idx + 0] = currentHeight + (avg - currentHeight) * factor;
         modified = true;
       } else if (operation === 'pond') {
-        // Depress to 0.0 and boost wetness
-        const pondTarget = 0.0;
+        // Depress to 0.0 or targetHeight and boost wetness
+        const pondTarget = options.targetHeight ?? 0.0;
         const factor = Math.min(1.0, strength * 2.5 * falloff);
-        buffer[idx + 0] = Math.max(0.0, currentHeight + (pondTarget - currentHeight) * factor);
+        buffer[idx + 0] = Math.max(minHeight, currentHeight + (pondTarget - currentHeight) * factor);
         // Boost wetness channel (G)
         buffer[idx + 1] = Math.min(1.0, buffer[idx + 1] + 0.85 * falloff);
+        modified = true;
+      } else if (operation === 'slope') {
+        const angleDeg = options.slopeAngle ?? 30;
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const tanAngle = Math.tan(angleRad);
+
+        const dirX = options.slopeDirection?.x ?? 0;
+        const dirZ = options.slopeDirection?.z ?? 1;
+        const origX = options.slopeOrigin?.x ?? centerX;
+        const origZ = options.slopeOrigin?.z ?? centerZ;
+        const origH = options.slopeOrigin?.height ?? buffer[idx + 0];
+
+        // Signed projection of vertex along slope direction relative to origin
+        const proj = (x - origX) * dirX + (z - origZ) * dirZ;
+        const targetH = origH + tanAngle * proj;
+        const clampedTarget = Math.max(minHeight, Math.min(maxHeight, targetH));
+
+        const factor = Math.min(1.0, strength * 2.5 * falloff);
+        buffer[idx + 0] = currentHeight + (clampedTarget - currentHeight) * factor;
         modified = true;
       }
     }

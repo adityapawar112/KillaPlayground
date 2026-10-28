@@ -13,6 +13,7 @@ import {
   STATE_BUFFER_SIZE,
 } from './terrainBuffer';
 import { generateTerrainBlueprint } from './terrainGenerators';
+import { useEditorStore, PondWaterFeature } from '../state/useEditorStore';
 
 interface TerrainState {
   stateBuffer: Float32Array;
@@ -40,6 +41,8 @@ interface TerrainState {
 const MAX_UNDO_SLOTS = 15;
 const undoStack: Float32Array[] = [];
 const redoStack: Float32Array[] = [];
+const pondUndoStack: PondWaterFeature[][] = [];
+const pondRedoStack: PondWaterFeature[][] = [];
 
 // Generate organic starter mud hill by default
 const initialBuffer = createStateBuffer(0.0, 0.0);
@@ -128,9 +131,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     const { stateBuffer } = get();
     if (undoStack.length >= MAX_UNDO_SLOTS) {
       undoStack.shift();
+      pondUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
+    pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
     redoStack.length = 0;
+    pondRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
@@ -143,6 +149,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     const prevSnapshot = undoStack.pop()!;
     redoStack.push(stateBuffer.slice());
     stateBuffer.set(prevSnapshot);
+
+    if (pondUndoStack.length > 0) {
+      const prevPonds = pondUndoStack.pop()!;
+      pondRedoStack.push([...useEditorStore.getState().pondWaterFeatures]);
+      useEditorStore.getState().setPondWaterFeatures(prevPonds);
+    }
 
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {
@@ -159,6 +171,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     const nextSnapshot = redoStack.pop()!;
     undoStack.push(stateBuffer.slice());
     stateBuffer.set(nextSnapshot);
+
+    if (pondRedoStack.length > 0) {
+      const nextPonds = pondRedoStack.pop()!;
+      pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
+      useEditorStore.getState().setPondWaterFeatures(nextPonds);
+    }
 
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {

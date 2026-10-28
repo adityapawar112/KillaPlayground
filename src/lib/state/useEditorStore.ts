@@ -11,6 +11,7 @@ export const SavedProjectSchema = z.object({
   waterMode: z.string().optional().default('tarpaulin'),
   splines: z.array(z.any()).default([]),
   placedProps: z.array(z.any()).default([]),
+  pondWaterFeatures: z.array(z.any()).optional().default([]),
   timestamp: z.number().optional(),
 });
 
@@ -32,12 +33,20 @@ export type ToolType =
   | 'grass';
 
 export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
-export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond';
+export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope';
 export type FoliageSubTool = 'grass' | 'path';
 
 export type SplineConversionType = 'walkway' | 'steps' | 'wall' | 'crenellated';
 
 export type BrushSizeType = 'large' | 'medium' | 'fine';
+
+export interface PondWaterFeature {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  radius: number;
+}
 
 export interface PlacedProp {
   id: string;
@@ -61,6 +70,7 @@ export interface SavedProject {
   data: {
     splines: SplinePath[];
     placedProps: PlacedProp[];
+    pondWaterFeatures?: PondWaterFeature[];
     fortTitle: string;
     builderName: string;
     templateId: string;
@@ -81,6 +91,8 @@ interface EditorState {
   setTerrainSubTool: (st: TerrainSubTool) => void;
   plateauHeight: number;
   setPlateauHeight: (h: number) => void;
+  slopeAngle: number; // 5 to 75 deg (default 30)
+  setSlopeAngle: (angle: number) => void;
   foliageSubTool: FoliageSubTool;
   setFoliageSubTool: (st: FoliageSubTool) => void;
   brushRadius: number; // 0.2 to 2.5
@@ -92,6 +104,14 @@ interface EditorState {
   waterMode: 'reflective' | 'tarpaulin';
   nightMode: boolean;
   mudLocked: boolean;
+
+  // Local Pond Water Planes
+  pondWaterFeatures: PondWaterFeature[];
+  addPondWater: (pond: Omit<PondWaterFeature, 'id'>) => string;
+  removePondWater: (id: string) => void;
+  clearPondWater: () => void;
+  undoLastPondWater: () => void;
+  setPondWaterFeatures: (features: PondWaterFeature[]) => void;
 
   // Spline Drawing State
   isDrawingSpline: boolean;
@@ -247,6 +267,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setTerrainSubTool: (terrainSubTool) => set({ terrainSubTool }),
   plateauHeight: 1.0,
   setPlateauHeight: (plateauHeight) => set({ plateauHeight }),
+  slopeAngle: 30,
+  setSlopeAngle: (slopeAngle) => set({ slopeAngle }),
   foliageSubTool: 'grass',
   setFoliageSubTool: (foliageSubTool) => set({ foliageSubTool }),
   brushRadius: 0.8,
@@ -258,6 +280,26 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   waterMode: 'tarpaulin',
   nightMode: false,
   mudLocked: false,
+
+  pondWaterFeatures: [],
+  addPondWater: (pond) => {
+    const id = `pond_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newPond: PondWaterFeature = { ...pond, id };
+    set((state) => ({
+      pondWaterFeatures: [...state.pondWaterFeatures, newPond],
+    }));
+    return id;
+  },
+  removePondWater: (id) =>
+    set((state) => ({
+      pondWaterFeatures: state.pondWaterFeatures.filter((p) => p.id !== id),
+    })),
+  clearPondWater: () => set({ pondWaterFeatures: [] }),
+  undoLastPondWater: () =>
+    set((state) => ({
+      pondWaterFeatures: state.pondWaterFeatures.slice(0, -1),
+    })),
+  setPondWaterFeatures: (pondWaterFeatures) => set({ pondWaterFeatures }),
 
   isDrawingSpline: false,
   currentSplinePoints: [],
@@ -338,7 +380,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   saveProjectLocally: (name) => {
-    const { splines, placedProps, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
+    const { splines, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
     const projectName = name?.trim() || fortTitle || 'Untitled Killa';
     const projectId = `killa_${Date.now()}`;
     const newProject: SavedProject = {
@@ -349,6 +391,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       data: {
         splines,
         placedProps,
+        pondWaterFeatures,
         fortTitle: projectName,
         builderName,
         templateId,
@@ -386,6 +429,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       splines: proj.data.splines || [],
       placedProps: proj.data.placedProps || [],
+      pondWaterFeatures: proj.data.pondWaterFeatures || [],
       fortTitle: proj.data.fortTitle || proj.name,
       builderName: proj.data.builderName || 'Mavala Builder',
       templateId: proj.data.templateId || 'raigad',
@@ -410,7 +454,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   exportProjectData: () => {
-    const { splines, placedProps, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const { splines, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode } = get();
     const payload = {
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
@@ -421,6 +465,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       waterMode,
       splines,
       placedProps,
+      pondWaterFeatures,
     };
     return JSON.stringify(payload, null, 2);
   },
@@ -443,6 +488,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         waterMode: data.waterMode as any,
         splines: data.splines,
         placedProps: data.placedProps,
+        pondWaterFeatures: data.pondWaterFeatures || [],
         isStartupModalOpen: false,
       });
 
@@ -578,6 +624,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       splines: [],
       placedProps: [],
+      pondWaterFeatures: [],
       selectedPropId: null,
       selectedPropType: null,
       mudLocked: false,

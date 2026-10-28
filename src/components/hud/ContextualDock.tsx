@@ -16,6 +16,9 @@ import {
   TbTrendingDown,
   TbMinus,
   TbWaveSine,
+  TbArrowUpRight,
+  TbArrowBackUp,
+  TbTrash,
 } from 'react-icons/tb';
 import { useEditorStore, BrushSizeType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -31,6 +34,11 @@ export const ContextualDock: React.FC = () => {
     setTerrainSubTool,
     plateauHeight,
     setPlateauHeight,
+    slopeAngle,
+    setSlopeAngle,
+    pondWaterFeatures,
+    undoLastPondWater,
+    clearPondWater,
     foliageSubTool,
     setFoliageSubTool,
     brushRadius,
@@ -339,6 +347,18 @@ export const ContextualDock: React.FC = () => {
               <TbRipple className="w-3.5 h-3.5" />
               <span>Pond</span>
             </button>
+            <button
+              onClick={() => setTerrainSubTool('slope')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                terrainSubTool === 'slope'
+                  ? 'bg-[#D97706] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+              title="Grade slopes and mountain pathways at calibrated angles"
+            >
+              <TbArrowUpRight className="w-3.5 h-3.5" />
+              <span>Slope</span>
+            </button>
           </div>
 
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
@@ -393,6 +413,75 @@ export const ContextualDock: React.FC = () => {
                   className="w-16 sm:w-20 accent-[#B58B63] cursor-pointer"
                 />
                 <span className="text-[11px] font-mono text-[#8D7666] w-6">{plateauHeight.toFixed(1)}m</span>
+              </div>
+            </>
+          )}
+
+          {/* Slope Angle Presets & Slider if Slope Tool Active */}
+          {terrainSubTool === 'slope' && (
+            <>
+              <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+              <div className="flex items-center gap-1 bg-[#EADECF] p-0.5 rounded-lg border border-[#D9C9B4]">
+                {[15, 30, 45, 60].map((deg) => (
+                  <button
+                    key={deg}
+                    onClick={() => setSlopeAngle(deg)}
+                    className={`px-1.5 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
+                      slopeAngle === deg
+                        ? 'bg-[#D97706] text-white shadow-xs'
+                        : 'text-[#634E40] hover:text-[#2B1E16]'
+                    }`}
+                    title={`${deg}° slope angle preset`}
+                  >
+                    {deg}°
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-[#D97706]">Angle:</span>
+                <input
+                  type="range"
+                  aria-label="Slope Incline Angle"
+                  min="5"
+                  max="75"
+                  step="5"
+                  value={slopeAngle}
+                  onChange={(e) => setSlopeAngle(parseInt(e.target.value, 10))}
+                  className="w-16 sm:w-20 accent-[#D97706] cursor-pointer"
+                />
+                <span className="text-[11px] font-mono text-[#8D7666] w-6">{slopeAngle}°</span>
+              </div>
+            </>
+          )}
+
+          {/* Pond Plane Undo / Clear Controls if Pond Tool Active */}
+          {terrainSubTool === 'pond' && (
+            <>
+              <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={undoLastPondWater}
+                  disabled={pondWaterFeatures.length === 0}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                    pondWaterFeatures.length > 0
+                      ? 'bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4] cursor-pointer shadow-xs'
+                      : 'opacity-40 cursor-not-allowed bg-transparent text-[#A8988B] border-transparent'
+                  }`}
+                  title="Undo and remove the most recently excavated pond water plane"
+                >
+                  <TbArrowBackUp className="w-3.5 h-3.5" />
+                  <span>Undo Pond {pondWaterFeatures.length > 0 ? `(${pondWaterFeatures.length})` : ''}</span>
+                </button>
+                {pondWaterFeatures.length > 0 && (
+                  <button
+                    onClick={clearPondWater}
+                    className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium text-[#8F4938] hover:bg-[#EADECF] border border-[#D9C9B4] transition-all cursor-pointer"
+                    title="Remove all placed pond water planes"
+                  >
+                    <TbTrash className="w-3.5 h-3.5" />
+                    <span>Clear</span>
+                  </button>
+                )}
               </div>
             </>
           )}

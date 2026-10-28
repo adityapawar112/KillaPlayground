@@ -262,3 +262,117 @@ export function syncStateToGeometry(
     geometry.computeVertexNormals();
   }
 }
+
+export interface TerrainBrushOptions {
+  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond';
+  radius: number;       // in world units (meters)
+  strength: number;     // delta / speed multiplier
+  targetHeight?: number;
+  maxHeight?: number;   // default 3.5
+  minHeight?: number;   // default 0.0
+}
+
+export interface DirtyRegion {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+  modified: boolean;
+}
+
+/**
+ * Applies direct terrain brush sculpting (elevate, lower, plateau, smooth, pond)
+ * directly into the stateBuffer with smooth radial falloff.
+ * Returns the modified dirty bounding box for targeted GPU buffer sync.
+ */
+export function applyTerrainBrush(
+  buffer: Float32Array,
+  centerX: number,
+  centerZ: number,
+  options: TerrainBrushOptions
+): DirtyRegion {
+  const {
+    operation,
+    radius,
+    strength,
+    targetHeight = 1.0,
+    maxHeight = 3.5,
+    minHeight = 0.0,
+  } = options;
+
+  const minWorldX = centerX - radius;
+  const maxWorldX = centerX + radius;
+  const minWorldZ = centerZ - radius;
+  const maxWorldZ = centerZ + radius;
+
+  const minGrid = worldToGrid(minWorldX, minWorldZ);
+  const maxGrid = worldToGrid(maxWorldX, maxWorldZ);
+
+  const minX = Math.max(0, Math.min(minGrid.ix, maxGrid.ix));
+  const maxX = Math.min(TERRAIN_RESOLUTION - 1, Math.max(minGrid.ix, maxGrid.ix));
+  const minZ = Math.max(0, Math.min(minGrid.iz, maxGrid.iz));
+  const maxZ = Math.min(TERRAIN_RESOLUTION - 1, Math.max(minGrid.iz, maxGrid.iz));
+
+  let modified = false;
+  const radiusSq = radius * radius;
+
+  for (let iz = minZ; iz <= maxZ; iz++) {
+    for (let ix = minX; ix <= maxX; ix++) {
+      const idx = (iz * TERRAIN_RESOLUTION + ix) * STATE_CHANNELS;
+      const isLocked = buffer[idx + 2] > 0.5;
+      if (isLocked) continue;
+
+      const { x, z } = gridToWorld(ix, iz);
+      const dx = x - centerX;
+      const dz = z - centerZ;
+      const distSq = dx * dx + dz * dz;
+
+      if (distSq > radiusSq) continue;
+
+      const dist = Math.sqrt(distSq);
+      const d = dist / radius;
+      // Hermite smoothstep falloff: 1 at center, 0 at radius, smooth derivative at endpoints
+      const falloff = (1.0 - d * d) * (1.0 - d * d);
+      const currentHeight = buffer[idx + 0];
+
+      if (operation === 'elevate') {
+        const delta = strength * falloff;
+        buffer[idx + 0] = Math.min(maxHeight, currentHeight + delta);
+        modified = true;
+      } else if (operation === 'lower') {
+        const delta = strength * falloff;
+        buffer[idx + 0] = Math.max(minHeight, currentHeight - delta);
+        modified = true;
+      } else if (operation === 'plateau') {
+        const factor = Math.min(1.0, strength * 2.0 * falloff);
+        buffer[idx + 0] = currentHeight + (targetHeight - currentHeight) * factor;
+        modified = true;
+      } else if (operation === 'smooth') {
+        // Sample 3x3 local neighborhood average
+        let sum = 0;
+        let count = 0;
+        for (let nz = Math.max(0, iz - 1); nz <= Math.min(TERRAIN_RESOLUTION - 1, iz + 1); nz++) {
+          for (let nx = Math.max(0, ix - 1); nx <= Math.min(TERRAIN_RESOLUTION - 1, ix + 1); nx++) {
+            const nIdx = (nz * TERRAIN_RESOLUTION + nx) * STATE_CHANNELS;
+            sum += buffer[nIdx + 0];
+            count++;
+          }
+        }
+        const avg = count > 0 ? sum / count : currentHeight;
+        const factor = Math.min(1.0, strength * falloff);
+        buffer[idx + 0] = currentHeight + (avg - currentHeight) * factor;
+        modified = true;
+      } else if (operation === 'pond') {
+        // Depress to 0.0 and boost wetness
+        const pondTarget = 0.0;
+        const factor = Math.min(1.0, strength * 2.5 * falloff);
+        buffer[idx + 0] = Math.max(0.0, currentHeight + (pondTarget - currentHeight) * factor);
+        // Boost wetness channel (G)
+        buffer[idx + 1] = Math.min(1.0, buffer[idx + 1] + 0.85 * falloff);
+        modified = true;
+      }
+    }
+  }
+
+  return { minX, maxX, minZ, maxZ, modified };
+}

@@ -12,6 +12,7 @@ import {
   createBaseTerrainGeometry,
   syncStateToGeometry,
   refitTerrainBVH,
+  applyTerrainBrush,
   TERRAIN_RESOLUTION,
   VERTEX_COUNT,
   STATE_BUFFER_SIZE,
@@ -243,5 +244,167 @@ describe('Terrain Buffer & State Management', () => {
     // Invalid non-object
     const invalid = SavedProjectSchema.safeParse('not an object');
     expect(invalid.success).toBe(false);
+  });
+
+  describe('Direct Terrain Sculpting Brush Operations (Ticket 03)', () => {
+    it('elevates terrain with smooth radial falloff and returns dirty region', () => {
+      const buffer = createStateBuffer();
+      // Apply elevate brush at world (0, 0)
+      const dirty = applyTerrainBrush(buffer, 0, 0, {
+        operation: 'elevate',
+        radius: 1.0,
+        strength: 0.5,
+      });
+
+      expect(dirty.modified).toBe(true);
+      expect(dirty.minX).toBeLessThan(128);
+      expect(dirty.maxX).toBeGreaterThan(128);
+
+      const centerTexel = getTexel(buffer, 128, 128);
+      expect(centerTexel.height).toBeGreaterThan(0.4);
+
+      // Texel near brush boundary should have smaller elevation (smooth falloff)
+      const midGrid = worldToGrid(0.6, 0);
+      const midTexel = getTexel(buffer, midGrid.ix, midGrid.iz);
+      expect(midTexel.height).toBeGreaterThan(0);
+      expect(midTexel.height).toBeLessThan(centerTexel.height);
+
+      // Texel outside brush radius should remain 0
+      const outsideGrid = worldToGrid(1.5, 0);
+      const outsideTexel = getTexel(buffer, outsideGrid.ix, outsideGrid.iz);
+      expect(outsideTexel.height).toBe(0);
+    });
+
+    it('lowers terrain and clamps cleanly at minHeight', () => {
+      const buffer = createStateBuffer(1.0);
+      const dirty = applyTerrainBrush(buffer, 0, 0, {
+        operation: 'lower',
+        radius: 1.0,
+        strength: 0.6,
+        minHeight: 0.0,
+      });
+
+      expect(dirty.modified).toBe(true);
+      const centerTexel = getTexel(buffer, 128, 128);
+      expect(centerTexel.height).toBeLessThan(0.6);
+      expect(centerTexel.height).toBeGreaterThanOrEqual(0.0);
+
+      // Further lowering clamps at 0.0
+      applyTerrainBrush(buffer, 0, 0, {
+        operation: 'lower',
+        radius: 1.0,
+        strength: 1.5,
+        minHeight: 0.0,
+      });
+      expect(getTexel(buffer, 128, 128).height).toBe(0.0);
+    });
+
+    it('flattens terrain toward targetHeight with plateau operation', () => {
+      const buffer = createStateBuffer(0.2);
+      // Create uneven slope
+      setTexel(buffer, 128, 128, { height: 1.8 });
+      setTexel(buffer, 129, 128, { height: 0.4 });
+
+      const dirty = applyTerrainBrush(buffer, 0, 0, {
+        operation: 'plateau',
+        radius: 1.0,
+        strength: 1.0,
+        targetHeight: 1.0,
+      });
+
+      expect(dirty.modified).toBe(true);
+      // Both should have moved towards targetHeight (1.0)
+      const centerTexel = getTexel(buffer, 128, 128);
+      expect(centerTexel.height).toBeCloseTo(1.0, 1);
+    });
+
+    it('smooths high variance spikes with neighborhood box blur', () => {
+      const buffer = createStateBuffer(0.5);
+      // Create single sharp jagged spike at center
+      setTexel(buffer, 128, 128, { height: 2.5 });
+
+      applyTerrainBrush(buffer, 0, 0, {
+        operation: 'smooth',
+        radius: 0.8,
+        strength: 0.8,
+      });
+
+      const centerTexel = getTexel(buffer, 128, 128);
+      // Spike should be blunted down closer to surrounding 0.5
+      expect(centerTexel.height).toBeLessThan(2.0);
+    });
+
+    it('excavates pond depression and sets wetness channel', () => {
+      const buffer = createStateBuffer(0.6);
+      const dirty = applyTerrainBrush(buffer, 1.0, 1.0, {
+        operation: 'pond',
+        radius: 1.2,
+        strength: 0.8,
+      });
+
+      expect(dirty.modified).toBe(true);
+      const pondGrid = worldToGrid(1.0, 1.0);
+      const pondTexel = getTexel(buffer, pondGrid.ix, pondGrid.iz);
+
+      // Depth should be depressed below 0.08
+      expect(pondTexel.height).toBeLessThan(0.08);
+      // Wetness should be marked for glistening mud/water
+      expect(pondTexel.wetness).toBeGreaterThan(0.5);
+    });
+
+    it('respects locked vertices and does not modify locked regions', () => {
+      const buffer = createStateBuffer(1.0);
+      // Lock center texel
+      setTexel(buffer, 128, 128, { locked: 1.0, height: 1.0 });
+
+      applyTerrainBrush(buffer, 0, 0, {
+        operation: 'elevate',
+        radius: 1.0,
+        strength: 0.5,
+      });
+
+      const centerTexel = getTexel(buffer, 128, 128);
+      expect(centerTexel.height).toBe(1.0); // Unchanged!
+    });
+  });
+
+  describe('Terrain Store State & Undo/Redo System', () => {
+    it('sculpts terrain through useTerrainStore and manages undo/redo stack', async () => {
+      const { useTerrainStore } = await import('./terrainStore');
+      const store = useTerrainStore.getState();
+
+      // Reset to fresh state
+      store.resetTerrain();
+      const initialHeight = getTexel(useTerrainStore.getState().stateBuffer, 128, 128).height;
+
+      // Push undo snapshot before sculpt
+      store.pushUndo();
+      expect(useTerrainStore.getState().canUndo()).toBe(true);
+      expect(useTerrainStore.getState().canRedo()).toBe(false);
+
+      // Perform elevate sculpt
+      const sculptResult = store.sculptTerrain(0, 0, {
+        operation: 'elevate',
+        radius: 1.0,
+        strength: 0.8,
+      });
+      expect(sculptResult).toBe(true);
+
+      const elevatedHeight = getTexel(useTerrainStore.getState().stateBuffer, 128, 128).height;
+      expect(elevatedHeight).toBeGreaterThan(initialHeight);
+
+      // Undo sculpt
+      const undoSuccess = store.undo();
+      expect(undoSuccess).toBe(true);
+      const restoredHeight = getTexel(useTerrainStore.getState().stateBuffer, 128, 128).height;
+      expect(restoredHeight).toBeCloseTo(initialHeight, 2);
+      expect(useTerrainStore.getState().canRedo()).toBe(true);
+
+      // Redo sculpt
+      const redoSuccess = store.redo();
+      expect(redoSuccess).toBe(true);
+      const redoneHeight = getTexel(useTerrainStore.getState().stateBuffer, 128, 128).height;
+      expect(redoneHeight).toBeCloseTo(elevatedHeight, 2);
+    });
   });
 });

@@ -3,12 +3,15 @@
 import React from 'react';
 import {
   TbMountain,
-  TbDropletHalf2,
-  TbLayersSubtract,
+  TbBuildingFortress,
   TbRoute,
   TbBrush,
-  TbPlant2,
+  TbTrees,
   TbUsersGroup,
+  TbShovel,
+  TbDropletHalf2,
+  TbLayersSubtract,
+  TbPlant2,
 } from 'react-icons/tb';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -20,13 +23,13 @@ interface ToolDef {
 }
 
 const TOOLS_CONFIG: ToolDef[] = [
-  { id: 'soil', key: '1', icon: TbMountain },
-  { id: 'water', key: '2', icon: TbDropletHalf2 },
-  { id: 'shape_side', key: '3', icon: TbLayersSubtract },
-  { id: 'spline', key: '4', icon: TbRoute },
-  { id: 'paint', key: '5', icon: TbBrush },
-  { id: 'grass', key: '6', icon: TbPlant2 },
-  { id: 'prop', key: '7', icon: TbUsersGroup },
+  { id: 'terrain', key: '1', icon: TbMountain },
+  { id: 'walls', key: '2', icon: TbBuildingFortress },
+  { id: 'spline', key: '3', icon: TbRoute },
+  { id: 'paint', key: '4', icon: TbBrush },
+  { id: 'foliage', key: '5', icon: TbTrees },
+  { id: 'prop', key: '6', icon: TbUsersGroup },
+  { id: 'soil', key: '7', icon: TbShovel },
 ];
 
 export const BottomDock: React.FC = () => {
@@ -37,18 +40,19 @@ export const BottomDock: React.FC = () => {
     ToolType | 'shape_side',
     { label: string; fullLabel: string; desc: string }
   > = {
+    terrain: (t.tools as any).terrain || { label: 'Terrain', fullLabel: 'Terrain Sculpt', desc: 'Manipulate mountain terrain' },
+    walls: (t.tools as any).walls || { label: 'Walls', fullLabel: 'Fort Walls', desc: 'Draw perimeter walls and bastions' },
+    spline: t.tools.spline,
+    paint: t.tools.paint,
+    foliage: (t.tools as any).foliage || t.tools.grass,
+    prop: t.tools.prop,
     soil: t.tools.soil,
     water: t.tools.water,
     shape: t.tools.shape,
     shape_side: t.tools.shape,
     shape_top: t.tools.shape,
     dry: (t.tools as any).dry || { label: 'Dry', fullLabel: 'Drying Tool', desc: 'Dries and solidifies shaped wet soil' },
-    paint: t.tools.paint,
-    terrain: (t.tools as any).terrain || { label: 'Terrain', fullLabel: 'Terrain Sculpt', desc: 'Manipulate mountain terrain' },
-    foliage: (t.tools as any).foliage || t.tools.grass,
     grass: t.tools.grass,
-    spline: t.tools.spline,
-    prop: t.tools.prop,
   };
 
   return (

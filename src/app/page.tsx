@@ -11,6 +11,7 @@ import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
 import { StartupModal } from '@/components/modals/StartupModal';
 import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
 import { useEditorStore } from '@/lib/state/useEditorStore';
+import { useTerrainStore } from '@/lib/terrain/terrainStore';
 
 const KillaCanvas = dynamic(
   () => import('@/components/3d/KillaCanvas').then((m) => m.KillaCanvas),
@@ -33,6 +34,11 @@ const KillaCanvas = dynamic(
 export default function HomePage() {
   const nightMode = useEditorStore((s) => s.nightMode);
   const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
+  const lastUpdated = useTerrainStore((s) => s.lastUpdated);
+  const undo = useTerrainStore((s) => s.undo);
+  const redo = useTerrainStore((s) => s.redo);
+  const canUndo = useTerrainStore.getState().canUndo();
+  const canRedo = useTerrainStore.getState().canRedo();
 
   // Global Keyboard Shortcuts (Tool keys 1-9, Brush size, Night mode, Reset, etc.)
   // shortcut: Read live store state via getState() to attach single permanent listener with zero re-renders
@@ -64,33 +70,48 @@ export default function HomePage() {
         return;
       }
 
-      // Tool Switching (1 to 9)
+      // Undo / Redo (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        useTerrainStore.getState().undo();
+        e.preventDefault();
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && (e.key.toLowerCase() === 'y' || (e.shiftKey && e.key.toLowerCase() === 'z'))) {
+        useTerrainStore.getState().redo();
+        e.preventDefault();
+        return;
+      }
+
+      // Tool Switching (1 to 9, 0)
       if (e.key === '1') {
-        store.setActiveTool('soil');
-        e.preventDefault();
-      } else if (e.key === '2') {
-        store.setActiveTool('water');
-        e.preventDefault();
-      } else if (e.key === '3') {
-        store.setActiveTool(store.activeTool === 'shape_side' ? 'shape_top' : 'shape_side');
-        e.preventDefault();
-      } else if (e.key === '4') {
-        store.setActiveTool('dry');
-        e.preventDefault();
-      } else if (e.key === '5') {
-        store.setActiveTool('paint');
-        e.preventDefault();
-      } else if (e.key === '6') {
         store.setActiveTool('terrain');
         e.preventDefault();
-      } else if (e.key === '7') {
-        store.setActiveTool('grass');
+      } else if (e.key === '2') {
+        store.setActiveTool('walls');
         e.preventDefault();
-      } else if (e.key === '8') {
+      } else if (e.key === '3') {
         store.setActiveTool('spline');
         e.preventDefault();
-      } else if (e.key === '9') {
+      } else if (e.key === '4') {
+        store.setActiveTool('paint');
+        e.preventDefault();
+      } else if (e.key === '5') {
+        store.setActiveTool('foliage');
+        e.preventDefault();
+      } else if (e.key === '6') {
         store.setActiveTool('prop');
+        e.preventDefault();
+      } else if (e.key === '7') {
+        store.setActiveTool('soil');
+        e.preventDefault();
+      } else if (e.key === '8') {
+        store.setActiveTool('water');
+        e.preventDefault();
+      } else if (e.key === '9') {
+        store.setActiveTool(store.activeTool === 'shape_side' ? 'shape_top' : 'shape_side');
+        e.preventDefault();
+      } else if (e.key === '0') {
+        store.setActiveTool('dry');
         e.preventDefault();
       }
 
@@ -132,7 +153,13 @@ export default function HomePage() {
       </div>
 
       {/* Desktop Application Menu Bar + Webpage Title */}
-      <AppMenuBar onSetCameraView={(view) => setCameraViewPreset(view)} />
+      <AppMenuBar
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        onSetCameraView={(view) => setCameraViewPreset(view)}
+      />
 
       {/* Left Vertical Tool Shelf (Tooltips expand cleanly to the right) */}
       <LeftToolShelf />

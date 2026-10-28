@@ -1,12 +1,80 @@
 'use client';
 
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { useTexture, Bvh } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
-import { createBaseTerrainGeometry, syncStateToGeometry } from '@/lib/terrain/terrainBuffer';
+import { useThree, ThreeEvent } from '@react-three/fiber';
+import {
+  createBaseTerrainGeometry,
+  syncStateToGeometry,
+  TerrainBrushOptions,
+} from '@/lib/terrain/terrainBuffer';
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
+import { useEditorStore } from '@/lib/state/useEditorStore';
+
+/**
+ * 3D Visual Brush Ring Cursor that tracks pointer raycast hit on the terrain surface.
+ */
+interface TerrainBrushCursorProps {
+  position: [number, number, number];
+  radius: number;
+  subTool: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond';
+  visible: boolean;
+}
+
+const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
+  position,
+  radius,
+  subTool,
+  visible,
+}) => {
+  const color = useMemo(() => {
+    switch (subTool) {
+      case 'elevate':
+        return '#E85D04'; // Bhagwa saffron
+      case 'lower':
+        return '#8F4938'; // Burnt clay
+      case 'plateau':
+        return '#B58B63'; // Camel stone
+      case 'smooth':
+        return '#777A57'; // Olive sage
+      case 'pond':
+        return '#0284C7'; // Tarpaulin blue
+      default:
+        return '#E85D04';
+    }
+  }, [subTool]);
+
+  if (!visible) return null;
+
+  return (
+    <group position={[position[0], position[1] + 0.02, position[2]]}>
+      {/* Outer Ring */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+        <ringGeometry args={[Math.max(0.05, radius - 0.04), radius, 48]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.85}
+          depthTest={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      {/* Center Reticle Point */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} renderOrder={999}>
+        <circleGeometry args={[0.04, 16]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.9}
+          depthTest={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  );
+};
 
 export const BaseTerrainFallback: React.FC = () => {
   const geometry = useMemo(() => {
@@ -41,8 +109,18 @@ export const BaseTerrainFallback: React.FC = () => {
 
 export const BaseTerrainContent: React.FC = () => {
   const meshRef = useRef<THREE.Mesh>(null);
+  const isSculptingRef = useRef(false);
+  const [cursorPos, setCursorPos] = useState<[number, number, number]>([0, 0, 0]);
+  const [cursorVisible, setCursorVisible] = useState(false);
+
   const { gl, invalidate } = useThree();
-  const { stateTexture, stateBuffer, lastUpdated, setTerrainMesh } = useTerrainStore();
+  const rawControls = useThree((state) => state.controls);
+  const controls = rawControls as unknown as { enabled: boolean } | null;
+
+  const { stateTexture, lastUpdated, setTerrainMesh, sculptTerrain, pushUndo } = useTerrainStore();
+  const activeTool = useEditorStore((s) => s.activeTool);
+  const terrainSubTool = useEditorStore((s) => s.terrainSubTool);
+  const brushRadius = useEditorStore((s) => s.brushRadius);
 
   // Load retro pixel-art PBR texture maps (Flavor A: Crisp PS1 / Valheim modern retro diorama):
   // - walkable: Dirt_03 (chunky reddish-brown soil with pebbles)
@@ -203,19 +281,129 @@ export const BaseTerrainContent: React.FC = () => {
     };
   }, [geometry]);
 
+  // Execute direct terrain sculpting with smooth radial falloff
+  const executeSculpt = useCallback(
+    (hitPoint: THREE.Vector3) => {
+      const editor = useEditorStore.getState();
+      if (editor.mudLocked) return;
+
+      const opts: TerrainBrushOptions = {
+        operation: editor.terrainSubTool,
+        radius: editor.brushRadius,
+        strength: editor.brushStrength * 0.15,
+        targetHeight: editor.plateauHeight,
+        maxHeight: 3.5,
+        minHeight: 0.0,
+      };
+
+      const modified = sculptTerrain(hitPoint.x, hitPoint.z, opts);
+      if (modified) {
+        invalidate();
+      }
+    },
+    [sculptTerrain, invalidate]
+  );
+
+  const handlePointerDown = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      const editor = useEditorStore.getState();
+      if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
+        return;
+      }
+      e.stopPropagation();
+
+      // Push undo snapshot before applying the stroke
+      pushUndo();
+      isSculptingRef.current = true;
+
+      // Disable camera orbit while dragging to sculpt
+      if (controls) {
+        controls.enabled = false;
+      }
+
+      setCursorPos([e.point.x, e.point.y, e.point.z]);
+      setCursorVisible(true);
+      executeSculpt(e.point);
+    },
+    [controls, executeSculpt, pushUndo]
+  );
+
+  const handlePointerMove = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      const editor = useEditorStore.getState();
+      if (editor.activeTool !== 'terrain') {
+        if (cursorVisible) setCursorVisible(false);
+        return;
+      }
+
+      setCursorPos([e.point.x, e.point.y, e.point.z]);
+      if (!cursorVisible) setCursorVisible(true);
+
+      if (isSculptingRef.current) {
+        e.stopPropagation();
+        executeSculpt(e.point);
+      }
+    },
+    [cursorVisible, executeSculpt]
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (isSculptingRef.current) {
+      isSculptingRef.current = false;
+      if (controls) {
+        controls.enabled = true;
+      }
+      invalidate();
+    }
+  }, [controls, invalidate]);
+
+  const handlePointerLeave = useCallback(() => {
+    if (!isSculptingRef.current) {
+      setCursorVisible(false);
+    }
+  }, []);
+
+  // Global window pointerup to catch pointer released outside mesh
+  useEffect(() => {
+    const handleGlobalPointerUp = () => {
+      if (isSculptingRef.current) {
+        isSculptingRef.current = false;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
+      }
+    };
+    window.addEventListener('pointerup', handleGlobalPointerUp);
+    return () => window.removeEventListener('pointerup', handleGlobalPointerUp);
+  }, [controls, invalidate]);
+
   return (
-    <Bvh firstHitOnly>
-      <mesh
-        ref={meshRef}
-        geometry={geometry}
-        position={[0, 0, 0]}
-        receiveShadow
-        castShadow
-        name="BaseTerrainMesh"
-      >
-        <primitive object={material} attach="material" />
-      </mesh>
-    </Bvh>
+    <>
+      <Bvh firstHitOnly>
+        <mesh
+          ref={meshRef}
+          geometry={geometry}
+          position={[0, 0, 0]}
+          receiveShadow
+          castShadow
+          name="BaseTerrainMesh"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handlePointerLeave}
+        >
+          <primitive object={material} attach="material" />
+        </mesh>
+      </Bvh>
+
+      <TerrainBrushCursor
+        position={cursorPos}
+        radius={brushRadius}
+        subTool={terrainSubTool}
+        visible={cursorVisible && activeTool === 'terrain'}
+      />
+    </>
   );
 };
 

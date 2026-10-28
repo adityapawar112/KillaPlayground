@@ -292,7 +292,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           mouseButtons={{
             LEFT: THREE.MOUSE.ROTATE,
             MIDDLE: THREE.MOUSE.PAN,
-            RIGHT: THREE.MOUSE.PAN,
+            RIGHT: THREE.MOUSE.ROTATE,
           }}
         />
 

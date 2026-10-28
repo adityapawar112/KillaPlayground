@@ -57,7 +57,7 @@ graph TD
 
 ## Ticket 02: 3D Scene Core, Camera Rig, Courtyard Bricks & Base Terrain
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 01`
 - **Delivers**:
   - Three.js `<Canvas frameloop="demand">` with `<OrbitControls>` (bounded polar angles, smooth damping).
@@ -68,16 +68,16 @@ graph TD
   - PBR texture loading pipeline connecting Binbun retro textures and mossy stone brick textures.
 
 ### Acceptance Criteria
-- [ ] Diorama canvas displays ground plane with courtyard lighting and brick perimeter border.
-- [ ] OrbitControls allow smooth 360° orbiting and zooming without clipping beneath the floor.
-- [ ] Raycaster intersection against terrain mesh executes in `< 0.2ms` via BVH.
-- [ ] `stateBuffer` initialized and bound to terrain shader pipeline.
+- [x] Diorama canvas displays ground plane with courtyard lighting and brick perimeter border.
+- [x] OrbitControls allow smooth 360° orbiting and zooming without clipping beneath the floor.
+- [x] Raycaster intersection against terrain mesh executes in `< 0.2ms` via BVH.
+- [x] `stateBuffer` initialized and bound to terrain shader pipeline.
 
 ---
 
 ## Ticket 03: Base Terrain Manipulation Tool
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 02`
 - **Delivers**:
   - **Direct Terrain Mesh Sculpting**:
@@ -90,11 +90,11 @@ graph TD
   - **Partial Dirty-Box Updates**: Updates `PlaneGeometry.attributes.position` strictly inside `[minX..maxX, minY..maxY]`, calling `addUpdateRange` and `bvh.refit()`.
 
 ### Acceptance Criteria
-- [ ] Elevating terrain smoothly raises organic hills and hilltops.
-- [ ] Lowering terrain excavates ponds that reveal the underlying water plane.
-- [ ] Plateau tool flattens elevated peaks into level fort construction decks.
-- [ ] Smoothing tool removes jagged vertices without resetting height.
-- [ ] Vertex modifications execute in dirty bounding box ranges without full geometry reallocations.
+- [x] Elevating terrain smoothly raises organic hills and hilltops.
+- [x] Lowering terrain excavates ponds that reveal the underlying water plane.
+- [x] Plateau tool flattens elevated peaks into level fort construction decks.
+- [x] Smoothing tool removes jagged vertices without resetting height.
+- [x] Vertex modifications execute in dirty bounding box ranges without full geometry reallocations.
 
 ---
 

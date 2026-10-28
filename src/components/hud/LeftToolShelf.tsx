@@ -3,14 +3,17 @@
 import React from 'react';
 import {
   TbMountain,
+  TbBuildingFortress,
+  TbRoute,
+  TbBrush,
+  TbTrees,
+  TbUsersGroup,
+  TbShovel,
   TbDropletHalf2,
   TbLayersSubtract,
   TbSun,
-  TbBrush,
   TbPick,
   TbPlant2,
-  TbRoute,
-  TbUsersGroup,
 } from 'react-icons/tb';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -21,21 +24,22 @@ interface ToolDef {
   icon: React.ElementType;
 }
 
-// 5 Bundled Structure Tools (For building on top of the terrain)
-const STRUCTURE_TOOLS: ToolDef[] = [
-  { id: 'soil', key: '1', icon: TbMountain },
-  { id: 'water', key: '2', icon: TbDropletHalf2 },
-  { id: 'shape_side', key: '3', icon: TbLayersSubtract },
-  { id: 'dry', key: '4', icon: TbSun },
-  { id: 'paint', key: '5', icon: TbBrush },
+// 6 Primary Killa-First Construction Tools
+const PRIMARY_KILLA_TOOLS: ToolDef[] = [
+  { id: 'terrain', key: '1', icon: TbMountain },
+  { id: 'walls', key: '2', icon: TbBuildingFortress },
+  { id: 'spline', key: '3', icon: TbRoute },
+  { id: 'paint', key: '4', icon: TbBrush },
+  { id: 'foliage', key: '5', icon: TbTrees },
+  { id: 'prop', key: '6', icon: TbUsersGroup },
 ];
 
-// Terrain, Foliage & Overlay World Tools
-const WORLD_TOOLS: ToolDef[] = [
-  { id: 'terrain', key: '6', icon: TbPick },
-  { id: 'grass', key: '7', icon: TbPlant2 },
-  { id: 'spline', key: '8', icon: TbRoute },
-  { id: 'prop', key: '9', icon: TbUsersGroup },
+// Soil Simulation Tools (Deferred Advanced Phase)
+const SECONDARY_SOIL_TOOLS: ToolDef[] = [
+  { id: 'soil', key: '7', icon: TbShovel },
+  { id: 'water', key: '8', icon: TbDropletHalf2 },
+  { id: 'shape_side', key: '9', icon: TbLayersSubtract },
+  { id: 'dry', key: '0', icon: TbSun },
 ];
 
 export const LeftToolShelf: React.FC = () => {
@@ -48,18 +52,19 @@ export const LeftToolShelf: React.FC = () => {
     ToolType | 'shape_side',
     { label: string; fullLabel: string; desc: string }
   > = {
+    terrain: (t.tools as any).terrain || { label: 'Terrain', fullLabel: 'Terrain Sculpt', desc: 'Manipulate mountain terrain & excavate ponds' },
+    walls: (t.tools as any).walls || { label: 'Walls', fullLabel: 'Fort Walls', desc: 'Draw perimeter walls and bastions' },
+    spline: t.tools.spline,
+    paint: t.tools.paint,
+    foliage: (t.tools as any).foliage || t.tools.grass,
+    prop: t.tools.prop,
     soil: t.tools.soil,
     water: t.tools.water,
     shape: t.tools.shape,
     shape_side: t.tools.shape,
     shape_top: t.tools.shape,
     dry: (t.tools as any).dry || { label: 'Dry', fullLabel: 'Drying Tool', desc: 'Dries and solidifies shaped wet soil' },
-    paint: t.tools.paint,
-    terrain: (t.tools as any).terrain || { label: 'Terrain', fullLabel: 'Terrain Sculpt', desc: 'Manipulate mountain terrain & excavate ponds' },
-    foliage: (t.tools as any).foliage || t.tools.grass,
     grass: t.tools.grass,
-    spline: t.tools.spline,
-    prop: t.tools.prop,
   };
 
   const renderToolButton = (tool: ToolDef) => {
@@ -122,17 +127,17 @@ export const LeftToolShelf: React.FC = () => {
       aria-label="3D Editing Tools"
       className="fixed left-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1 p-1.5 bg-[#F2EBE1]/94 backdrop-blur-xl rounded-[22px] border border-[#D9C9B4] shadow-2xl transition-all select-none"
     >
-      {/* Group 1: 5 Bundled Structure Tools */}
+      {/* Group 1: 6 Primary Killa-First Construction Tools */}
       <div className="flex flex-col items-center gap-1">
-        {STRUCTURE_TOOLS.map(renderToolButton)}
+        {PRIMARY_KILLA_TOOLS.map(renderToolButton)}
       </div>
 
-      {/* Visual Divider Separating Structures from Terrain/World */}
+      {/* Visual Divider Separating Killa Tools from Soil Pipeline */}
       <div className="w-7 h-[1.5px] bg-[#D9C9B4]/80 my-1 rounded-full" />
 
-      {/* Group 2: Terrain, Foliage & World Tools */}
+      {/* Group 2: Soil Pipeline Tools */}
       <div className="flex flex-col items-center gap-1">
-        {WORLD_TOOLS.map(renderToolButton)}
+        {SECONDARY_SOIL_TOOLS.map(renderToolButton)}
       </div>
     </aside>
   );

@@ -6,6 +6,8 @@ import {
   createBaseTerrainGeometry,
   syncStateToGeometry,
   refitTerrainBVH,
+  applyTerrainBrush,
+  TerrainBrushOptions,
   TERRAIN_RESOLUTION,
   VERTEX_COUNT,
   STATE_BUFFER_SIZE,
@@ -26,7 +28,18 @@ interface TerrainState {
   markTextureNeedsUpdate: () => void;
   resetTerrain: () => void;
   applyDirtyRegion: (minX: number, maxX: number, minZ: number, maxZ: number) => void;
+  sculptTerrain: (centerX: number, centerZ: number, options: TerrainBrushOptions) => boolean;
+  pushUndo: () => void;
+  undo: () => boolean;
+  redo: () => boolean;
+  canUndo: () => boolean;
+  canRedo: () => boolean;
 }
+
+// shortcut: 15-slot in-memory circular buffer for undo/redo, upgrade to indexedDB if state exceeds 50MB
+const MAX_UNDO_SLOTS = 15;
+const undoStack: Float32Array[] = [];
+const redoStack: Float32Array[] = [];
 
 // Generate organic starter mud hill by default
 const initialBuffer = createStateBuffer(0.0, 0.0);
@@ -94,5 +107,65 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     }
 
     set({ lastUpdated: Date.now() });
+  },
+
+  sculptTerrain: (centerX, centerZ, options) => {
+    const { stateBuffer, stateTexture, terrainGeometry } = get();
+    const dirty = applyTerrainBrush(stateBuffer, centerX, centerZ, options);
+    if (!dirty.modified) return false;
+
+    stateTexture.needsUpdate = true;
+    if (terrainGeometry) {
+      syncStateToGeometry(stateBuffer, terrainGeometry, dirty);
+      refitTerrainBVH(terrainGeometry);
+    }
+
+    set({ lastUpdated: Date.now() });
+    return true;
+  },
+
+  pushUndo: () => {
+    const { stateBuffer } = get();
+    if (undoStack.length >= MAX_UNDO_SLOTS) {
+      undoStack.shift();
+    }
+    undoStack.push(stateBuffer.slice());
+    redoStack.length = 0;
+    set({ lastUpdated: Date.now() });
+  },
+
+  canUndo: () => undoStack.length > 0,
+  canRedo: () => redoStack.length > 0,
+
+  undo: () => {
+    if (undoStack.length === 0) return false;
+    const { stateBuffer, stateTexture, terrainGeometry } = get();
+    const prevSnapshot = undoStack.pop()!;
+    redoStack.push(stateBuffer.slice());
+    stateBuffer.set(prevSnapshot);
+
+    stateTexture.needsUpdate = true;
+    if (terrainGeometry) {
+      syncStateToGeometry(stateBuffer, terrainGeometry);
+      refitTerrainBVH(terrainGeometry);
+    }
+    set({ lastUpdated: Date.now() });
+    return true;
+  },
+
+  redo: () => {
+    if (redoStack.length === 0) return false;
+    const { stateBuffer, stateTexture, terrainGeometry } = get();
+    const nextSnapshot = redoStack.pop()!;
+    undoStack.push(stateBuffer.slice());
+    stateBuffer.set(nextSnapshot);
+
+    stateTexture.needsUpdate = true;
+    if (terrainGeometry) {
+      syncStateToGeometry(stateBuffer, terrainGeometry);
+      refitTerrainBVH(terrainGeometry);
+    }
+    set({ lastUpdated: Date.now() });
+    return true;
   },
 }));

@@ -15,23 +15,24 @@ export const SavedProjectSchema = z.object({
 });
 
 export type ToolType =
-  // 5 Bundled Structure Tools (For building on the terrain)
+  // 6 Primary Killa-First Tools
+  | 'terrain'
+  | 'walls'
+  | 'spline'
+  | 'paint'
+  | 'foliage'
+  | 'prop'
+  // Soil Pipeline Tools (Deferred Phase)
   | 'soil'
   | 'water'
   | 'shape'
   | 'shape_top'
   | 'shape_side'
   | 'dry'
-  | 'paint'
-  // Terrain & World Tools
-  | 'terrain'
-  | 'foliage'
-  | 'grass'
-  | 'spline'
-  | 'prop';
+  | 'grass';
 
 export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
-export type TerrainSubTool = 'elevate' | 'pond';
+export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond';
 export type FoliageSubTool = 'grass' | 'path';
 
 export type SplineConversionType = 'walkway' | 'steps' | 'wall' | 'crenellated';
@@ -78,6 +79,8 @@ interface EditorState {
   setShapeSubTool: (st: ShapeSubTool) => void;
   terrainSubTool: TerrainSubTool;
   setTerrainSubTool: (st: TerrainSubTool) => void;
+  plateauHeight: number;
+  setPlateauHeight: (h: number) => void;
   foliageSubTool: FoliageSubTool;
   setFoliageSubTool: (st: FoliageSubTool) => void;
   brushRadius: number; // 0.2 to 2.5
@@ -237,11 +240,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   locale: 'en',
   setLocale: (locale) => set({ locale }),
 
-  activeTool: 'soil',
+  activeTool: 'terrain',
   shapeSubTool: 'pat_top',
   setShapeSubTool: (shapeSubTool) => set({ shapeSubTool }),
   terrainSubTool: 'elevate',
   setTerrainSubTool: (terrainSubTool) => set({ terrainSubTool }),
+  plateauHeight: 1.0,
+  setPlateauHeight: (plateauHeight) => set({ plateauHeight }),
   foliageSubTool: 'grass',
   setFoliageSubTool: (foliageSubTool) => set({ foliageSubTool }),
   brushRadius: 0.8,

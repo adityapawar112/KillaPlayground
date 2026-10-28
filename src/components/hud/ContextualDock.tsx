@@ -13,6 +13,9 @@ import {
   TbArrowsLeft,
   TbArrowsRight,
   TbArrowDownBar,
+  TbTrendingDown,
+  TbMinus,
+  TbWaveSine,
 } from 'react-icons/tb';
 import { useEditorStore, BrushSizeType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -26,6 +29,8 @@ export const ContextualDock: React.FC = () => {
     setShapeSubTool,
     terrainSubTool,
     setTerrainSubTool,
+    plateauHeight,
+    setPlateauHeight,
     foliageSubTool,
     setFoliageSubTool,
     brushRadius,
@@ -276,43 +281,121 @@ export const ContextualDock: React.FC = () => {
           <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
             <button
               onClick={() => setTerrainSubTool('elevate')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'elevate'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
+                  ? 'bg-[#E85D04] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
+              title="Elevate mountain mounds and ridges"
             >
               <TbMountain className="w-3.5 h-3.5" />
-              <span>Elevate Mountain</span>
+              <span>Elevate</span>
+            </button>
+            <button
+              onClick={() => setTerrainSubTool('lower')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                terrainSubTool === 'lower'
+                  ? 'bg-[#8F4938] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+              title="Carve trenches and valleys"
+            >
+              <TbTrendingDown className="w-3.5 h-3.5" />
+              <span>Lower</span>
+            </button>
+            <button
+              onClick={() => setTerrainSubTool('plateau')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                terrainSubTool === 'plateau'
+                  ? 'bg-[#B58B63] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+              title="Level peaks into flat fort building plateaus"
+            >
+              <TbMinus className="w-3.5 h-3.5" />
+              <span>Plateau</span>
+            </button>
+            <button
+              onClick={() => setTerrainSubTool('smooth')}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                terrainSubTool === 'smooth'
+                  ? 'bg-[#777A57] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+              title="Soften sharp edges and jagged spikes"
+            >
+              <TbWaveSine className="w-3.5 h-3.5" />
+              <span>Smooth</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('pond')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'pond'
                   ? 'bg-[#0284C7] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
+              title="Excavate water cisterns and ponds"
             >
               <TbRipple className="w-3.5 h-3.5" />
-              <span>Excavate Pond</span>
+              <span>Pond</span>
             </button>
           </div>
 
           <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
-          <div className="flex items-center gap-2">
+          {/* Brush Size Slider */}
+          <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-[#4B382C]">Size:</span>
             <input
               type="range"
               aria-label="Terrain Brush Size"
-              min="0.4"
+              min="0.2"
               max="3.0"
               step="0.1"
               value={brushRadius}
               onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-              className="w-20 accent-[#4B382C] cursor-pointer"
+              className="w-16 sm:w-20 accent-[#4B382C] cursor-pointer"
+            />
+            <span className="text-[11px] font-mono text-[#8D7666] w-6">{brushRadius.toFixed(1)}m</span>
+          </div>
+
+          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+
+          {/* Sculpt Strength Slider */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-[#4B382C]">Speed:</span>
+            <input
+              type="range"
+              aria-label="Terrain Sculpt Speed"
+              min="0.05"
+              max="1.0"
+              step="0.05"
+              value={brushStrength}
+              onChange={(e) => setBrushStrength(parseFloat(e.target.value))}
+              className="w-16 sm:w-20 accent-[#4B382C] cursor-pointer"
             />
           </div>
+
+          {/* Plateau Height Slider if Plateau Tool Active */}
+          {terrainSubTool === 'plateau' && (
+            <>
+              <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-[#B58B63]">Height:</span>
+                <input
+                  type="range"
+                  aria-label="Plateau Height"
+                  min="0.1"
+                  max="3.0"
+                  step="0.1"
+                  value={plateauHeight}
+                  onChange={(e) => setPlateauHeight(parseFloat(e.target.value))}
+                  className="w-16 sm:w-20 accent-[#B58B63] cursor-pointer"
+                />
+                <span className="text-[11px] font-mono text-[#8D7666] w-6">{plateauHeight.toFixed(1)}m</span>
+              </div>
+            </>
+          )}
         </div>
       )}
 

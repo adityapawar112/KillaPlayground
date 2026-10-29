@@ -245,7 +245,7 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 - Floats directly above the active master tool button. Radius: `{rounded.lg}`.
 - Displays tool-specific parameter sliders and toggles:
   - **Terrain:** Mode pills (`Elevate`, `Lower`, `Plateau`, `Smooth`, `Pond`) + Radius & Strength sliders.
-  - **Walls:** Wall Height slider (0.5m–4.0m), Towers/Bastions toggle & corner auto-spawn, Fort Gates (*Maha Darwaza*) selector, Gatehouse toggle, Crenellations (*Kangare*) toggle, and Brick Texture Scale slider.
+  - **Walls:** 3-Step Stepper (`1. Layout` -> `2. Fortify` -> `3. Solidify`), Wall Height slider (10cm–100cm), Thickness slider (5cm–40cm), Magnetic Snap Shelf (`Buruj`, `Maha Buruj`, `Maha Darwaza`, `Balekilla Citadel`), Crenellations toggle, and Brick Texture Scale slider.
   - **Spline:** Structure conversion pills (`Stone Steps / Payrya`, `Bhagwa Saffron Flags`, `Glowing Divas`), spacing slider, and size slider. *(Note: Walking paths are painted using Terrain Paint).*
   - **Terrain Paint:** Texture swatches (`Dirt / Tambdi Maati`, `Sand`, `Grass`, `Gravel`, `Rock / Basalt`, `Rocky Ground`) + Brush Radius & Opacity/Strength sliders.
   - **Foliage Paint:** Asset selector (`Trees`, `Rocks`, `Shrubs`, `3D Grass Models`) + Scatter Radius, Density, and Scale Jitter sliders.
@@ -308,14 +308,19 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 
 ### Spline & Walls Controls
 
-**`walls-context-dock`**
-- Floating parameters when drawing or selecting walls:
-  - Wall Height: 0.5m to 4.0m
-  - Towers / Bastions: Toggle on/off + Spacing slider
-  - Gates: Insert *Maha Darwaza* at clicked segment
-  - Gatehouse: Toggle fortified entry pavilion
-  - Crenellations: Toggle alternating stone merlons along wall ridge
-  - Brick Scale: UV repetition slider for stone masonry tiling
+**`walls-stepper-panel`**
+- 3-Step Fort Crafting Stepper:
+  - **Step 1 (Layout / Tracing):** Interactive draft tracing. Green start closing node (`#10b981`), yellow intermediate nodes (`#f59e0b`), amber line preview. Action buttons: Primary `"Proceed to Fortify"` (green `#10b981`) and Secondary `"Cancel Draft"`.
+  - **Step 2 (Fortify & Decorate):** Magnetic Snap Stamp Shelf featuring Buruj (Round Bastion), Maha Buruj (Grand Bastion), Maha Darwaza (Arched Gateway), and Balekilla (Citadel Keep). Visual 3D selection handles with glowing cyan/emerald rings (`#10b981`) and floating badge pins (`#2563eb`). Contextual Bastion & Gate inspectors with dimension sliders and delete buttons (`#ef4444`).
+  - **Step 3 (Diorama Solidified):** Diorama lock-in state (`#059669`) hiding all wireframes and handles. Displays fort circuit summary cards (total length, wall count, gates, citadels) with `"Build Another Wall Circuit"` CTA.
+- **Physical Diorama Scale Tokens:**
+  - Wall Height: 10cm to 100cm (formatted as `X cm`).
+  - Wall Thickness: 5cm to 40cm (formatted as `X cm`).
+  - Foundation Embed: 12mm subterranean base skirt.
+- **Hologram Tokens:**
+  - Snapped Vertex Target: Concentric emerald disk ring (`#10b981`) with 70% opacity.
+  - Snapped Gate Archway: Transparent blue arch wireframe volume (`#3b82f6`) with orientation arrows.
+  - Cursor Toast: Floating dark basalt pill (`#23211E`) explaining interaction feedback.
 
 **`spline-context-menu`**
 - Floating pill-panel anchored to the drawn spline path:

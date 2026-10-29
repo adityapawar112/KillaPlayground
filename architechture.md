@@ -100,16 +100,26 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * *Smooth:* Softens steep edges using a 3x3 box blur filter.
      * *Pond Excavation:* Depresses terrain below $Y < 0.08$ to automatically uncover the water plane.
 
-2. **Walls Tool (Parametric Fort Ramparts):**
-   * Spline/segment-driven wall generator that conforms to terrain contours.
-   * Built specifically for builders who want ramparts immediately without soil sculpting.
-   * **Parametric Features:**
-     * *Height:* Adjustable slider (0.5m to 4.0m).
-     * *Towers / Bastions (*Buruj*):* Toggles round bastions at path vertices or automatically at corners $> 35^\circ$.
-     * *Gates (*Maha Darwaza*):* Inserts arched wooden/iron gates into wall segments.
-     * *Gatehouse:* Adds fortified flanking chambers.
-     * *Crenellations (*Kangare*):* Alternating stone merlons along the top wall ridge.
-     * *Brick Texture Scale:* Adjusts UV repetition of the stone masonry texture.
+2. **Walls Tool (Parametric Fort Ramparts & Bastions):**
+   * Spline/segment-driven parametric procedural geometry pipeline conforming directly to terrain elevation.
+   * Built specifically for builders who want fort ramparts immediately without soil sculpting.
+   * **Procedural Geometry Engine (`wallGeometry.ts` & `GeometryBuilder`):**
+     * *Resampling & Bilinear Height Sampling:* Resamples centerline wall vertices uniformly at 0.04m intervals, computing bilinear heights (`sampleBilinearHeight`) from `stateBuffer` with continuous elevation adherence.
+     * *Multi-Material Group Partitioning (`BufferGeometry.addGroup`):*
+       * **Group 0 (Wall & Tower Sides):** Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`) with retro pixel `NearestFilter` and repeat wrapping.
+       * **Group 1 (Walkways & Tower Floors):** Crushed gravel (`Gravel_01`) for rampart walkway strips and circular tower floor disks.
+       * **Group 2 (Battlements & Trims):** Solid dark basalt stone (`dark_stone_texture_128x128_pbr`) for pointed crenellations (*kangare*), gateway soffits, and plinths.
+     * *Authentic Murud-Janjira Pointed Crenellations:* Custom procedural merlons with pointed tops and arrow slit embrasures, oriented outward using 2D polygon centroid testing (closed paths) and downhill terrain gradient sampling (open paths).
+     * *Tower Exclusion Zones:* Automatically excludes wall crenellations within the cylindrical footprint of bastions ($r = \text{bastionRadius}$) and flanking gatehouse towers ($r = 0.20\text{m}$), preventing internal geometry clipping.
+     * *Watertight Maha Darwaza Arched Gate:* Procedurally cuts wall ribbons, constructs solid side jambs and arched soffits, and builds a continuous upper walkway over the lintel connecting to flanking stone towers.
+     * *Miniature Tabletop Scaling:* 10x miniature scaling (wall height: 10cm to 100cm, thickness: 5cm to 40cm, foundation embedding: 12mm).
+   * **Magnetic Snap Hologram Engine (`calculateMagneticSnap`):**
+     * Linear raycast snapping algorithm with Euclidean thresholds: 0.45m for Buruj vertex snapping and 0.60m for arched gate segment snapping.
+     * Interpolation parameter $t$ is clamped to $[0.15, 0.85]$ along the segment, preventing gates from colliding with corner bastions.
+     * Renders real-time holographic snap previews with green/amber rings, arch volumes, and orientation indicators.
+   * **State Machine & Synchronous Undo Architecture:**
+     * 3-Step Stepper: `layout` (drawing) $\rightarrow$ `fortify` (interactive editing & magnetic placement) $\rightarrow$ `solidified` (clean diorama presentation).
+     * `useEditorStore` integrates top-level synchronous `pushUndoSnapshot()` directly preceding store mutations, capturing pre-mutation states synchronously and eliminating microtask race conditions with `terrainStore`.
 
 3. **Spline Tool (Linear Structure Placement):**
    * Draws 3D curves along the terrain surface using `THREE.CatmullRomCurve3`.

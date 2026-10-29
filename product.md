@@ -92,12 +92,27 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 
 #### 3.1 Parametric Walls Tool
 Enables users to draw continuous wall curves or multi-segment fort ramparts conforming directly to the underlying terrain elevation. This provides an express path to building fortified killas without requiring manual soil sculpting:
-* **Wall Height Slider:** Interactively adjust rampart height (0.5m to 4.0m).
-* **Towers / Bastions (*Buruj*):** Toggle rounded stone bastions at path vertices or automatically at sharp corners ($> 35^\circ$), with custom bastion radius.
-* **Gates (*Maha Darwaza*):** Insert fortified arched gates into wall segments.
-* **Gatehouse:** Toggle fortified entry chambers flanking the main entrance.
-* **Crenellations (*Kangare*):** Add alternating notched stone merlons along the top ridge.
-* **Brick Texture Scale:** Slider adjusting the UV tiling and resolution of the stone/brick masonry texture.
+* **3-Step Crafting Stepper Flow**:
+  * **Step 1: Layout & Path Tracing**: Click or drag on terrain to draft rampart curves. Start closing node rendered in green, intermediate points in yellow. Actions to "Proceed to Fortify" or "Cancel Draft".
+  * **Step 2: Fortify & Decorate**: Interactive editing mode where users can select walls, adjust physical dimensions, and use the Magnetic Snap Shelf to attach bastions, grand bastions, arched gates, or freestanding Balekilla citadel keeps. Features glowing selection rings, top badge pins, and contextual inspectors with deletion controls.
+  * **Step 3: Diorama Solidified**: Locks the fort walls seamlessly into the diorama without editing handles, wireframe overlays, or pins, presenting a clean showcase view with circuit summary metrics.
+* **Miniature Tabletop Diorama Calibration**:
+  * Scaled to realistic miniature diorama measurements (10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding to eliminate floating walls.
+  * Sliders dynamically display physical units in centimeters (`cm`).
+* **Multi-Material PBR Texturing**:
+  * Wall & Tower Facings: Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`).
+  * Rampart Walkways & Tower Floor Decks: Crushed gravel (`Gravel_01`).
+  * Battlements (*Kangare*) & Trims: Solid dark basalt stone (`dark_stone_texture_128x128_pbr`).
+* **Authentic Murud-Janjira Pointed Battlements (*Kangare*)**:
+  * Pointed stone merlons modeled after coastal and Deccan hill forts.
+  * Outer-facing battlements automatically oriented via 2D centroid polygon calculations and downhill terrain slope gradient sampling, with manual flip toggle.
+  * Automatic exclusion zones prevent crenellations from clipping through bastions or gatehouse flanking towers.
+* **Watertight Maha Darwaza Arched Gateway**:
+  * Formed with solid stone jambs, carved archway opening, and flush upper walkway connecting the fort ramparts across the entrance.
+  * Flanked by twin defensive stone towers with solid floors.
+* **Magnetic Snap Holograms**:
+  * Real-time cursor holograms snapping to vertices for bastions and along segments for gates with 0.45m / 0.60m thresholds and segment endpoint clamping.
+  * Real-time cursor toast notifications explaining actions and states.
 
 #### 3.2 Spline Structure Placement Tool
 Draws smooth 3D curves across the terrain surface using `THREE.CatmullRomCurve3` and places specialized structures along the drawn path:

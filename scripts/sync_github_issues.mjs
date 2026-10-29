@@ -135,34 +135,48 @@ Implements direct vertex terrain sculpting tools (Elevate, Lower, Plateau, Smoot
   {
     ticketNumber: 4,
     title: 'Ticket 04: Parametric Fort Walls Construction Tool',
-    labels: ['tracer-bullet', 'enhancement'],
-    state: 'open',
+    labels: ['tracer-bullet', 'enhancement', 'verified'],
+    state: 'closed',
     body: `## Overview
-Provides interactive fort rampart drawing conforming directly to the underlying terrain elevation with parametric bastions, gates, crenellations, and texture scaling.
+Provides interactive fort rampart drawing conforming directly to the underlying terrain elevation with parametric bastions, gates, crenellations, multi-material texturing, and magnetic snap holograms.
 
-- **Status**: \`ready-for-agent\`
+- **Status**: \`completed\`
 - **Blocked by**: #3
 
 ## Delivers
-- **Direct Wall Generation**:
-  - Enables users to draw wall lines or curves conforming directly to the underlying terrain elevation.
-  - Instant fort construction for builders who want ramparts without manual soil sculpting.
-- **Rich Parametric Customization**:
-  - **Wall Height**: Adjustable slider (e.g. 0.5m to 4.0m).
-  - **Towers / Bastions (*Buruj*)**: Toggle round bastions at path vertices or automatically at corners > 35°, with custom tower radius.
-  - **Gates (*Maha Darwaza*)**: Insert arched gates into wall segments.
-  - **Gatehouse**: Toggle fortified gatehouse structures flanking the main entrance.
-  - **Crenellations (*Kangare*)**: Toggle alternating notched stone merlons along the top ridge.
-  - **Brick Texture Scale**: Adjustable UV tiling slider for brick/masonry stone textures.
-- **Geometry Pipeline**: Efficient extruded wall geometry with UV mapping for mossy stone brick textures.
+- **3-Step Fort Crafting Stepper**:
+  - **Step 1 (Layout & Tracing)**: Click or drag on terrain to draft wall circuits. Start closing node in green, intermediate points in yellow, with direct "Proceed to Fortify" and "Cancel Draft" actions.
+  - **Step 2 (Fortify & Decorate)**: Interactive editing mode with magnetic snap holograms for placing standard Bastions (*Buruj*), corner Grand Bastions (*Maha Buruj*), arched fortified gates (*Maha Darwaza*), and freestanding Balekilla Citadel Keeps. Features visual 3D selection rings, top badge pins, and dedicated inspectors with deletion and dimension controls.
+  - **Step 3 (Diorama Solidified)**: Seamlessly locks fort walls into the diorama presentation without editing handles, wireframe overlays, or placement badges.
+- **Miniature Diorama Tabletop Calibration**:
+  - Re-calibrated scale from oversized meters to realistic miniature diorama dimensions: wall height from 10cm to 100cm (0.10m to 1.0m) with 12mm ground foundation embedding.
+  - Wall thickness calibrated from 5cm to 40cm (0.05m to 0.40m).
+  - Slider readouts dynamically formatted in centimeters (\`cm\`).
+- **Multi-Material PBR Texture Grouping**:
+  - Procedural \`BufferGeometry\` segmented into 3 distinct material groups (\`geo.addGroup\`):
+    - **Group 0 (Wall & Tower Sides)**: \`mossy_stone_brick_128x128_pbr\` (basecolor, normal, roughness, AO).
+    - **Group 1 (Walkways & Tower Floors)**: \`Gravel_01\` PBR gravel for rampart walkways and circular bastion floor decks.
+    - **Group 2 (Battlements & Stone Trims)**: \`dark_stone_texture_128x128_pbr\` solid dark stone for crenellations (*kangare*), gate soffits, lintel trims, and plinths.
+- **Authentic Murud-Janjira Pointed Crenellations (*Kangare*)**:
+  - Outer-facing battlements automatically oriented using 2D polygon centroid testing for closed fort circuits and downhill terrain slope gradient sampling for open wall runs, with manual flip override.
+  - Automatic exclusion zones prevent crenellations from clipping through bastions or gatehouse flanking towers.
+- **Watertight Maha Darwaza Arched Gateway**:
+  - Procedurally carved arched entrance with solid jambs, extruded arch soffit, and continuous top walkway flush with the fort rampart path.
+  - Flanked by twin stone bastions with capped walkway floors.
+- **Real-Time Magnetic Snap Hologram Engine**:
+  - Real-time raycast snapping with generous Euclidean thresholds (0.45m for buruj vertex snapping, 0.60m for arched gate segment snapping).
+  - Clamped segment interpolation ($t \\in [0.15, 0.85]$) ensuring gates never intersect bastion nodes.
+- **Synchronous Undo/Redo Engine**:
+  - Integrated with the diorama's 15-slot circular history (\`Ctrl+Z\` / \`Ctrl+Y\`), capturing pre-mutation state synchronously to guarantee 100% reliable state rollback across all wall, bastion, gate, and citadel operations.
 
 ## Acceptance Criteria
-- [ ] User can click and drag to draw a wall that follows terrain contours.
-- [ ] Wall height updates interactively via slider.
-- [ ] Round bastions (*buruj*) automatically or manually spawn at corners.
-- [ ] Fort gates (*Maha Darwaza*) can be inserted cleanly along wall segments.
-- [ ] Crenellations (*kangare*) render alternating battlements along wall tops.
-- [ ] Brick texture scale adjusts stone tile density without visual distortion.`,
+- [x] User can click and drag to draw a wall that follows terrain contours.
+- [x] Wall height updates interactively via slider in miniature centimeters (10cm - 100cm).
+- [x] Round bastions (*buruj*) automatically spawn at corners or snap to vertices via magnetic hologram.
+- [x] Fort gates (*Maha Darwaza*) insert cleanly along wall segments with continuous top walkway.
+- [x] Crenellations (*kangare*) render outer-facing pointed battlements with tower exclusion zones.
+- [x] Multi-material PBR texturing applies stone brick, gravel, and dark stone across geometry groups.
+- [x] 3-Step stepper (\`Layout\` -> \`Fortify\` -> \`Solidified\`) isolates editing handles from final diorama.`,
   },
   {
     ticketNumber: 5,

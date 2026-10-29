@@ -91,6 +91,7 @@ const SingleWallMesh: React.FC<{
   isSelected: boolean;
 }> = ({ wall, stateBuffer, materials, isSelected }) => {
   const geometry = useMemo(() => {
+    // shortcut: Wall geometry regenerates when terrain heightmap changes, upgrade to dirty-chunk local vertex displacement if terrain sculpting lags with >50 walls
     return generateWallBufferGeometry(wall, stateBuffer);
   }, [wall, stateBuffer]);
 
@@ -99,6 +100,9 @@ const SingleWallMesh: React.FC<{
       geometry.dispose();
     };
   }, [geometry]);
+
+  const hasValidGeometry = Boolean(geometry.attributes.position && geometry.attributes.position.count > 0);
+  if (!hasValidGeometry) return null;
 
   const handleWallClick = (e: any) => {
     const editor = useEditorStore.getState();
@@ -347,6 +351,9 @@ const SingleCitadelMesh: React.FC<{
     };
   }, [geometry]);
 
+  const hasValidGeometry = Boolean(geometry.attributes.position && geometry.attributes.position.count > 0);
+  if (!hasValidGeometry) return null;
+
   const handleClick = (e: any) => {
     const editor = useEditorStore.getState();
     if (editor.activeTool !== 'walls') return;
@@ -544,39 +551,50 @@ export const FortWalls: React.FC = () => {
   }, [brickTextures, gravelTextures, darkStoneTextures]);
 
   // Multi-material set: [Group 0: Stone Wall, Group 1: Gravel Walkway/Floor, Group 2: Dark Stone Kangare]
+  // Stable material instances instantiated once to prevent continuous recreation during render cycles
   const wallMaterials = useMemo(() => {
     const mat0 = new THREE.MeshStandardMaterial({
-      map: brickTextures.diffuse,
-      normalMap: brickTextures.normal,
-      roughnessMap: brickTextures.roughness,
-      aoMap: brickTextures.ao,
       roughness: 0.88,
       metalness: 0.04,
       side: THREE.DoubleSide,
       shadowSide: THREE.DoubleSide,
     });
     const mat1 = new THREE.MeshStandardMaterial({
-      map: gravelTextures.diffuse,
-      normalMap: gravelTextures.normal,
-      roughnessMap: gravelTextures.roughness,
-      aoMap: gravelTextures.ao,
       roughness: 0.95,
       metalness: 0.02,
       side: THREE.DoubleSide,
       shadowSide: THREE.DoubleSide,
     });
     const mat2 = new THREE.MeshStandardMaterial({
-      map: darkStoneTextures.diffuse,
-      normalMap: darkStoneTextures.normal,
-      roughnessMap: darkStoneTextures.roughness,
-      aoMap: darkStoneTextures.ao,
       roughness: 0.82,
       metalness: 0.06,
       side: THREE.DoubleSide,
       shadowSide: THREE.DoubleSide,
     });
     return [mat0, mat1, mat2];
-  }, [brickTextures, gravelTextures, darkStoneTextures]);
+  }, []);
+
+  // Sync textures to materials cleanly without re-allocating WebGL program pipelines
+  useEffect(() => {
+    const [mat0, mat1, mat2] = wallMaterials;
+    mat0.map = brickTextures.diffuse;
+    mat0.normalMap = brickTextures.normal;
+    mat0.roughnessMap = brickTextures.roughness;
+    mat0.aoMap = brickTextures.ao;
+    mat0.needsUpdate = true;
+
+    mat1.map = gravelTextures.diffuse;
+    mat1.normalMap = gravelTextures.normal;
+    mat1.roughnessMap = gravelTextures.roughness;
+    mat1.aoMap = gravelTextures.ao;
+    mat1.needsUpdate = true;
+
+    mat2.map = darkStoneTextures.diffuse;
+    mat2.normalMap = darkStoneTextures.normal;
+    mat2.roughnessMap = darkStoneTextures.roughness;
+    mat2.aoMap = darkStoneTextures.ao;
+    mat2.needsUpdate = true;
+  }, [wallMaterials, brickTextures, gravelTextures, darkStoneTextures]);
 
   useEffect(() => {
     return () => {

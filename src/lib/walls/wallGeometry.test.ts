@@ -122,7 +122,7 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
         { x: -2, y: 0, z: 0 },
         { x: 2, y: 0, z: 0 },
       ];
-      const resampled = resampleWallPointsAlongTerrain(points, buffer, 0.25);
+      const resampled = resampleWallPointsAlongTerrain(points, buffer, false, 0.25);
       expect(resampled.length).toBeGreaterThan(10);
       // All resampled points should sample ground height 0.5 from buffer
       for (const p of resampled) {

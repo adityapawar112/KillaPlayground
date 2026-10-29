@@ -211,6 +211,8 @@ export function calculateWallTotalLength(
  * Group 0: Stone Brick Masonry (mossy_stone_brick) - wall sides, towers, gate jambs
  * Group 1: Walkway & Tower Floor Gravel (Gravel_01) - wall top ramparts, tower floor discs
  * Group 2: Solid Dark Stone (dark_stone_texture) - crenellations (kangare), soffits, trims
+ *
+ * // shortcut: unindexed quad vertex emission (duplicated shared vertices), upgrade to spatial hash index map if fort vertex count exceeds 50,000 vertices
  */
 class GeometryBuilder {
   positions: number[] = [];
@@ -320,11 +322,10 @@ export function generateWallBufferGeometry(
     excludedBastionIndices = [],
     customBastions = {},
   } = wall;
-  if (points.length < 2) {
-    return new THREE.BufferGeometry();
-  }
-
   const builder = new GeometryBuilder();
+  if (points.length < 2) {
+    return builder.build();
+  }
   const halfThick = settings.thickness * 0.5;
   const wallH = settings.height;
   const effectiveUvScale = settings.uvScale * BRICK_UV_MULTIPLIER;
@@ -720,6 +721,7 @@ export function generateWallBufferGeometry(
         const unitNorm: [number, number, number] = [mNormX / normLen, 0, mNormZ / normLen];
 
         // Determine authentic outer-facing direction
+        // shortcut: 2D polygon centroid & downhill sampling for battlement orientation, upgrade to winding order mesh BVH if interior courtyards self-intersect
         let outwardDir = 1;
         if (isClosed && points.length >= 3) {
           const fromCenterX = mMidX - centroidX;
@@ -1282,6 +1284,10 @@ export interface SnapResult {
   tangent?: { x: number; z: number };
 }
 
+/**
+ * Computes magnetic snap targets along fort wall curves and vertices.
+ * // shortcut: 0.45m buruj / 0.60m gate linear raycast scan, upgrade to KD-Tree spatial index if wall vertices exceed 1,000 nodes
+ */
 export function calculateMagneticSnap(
   stamp: FortStampType,
   pointerPos: { x: number; y: number; z: number },

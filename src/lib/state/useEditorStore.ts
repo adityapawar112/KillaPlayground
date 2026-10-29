@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { z } from 'zod';
 import { COLORS } from '../constants/tokens';
+import { useTerrainStore } from '../terrain/terrainStore';
 import {
   WallPath,
   WallPoint,
@@ -321,6 +322,20 @@ const getInitialStartupPref = (): boolean => {
   }
 };
 
+/**
+ * Synchronous undo snapshot helper to capture state BEFORE any mutation occurs,
+ * eliminating async microtask race conditions.
+ *
+ * // shortcut: Synchronous undo/redo snapshots via useTerrainStore, upgrade to isolated IndexedDB action journal if scene state exceeds 50MB
+ */
+const pushUndoSnapshot = () => {
+  try {
+    useTerrainStore.getState().pushUndo();
+  } catch {
+    // Graceful fallback if invoked during initial module bootstrapping
+  }
+};
+
 export const useEditorStore = create<EditorState>((set, get) => ({
   locale: 'en',
   setLocale: (locale) => set({ locale }),
@@ -401,7 +416,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         wallSettings: wall ? { ...wall.settings } : state.wallSettings,
       };
     }),
-  setWallStep: (wallStep) => set({ wallStep }),
+  // shortcut: 3-state stepper (layout -> fortify -> solidified), upgrade to hierarchical statechart (XState) if nested sub-bastion editing modes are added
+  setWallStep: (wallStep) =>
+    set((state) => {
+      // Guard: Cannot transition to fortify or solidified if there are no walls built and no active draft
+      if (wallStep !== 'layout' && state.walls.length === 0 && state.activeWallDraft.length < 2) {
+        return state;
+      }
+      return { wallStep };
+    }),
   setActiveStamp: (activeStamp) => set({ activeStamp, wallSnapPreview: null }),
   setWallSnapPreview: (wallSnapPreview) => set({ wallSnapPreview }),
   setSelectedComponent: (selectedComponent) => set({ selectedComponent }),
@@ -411,9 +434,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const { activeWallDraft, wallSettings, walls } = get();
     if (activeWallDraft.length < 2) return null;
 
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
 
     const id = `wall_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newWall: WallPath = {
@@ -436,9 +457,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   cancelCurrentWall: () => set({ activeWallDraft: [] }),
   removeWall: (id) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set((state) => ({
       walls: state.walls.filter((w) => w.id !== id),
       selectedWallId: state.selectedWallId === id ? null : state.selectedWallId,
@@ -448,9 +467,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   clearAllWalls: () => {
     if (get().walls.length === 0) return;
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set({
       walls: [],
       activeWallDraft: [],
@@ -460,9 +477,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
   toggleBastionOnNode: (wallId, nodeIndex) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set((state) => ({
       walls: state.walls.map((w) => {
         if (w.id !== wallId) return w;
@@ -483,9 +498,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   toggleGrandBastionOnNode: (wallId, nodeIndex) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set((state) => ({
       walls: state.walls.map((w) => {
         if (w.id !== wallId) return w;
@@ -537,9 +550,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   removeBastionFromNode: (wallId, nodeIndex) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set((state) => ({
       walls: state.walls.map((w) => {
         if (w.id !== wallId) return w;
@@ -565,9 +576,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     const gateId = `gate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newGate: WallGate = {
       id: gateId,
@@ -597,9 +606,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   removeGateFromWall: (wallId, gateId) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set((state) => ({
       walls: state.walls.map((w) => {
         if (w.id !== wallId) return w;
@@ -612,9 +619,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   addCitadelKeep: (keep) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     const id = `citadel_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newKeep: CitadelKeep = {
       ...keep,
@@ -633,9 +638,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   removeCitadelKeep: (id) => {
-    import('../terrain/terrainStore').then((m) => {
-      m.useTerrainStore.getState().pushUndo();
-    });
+    pushUndoSnapshot();
     set((state) => ({
       citadelKeeps: state.citadelKeeps.filter((k) => k.id !== id),
       selectedComponent:

@@ -81,6 +81,12 @@ const CameraKeyboardController: React.FC<{
     controls.update();
   }, [controlsRef]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined' && controlsRef.current) {
+      (window as any).__orbitControls = controlsRef.current;
+    }
+  }, [controlsRef]);
+
   // Respond to store reset trigger
   useEffect(() => {
     if (cameraResetTrigger > 0) {
@@ -369,7 +375,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           makeDefault
           enableDamping
           dampingFactor={0.08}
-          minDistance={2.5}
+          minDistance={0.25}
           maxDistance={30}
           minPolarAngle={0.05} // Constrain camera from flipping over top
           maxPolarAngle={Math.PI / 2 - 0.05} // Constrain polar angle above floor

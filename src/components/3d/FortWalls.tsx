@@ -3,6 +3,7 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { generateWallBufferGeometry } from '@/lib/walls/wallGeometry';
@@ -17,7 +18,7 @@ const WallDraftPreview: React.FC<{
 }> = ({ draftPoints, nightMode }) => {
   const lineObject = useMemo(() => {
     if (draftPoints.length < 2) return null;
-    const pts = draftPoints.map((p) => new THREE.Vector3(p.x, p.y + 0.15, p.z));
+    const pts = draftPoints.map((p) => new THREE.Vector3(p.x, p.y + 0.015, p.z));
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
     const mat = new THREE.LineBasicMaterial({
       color: nightMode ? '#f59e0b' : '#d97706',
@@ -52,13 +53,13 @@ const WallDraftPreview: React.FC<{
         return (
           <mesh
             key={`node_${idx}`}
-            position={[p.x, p.y + 0.15, p.z]}
+            position={[p.x, p.y + 0.012, p.z]}
           >
             <cylinderGeometry
               args={[
-                canClose ? 0.22 : 0.12,
-                canClose ? 0.22 : 0.12,
-                0.08,
+                canClose ? 0.035 : 0.02,
+                canClose ? 0.035 : 0.02,
+                0.012,
                 16,
               ]}
             />
@@ -126,6 +127,17 @@ const SingleWallMesh: React.FC<{
 export const FortWalls: React.FC = () => {
   const { walls, activeWallDraft, selectedWallId, nightMode } = useEditorStore();
   const { stateBuffer, lastUpdated } = useTerrainStore();
+  const { invalidate, scene } = useThree();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__threeScene = scene;
+    }
+  }, [scene]);
+
+  useEffect(() => {
+    invalidate();
+  }, [walls, activeWallDraft, selectedWallId, invalidate]);
 
   // Load Retroground PBR mossy stone brick textures
   const textures = useTexture({

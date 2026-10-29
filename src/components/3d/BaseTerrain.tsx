@@ -412,9 +412,10 @@ export const BaseTerrainContent: React.FC = () => {
 
           for (const wall of editor.walls) {
             const pts = wall.points;
-            for (let i = 0; i < pts.length - 1; i++) {
+            const numSegs = wall.isClosed && pts.length >= 3 ? pts.length : pts.length - 1;
+            for (let i = 0; i < numSegs; i++) {
               const pA = pts[i];
-              const pB = pts[i + 1];
+              const pB = pts[(i + 1) % pts.length];
               const segDx = pB.x - pA.x;
               const segDz = pB.z - pA.z;
               const segLenSq = segDx * segDx + segDz * segDz;
@@ -432,7 +433,7 @@ export const BaseTerrainContent: React.FC = () => {
             }
           }
 
-          if (targetWallId && closestDist < 1.4) {
+          if (targetWallId && closestDist < 0.25) {
             editor.addGateToWall(targetWallId, targetSegIdx, targetT);
             editor.setToastMessage('Maha Darwaza arched gateway inserted!');
           } else {
@@ -458,7 +459,7 @@ export const BaseTerrainContent: React.FC = () => {
             });
           }
 
-          if (targetWallId && closestDist < 1.4) {
+          if (targetWallId && closestDist < 0.20) {
             editor.toggleBastionOnNode(targetWallId, targetNodeIdx);
             editor.setToastMessage('Round bastion toggled on vertex!');
           } else {
@@ -472,7 +473,7 @@ export const BaseTerrainContent: React.FC = () => {
         const draft = editor.activeWallDraft;
         if (draft.length >= 3) {
           const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
-          if (dStart < 0.65) {
+          if (dStart < 0.15) {
             editor.finishCurrentWall(true);
             editor.setToastMessage('Fort perimeter wall closed into defensive circuit!');
             invalidate();
@@ -532,7 +533,7 @@ export const BaseTerrainContent: React.FC = () => {
           const dx = e.point.x - lastWallPointRef.current.x;
           const dz = e.point.z - lastWallPointRef.current.z;
           const dist = Math.hypot(dx, dz);
-          if (dist >= 0.45) {
+          if (dist >= 0.06) {
             editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
             lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
             invalidate();

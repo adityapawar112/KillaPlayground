@@ -8,6 +8,19 @@ import {
 import { WallPath, WallPoint, WallSettings, WallGate } from './wallTypes';
 
 /**
+ * Miniature diorama stone masonry scale factor.
+ * Since fort walls are miniature (20mm to 100mm height),
+ * coordinates are in [0.02..0.10]. Multiplying by 22.0 maps each
+ * stone brick course to ~10mm x 5mm miniature scale blocks.
+ */
+export const BRICK_UV_MULTIPLIER = 22.0;
+
+/**
+ * Foundation sink into terrain to guarantee rock-solid grounding on steep terrain slopes.
+ */
+export const WALL_EMBED_DEPTH = 0.012; // 12mm
+
+/**
  * Samples terrain height at arbitrary continuous world coordinates (worldX, worldZ)
  * using smooth bilinear interpolation over the state heightmap buffer.
  */
@@ -120,11 +133,13 @@ export function detectBastionLocations(
 /**
  * Subdivides long wall segments into smaller intervals (<= stepSize)
  * and snaps every sub-point's ground elevation to the terrain heightmap.
+ * For closed loops, seamlessly closes from points[count-1] to points[0].
  */
 export function resampleWallPointsAlongTerrain(
   points: WallPoint[],
   buffer: Float32Array,
-  stepSize = 0.25
+  isClosed = false,
+  stepSize = 0.04
 ): WallPoint[] {
   if (points.length < 2) {
     return points.map((p) => ({
@@ -135,10 +150,11 @@ export function resampleWallPointsAlongTerrain(
   }
 
   const resampled: WallPoint[] = [];
+  const segCount = isClosed && points.length >= 3 ? points.length : points.length - 1;
 
-  for (let i = 0; i < points.length - 1; i++) {
+  for (let i = 0; i < segCount; i++) {
     const p1 = points[i];
-    const p2 = points[i + 1];
+    const p2 = points[(i + 1) % points.length];
     const dx = p2.x - p1.x;
     const dz = p2.z - p1.z;
     const dist = Math.hypot(dx, dz);
@@ -153,11 +169,12 @@ export function resampleWallPointsAlongTerrain(
     }
   }
 
-  const last = points[points.length - 1];
+  // End point / closing point
+  const endRef = isClosed && points.length >= 3 ? points[0] : points[points.length - 1];
   resampled.push({
-    x: last.x,
-    y: sampleBilinearHeight(buffer, last.x, last.z),
-    z: last.z,
+    x: endRef.x,
+    y: sampleBilinearHeight(buffer, endRef.x, endRef.z),
+    z: endRef.z,
   });
 
   return resampled;
@@ -200,6 +217,21 @@ class GeometryBuilder {
     return this.vertCount++;
   }
 
+  addTriangle(
+    p0: [number, number, number],
+    p1: [number, number, number],
+    p2: [number, number, number],
+    norm: [number, number, number],
+    uv0: [number, number],
+    uv1: [number, number],
+    uv2: [number, number]
+  ) {
+    const i0 = this.addVertex(p0[0], p0[1], p0[2], norm[0], norm[1], norm[2], uv0[0], uv0[1]);
+    const i1 = this.addVertex(p1[0], p1[1], p1[2], norm[0], norm[1], norm[2], uv1[0], uv1[1]);
+    const i2 = this.addVertex(p2[0], p2[1], p2[2], norm[0], norm[1], norm[2], uv2[0], uv2[1]);
+    this.indices.push(i0, i1, i2);
+  }
+
   addQuad(
     p0: [number, number, number],
     p1: [number, number, number],
@@ -235,12 +267,11 @@ class GeometryBuilder {
 /**
  * Builds the complete parametric fort wall BufferGeometry for a single WallPath.
  * Integrates:
- * - Terrain elevation conformity & foundation embedding
- * - Extruded wall ribbon (left face, right face, top rampart walk)
- * - Round bastions (buruj) at corners and path terminals
- * - Crenellations (kangare) along top ridge
- * - Maha Darwaza arched gateway openings & gatehouse bastions
- * - Proper UV tiling based on world meters * uvScale
+ * - 10x Miniature diorama scale (wall height 20mm to 100mm)
+ * - Grounding foundation embedding (12mm)
+ * - Authentic Murud-Janjira arched/pointed kangare along ramparts & bastion tops
+ * - Watertight arched Maha Darwaza with solid flanking bastions and capped tops
+ * - Multiplied miniature brick UV scale for crisp stone masonry
  */
 export function generateWallBufferGeometry(
   wall: WallPath,
@@ -254,11 +285,11 @@ export function generateWallBufferGeometry(
   const builder = new GeometryBuilder();
   const halfThick = settings.thickness * 0.5;
   const wallH = settings.height;
-  const uvScale = settings.uvScale;
-  const embedDepth = 0.12; // Embed foundation slightly into soil to eliminate gaps on slopes
+  const effectiveUvScale = settings.uvScale * BRICK_UV_MULTIPLIER;
+  const embedDepth = WALL_EMBED_DEPTH;
 
   // 1. Resample centerline points along terrain heightmap
-  const resampled = resampleWallPointsAlongTerrain(points, buffer, 0.25);
+  const resampled = resampleWallPointsAlongTerrain(points, buffer, isClosed, 0.04);
   const n = resampled.length;
   if (n < 2) return builder.build();
 
@@ -272,16 +303,16 @@ export function generateWallBufferGeometry(
 
     if (i === 0) {
       if (isClosed) {
-        tx = resampled[1].x - resampled[n - 1].x;
-        tz = resampled[1].z - resampled[n - 1].z;
+        tx = resampled[1].x - resampled[n - 2].x;
+        tz = resampled[1].z - resampled[n - 2].z;
       } else {
         tx = resampled[1].x - resampled[0].x;
         tz = resampled[1].z - resampled[0].z;
       }
     } else if (i === n - 1) {
       if (isClosed) {
-        tx = resampled[0].x - resampled[n - 2].x;
-        tz = resampled[0].z - resampled[n - 2].z;
+        tx = resampled[1].x - resampled[n - 2].x;
+        tz = resampled[1].z - resampled[n - 2].z;
       } else {
         tx = resampled[n - 1].x - resampled[n - 2].x;
         tz = resampled[n - 1].z - resampled[n - 2].z;
@@ -304,10 +335,8 @@ export function generateWallBufferGeometry(
     }
   }
 
-  // Check if any gates exist
-  const hasGates = gates.length > 0;
-  // Compute approximate world ranges for gates so wall ribbon leaves arched portal openings
-  interface GateRange {
+  // 3. Process Gates (Maha Darwaza)
+  interface ActiveGateData {
     gate: WallGate;
     centerDist: number;
     halfWidth: number;
@@ -315,18 +344,22 @@ export function generateWallBufferGeometry(
     centerZ: number;
     groundY: number;
     normal: { x: number; z: number };
+    tangent: { x: number; z: number };
   }
 
-  const gateRanges: GateRange[] = [];
+  const activeGates: ActiveGateData[] = [];
+  const hasGates = gates.length > 0;
+
   if (hasGates) {
-    const totalPathDist = cumulativeDist[n - 1];
     for (const g of gates) {
-      // Find approximate distance along path for this gate
-      const targetSeg = Math.min(points.length - 2, Math.max(0, g.segmentIndex));
-      const pA = points[targetSeg];
-      const pB = points[targetSeg + 1];
-      const gx = pA.x + (pB.x - pA.x) * g.t;
-      const gz = pA.z + (pB.z - pA.z) * g.t;
+      // Find segment on original points
+      const origCount = isClosed && points.length >= 3 ? points.length : points.length - 1;
+      const segIdx = Math.max(0, Math.min(origCount - 1, g.segmentIndex));
+      const pA = points[segIdx];
+      const pB = points[(segIdx + 1) % points.length];
+      const t = Math.max(0.15, Math.min(0.85, g.t || 0.5));
+      const gx = pA.x + (pB.x - pA.x) * t;
+      const gz = pA.z + (pB.z - pA.z) * t;
 
       // Find closest index in resampled
       let closestIdx = 0;
@@ -340,30 +373,36 @@ export function generateWallBufferGeometry(
       }
 
       const centerDist = cumulativeDist[closestIdx];
-      const halfWidth = (g.width || 1.4) * 0.5;
-      gateRanges.push({
+      // Gate width scaled appropriately to wall thickness (e.g. 2.2x thickness)
+      const gateWidth = Math.max(0.04, Math.min(0.12, (g.width && g.width <= 0.2 ? g.width : settings.thickness * 2.2)));
+      const halfWidth = gateWidth * 0.5;
+      const norm = lateralNormals[closestIdx];
+      const tan = { x: -norm.z, z: norm.x };
+
+      activeGates.push({
         gate: g,
         centerDist,
         halfWidth,
         centerX: gx,
         centerZ: gz,
         groundY: sampleBilinearHeight(buffer, gx, gz),
-        normal: lateralNormals[closestIdx],
+        normal: norm,
+        tangent: tan,
       });
     }
   }
 
-  // 3. Build wall ribbon faces between consecutive sample points
+  // 4. Build Main Wall Ribbon
   for (let i = 0; i < n - 1; i++) {
     const pA = resampled[i];
     const pB = resampled[i + 1];
     const distA = cumulativeDist[i];
     const distB = cumulativeDist[i + 1];
 
-    // Check if this segment is completely inside a gate opening
+    // Check if segment is completely inside a gate opening
     let isInsideGate = false;
-    for (const gr of gateRanges) {
-      if (distA >= gr.centerDist - gr.halfWidth && distB <= gr.centerDist + gr.halfWidth) {
+    for (const ag of activeGates) {
+      if (distA >= ag.centerDist - ag.halfWidth && distB <= ag.centerDist + ag.halfWidth) {
         isInsideGate = true;
         break;
       }
@@ -373,7 +412,6 @@ export function generateWallBufferGeometry(
     const nA = lateralNormals[i];
     const nB = lateralNormals[i + 1];
 
-    // Vertex positions: Left Bottom, Left Top, Right Bottom, Right Top
     const yBotA = pA.y - embedDepth;
     const yTopA = pA.y + wallH;
     const yBotB = pB.y - embedDepth;
@@ -389,12 +427,12 @@ export function generateWallBufferGeometry(
     const rbB: [number, number, number] = [pB.x + nB.x * halfThick, yBotB, pB.z + nB.z * halfThick];
     const rtB: [number, number, number] = [pB.x + nB.x * halfThick, yTopB, pB.z + nB.z * halfThick];
 
-    const uA = distA * uvScale;
-    const uB = distB * uvScale;
-    const vBotA = yBotA * uvScale;
-    const vTopA = yTopA * uvScale;
-    const vBotB = yBotB * uvScale;
-    const vTopB = yTopB * uvScale;
+    const uA = distA * effectiveUvScale;
+    const uB = distB * effectiveUvScale;
+    const vBotA = yBotA * effectiveUvScale;
+    const vTopA = yTopA * effectiveUvScale;
+    const vBotB = yBotB * effectiveUvScale;
+    const vTopB = yTopB * effectiveUvScale;
 
     // Face 1: Left Outer Wall Face (facing -N)
     const normLeft: [number, number, number] = [-(nA.x + nB.x) * 0.5, 0, -(nA.z + nB.z) * 0.5];
@@ -416,13 +454,12 @@ export function generateWallBufferGeometry(
     builder.addQuad(
       ltA, ltB, rtB, rtA,
       [0, 1, 0],
-      [uA, 0], [uB, 0], [uB, settings.thickness * uvScale], [uA, settings.thickness * uvScale]
+      [uA, 0], [uB, 0], [uB, settings.thickness * effectiveUvScale], [uA, settings.thickness * effectiveUvScale]
     );
   }
 
-  // End Caps for open walls (start and end)
+  // End Caps for open walls
   if (!isClosed && n >= 2) {
-    // Start Cap
     const p0 = resampled[0];
     const n0 = lateralNormals[0];
     const yB0 = p0.y - embedDepth;
@@ -432,18 +469,16 @@ export function generateWallBufferGeometry(
     const rb0: [number, number, number] = [p0.x + n0.x * halfThick, yB0, p0.z + n0.z * halfThick];
     const rt0: [number, number, number] = [p0.x + n0.x * halfThick, yT0, p0.z + n0.z * halfThick];
 
-    // Outward facing tangent at start
     const d0x = -(resampled[1].x - p0.x);
     const d0z = -(resampled[1].z - p0.z);
     const d0Len = Math.hypot(d0x, d0z) || 1;
     builder.addQuad(
       rb0, lb0, lt0, rt0,
       [d0x / d0Len, 0, d0z / d0Len],
-      [0, yB0 * uvScale], [settings.thickness * uvScale, yB0 * uvScale],
-      [settings.thickness * uvScale, yT0 * uvScale], [0, yT0 * uvScale]
+      [0, yB0 * effectiveUvScale], [settings.thickness * effectiveUvScale, yB0 * effectiveUvScale],
+      [settings.thickness * effectiveUvScale, yT0 * effectiveUvScale], [0, yT0 * effectiveUvScale]
     );
 
-    // End Cap
     const pEnd = resampled[n - 1];
     const nEnd = lateralNormals[n - 1];
     const yBEnd = pEnd.y - embedDepth;
@@ -459,18 +494,73 @@ export function generateWallBufferGeometry(
     builder.addQuad(
       lbEnd, rbEnd, rtEnd, ltEnd,
       [dEndx / dEndLen, 0, dEndz / dEndLen],
-      [0, yBEnd * uvScale], [settings.thickness * uvScale, yBEnd * uvScale],
-      [settings.thickness * uvScale, yTEnd * uvScale], [0, yTEnd * uvScale]
+      [0, yBEnd * effectiveUvScale], [settings.thickness * effectiveUvScale, yBEnd * effectiveUvScale],
+      [settings.thickness * effectiveUvScale, yTEnd * effectiveUvScale], [0, yTEnd * effectiveUvScale]
     );
   }
 
-  // 4. Crenellations (Kangare) along top ridge
+  // 5. Authentic Murud-Janjira Pointed Arch Crenellations (Kangare)
+  // Helper to add a single authentic pointed/ogival kangara
+  const addPointedKangara = (
+    cLeft: [number, number, number],
+    cRight: [number, number, number],
+    norm: [number, number, number],
+    baseY: number,
+    kHeight: number,
+    kThick: number
+  ) => {
+    const hShoulder = kHeight * 0.62;
+    const hPeak = kHeight;
+
+    // Midpoint on outer rim
+    const cMidX = (cLeft[0] + cRight[0]) * 0.5;
+    const cMidZ = (cLeft[2] + cRight[2]) * 0.5;
+
+    // 5 Outer Vertices: V0(left bot), V1(right bot), V2(right shoulder), V3(peak center), V4(left shoulder)
+    const v0: [number, number, number] = [cLeft[0], baseY, cLeft[2]];
+    const v1: [number, number, number] = [cRight[0], baseY, cRight[2]];
+    const v2: [number, number, number] = [cRight[0], baseY + hShoulder, cRight[2]];
+    const v3: [number, number, number] = [cMidX, baseY + hPeak, cMidZ];
+    const v4: [number, number, number] = [cLeft[0], baseY + hShoulder, cLeft[2]];
+
+    // 5 Inner Vertices (offset by inward normal)
+    const inX = norm[0] * kThick;
+    const inZ = norm[2] * kThick;
+    const iv0: [number, number, number] = [v0[0] + inX, baseY, v0[2] + inZ];
+    const iv1: [number, number, number] = [v1[0] + inX, baseY, v1[2] + inZ];
+    const iv2: [number, number, number] = [v2[0] + inX, baseY + hShoulder, v2[2] + inZ];
+    const iv3: [number, number, number] = [v3[0] + inX, baseY + hPeak, v3[2] + inZ];
+    const iv4: [number, number, number] = [v4[0] + inX, baseY + hShoulder, v4[2] + inZ];
+
+    const outNorm: [number, number, number] = [-norm[0], 0, -norm[2]];
+    const inNorm: [number, number, number] = [norm[0], 0, norm[2]];
+
+    // Outer Face: Quad base + Pointed Triangle Peak
+    builder.addQuad(v0, v1, v2, v4, outNorm, [0, 0], [1, 0], [1, 0.6], [0, 0.6]);
+    builder.addTriangle(v4, v2, v3, outNorm, [0, 0.6], [1, 0.6], [0.5, 1.0]);
+
+    // Inner Face: Quad base + Pointed Triangle Peak (reversed winding)
+    builder.addQuad(iv1, iv0, iv4, iv2, inNorm, [0, 0], [1, 0], [1, 0.6], [0, 0.6]);
+    builder.addTriangle(iv2, iv4, iv3, inNorm, [1, 0.6], [0, 0.6], [0.5, 1.0]);
+
+    // Left Side Quad
+    builder.addQuad(v0, iv0, iv4, v4, [-norm[2], 0, norm[0]], [0, 0], [0.3, 0], [0.3, 0.6], [0, 0.6]);
+
+    // Right Side Quad
+    builder.addQuad(iv1, v1, v2, iv2, [norm[2], 0, -norm[0]], [0, 0], [0.3, 0], [0.3, 0.6], [0, 0.6]);
+
+    // Sloping Peaked Roof (Left Slope & Right Slope)
+    builder.addQuad(v4, v3, iv3, iv4, [-0.5, 0.8, 0], [0, 0], [0.5, 0], [0.5, 0.3], [0, 0.3]);
+    builder.addQuad(v3, v2, iv2, iv3, [0.5, 0.8, 0], [0, 0], [0.5, 0], [0.5, 0.3], [0, 0.3]);
+  };
+
+  // Add Murud-Janjira Kangare along Ramparts
   if (settings.crenellations) {
-    const crenH = settings.crenellationHeight;
-    const merlonW = settings.crenellationWidth;
-    const gapW = 0.22;
+    const crenH = Math.max(0.010, Math.min(0.025, settings.crenellationHeight));
+    const merlonW = Math.max(0.012, Math.min(0.028, settings.crenellationWidth));
+    const gapW = 0.012;
     const cycle = merlonW + gapW;
-    const crenThick = halfThick * 0.55;
+    const crenThick = halfThick * 0.65;
 
     for (let i = 0; i < n - 1; i++) {
       const pA = resampled[i];
@@ -480,8 +570,8 @@ export function generateWallBufferGeometry(
 
       // Check if gate is here
       let isGate = false;
-      for (const gr of gateRanges) {
-        if (distA >= gr.centerDist - gr.halfWidth && distB <= gr.centerDist + gr.halfWidth) {
+      for (const ag of activeGates) {
+        if (distA >= ag.centerDist - ag.halfWidth && distB <= ag.centerDist + ag.halfWidth) {
           isGate = true;
           break;
         }
@@ -494,7 +584,6 @@ export function generateWallBufferGeometry(
       const nA = lateralNormals[i];
       const nB = lateralNormals[i + 1];
 
-      // Merlon cycle count on this segment
       const numCycles = Math.max(1, Math.floor(segLen / cycle));
       for (let c = 0; c < numCycles; c++) {
         const tStart = (c * cycle) / segLen;
@@ -507,48 +596,21 @@ export function generateWallBufferGeometry(
 
         const mBx = pA.x + (pB.x - pA.x) * tEnd;
         const mBz = pA.z + (pB.z - pA.z) * tEnd;
-        const mBy = pA.y + (pB.y - pA.y) * tEnd + wallH;
 
         const mNormX = nA.x + (nB.x - nA.x) * tStart;
         const mNormZ = nA.z + (nB.z - nA.z) * tStart;
+        const normLen = Math.hypot(mNormX, mNormZ) || 1;
+        const unitNorm: [number, number, number] = [mNormX / normLen, 0, mNormZ / normLen];
 
-        // Merlon Box
-        const mb_lbA: [number, number, number] = [mAx - mNormX * halfThick, mAy, mAz - mNormZ * halfThick];
-        const mb_ltA: [number, number, number] = [mAx - mNormX * halfThick, mAy + crenH, mAz - mNormZ * halfThick];
-        const mb_rbA: [number, number, number] = [mAx - mNormX * (halfThick - crenThick), mAy, mAz - mNormZ * (halfThick - crenThick)];
-        const mb_rtA: [number, number, number] = [mAx - mNormX * (halfThick - crenThick), mAy + crenH, mAz - mNormZ * (halfThick - crenThick)];
+        const cL: [number, number, number] = [mAx - unitNorm[0] * halfThick, mAy, mAz - unitNorm[2] * halfThick];
+        const cR: [number, number, number] = [mBx - unitNorm[0] * halfThick, mAy, mBz - unitNorm[2] * halfThick];
 
-        const mb_lbB: [number, number, number] = [mBx - mNormX * halfThick, mBy, mBz - mNormZ * halfThick];
-        const mb_ltB: [number, number, number] = [mBx - mNormX * halfThick, mBy + crenH, mBz - mNormZ * halfThick];
-        const mb_rbB: [number, number, number] = [mBx - mNormX * (halfThick - crenThick), mBy, mBz - mNormZ * (halfThick - crenThick)];
-        const mb_rtB: [number, number, number] = [mBx - mNormX * (halfThick - crenThick), mBy + crenH, mBz - mNormZ * (halfThick - crenThick)];
-
-        // Outer face
-        builder.addQuad(
-          mb_lbA, mb_lbB, mb_ltB, mb_ltA,
-          [-mNormX, 0, -mNormZ],
-          [distA * uvScale, mAy * uvScale], [(distA + merlonW) * uvScale, mBy * uvScale],
-          [(distA + merlonW) * uvScale, (mBy + crenH) * uvScale], [distA * uvScale, (mAy + crenH) * uvScale]
-        );
-        // Inner face
-        builder.addQuad(
-          mb_rbB, mb_rbA, mb_rtA, mb_rtB,
-          [mNormX, 0, mNormZ],
-          [(distA + merlonW) * uvScale, mBy * uvScale], [distA * uvScale, mAy * uvScale],
-          [distA * uvScale, (mAy + crenH) * uvScale], [(distA + merlonW) * uvScale, (mBy + crenH) * uvScale]
-        );
-        // Top cap
-        builder.addQuad(
-          mb_ltA, mb_ltB, mb_rtB, mb_rtA,
-          [0, 1, 0],
-          [distA * uvScale, 0], [(distA + merlonW) * uvScale, 0],
-          [(distA + merlonW) * uvScale, crenThick * uvScale], [distA * uvScale, crenThick * uvScale]
-        );
+        addPointedKangara(cL, cR, unitNorm, mAy, crenH, crenThick);
       }
     }
   }
 
-  // 5. Round Bastions (Buruj) at detected positions
+  // 6. Round Bastions (Buruj) with Solid Top Floors and Crowning Kangare Rings
   const bastionIndices = detectBastionLocations(
     points,
     isClosed,
@@ -556,15 +618,17 @@ export function generateWallBufferGeometry(
     manualBastionIndices
   );
 
-  const bastionRadius = settings.bastionRadius;
+  const bastionRadius = Math.max(0.03, Math.min(0.10, settings.bastionRadius));
   const radialSegments = 16;
+  const crenH = Math.max(0.010, Math.min(0.025, settings.crenellationHeight));
+
   for (const bIdx of bastionIndices) {
     const pt = points[bIdx];
     if (!pt) continue;
 
     const groundY = sampleBilinearHeight(buffer, pt.x, pt.z);
-    const bBotY = groundY - 0.2;
-    const bTopY = groundY + wallH + 0.25; // Bastions stand proud above walls
+    const bBotY = groundY - embedDepth;
+    const bTopY = groundY + wallH + 0.012; // Stand slightly proud of wall
 
     // Cylinder side quads
     for (let r = 0; r < radialSegments; r++) {
@@ -581,11 +645,11 @@ export function generateWallBufferGeometry(
       const x1 = pt.x + cos1 * bastionRadius;
       const z1 = pt.z + sin1 * bastionRadius;
 
-      const u0 = (a0 / (Math.PI * 2)) * (bastionRadius * Math.PI * 2) * uvScale;
-      const u1 = (a1 / (Math.PI * 2)) * (bastionRadius * Math.PI * 2) * uvScale;
+      const u0 = (a0 / (Math.PI * 2)) * (bastionRadius * Math.PI * 2) * effectiveUvScale;
+      const u1 = (a1 / (Math.PI * 2)) * (bastionRadius * Math.PI * 2) * effectiveUvScale;
 
-      const v0 = bBotY * uvScale;
-      const v1 = bTopY * uvScale;
+      const v0 = bBotY * effectiveUvScale;
+      const v1 = bTopY * effectiveUvScale;
 
       const avgNorm: [number, number, number] = [(cos0 + cos1) * 0.5, 0, (sin0 + sin1) * 0.5];
 
@@ -599,7 +663,7 @@ export function generateWallBufferGeometry(
       );
     }
 
-    // Bastion top circle
+    // SOLID BASTION TOP FLOOR DISC (Watertight top)
     const centerTopIdx = builder.addVertex(pt.x, bTopY, pt.z, 0, 1, 0, 0.5, 0.5);
     for (let r = 0; r < radialSegments; r++) {
       const a0 = (r / radialSegments) * Math.PI * 2;
@@ -613,72 +677,140 @@ export function generateWallBufferGeometry(
       const i1 = builder.addVertex(x1, bTopY, z1, 0, 1, 0, 0.5 + Math.cos(a1) * 0.5, 0.5 + Math.sin(a1) * 0.5);
       builder.indices.push(centerTopIdx, i0, i1);
     }
+
+    // MURUD-JANJIRA CROWNING KANGARE RING AROUND BASTION RIM
+    if (settings.crenellations) {
+      const numBastionKangare = 10;
+      const bKThick = bastionRadius * 0.22;
+
+      for (let k = 0; k < numBastionKangare; k++) {
+        // Leave alternating small embrasure gaps
+        const aStart = ((k + 0.15) / numBastionKangare) * Math.PI * 2;
+        const aEnd = ((k + 0.85) / numBastionKangare) * Math.PI * 2;
+        const aMid = (aStart + aEnd) * 0.5;
+
+        const cL: [number, number, number] = [
+          pt.x + Math.cos(aStart) * bastionRadius,
+          bTopY,
+          pt.z + Math.sin(aStart) * bastionRadius,
+        ];
+        const cR: [number, number, number] = [
+          pt.x + Math.cos(aEnd) * bastionRadius,
+          bTopY,
+          pt.z + Math.sin(aEnd) * bastionRadius,
+        ];
+
+        // Inward pointing normal
+        const unitInNorm: [number, number, number] = [-Math.cos(aMid), 0, -Math.sin(aMid)];
+
+        addPointedKangara(cL, cR, unitInNorm, bTopY, crenH * 0.9, bKThick);
+      }
+    }
   }
 
-  // 6. Arched Gateways (Maha Darwaza) and Flanking Gatehouses
-  for (const gr of gateRanges) {
-    const { gate, centerX, centerZ, groundY, normal } = gr;
-    const gWidth = gate.width || 1.4;
-    const gHeight = gate.height || 2.2;
-    const halfGW = gWidth * 0.5;
+  // 7. Maha Darwaza (Arched Gateway Portal & Flanking Round Bastions)
+  for (const ag of activeGates) {
+    const { centerX, centerZ, groundY, normal, tangent, halfWidth } = ag;
+    const gWidth = halfWidth * 2;
 
-    // Tangent perpendicular to normal
-    const tanX = -normal.z;
-    const tanZ = normal.x;
+    // Grounded Arch opening height fits completely within wall height
+    const hArch = wallH * 0.70;
+    const archBotY = groundY;
+    const archTopY = groundY + hArch;
+    const lintelTopY = groundY + wallH; // Seamlessly continuous with wall top!
 
-    // Gate lintel arch beam connecting over the portal opening
-    const lintelBotY = groundY + gHeight * 0.85;
-    const lintelTopY = groundY + Math.max(wallH + 0.3, gHeight + 0.35);
+    // Left and right jamb positions
+    const jLeftX = centerX - tangent.x * halfWidth;
+    const jLeftZ = centerZ - tangent.z * halfWidth;
+    const jRightX = centerX + tangent.x * halfWidth;
+    const jRightZ = centerZ + tangent.z * halfWidth;
 
-    // Left and right opening jambs
-    const jLeftX = centerX - tanX * halfGW;
-    const jLeftZ = centerZ - tanZ * halfGW;
-    const jRightX = centerX + tanX * halfGW;
-    const jRightZ = centerZ + tanZ * halfGW;
-
-    // Lintel Front Face
+    // A. SOLID LEFT JAMB FACE (Facing +T into portal)
     builder.addQuad(
-      [jLeftX - normal.x * halfThick, lintelBotY, jLeftZ - normal.z * halfThick],
-      [jRightX - normal.x * halfThick, lintelBotY, jRightZ - normal.z * halfThick],
+      [jLeftX - normal.x * halfThick, archBotY, jLeftZ - normal.z * halfThick],
+      [jLeftX + normal.x * halfThick, archBotY, jLeftZ + normal.z * halfThick],
+      [jLeftX + normal.x * halfThick, archTopY, jLeftZ + normal.z * halfThick],
+      [jLeftX - normal.x * halfThick, archTopY, jLeftZ - normal.z * halfThick],
+      [tangent.x, 0, tangent.z],
+      [0, 0], [settings.thickness * effectiveUvScale, 0],
+      [settings.thickness * effectiveUvScale, hArch * effectiveUvScale], [0, hArch * effectiveUvScale]
+    );
+
+    // B. SOLID RIGHT JAMB FACE (Facing -T into portal)
+    builder.addQuad(
+      [jRightX + normal.x * halfThick, archBotY, jRightZ + normal.z * halfThick],
+      [jRightX - normal.x * halfThick, archBotY, jRightZ - normal.z * halfThick],
+      [jRightX - normal.x * halfThick, archTopY, jRightZ - normal.z * halfThick],
+      [jRightX + normal.x * halfThick, archTopY, jRightZ + normal.z * halfThick],
+      [-tangent.x, 0, -tangent.z],
+      [0, 0], [settings.thickness * effectiveUvScale, 0],
+      [settings.thickness * effectiveUvScale, hArch * effectiveUvScale], [0, hArch * effectiveUvScale]
+    );
+
+    // C. ARCH SOFFIT / CEILING (Downward facing ceiling at archTopY)
+    builder.addQuad(
+      [jLeftX - normal.x * halfThick, archTopY, jLeftZ - normal.z * halfThick],
+      [jLeftX + normal.x * halfThick, archTopY, jLeftZ + normal.z * halfThick],
+      [jRightX + normal.x * halfThick, archTopY, jRightZ + normal.z * halfThick],
+      [jRightX - normal.x * halfThick, archTopY, jRightZ - normal.z * halfThick],
+      [0, -1, 0],
+      [0, 0], [settings.thickness * effectiveUvScale, 0],
+      [settings.thickness * effectiveUvScale, gWidth * effectiveUvScale], [0, gWidth * effectiveUvScale]
+    );
+
+    // D. LINTEL FRONT FACE (Spans from archTopY to lintelTopY)
+    builder.addQuad(
+      [jLeftX - normal.x * halfThick, archTopY, jLeftZ - normal.z * halfThick],
+      [jRightX - normal.x * halfThick, archTopY, jRightZ - normal.z * halfThick],
       [jRightX - normal.x * halfThick, lintelTopY, jRightZ - normal.z * halfThick],
       [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick],
       [-normal.x, 0, -normal.z],
-      [0, lintelBotY * uvScale], [gWidth * uvScale, lintelBotY * uvScale],
-      [gWidth * uvScale, lintelTopY * uvScale], [0, lintelTopY * uvScale]
+      [0, archTopY * effectiveUvScale], [gWidth * effectiveUvScale, archTopY * effectiveUvScale],
+      [gWidth * effectiveUvScale, lintelTopY * effectiveUvScale], [0, lintelTopY * effectiveUvScale]
     );
 
-    // Lintel Back Face
+    // E. LINTEL BACK FACE (Spans from archTopY to lintelTopY)
     builder.addQuad(
-      [jRightX + normal.x * halfThick, lintelBotY, jRightZ + normal.z * halfThick],
-      [jLeftX + normal.x * halfThick, lintelBotY, jLeftZ + normal.z * halfThick],
+      [jRightX + normal.x * halfThick, archTopY, jRightZ + normal.z * halfThick],
+      [jLeftX + normal.x * halfThick, archTopY, jLeftZ + normal.z * halfThick],
       [jLeftX + normal.x * halfThick, lintelTopY, jLeftZ + normal.z * halfThick],
       [jRightX + normal.x * halfThick, lintelTopY, jRightZ + normal.z * halfThick],
       [normal.x, 0, normal.z],
-      [0, lintelBotY * uvScale], [gWidth * uvScale, lintelBotY * uvScale],
-      [gWidth * uvScale, lintelTopY * uvScale], [0, lintelTopY * uvScale]
+      [0, archTopY * effectiveUvScale], [gWidth * effectiveUvScale, archTopY * effectiveUvScale],
+      [gWidth * effectiveUvScale, lintelTopY * effectiveUvScale], [0, lintelTopY * effectiveUvScale]
     );
 
-    // Lintel Under Arch Face (Soffic/Ceiling)
+    // F. LINTEL TOP WALKWAY (Continuous rampart walk at lintelTopY)
     builder.addQuad(
-      [jLeftX - normal.x * halfThick, lintelBotY, jLeftZ - normal.z * halfThick],
-      [jLeftX + normal.x * halfThick, lintelBotY, jLeftZ + normal.z * halfThick],
-      [jRightX + normal.x * halfThick, lintelBotY, jRightZ + normal.z * halfThick],
-      [jRightX - normal.x * halfThick, lintelBotY, jRightZ - normal.z * halfThick],
-      [0, -1, 0],
-      [0, 0], [settings.thickness * uvScale, 0],
-      [settings.thickness * uvScale, gWidth * uvScale], [0, gWidth * uvScale]
+      [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick],
+      [jRightX - normal.x * halfThick, lintelTopY, jRightZ - normal.z * halfThick],
+      [jRightX + normal.x * halfThick, lintelTopY, jRightZ + normal.z * halfThick],
+      [jLeftX + normal.x * halfThick, lintelTopY, jLeftZ + normal.z * halfThick],
+      [0, 1, 0],
+      [0, 0], [gWidth * effectiveUvScale, 0],
+      [gWidth * effectiveUvScale, settings.thickness * effectiveUvScale], [0, settings.thickness * effectiveUvScale]
     );
 
-    // Flanking Gatehouse Bastions (if enabled)
-    if (gate.hasGatehouse) {
-      const ghRadius = 0.5;
-      const ghTopY = groundY + wallH + 0.35;
-      const flankOffsets = [-halfGW - ghRadius * 0.7, halfGW + ghRadius * 0.7];
+    // Crenellations over the gateway lintel
+    if (settings.crenellations) {
+      const cL: [number, number, number] = [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick];
+      const cR: [number, number, number] = [jRightX - normal.x * halfThick, lintelTopY, jRightZ - normal.z * halfThick];
+      addPointedKangara(cL, cR, [normal.x, 0, normal.z], lintelTopY, crenH, halfThick * 0.65);
+    }
+
+    // G. FLANKING GATEHOUSE BASTIONS (with solid top floor & crowning kangare)
+    if (ag.gate.hasGatehouse !== false) {
+      const ghRadius = Math.max(0.025, Math.min(0.06, settings.thickness * 1.25));
+      const ghTopY = lintelTopY + 0.012; // Flanking towers rise slightly above portal
+      const flankOffsets = [-halfWidth - ghRadius * 0.8, halfWidth + ghRadius * 0.8];
 
       for (const off of flankOffsets) {
-        const ghX = centerX + tanX * off;
-        const ghZ = centerZ + tanZ * off;
+        const ghX = centerX + tangent.x * off;
+        const ghZ = centerZ + tangent.z * off;
+        const ghGroundY = sampleBilinearHeight(buffer, ghX, ghZ);
+        const ghBotY = ghGroundY - embedDepth;
 
+        // Side cylinder quads (12 segments)
         for (let r = 0; r < 12; r++) {
           const a0 = (r / 12) * Math.PI * 2;
           const a1 = ((r + 1) / 12) * Math.PI * 2;
@@ -688,13 +820,56 @@ export function generateWallBufferGeometry(
           const z1 = ghZ + Math.sin(a1) * ghRadius;
 
           builder.addQuad(
-            [x0, groundY - 0.2, z0],
-            [x1, groundY - 0.2, z1],
+            [x0, ghBotY, z0],
+            [x1, ghBotY, z1],
             [x1, ghTopY, z1],
             [x0, ghTopY, z0],
             [(Math.cos(a0) + Math.cos(a1)) * 0.5, 0, (Math.sin(a0) + Math.sin(a1)) * 0.5],
-            [0, 0], [0.3, 0], [0.3, ghTopY * uvScale], [0, ghTopY * uvScale]
+            [0, ghBotY * effectiveUvScale],
+            [0.3, ghBotY * effectiveUvScale],
+            [0.3, ghTopY * effectiveUvScale],
+            [0, ghTopY * effectiveUvScale]
           );
+        }
+
+        // SOLID TOP FLOOR DISC FOR FLANKING TOWERS (Solves missing tower top)
+        const ghCenterTop = builder.addVertex(ghX, ghTopY, ghZ, 0, 1, 0, 0.5, 0.5);
+        for (let r = 0; r < 12; r++) {
+          const a0 = (r / 12) * Math.PI * 2;
+          const a1 = ((r + 1) / 12) * Math.PI * 2;
+          const x0 = ghX + Math.cos(a0) * ghRadius;
+          const z0 = ghZ + Math.sin(a0) * ghRadius;
+          const x1 = ghX + Math.cos(a1) * ghRadius;
+          const z1 = ghZ + Math.sin(a1) * ghRadius;
+
+          const i0 = builder.addVertex(x0, ghTopY, z0, 0, 1, 0, 0.5 + Math.cos(a0) * 0.5, 0.5 + Math.sin(a0) * 0.5);
+          const i1 = builder.addVertex(x1, ghTopY, z1, 0, 1, 0, 0.5 + Math.cos(a1) * 0.5, 0.5 + Math.sin(a1) * 0.5);
+          builder.indices.push(ghCenterTop, i0, i1);
+        }
+
+        // CROWNING KANGARE FOR FLANKING GATEHOUSE TOWERS
+        if (settings.crenellations) {
+          const numGHKangare = 8;
+          const ghKThick = ghRadius * 0.25;
+          for (let k = 0; k < numGHKangare; k++) {
+            const aStart = ((k + 0.15) / numGHKangare) * Math.PI * 2;
+            const aEnd = ((k + 0.85) / numGHKangare) * Math.PI * 2;
+            const aMid = (aStart + aEnd) * 0.5;
+
+            const cL: [number, number, number] = [
+              ghX + Math.cos(aStart) * ghRadius,
+              ghTopY,
+              ghZ + Math.sin(aStart) * ghRadius,
+            ];
+            const cR: [number, number, number] = [
+              ghX + Math.cos(aEnd) * ghRadius,
+              ghTopY,
+              ghZ + Math.sin(aEnd) * ghRadius,
+            ];
+
+            const unitInNorm: [number, number, number] = [-Math.cos(aMid), 0, -Math.sin(aMid)];
+            addPointedKangara(cL, cR, unitInNorm, ghTopY, crenH * 0.85, ghKThick);
+          }
         }
       }
     }
@@ -702,4 +877,3 @@ export function generateWallBufferGeometry(
 
   return builder.build();
 }
-

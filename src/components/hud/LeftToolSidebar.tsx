@@ -524,13 +524,15 @@ export const LeftToolSidebar: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-[#4B382C]">{t.tools.walls.height}:</span>
-                <span className="font-mono text-[#8D7666]">{wallSettings.height.toFixed(1)}m</span>
+                <span className="font-mono text-[#8D7666]">
+                  {(wallSettings.height * 1000).toFixed(0)}mm
+                </span>
               </div>
               <input
                 type="range"
-                min="0.5"
-                max="4.0"
-                step="0.1"
+                min="0.02"
+                max="0.10"
+                step="0.005"
                 value={wallSettings.height}
                 onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
                 className="w-full accent-[#4B382C] cursor-pointer"
@@ -538,15 +540,15 @@ export const LeftToolSidebar: React.FC = () => {
               {/* Quick height presets */}
               <div className="grid grid-cols-3 gap-1 pt-0.5">
                 {[
-                  { label: 'Low 1.0m', val: 1.0 },
-                  { label: 'Default 1.8m', val: 1.8 },
-                  { label: 'Citadel 3.0m', val: 3.0 },
+                  { label: 'Low 30mm', val: 0.03 },
+                  { label: 'Default 50mm', val: 0.05 },
+                  { label: 'Citadel 80mm', val: 0.08 },
                 ].map((preset) => (
                   <button
                     key={preset.val}
                     onClick={() => setWallSettings({ height: preset.val })}
                     className={`py-0.5 text-[10px] rounded border transition-all cursor-pointer ${
-                      Math.abs(wallSettings.height - preset.val) < 0.05
+                      Math.abs(wallSettings.height - preset.val) < 0.005
                         ? 'bg-[#4B382C] text-white border-[#38281E]'
                         : 'bg-[#FAF8F5] text-[#5C4638] border-[#D9C9B4] hover:bg-[#EAE0D3]'
                     }`}
@@ -561,13 +563,15 @@ export const LeftToolSidebar: React.FC = () => {
             <div className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-[#4B382C]">{t.tools.walls.thickness}:</span>
-                <span className="font-mono text-[#8D7666]">{wallSettings.thickness.toFixed(2)}m</span>
+                <span className="font-mono text-[#8D7666]">
+                  {(wallSettings.thickness * 1000).toFixed(0)}mm
+                </span>
               </div>
               <input
                 type="range"
-                min="0.2"
-                max="0.8"
-                step="0.05"
+                min="0.015"
+                max="0.06"
+                step="0.005"
                 value={wallSettings.thickness}
                 onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
                 className="w-full accent-[#8F4938] cursor-pointer"
@@ -617,13 +621,15 @@ export const LeftToolSidebar: React.FC = () => {
               <div className="space-y-1 pl-1">
                 <div className="flex items-center justify-between text-[11px]">
                   <span className="font-semibold text-[#5C4638]">{t.tools.walls.bastionRadius}:</span>
-                  <span className="font-mono text-[#8D7666]">{wallSettings.bastionRadius.toFixed(2)}m</span>
+                  <span className="font-mono text-[#8D7666]">
+                    {(wallSettings.bastionRadius * 1000).toFixed(0)}mm
+                  </span>
                 </div>
                 <input
                   type="range"
-                  min="0.4"
-                  max="1.2"
-                  step="0.05"
+                  min="0.03"
+                  max="0.10"
+                  step="0.005"
                   value={wallSettings.bastionRadius}
                   onChange={(e) => setWallSettings({ bastionRadius: parseFloat(e.target.value) })}
                   className="w-full accent-[#4B382C] cursor-pointer"

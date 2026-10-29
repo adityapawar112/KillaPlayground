@@ -435,8 +435,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           id: gateId,
           segmentIndex,
           t,
-          width: 1.4,
-          height: 2.2,
+          width: 0.08,
+          height: 0.04,
           hasGatehouse: true,
         };
         return { ...w, gates: [...(w.gates || []), newGate] };

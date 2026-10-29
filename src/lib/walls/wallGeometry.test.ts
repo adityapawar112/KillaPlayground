@@ -261,8 +261,8 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
             id: 'maha_darwaza_1',
             segmentIndex: 0,
             t: 0.5,
-            width: 1.4,
-            height: 2.2,
+            width: 0.08,
+            height: 0.04,
             hasGatehouse: true,
           },
         ],
@@ -273,11 +273,45 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       const geoGate = generateWallBufferGeometry(wallWithGate, buffer);
       expect(geoGate.getAttribute('position').count).toBeGreaterThan(0);
 
-      // Bounding box should enclose the gate height
+      // Bounding box should enclose the gate height at miniature scale (<= 0.12m)
       geoGate.computeBoundingBox();
-      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(1.8);
+      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(0.04);
+      expect(geoGate.boundingBox!.max.y).toBeLessThanOrEqual(0.12);
 
       geoGate.dispose();
+    });
+
+    it('generates capped bastions with crowning pointed kangare', () => {
+      const buffer = createStateBuffer(0.0, 0.0);
+      const wallWithBastions: WallPath = {
+        id: 'wall_bastion_test',
+        points: [
+          { x: -2, y: 0, z: 0 },
+          { x: 0, y: 0, z: 2 },
+          { x: 2, y: 0, z: 0 },
+        ],
+        isClosed: true,
+        gates: [],
+        manualBastionIndices: [1],
+        settings: { ...DEFAULT_WALL_SETTINGS, autoBastions: true, crenellations: true },
+        createdAt: Date.now(),
+      };
+
+      const geo = generateWallBufferGeometry(wallWithBastions, buffer);
+      expect(geo.getAttribute('position').count).toBeGreaterThan(0);
+
+      // Verify upward facing normal [0, 1, 0] exists on top floor cap of bastion
+      const normals = geo.getAttribute('normal');
+      let foundUpwardNormal = false;
+      for (let i = 0; i < normals.count; i++) {
+        if (normals.getY(i) > 0.95 && Math.abs(normals.getX(i)) < 0.05 && Math.abs(normals.getZ(i)) < 0.05) {
+          foundUpwardNormal = true;
+          break;
+        }
+      }
+      expect(foundUpwardNormal).toBe(true);
+
+      geo.dispose();
     });
   });
 });

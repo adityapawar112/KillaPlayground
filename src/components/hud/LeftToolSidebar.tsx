@@ -33,6 +33,10 @@ import {
   TbRuler2,
   TbPlus,
   TbShieldCheck,
+  TbFlag,
+  TbFlame,
+  TbStairs,
+  TbX,
 } from 'react-icons/tb';
 import { useEditorStore, BrushSizeType, ToolType, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -111,6 +115,22 @@ export const LeftToolSidebar: React.FC = () => {
     finishCurrentWall,
     cancelCurrentWall,
     clearAllWalls,
+    splines,
+    currentSplinePoints,
+    isDrawingSpline,
+    selectedSplineId,
+    setSelectedSplineId,
+    splineConversionType,
+    setSplineConversionType,
+    splineSettings,
+    setSplineSettings,
+    startSpline,
+    finishSpline,
+    cancelSpline,
+    deleteSpline,
+    clearAllSplines,
+    updateSplineType,
+    updateSplineSettings,
   } = useEditorStore();
 
   const { t } = useTranslation();
@@ -1306,6 +1326,346 @@ export const LeftToolSidebar: React.FC = () => {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------ */}
+        {/* SPLINE STRUCTURE PLACEMENT STUDIO PROPERTIES                 */}
+        {/* ------------------------------------------------------------ */}
+        {activeTool === 'spline' && (
+          <div className="space-y-4">
+            {/* 1. Header & Instructions */}
+            <div className="p-3 bg-[#EADECF] rounded-xl border border-[#D9C9B4] space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
+                  <TbRoute className="w-4 h-4 text-[#F59E0B]" />
+                  <span>Spline Structure Studio</span>
+                </span>
+                <span className="text-[10px] font-semibold text-[#8D7666] bg-[#FAF8F5] px-1.5 py-0.5 rounded">
+                  {splines.length} placed
+                </span>
+              </div>
+              <p className="text-[11px] text-[#634E40] leading-snug">
+                Click or drag on the terrain to draw smooth 3D paths ascending mountain slopes.
+              </p>
+            </div>
+
+            {/* 2. Interactive Drafting Controls */}
+            {currentSplinePoints.length > 0 && (
+              <div className="p-3 bg-[#FEF3C7] rounded-xl border border-[#F59E0B]/50 space-y-2.5 shadow-sm animate-in fade-in">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#92400E] flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-ping" />
+                    <span>Path Drafting in Progress</span>
+                  </span>
+                  <span className="font-mono font-bold text-[#B45309] text-[11px]">
+                    {currentSplinePoints.length} points
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      const id = finishSpline();
+                      if (id) {
+                        setToastMessage('Spline structure placed on terrain!');
+                      }
+                    }}
+                    disabled={currentSplinePoints.length < 2}
+                    className="py-2 px-3 rounded-lg bg-[#059669] hover:bg-[#047857] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <TbCheck className="w-4 h-4" />
+                    <span>Finish Path</span>
+                  </button>
+                  <button
+                    onClick={cancelSpline}
+                    className="py-2 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <TbX className="w-4 h-4" />
+                    <span>Cancel</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 3. Spline Conversion Sub-Tool Switcher */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#4B382C]">Feature Type:</label>
+              <div className="grid grid-cols-3 gap-1.5 bg-[#EADECF] p-1.5 rounded-xl border border-[#D9C9B4]">
+                <button
+                  onClick={() => setSplineConversionType('steps')}
+                  className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                    splineConversionType === 'steps'
+                      ? 'bg-[#4B382C] text-white shadow-sm'
+                      : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
+                  }`}
+                >
+                  <TbStairs className="w-4 h-4 text-[#F59E0B]" />
+                  <span className="text-[11px] font-bold leading-tight">Stone Steps</span>
+                  <span className="text-[9px] opacity-80">पायऱ्या</span>
+                </button>
+
+                <button
+                  onClick={() => setSplineConversionType('flags')}
+                  className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                    splineConversionType === 'flags'
+                      ? 'bg-[#4B382C] text-white shadow-sm'
+                      : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
+                  }`}
+                >
+                  <TbFlag className="w-4 h-4 text-[#FF7722]" />
+                  <span className="text-[11px] font-bold leading-tight">Flags</span>
+                  <span className="text-[9px] opacity-80">भगवा ध्वज</span>
+                </button>
+
+                <button
+                  onClick={() => setSplineConversionType('diyas')}
+                  className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
+                    splineConversionType === 'diyas'
+                      ? 'bg-[#4B382C] text-white shadow-sm'
+                      : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
+                  }`}
+                >
+                  <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                  <span className="text-[11px] font-bold leading-tight">Diyas</span>
+                  <span className="text-[9px] opacity-80">दिवे / पणत्या</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 4. Contextual Parameter Sliders */}
+            <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+              {splineConversionType === 'steps' && (
+                <>
+                  {/* Step Width Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Stair Width:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {Math.round((splineSettings.stepWidth ?? 0.6) * 100)} cm
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.3}
+                      max={1.5}
+                      step={0.05}
+                      value={splineSettings.stepWidth ?? 0.6}
+                      onChange={(e) => setSplineSettings({ stepWidth: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Step Tread Depth / Run Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Tread Depth (Run):</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {Math.round((splineSettings.stepRun ?? 0.22) * 100)} cm
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.15}
+                      max={0.4}
+                      step={0.01}
+                      value={splineSettings.stepRun ?? 0.22}
+                      onChange={(e) => setSplineSettings({ stepRun: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Step Riser Height Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Step Rise Height:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {Math.round((splineSettings.stepRise ?? 0.08) * 100)} cm
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.04}
+                      max={0.20}
+                      step={0.01}
+                      value={splineSettings.stepRise ?? 0.08}
+                      onChange={(e) => setSplineSettings({ stepRise: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+                </>
+              )}
+
+              {splineConversionType === 'flags' && (
+                <>
+                  {/* Flag Spacing Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Flag Spacing:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {(splineSettings.spacing ?? 0.8).toFixed(1)} m
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.4}
+                      max={2.5}
+                      step={0.1}
+                      value={splineSettings.spacing ?? 0.8}
+                      onChange={(e) => setSplineSettings({ spacing: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Flag Scale Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Flag Scale:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {(splineSettings.scale ?? 1.0).toFixed(1)}x
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.6}
+                      max={1.8}
+                      step={0.1}
+                      value={splineSettings.scale ?? 1.0}
+                      onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+                </>
+              )}
+
+              {splineConversionType === 'diyas' && (
+                <>
+                  {/* Diya Spacing Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Diya Spacing:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {(splineSettings.spacing ?? 0.35).toFixed(2)} m
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.2}
+                      max={1.5}
+                      step={0.05}
+                      value={splineSettings.spacing ?? 0.35}
+                      onChange={(e) => setSplineSettings({ spacing: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Diya Scale Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Diya Scale:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {(splineSettings.scale ?? 1.0).toFixed(1)}x
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.6}
+                      max={1.8}
+                      step={0.1}
+                      value={splineSettings.scale ?? 1.0}
+                      onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 5. Placed Spline List Shelf */}
+            <div className="space-y-2 pt-1">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-[#4B382C]">Placed Features ({splines.length}):</span>
+                {splines.length > 0 && (
+                  <button
+                    onClick={clearAllSplines}
+                    className="text-[11px] text-[#DC2626] hover:underline cursor-pointer font-medium"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {splines.length === 0 ? (
+                <div className="p-3 bg-[#EADECF]/50 rounded-xl border border-dashed border-[#D9C9B4] text-center text-xs text-[#8D7666]">
+                  No spline structures placed yet. Draw on the terrain to add steps, flags, or diyas!
+                </div>
+              ) : (
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {splines.map((spline, idx) => {
+                    const isSelected = selectedSplineId === spline.id;
+                    const typeLabel =
+                      spline.type === 'steps'
+                        ? 'Stone Steps'
+                        : spline.type === 'flags'
+                        ? 'Saffron Flags'
+                        : 'Festive Diyas';
+
+                    return (
+                      <div
+                        key={spline.id}
+                        onClick={() => setSelectedSplineId(spline.id)}
+                        className={`p-2 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-[#FEF3C7] border-[#F59E0B] shadow-sm'
+                            : 'bg-[#FAF8F5] border-[#D9C9B4] hover:bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          {spline.type === 'steps' && <TbStairs className="w-4 h-4 text-[#8D7666]" />}
+                          {spline.type === 'flags' && <TbFlag className="w-4 h-4 text-[#FF7722]" />}
+                          {spline.type === 'diyas' && <TbFlame className="w-4 h-4 text-[#F59E0B]" />}
+                          <div>
+                            <div className="font-bold text-[#4B382C]">
+                              #{idx + 1} {typeLabel}
+                            </div>
+                            <div className="text-[10px] text-[#8D7666]">
+                              {spline.points.length} nodes
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          {/* Type toggle buttons */}
+                          {(['steps', 'flags', 'diyas'] as const).map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => updateSplineType(spline.id, t)}
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+                                spline.type === t
+                                  ? 'bg-[#4B382C] text-white'
+                                  : 'bg-[#EADECF] text-[#634E40] hover:text-[#2B1E16]'
+                              }`}
+                              title={`Convert to ${t}`}
+                            >
+                              {t === 'steps' ? 'Steps' : t === 'flags' ? 'Flags' : 'Diyas'}
+                            </button>
+                          ))}
+
+                          {/* Delete button */}
+                          <button
+                            onClick={() => deleteSpline(spline.id)}
+                            className="p-1 text-[#DC2626] hover:bg-[#FEE2E2] rounded transition-all cursor-pointer ml-1"
+                            title="Delete this spline structure"
+                          >
+                            <TbTrash className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

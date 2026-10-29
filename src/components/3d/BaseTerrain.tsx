@@ -136,6 +136,8 @@ export const BaseTerrainContent: React.FC = () => {
   const isSculptingRef = useRef(false);
   const isDrawingWallRef = useRef(false);
   const lastWallPointRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const isDrawingSplineRef = useRef(false);
+  const lastSplinePointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
   const pondOriginRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const [cursorPos, setCursorPos] = useState<[number, number, number]>([0, 0, 0]);
@@ -500,6 +502,25 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      // Handle Spline Tool Drawing
+      if (editor.activeTool === 'spline') {
+        if (e.button !== 0 || e.altKey) return;
+        e.stopPropagation();
+
+        if (controls) {
+          controls.enabled = false;
+        }
+
+        isDrawingSplineRef.current = true;
+        if (!editor.isDrawingSpline) {
+          editor.startSpline();
+        }
+        editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+        lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+        invalidate();
+        return;
+      }
+
       if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
         return;
       }
@@ -570,6 +591,22 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      if (editor.activeTool === 'spline') {
+        if (cursorVisible) setCursorVisible(false);
+        if (isDrawingSplineRef.current && lastSplinePointRef.current) {
+          e.stopPropagation();
+          const dx = e.point.x - lastSplinePointRef.current.x;
+          const dz = e.point.z - lastSplinePointRef.current.z;
+          const dist = Math.hypot(dx, dz);
+          if (dist >= 0.20) {
+            editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+            lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+            invalidate();
+          }
+        }
+        return;
+      }
+
       if (editor.activeTool !== 'terrain') {
         if (cursorVisible) setCursorVisible(false);
         return;
@@ -589,6 +626,15 @@ export const BaseTerrainContent: React.FC = () => {
   );
 
   const handlePointerUp = useCallback(() => {
+    if (isDrawingSplineRef.current) {
+      isDrawingSplineRef.current = false;
+      lastSplinePointRef.current = null;
+      if (controls) {
+        controls.enabled = true;
+      }
+      invalidate();
+    }
+
     if (isDrawingWallRef.current) {
       isDrawingWallRef.current = false;
       lastWallPointRef.current = null;
@@ -622,6 +668,15 @@ export const BaseTerrainContent: React.FC = () => {
   // Global window pointerup to catch pointer released outside mesh
   useEffect(() => {
     const handleGlobalPointerUp = () => {
+      if (isDrawingSplineRef.current) {
+        isDrawingSplineRef.current = false;
+        lastSplinePointRef.current = null;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
+      }
+
       if (isDrawingWallRef.current) {
         isDrawingWallRef.current = false;
         lastWallPointRef.current = null;

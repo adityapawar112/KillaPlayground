@@ -181,12 +181,12 @@ Provides interactive fort rampart drawing conforming directly to the underlying 
   {
     ticketNumber: 5,
     title: 'Ticket 05: Spline Structure Placement Tool',
-    labels: ['tracer-bullet', 'enhancement'],
-    state: 'open',
+    labels: ['tracer-bullet', 'enhancement', 'verified'],
+    state: 'closed',
     body: `## Overview
 Interactive 3D spline curve drawing across terrain slopes with procedural conversion to stone stairs, spaced saffron flags, and glowing diyas.
 
-- **Status**: \`ready-for-agent\`
+- **Status**: \`completed\`
 - **Blocked by**: #3
 
 ## Delivers
@@ -199,10 +199,10 @@ Interactive 3D spline curve drawing across terrain slopes with procedural conver
 - *(Note: Walkway paths are handled via the Terrain Paint Tool rather than splines).*
 
 ## Acceptance Criteria
-- [ ] Spline curve drawing cleanly samples 3D surface points across slopes.
-- [ ] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient.
-- [ ] Converting to Flags places spaced saffron flags with wind sway vertex shader.
-- [ ] Converting to Divas arranges warm glowing oil lamps along the drawn path.`,
+- [x] Spline curve drawing cleanly samples 3D surface points across slopes.
+- [x] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient.
+- [x] Converting to Flags places spaced saffron flags with wind sway vertex shader.
+- [x] Converting to Divas arranges warm glowing oil lamps along the drawn path.`,
   },
   {
     ticketNumber: 6,

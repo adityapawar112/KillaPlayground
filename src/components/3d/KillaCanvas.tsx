@@ -10,6 +10,7 @@ import { BaseTerrain } from './BaseTerrain';
 import { CourtyardBricks } from './CourtyardBricks';
 import { WaterPlane } from './WaterPlane';
 import { FortWalls } from './FortWalls';
+import { SplineStructures } from './SplineStructures';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -446,6 +447,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         {/* Parametric Fort Ramparts, Bastions & Arched Gates */}
         <FortWalls />
+
+        {/* Spline Structures: Steps, Saffron Flags, Festive Diyas */}
+        <SplineStructures />
 
         {/* 3D Base Water Level Plane for Coastal Moats & Excavated Ponds */}
         <WaterPlane />

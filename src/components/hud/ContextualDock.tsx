@@ -62,6 +62,11 @@ export const ContextualDock: React.FC = () => {
     mudLocked,
     setMudLocked,
     showContextualDock,
+    splineConversionType,
+    setSplineConversionType,
+    currentSplinePoints,
+    finishSpline,
+    cancelSpline,
   } = useEditorStore();
 
   const { t } = useTranslation();
@@ -521,12 +526,67 @@ export const ContextualDock: React.FC = () => {
         </div>
       )}
 
-      {/* 8. SPLINE TOOL HINT */}
+      {/* 8. SPLINE TOOL CONTROLS */}
       {activeTool === 'spline' && (
         <div className="flex items-center gap-3">
-          <span className="text-xs font-semibold text-[#4B382C]">
-            Click on terrain or solid structure to draw stairways (Payrya) or crenellations (Kangare)
-          </span>
+          {/* Quick Sub-tool Selector */}
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
+            <button
+              onClick={() => setSplineConversionType('steps')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                splineConversionType === 'steps'
+                  ? 'bg-[#4B382C] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <span>Steps (पायऱ्या)</span>
+            </button>
+            <button
+              onClick={() => setSplineConversionType('flags')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                splineConversionType === 'flags'
+                  ? 'bg-[#4B382C] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <span>Flags (ध्वज)</span>
+            </button>
+            <button
+              onClick={() => setSplineConversionType('diyas')}
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                splineConversionType === 'diyas'
+                  ? 'bg-[#4B382C] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <span>Diyas (पणत्या)</span>
+            </button>
+          </div>
+
+          {currentSplinePoints.length > 0 && (
+            <>
+              <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+              <button
+                onClick={() => finishSpline()}
+                disabled={currentSplinePoints.length < 2}
+                className="px-3 py-1 bg-[#059669] hover:bg-[#047857] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+              >
+                Finish ({currentSplinePoints.length} pts)
+              </button>
+              <button
+                onClick={cancelSpline}
+                className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+            </>
+          )}
+
+          {currentSplinePoints.length === 0 && (
+            <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
+              Click or drag on mountain slopes to draw path
+            </span>
+          )}
         </div>
       )}
 

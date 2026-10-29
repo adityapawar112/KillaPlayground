@@ -168,7 +168,7 @@ graph TD
 
 ## Ticket 05: Spline Structure Placement Tool
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
   - **Interactive 3D Curve Drawing**:
@@ -180,10 +180,10 @@ graph TD
   - *(Note: Walkway paths are handled via the Terrain Paint Tool rather than splines).*
 
 ### Acceptance Criteria
-- [ ] Spline curve drawing cleanly samples 3D surface points across slopes.
-- [ ] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient.
-- [ ] Converting to Flags places spaced saffron flags with wind sway vertex shader.
-- [ ] Converting to Divas arranges warm glowing oil lamps along the drawn path.
+- [x] Spline curve drawing cleanly samples 3D surface points across slopes.
+- [x] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient.
+- [x] Converting to Flags places spaced saffron flags with wind sway vertex shader.
+- [x] Converting to Divas arranges warm glowing oil lamps along the drawn path.
 
 ---
 

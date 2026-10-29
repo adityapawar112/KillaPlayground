@@ -15,6 +15,8 @@ import {
   SelectedComponentRef,
 } from '../walls/wallTypes';
 import { SnapResult } from '../walls/wallGeometry';
+import { SplineConversionType, SplineSettings, SplinePath } from '../spline/splineTypes';
+export type { SplineConversionType, SplineSettings, SplinePath };
 
 export const SavedProjectSchema = z.object({
   id: z.string().optional(),
@@ -52,8 +54,6 @@ export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
 export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope' | 'soil';
 export type FoliageSubTool = 'grass' | 'path';
 
-export type SplineConversionType = 'walkway' | 'steps' | 'wall' | 'crenellated';
-
 export type BrushSizeType = 'large' | 'medium' | 'fine';
 
 export interface PondWaterFeature {
@@ -70,12 +70,6 @@ export interface PlacedProp {
   position: [number, number, number];
   rotation: [number, number, number];
   scale: [number, number, number];
-}
-
-export interface SplinePath {
-  id: string;
-  points: [number, number, number][];
-  type: SplineConversionType;
 }
 
 export interface SavedProject {
@@ -179,6 +173,9 @@ interface EditorState {
   isDrawingSpline: boolean;
   currentSplinePoints: [number, number, number][];
   splines: SplinePath[];
+  selectedSplineId: string | null;
+  splineConversionType: SplineConversionType;
+  splineSettings: SplineSettings;
 
   // Props & Figurines State
   placedProps: PlacedProp[];
@@ -268,9 +265,15 @@ interface EditorState {
   // Spline Actions
   startSpline: () => void;
   addSplinePoint: (point: [number, number, number]) => void;
-  finishSpline: (type: SplineConversionType) => void;
+  finishSpline: (type?: SplineConversionType, settings?: SplineSettings) => string | null;
   cancelSpline: () => void;
   deleteSpline: (id: string) => void;
+  clearAllSplines: () => void;
+  setSelectedSplineId: (id: string | null) => void;
+  setSplineConversionType: (type: SplineConversionType) => void;
+  setSplineSettings: (settings: Partial<SplineSettings>) => void;
+  updateSplineType: (id: string, type: SplineConversionType) => void;
+  updateSplineSettings: (id: string, settings: Partial<SplineSettings>) => void;
 
   // Prop Actions
   addProp: (prop: Omit<PlacedProp, 'id'>) => string;
@@ -694,6 +697,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isDrawingSpline: false,
   currentSplinePoints: [],
   splines: [],
+  selectedSplineId: null,
+  splineConversionType: 'steps',
+  splineSettings: {
+    stepWidth: 0.6,
+    stepRun: 0.22,
+    stepRise: 0.08,
+    spacing: 0.5,
+    scale: 1.0,
+  },
 
   placedProps: [],
   selectedPropType: null,
@@ -928,28 +940,70 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({
       currentSplinePoints: [...state.currentSplinePoints, pt],
     })),
-  finishSpline: (type) => {
-    const { currentSplinePoints, splines } = get();
+  finishSpline: (type, settings) => {
+    const { currentSplinePoints, splines, splineConversionType, splineSettings } = get();
     if (currentSplinePoints.length >= 2) {
+      pushUndoSnapshot();
+      const id = `spline_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const resolvedType = type ?? splineConversionType;
+      const resolvedSettings = settings
+        ? { ...splineSettings, ...settings }
+        : { ...splineSettings };
       const newSpline: SplinePath = {
-        id: `spline_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id,
         points: currentSplinePoints,
-        type,
+        type: resolvedType,
+        settings: resolvedSettings,
       };
       set({
         splines: [...splines, newSpline],
         isDrawingSpline: false,
         currentSplinePoints: [],
+        selectedSplineId: id,
       });
+      return id;
     } else {
       set({ isDrawingSpline: false, currentSplinePoints: [] });
+      return null;
     }
   },
   cancelSpline: () => set({ isDrawingSpline: false, currentSplinePoints: [] }),
-  deleteSpline: (id) =>
+  deleteSpline: (id) => {
+    pushUndoSnapshot();
     set((state) => ({
       splines: state.splines.filter((s) => s.id !== id),
+      selectedSplineId: state.selectedSplineId === id ? null : state.selectedSplineId,
+    }));
+  },
+  clearAllSplines: () => {
+    pushUndoSnapshot();
+    set({
+      splines: [],
+      selectedSplineId: null,
+      isDrawingSpline: false,
+      currentSplinePoints: [],
+    });
+  },
+  setSelectedSplineId: (id) => set({ selectedSplineId: id }),
+  setSplineConversionType: (splineConversionType) => set({ splineConversionType }),
+  setSplineSettings: (settings) =>
+    set((state) => ({
+      splineSettings: { ...state.splineSettings, ...settings },
     })),
+  updateSplineType: (id, type) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      splines: state.splines.map((s) => (s.id === id ? { ...s, type } : s)),
+    }));
+  },
+  updateSplineSettings: (id, settings) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      splines: state.splines.map((s) =>
+        s.id === id ? { ...s, settings: { ...s.settings, ...settings } } : s
+      ),
+    }));
+  },
 
   addProp: (prop) => {
     const id = `prop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;

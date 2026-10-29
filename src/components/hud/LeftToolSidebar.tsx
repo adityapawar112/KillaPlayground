@@ -25,6 +25,7 @@ import {
   TbAdjustmentsHorizontal,
   TbChevronLeft,
   TbChevronDown,
+  TbPointer,
   TbPencil,
   TbDoorEnter,
   TbTower,
@@ -80,6 +81,10 @@ export const LeftToolSidebar: React.FC = () => {
     activeWallDraft,
     wallSettings,
     wallSubTool,
+    selectedWallId,
+    setSelectedWallId,
+    removeWall,
+    setToastMessage,
     setWallSettings,
     setWallSubTool,
     finishCurrentWall,
@@ -88,6 +93,27 @@ export const LeftToolSidebar: React.FC = () => {
   } = useEditorStore();
 
   const { t } = useTranslation();
+
+  // Floating cursor toast notification for disabled buttons/properties
+  const [cursorToast, setCursorToast] = useState<{
+    message: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const cursorToastTimer = useRef<NodeJS.Timeout | null>(null);
+
+  const showCursorToast = (e: React.MouseEvent | null, message: string) => {
+    if (cursorToastTimer.current) {
+      clearTimeout(cursorToastTimer.current);
+    }
+    const x = e ? e.clientX : 320;
+    const y = e ? e.clientY : 300;
+    setCursorToast({ message, x, y });
+    cursorToastTimer.current = setTimeout(() => {
+      setCursorToast(null);
+    }, 2800);
+    setToastMessage(message);
+  };
 
   // Adjustable Width State (default: 290px, min: 230px, max: 460px)
   const [sidebarWidth, setSidebarWidth] = useState<number>(290);
@@ -415,56 +441,80 @@ export const LeftToolSidebar: React.FC = () => {
         {/* ------------------------------------------------------------ */}
         {activeTool === 'walls' && (
           <div className="space-y-3.5">
-            {/* 1. Subtool Selector (Draw, Gate, Bastion) */}
+            {/* 1. Subtool Selector (Draw, Select, Gate, Bastion) */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-[#4B382C]">
                 {t.tools.walls.label} Mode:
               </label>
-              <div className="grid grid-cols-3 gap-1 bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4]">
+              <div className="grid grid-cols-4 gap-1 bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4]">
                 <button
                   onClick={() => setWallSubTool('draw')}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                     wallSubTool === 'draw'
                       ? 'bg-[#4B382C] text-white shadow-sm'
                       : 'text-[#634E40] hover:text-[#2B1E16]'
                   }`}
                   title={t.tools.walls.clickHint}
                 >
-                  <TbPencil className="w-4 h-4 mb-0.5" />
-                  <span className="leading-tight">{t.tools.walls.modeDraw}</span>
+                  <TbPencil className="w-3.5 h-3.5 mb-0.5" />
+                  <span className="leading-tight text-center">{t.tools.walls.modeDraw}</span>
                 </button>
 
                 <button
-                  onClick={() => setWallSubTool('gate')}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  onClick={() => setWallSubTool('select')}
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
+                    wallSubTool === 'select'
+                      ? 'bg-[#4B382C] text-white shadow-sm'
+                      : 'text-[#634E40] hover:text-[#2B1E16]'
+                  }`}
+                  title="Click on any fort wall on terrain to select it into Vertex Mode"
+                >
+                  <TbPointer className="w-3.5 h-3.5 mb-0.5" />
+                  <span className="leading-tight text-center">{t.tools.walls.modeSelect}</span>
+                </button>
+
+                <button
+                  onClick={(e) => {
+                    if (!selectedWallId) {
+                      showCursorToast(e, 'Select a fort wall on terrain first to insert Maha Darwaza.');
+                    }
+                    setWallSubTool('gate');
+                  }}
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                     wallSubTool === 'gate'
                       ? 'bg-[#E85D04] text-white shadow-sm'
                       : 'text-[#634E40] hover:text-[#2B1E16]'
                   }`}
-                  title="Click on any fort wall segment to insert an arched Maha Darwaza"
+                  title="Click on selected fort wall segment to insert an arched Maha Darwaza"
                 >
-                  <TbDoorEnter className="w-4 h-4 mb-0.5" />
-                  <span className="leading-tight">{t.tools.walls.modeGate}</span>
+                  <TbDoorEnter className="w-3.5 h-3.5 mb-0.5" />
+                  <span className="leading-tight text-center">{t.tools.walls.modeGate}</span>
                 </button>
 
                 <button
-                  onClick={() => setWallSubTool('bastion')}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                  onClick={(e) => {
+                    if (!selectedWallId) {
+                      showCursorToast(e, 'Select a fort wall on terrain first to toggle bastions.');
+                    }
+                    setWallSubTool('bastion');
+                  }}
+                  className={`flex flex-col items-center justify-center py-1.5 px-0.5 rounded-lg text-[10px] font-semibold transition-all cursor-pointer ${
                     wallSubTool === 'bastion'
                       ? 'bg-[#8F4938] text-white shadow-sm'
                       : 'text-[#634E40] hover:text-[#2B1E16]'
                   }`}
-                  title="Click on any fort wall vertex to toggle a round bastion"
+                  title="Click on selected fort wall vertex to toggle a round bastion"
                 >
-                  <TbTower className="w-4 h-4 mb-0.5" />
-                  <span className="leading-tight">{t.tools.walls.modeBastion}</span>
+                  <TbTower className="w-3.5 h-3.5 mb-0.5" />
+                  <span className="leading-tight text-center">{t.tools.walls.modeBastion}</span>
                 </button>
               </div>
             </div>
 
-            {/* 2. Active Construction Draft Status & Action Buttons */}
+            {/* 2. State-Driven Action Panel (Drafting / Vertex Mode / Locked) */}
             {activeWallDraft.length > 0 ? (
-              <div className="p-2.5 bg-[#FFF8EB] border border-[#F59E0B]/40 rounded-xl space-y-2">
+              /* A. Active Construction Draft State */
+              <div className="p-2.5 bg-[#FFF8EB] border border-[#F59E0B]/50 rounded-xl space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-[#92400E]">
                   <span>{t.tools.walls.drafting}</span>
                   <span className="bg-[#FDE68A] px-1.5 py-0.5 rounded text-[10px] font-mono">
@@ -472,192 +522,277 @@ export const LeftToolSidebar: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[10px] text-[#78350F] leading-tight">
-                  {activeWallDraft.length >= 3
-                    ? t.tools.walls.closeHint
-                    : t.tools.walls.clickHint}
+                  {activeWallDraft.length < 2
+                    ? 'Click or drag on the terrain to place at least 2 points.'
+                    : 'Click Proceed to create the wall and enter Vertex Mode to adjust properties.'}
                 </p>
                 <div className="grid grid-cols-2 gap-1.5 pt-1">
                   <button
-                    onClick={() => finishCurrentWall(false)}
-                    className="py-1 px-2 bg-[#4B382C] text-white text-[11px] font-semibold rounded-lg hover:bg-[#38281E] cursor-pointer shadow-sm transition-all"
+                    onClick={(e) => {
+                      if (activeWallDraft.length < 2) {
+                        showCursorToast(e, 'Click on the terrain to place at least 2 points first.');
+                        return;
+                      }
+                      const isLoop =
+                        activeWallDraft.length >= 3 &&
+                        Math.hypot(
+                          activeWallDraft[0].x - activeWallDraft[activeWallDraft.length - 1].x,
+                          activeWallDraft[0].z - activeWallDraft[activeWallDraft.length - 1].z
+                        ) < 2.5;
+                      const newId = finishCurrentWall(isLoop);
+                      if (newId) {
+                        setSelectedWallId(newId);
+                        showCursorToast(
+                          null,
+                          'Wall created! Adjust properties below or add gates/towers in Vertex Mode.'
+                        );
+                      }
+                    }}
+                    className={`py-1.5 px-2 text-[11px] font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1 ${
+                      activeWallDraft.length >= 2
+                        ? 'bg-[#16A34A] text-white hover:bg-[#15803D] cursor-pointer'
+                        : 'bg-[#D9C9B4] text-[#786558] cursor-not-allowed opacity-75'
+                    }`}
                   >
-                    {t.tools.walls.finishWall}
+                    <TbCheck className="w-3.5 h-3.5" />
+                    <span>{t.tools.walls.proceed}</span>
                   </button>
-                  {activeWallDraft.length >= 3 ? (
-                    <button
-                      onClick={() => finishCurrentWall(true)}
-                      className="py-1 px-2 bg-[#16A34A] text-white text-[11px] font-semibold rounded-lg hover:bg-[#15803D] cursor-pointer shadow-sm transition-all"
-                    >
-                      {t.tools.walls.closeLoop}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={cancelCurrentWall}
-                      className="py-1 px-2 bg-[#FAF8F5] text-[#8F4938] border border-[#D9C9B4] text-[11px] font-semibold rounded-lg hover:bg-[#EAE0D3] cursor-pointer transition-all"
-                    >
-                      {t.tools.walls.cancelDraft}
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      cancelCurrentWall();
+                      showCursorToast(null, 'Wall draft canceled.');
+                    }}
+                    className="py-1.5 px-2 bg-[#FAF8F5] text-[#8F4938] border border-[#D9C9B4] text-[11px] font-semibold rounded-lg hover:bg-[#EAE0D3] cursor-pointer transition-all"
+                  >
+                    {t.tools.walls.cancelDraft}
+                  </button>
+                </div>
+              </div>
+            ) : selectedWallId ? (
+              /* B. Selected Wall in Vertex Mode */
+              <div className="p-2.5 bg-[#EFF6FF] border border-[#3B82F6]/50 rounded-xl space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-[#1E40AF]">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
+                    <span>Editing Fort Wall (Vertex Mode)</span>
+                  </div>
+                  <span className="bg-[#DBEAFE] text-[#1E40AF] px-1.5 py-0.5 rounded text-[10px] font-mono">
+                    Active
+                  </span>
+                </div>
+                <p className="text-[10px] text-[#1E3A8A] leading-tight">
+                  Wall is active with vertex overlay. Sliders below modify this wall. Click <strong>Finish Wall</strong> to lock and remove vertex overlay.
+                </p>
+                <div className="grid grid-cols-2 gap-1.5 pt-1">
+                  <button
+                    onClick={() => {
+                      setSelectedWallId(null);
+                      setWallSubTool('draw');
+                      showCursorToast(null, 'Fort wall finished and locked into diorama!');
+                    }}
+                    className="py-1.5 px-2 bg-[#16A34A] text-white text-[11px] font-bold rounded-lg hover:bg-[#15803D] cursor-pointer shadow-sm transition-all flex items-center justify-center gap-1"
+                  >
+                    <TbCheck className="w-3.5 h-3.5" />
+                    <span>Finish Wall</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (selectedWallId) {
+                        removeWall(selectedWallId);
+                        setSelectedWallId(null);
+                        showCursorToast(null, 'Fort wall deleted.');
+                      }
+                    }}
+                    className="py-1.5 px-2 bg-[#FAF8F5] text-[#DC2626] border border-[#FECACA] text-[11px] font-semibold rounded-lg hover:bg-[#FEE2E2] cursor-pointer transition-all flex items-center justify-center gap-1"
+                  >
+                    <TbTrash className="w-3.5 h-3.5" />
+                    <span>Delete Wall</span>
+                  </button>
                 </div>
               </div>
             ) : (
-              <div className="p-2 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-[11px] text-[#634E40] leading-snug">
-                {wallSubTool === 'draw' && (
-                  <span>
-                    💡 <strong>Tip:</strong> {t.tools.walls.clickHint}. Click near the green start node to close the fort circuit.
-                  </span>
-                )}
-                {wallSubTool === 'gate' && (
-                  <span>
-                    🚪 <strong>Maha Darwaza:</strong> Click on any existing wall segment to insert an arched gateway flanked by stone towers.
-                  </span>
-                )}
-                {wallSubTool === 'bastion' && (
-                  <span>
-                    🏰 <strong>Buruj / Bastion:</strong> Click on any corner or vertex of a wall to spawn or toggle a rounded watchtower.
-                  </span>
+              /* C. Idle / Properties Locked */
+              <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-[11px] text-[#634E40] space-y-1.5">
+                <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
+                  <TbLock className="w-3.5 h-3.5 text-[#8D7666]" />
+                  <span>Properties Locked</span>
+                </div>
+                <p className="text-[10px] leading-snug">
+                  {walls.length > 0
+                    ? 'Click an existing fort wall on the terrain to enter Vertex Mode, or click Draw Rampart to build a new wall.'
+                    : 'Click Draw Rampart and click on the terrain to start drafting a fort wall circuit.'}
+                </p>
+                {wallSubTool !== 'draw' && (
+                  <button
+                    onClick={() => setWallSubTool('draw')}
+                    className="w-full py-1 px-2 mt-1 bg-[#4B382C] text-white text-[10px] font-semibold rounded-lg hover:bg-[#38281E] cursor-pointer transition-all"
+                  >
+                    Start Drawing Rampart
+                  </button>
                 )}
               </div>
             )}
 
-            {/* 3. Parametric Sliders: Wall Height */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">{t.tools.walls.height}:</span>
-                <span className="font-mono text-[#8D7666]">
-                  {(wallSettings.height * 1000).toFixed(0)}mm
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0.02"
-                max="0.10"
-                step="0.005"
-                value={wallSettings.height}
-                onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
-                className="w-full accent-[#4B382C] cursor-pointer"
-              />
-              {/* Quick height presets */}
-              <div className="grid grid-cols-3 gap-1 pt-0.5">
-                {[
-                  { label: 'Low 30mm', val: 0.03 },
-                  { label: 'Default 50mm', val: 0.05 },
-                  { label: 'Citadel 80mm', val: 0.08 },
-                ].map((preset) => (
-                  <button
-                    key={preset.val}
-                    onClick={() => setWallSettings({ height: preset.val })}
-                    className={`py-0.5 text-[10px] rounded border transition-all cursor-pointer ${
-                      Math.abs(wallSettings.height - preset.val) < 0.005
-                        ? 'bg-[#4B382C] text-white border-[#38281E]'
-                        : 'bg-[#FAF8F5] text-[#5C4638] border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* 3. Parametric Sliders Section (Accessible only in Vertex Mode) */}
+            <div className={`space-y-3 relative ${!selectedWallId ? 'opacity-40 select-none' : ''}`}>
+              {/* Invisible Click Interceptor to show cursor toast when locked */}
+              {!selectedWallId && (
+                <div
+                  onClick={(e) => {
+                    if (activeWallDraft.length > 0) {
+                      showCursorToast(e, 'Click "Proceed" on your draft to unlock wall properties.');
+                    } else {
+                      showCursorToast(e, 'Select a fort wall on terrain to enter Vertex Mode and unlock properties.');
+                    }
+                  }}
+                  className="absolute inset-0 z-30 cursor-not-allowed"
+                  title="Unlock by proceeding with draft or selecting a wall"
+                />
+              )}
 
-            {/* 4. Parametric Sliders: Wall Thickness */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">{t.tools.walls.thickness}:</span>
-                <span className="font-mono text-[#8D7666]">
-                  {(wallSettings.thickness * 1000).toFixed(0)}mm
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0.015"
-                max="0.06"
-                step="0.005"
-                value={wallSettings.thickness}
-                onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
-                className="w-full accent-[#8F4938] cursor-pointer"
-              />
-            </div>
-
-            {/* 5. Brick Texture UV Scale Slider */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">{t.tools.walls.uvScale}:</span>
-                <span className="font-mono text-[#8D7666]">{wallSettings.uvScale.toFixed(1)}x</span>
-              </div>
-              <input
-                type="range"
-                min="0.5"
-                max="3.0"
-                step="0.1"
-                value={wallSettings.uvScale}
-                onChange={(e) => setWallSettings({ uvScale: parseFloat(e.target.value) })}
-                className="w-full accent-[#B58B63] cursor-pointer"
-              />
-            </div>
-
-            {/* 6. Authentic Features: Bastions (Buruj) & Crenellations (Kangare) */}
-            <div className="space-y-2 pt-1 border-t border-[#D9C9B4]">
-              {/* Auto Bastions Toggle */}
-              <button
-                onClick={() => setWallSettings({ autoBastions: !wallSettings.autoBastions })}
-                className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
-                  wallSettings.autoBastions
-                    ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
-                    : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <TbTower className="w-4 h-4 text-[#F59E0B]" />
-                  <span className="text-xs font-semibold">{t.tools.walls.autoBastions}</span>
-                </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                  wallSettings.autoBastions ? 'bg-black/30 text-[#FAF8F5]' : 'bg-[#E4D8CB]'
-                }`}>
-                  {wallSettings.autoBastions ? 'ON' : 'OFF'}
-                </span>
-              </button>
-
-              {/* Bastion Radius Slider */}
-              <div className="space-y-1 pl-1">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="font-semibold text-[#5C4638]">{t.tools.walls.bastionRadius}:</span>
+              {/* Slider 1: Wall Height (Scale in Centimeters up to 100cm) */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#4B382C]">{t.tools.walls.height}:</span>
                   <span className="font-mono text-[#8D7666]">
-                    {(wallSettings.bastionRadius * 1000).toFixed(0)}mm
+                    {(wallSettings.height * 100).toFixed(0)}cm
                   </span>
                 </div>
                 <input
                   type="range"
-                  min="0.03"
-                  max="0.10"
-                  step="0.005"
-                  value={wallSettings.bastionRadius}
-                  onChange={(e) => setWallSettings({ bastionRadius: parseFloat(e.target.value) })}
+                  min="0.10"
+                  max="1.00"
+                  step="0.05"
+                  value={wallSettings.height}
+                  onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
                   className="w-full accent-[#4B382C] cursor-pointer"
+                />
+                {/* Quick height presets */}
+                <div className="grid grid-cols-3 gap-1 pt-0.5">
+                  {[
+                    { label: 'Low 25cm', val: 0.25 },
+                    { label: 'Default 50cm', val: 0.50 },
+                    { label: 'Citadel 80cm', val: 0.80 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.val}
+                      onClick={() => setWallSettings({ height: preset.val })}
+                      className={`py-0.5 text-[10px] rounded border transition-all cursor-pointer ${
+                        Math.abs(wallSettings.height - preset.val) < 0.04
+                          ? 'bg-[#4B382C] text-white border-[#38281E]'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border-[#D9C9B4] hover:bg-[#EAE0D3]'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Slider 2: Wall Thickness (Scale in Centimeters) */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#4B382C]">{t.tools.walls.thickness}:</span>
+                  <span className="font-mono text-[#8D7666]">
+                    {(wallSettings.thickness * 100).toFixed(0)}cm
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min="0.05"
+                  max="0.40"
+                  step="0.02"
+                  value={wallSettings.thickness}
+                  onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
+                  className="w-full accent-[#8F4938] cursor-pointer"
                 />
               </div>
 
-              {/* Crenellations (Kangare) Toggle */}
-              <button
-                onClick={() => setWallSettings({ crenellations: !wallSettings.crenellations })}
-                className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
-                  wallSettings.crenellations
-                    ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
-                    : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
-                }`}
-              >
-                <div className="flex items-center gap-1.5">
-                  <TbBuildingFortress className="w-4 h-4 text-[#E85D04]" />
-                  <span className="text-xs font-semibold">{t.tools.walls.crenellations}</span>
+              {/* Slider 3: Brick Texture UV Scale */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-[#4B382C]">{t.tools.walls.uvScale}:</span>
+                  <span className="font-mono text-[#8D7666]">{wallSettings.uvScale.toFixed(1)}x</span>
                 </div>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                  wallSettings.crenellations ? 'bg-black/30 text-[#FAF8F5]' : 'bg-[#E4D8CB]'
-                }`}>
-                  {wallSettings.crenellations ? 'ON' : 'OFF'}
-                </span>
-              </button>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="3.0"
+                  step="0.1"
+                  value={wallSettings.uvScale}
+                  onChange={(e) => setWallSettings({ uvScale: parseFloat(e.target.value) })}
+                  className="w-full accent-[#B58B63] cursor-pointer"
+                />
+              </div>
+
+              {/* 4. Authentic Features: Bastions (Buruj) & Crenellations (Kangare) */}
+              <div className="space-y-2 pt-1 border-t border-[#D9C9B4]">
+                {/* Auto Bastions Toggle */}
+                <button
+                  onClick={() => setWallSettings({ autoBastions: !wallSettings.autoBastions })}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
+                    wallSettings.autoBastions
+                      ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
+                      : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <TbTower className="w-4 h-4 text-[#F59E0B]" />
+                    <span className="text-xs font-semibold">{t.tools.walls.autoBastions}</span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      wallSettings.autoBastions ? 'bg-black/30 text-[#FAF8F5]' : 'bg-[#E4D8CB]'
+                    }`}
+                  >
+                    {wallSettings.autoBastions ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+
+                {/* Bastion Radius Slider (Scale in Centimeters) */}
+                <div className="space-y-1 pl-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-semibold text-[#5C4638]">{t.tools.walls.bastionRadius}:</span>
+                    <span className="font-mono text-[#8D7666]">
+                      {(wallSettings.bastionRadius * 100).toFixed(0)}cm
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.10"
+                    max="0.60"
+                    step="0.02"
+                    value={wallSettings.bastionRadius}
+                    onChange={(e) => setWallSettings({ bastionRadius: parseFloat(e.target.value) })}
+                    className="w-full accent-[#4B382C] cursor-pointer"
+                  />
+                </div>
+
+                {/* Crenellations (Kangare) Toggle */}
+                <button
+                  onClick={() => setWallSettings({ crenellations: !wallSettings.crenellations })}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
+                    wallSettings.crenellations
+                      ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
+                      : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <TbBuildingFortress className="w-4 h-4 text-[#E85D04]" />
+                    <span className="text-xs font-semibold">{t.tools.walls.crenellations}</span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      wallSettings.crenellations ? 'bg-black/30 text-[#FAF8F5]' : 'bg-[#E4D8CB]'
+                    }`}
+                  >
+                    {wallSettings.crenellations ? 'ON' : 'OFF'}
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* 7. Wall Network Stats & Clear Actions */}
+            {/* 5. Wall Network Stats & Clear Actions */}
             <div className="pt-2 border-t border-[#D9C9B4] space-y-2">
               <div className="flex items-center justify-between text-[11px] text-[#634E40] bg-[#FAF8F5] p-2 rounded-lg border border-[#D9C9B4]">
                 <div>
@@ -1003,6 +1138,18 @@ export const LeftToolSidebar: React.FC = () => {
       >
         <div className="w-[1.5px] h-8 rounded-full bg-[#B39E8C] group-hover:bg-[#B85F45] transition-colors" />
       </div>
+      {/* ============================================================ */}
+      {/* 5. FLOATING CURSOR TOAST FOR DISABLED BUTTONS & PROPERTIES   */}
+      {/* ============================================================ */}
+      {cursorToast && (
+        <div
+          style={{ left: cursorToast.x + 10, top: cursorToast.y - 12 }}
+          className="fixed z-50 pointer-events-none transform -translate-y-full bg-[#2B1E16]/95 backdrop-blur-md text-[#FFF8EB] border border-[#F59E0B]/70 px-3 py-1.5 rounded-lg text-xs shadow-xl max-w-xs font-medium animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5"
+        >
+          <span className="text-[#F59E0B] text-sm">🔒</span>
+          <span>{cursorToast.message}</span>
+        </div>
+      )}
     </aside>
   </>
   );

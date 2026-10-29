@@ -18,7 +18,7 @@ const WallDraftPreview: React.FC<{
 }> = ({ draftPoints, nightMode }) => {
   const lineObject = useMemo(() => {
     if (draftPoints.length < 2) return null;
-    const pts = draftPoints.map((p) => new THREE.Vector3(p.x, p.y + 0.015, p.z));
+    const pts = draftPoints.map((p) => new THREE.Vector3(p.x, p.y + 0.04, p.z));
     const geo = new THREE.BufferGeometry().setFromPoints(pts);
     const mat = new THREE.LineBasicMaterial({
       color: nightMode ? '#f59e0b' : '#d97706',
@@ -53,13 +53,13 @@ const WallDraftPreview: React.FC<{
         return (
           <mesh
             key={`node_${idx}`}
-            position={[p.x, p.y + 0.012, p.z]}
+            position={[p.x, p.y + 0.03, p.z]}
           >
             <cylinderGeometry
               args={[
-                canClose ? 0.035 : 0.02,
-                canClose ? 0.035 : 0.02,
-                0.012,
+                canClose ? 0.08 : 0.05,
+                canClose ? 0.08 : 0.05,
+                0.04,
                 16,
               ]}
             />
@@ -94,6 +94,14 @@ const SingleWallMesh: React.FC<{
     };
   }, [geometry]);
 
+  const handleWallClick = (e: any) => {
+    const editor = useEditorStore.getState();
+    if (editor.activeTool !== 'walls' || editor.activeWallDraft.length > 0) return;
+    e.stopPropagation();
+    editor.setSelectedWallId(wall.id);
+    editor.setToastMessage('Fort wall selected in Vertex Mode. Adjust properties, or click Finish Wall when done.');
+  };
+
   return (
     <group name={`FortWall_${wall.id}`}>
       <mesh
@@ -101,20 +109,52 @@ const SingleWallMesh: React.FC<{
         material={material}
         castShadow
         receiveShadow
+        onClick={handleWallClick}
       />
       {isSelected && (
-        <mesh
-          geometry={geometry}
-          castShadow={false}
-          receiveShadow={false}
-        >
-          <meshBasicMaterial
-            color="#fbbf24"
-            wireframe
-            transparent
-            opacity={0.35}
-          />
-        </mesh>
+        <group name={`VertexOverlay_${wall.id}`}>
+          {/* Subtle amber wireframe highlight */}
+          <mesh
+            geometry={geometry}
+            castShadow={false}
+            receiveShadow={false}
+          >
+            <meshBasicMaterial
+              color="#fbbf24"
+              wireframe
+              transparent
+              opacity={0.25}
+            />
+          </mesh>
+
+          {/* Interactive Vertex Handles overlay (visible ONLY when wall is selected) */}
+          {wall.points.map((pt, idx) => {
+            const isManualBastion = wall.manualBastionIndices?.includes(idx);
+            return (
+              <mesh
+                key={`vert_${idx}`}
+                position={[pt.x, pt.y + wall.settings.height + 0.05, pt.z]}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const editor = useEditorStore.getState();
+                  if (editor.wallSubTool === 'bastion') {
+                    editor.toggleBastionOnNode(wall.id, idx);
+                    editor.setToastMessage('Round bastion watchtower toggled on vertex!');
+                  } else {
+                    editor.setSelectedWallId(wall.id);
+                  }
+                }}
+              >
+                <sphereGeometry args={[isManualBastion ? 0.06 : 0.04, 16, 16]} />
+                <meshStandardMaterial
+                  color={isManualBastion ? '#3b82f6' : '#f59e0b'}
+                  emissive={isManualBastion ? '#1d4ed8' : '#d97706'}
+                  emissiveIntensity={0.7}
+                />
+              </mesh>
+            );
+          })}
+        </group>
       )}
     </group>
   );

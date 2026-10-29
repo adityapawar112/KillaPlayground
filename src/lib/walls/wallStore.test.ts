@@ -36,12 +36,30 @@ describe('Wall Store & State Integration', () => {
 
   it('updates parametric wall settings', () => {
     const store = useEditorStore.getState();
-    store.setWallSettings({ height: 2.8, thickness: 0.6, uvScale: 1.5 });
+    store.setWallSettings({ height: 0.8, thickness: 0.3, uvScale: 1.5 });
 
     const updated = useEditorStore.getState().wallSettings;
-    expect(updated.height).toBe(2.8);
-    expect(updated.thickness).toBe(0.6);
+    expect(updated.height).toBe(0.8);
+    expect(updated.thickness).toBe(0.3);
     expect(updated.uvScale).toBe(1.5);
+  });
+
+  it('manages wall selection, vertex mode, and finish wall to lock editing', () => {
+    const store = useEditorStore.getState();
+    store.addWallDraftPoint({ x: 0, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 3, y: 0, z: 0 });
+    const wallId = store.finishCurrentWall(false)!;
+
+    // Wall creation automatically enters vertex mode (selectedWallId is set)
+    expect(useEditorStore.getState().selectedWallId).toBe(wallId);
+
+    // Clicking finish wall sets selectedWallId to null (exiting vertex mode)
+    store.setSelectedWallId(null);
+    expect(useEditorStore.getState().selectedWallId).toBeNull();
+
+    // Selecting wall re-enters vertex mode and syncs wall settings
+    store.setSelectedWallId(wallId);
+    expect(useEditorStore.getState().selectedWallId).toBe(wallId);
   });
 
   it('toggles bastions and inserts gates into existing walls', () => {

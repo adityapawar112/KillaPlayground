@@ -261,8 +261,8 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
             id: 'maha_darwaza_1',
             segmentIndex: 0,
             t: 0.5,
-            width: 0.08,
-            height: 0.04,
+            width: 0.35,
+            height: 0.28,
             hasGatehouse: true,
           },
         ],
@@ -273,10 +273,10 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       const geoGate = generateWallBufferGeometry(wallWithGate, buffer);
       expect(geoGate.getAttribute('position').count).toBeGreaterThan(0);
 
-      // Bounding box should enclose the gate height at miniature scale (<= 0.12m)
+      // Bounding box should enclose the gatehouse height at 10cm-100cm scale
       geoGate.computeBoundingBox();
-      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(0.04);
-      expect(geoGate.boundingBox!.max.y).toBeLessThanOrEqual(0.12);
+      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(0.30);
+      expect(geoGate.boundingBox!.max.y).toBeLessThanOrEqual(0.70);
 
       geoGate.dispose();
     });

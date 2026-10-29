@@ -360,7 +360,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return { wallSettings: updated, walls: updatedWalls };
     }),
   setWallSubTool: (wallSubTool) => set({ wallSubTool }),
-  setSelectedWallId: (selectedWallId) => set({ selectedWallId }),
+  setSelectedWallId: (selectedWallId) =>
+    set((state) => {
+      if (!selectedWallId) return { selectedWallId: null };
+      const wall = state.walls.find((w) => w.id === selectedWallId);
+      return {
+        selectedWallId,
+        wallSettings: wall ? { ...wall.settings } : state.wallSettings,
+      };
+    }),
   addWallDraftPoint: (point) =>
     set((state) => ({ activeWallDraft: [...state.activeWallDraft, point] })),
   finishCurrentWall: (isClosed = false) => {
@@ -435,8 +443,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           id: gateId,
           segmentIndex,
           t,
-          width: 0.08,
-          height: 0.04,
+          width: 0.35,
+          height: 0.28,
           hasGatehouse: true,
         };
         return { ...w, gates: [...(w.gates || []), newGate] };

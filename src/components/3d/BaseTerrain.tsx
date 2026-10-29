@@ -403,67 +403,96 @@ export const BaseTerrainContent: React.FC = () => {
         if (e.button !== 0 || e.altKey) return;
         e.stopPropagation();
 
-        if (editor.wallSubTool === 'gate') {
-          // Find closest wall segment to insert Maha Darwaza
+        if (editor.wallSubTool === 'select') {
+          // Find closest wall to select it into Vertex Mode
           let closestDist = Infinity;
           let targetWallId: string | null = null;
-          let targetSegIdx = 0;
-          let targetT = 0.5;
-
           for (const wall of editor.walls) {
-            const pts = wall.points;
-            const numSegs = wall.isClosed && pts.length >= 3 ? pts.length : pts.length - 1;
-            for (let i = 0; i < numSegs; i++) {
-              const pA = pts[i];
-              const pB = pts[(i + 1) % pts.length];
-              const segDx = pB.x - pA.x;
-              const segDz = pB.z - pA.z;
-              const segLenSq = segDx * segDx + segDz * segDz;
-              if (segLenSq < 1e-4) continue;
-              const t = Math.max(0.15, Math.min(0.85, ((e.point.x - pA.x) * segDx + (e.point.z - pA.z) * segDz) / segLenSq));
-              const projX = pA.x + segDx * t;
-              const projZ = pA.z + segDz * t;
-              const d = Math.hypot(e.point.x - projX, e.point.z - projZ);
+            for (const pt of wall.points) {
+              const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
               if (d < closestDist) {
                 closestDist = d;
                 targetWallId = wall.id;
-                targetSegIdx = i;
-                targetT = t;
               }
             }
           }
-
-          if (targetWallId && closestDist < 0.25) {
-            editor.addGateToWall(targetWallId, targetSegIdx, targetT);
-            editor.setToastMessage('Maha Darwaza arched gateway inserted!');
+          if (targetWallId && closestDist < 0.6) {
+            editor.setSelectedWallId(targetWallId);
+            editor.setToastMessage('Fort wall selected in Vertex Mode.');
           } else {
-            editor.setToastMessage('Click closer to a fort wall segment to insert Maha Darwaza.');
+            editor.setSelectedWallId(null);
+          }
+          invalidate();
+          return;
+        }
+
+        if (editor.wallSubTool === 'gate') {
+          if (!editor.selectedWallId) {
+            editor.setToastMessage('Select a fort wall first in Vertex Mode to insert Maha Darwaza.');
+            return;
+          }
+          const wall = editor.walls.find((w) => w.id === editor.selectedWallId);
+          if (!wall) return;
+
+          let closestDist = Infinity;
+          let targetSegIdx = 0;
+          let targetT = 0.5;
+
+          const pts = wall.points;
+          const numSegs = wall.isClosed && pts.length >= 3 ? pts.length : pts.length - 1;
+          for (let i = 0; i < numSegs; i++) {
+            const pA = pts[i];
+            const pB = pts[(i + 1) % pts.length];
+            const segDx = pB.x - pA.x;
+            const segDz = pB.z - pA.z;
+            const segLenSq = segDx * segDx + segDz * segDz;
+            if (segLenSq < 1e-4) continue;
+            const t = Math.max(0.15, Math.min(0.85, ((e.point.x - pA.x) * segDx + (e.point.z - pA.z) * segDz) / segLenSq));
+            const projX = pA.x + segDx * t;
+            const projZ = pA.z + segDz * t;
+            const d = Math.hypot(e.point.x - projX, e.point.z - projZ);
+            if (d < closestDist) {
+              closestDist = d;
+              targetSegIdx = i;
+              targetT = t;
+            }
+          }
+
+          if (closestDist < 0.45) {
+            editor.addGateToWall(wall.id, targetSegIdx, targetT);
+            editor.setToastMessage('Maha Darwaza arched gateway inserted on selected wall!');
+            invalidate();
+          } else {
+            editor.setToastMessage('Click closer to a segment of the selected fort wall.');
           }
           return;
         }
 
         if (editor.wallSubTool === 'bastion') {
-          // Find closest wall vertex to toggle bastion
+          if (!editor.selectedWallId) {
+            editor.setToastMessage('Select a fort wall first in Vertex Mode to toggle bastions.');
+            return;
+          }
+          const wall = editor.walls.find((w) => w.id === editor.selectedWallId);
+          if (!wall) return;
+
           let closestDist = Infinity;
-          let targetWallId: string | null = null;
           let targetNodeIdx = 0;
 
-          for (const wall of editor.walls) {
-            wall.points.forEach((pt, idx) => {
-              const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
-              if (d < closestDist) {
-                closestDist = d;
-                targetWallId = wall.id;
-                targetNodeIdx = idx;
-              }
-            });
-          }
+          wall.points.forEach((pt, idx) => {
+            const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
+            if (d < closestDist) {
+              closestDist = d;
+              targetNodeIdx = idx;
+            }
+          });
 
-          if (targetWallId && closestDist < 0.20) {
-            editor.toggleBastionOnNode(targetWallId, targetNodeIdx);
-            editor.setToastMessage('Round bastion toggled on vertex!');
+          if (closestDist < 0.35) {
+            editor.toggleBastionOnNode(wall.id, targetNodeIdx);
+            editor.setToastMessage('Round bastion watchtower toggled on vertex!');
+            invalidate();
           } else {
-            editor.setToastMessage('Click closer to a fort wall vertex to toggle bastion.');
+            editor.setToastMessage('Click closer to a vertex of the selected fort wall.');
           }
           return;
         }
@@ -473,7 +502,7 @@ export const BaseTerrainContent: React.FC = () => {
         const draft = editor.activeWallDraft;
         if (draft.length >= 3) {
           const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
-          if (dStart < 0.15) {
+          if (dStart < 0.30) {
             editor.finishCurrentWall(true);
             editor.setToastMessage('Fort perimeter wall closed into defensive circuit!');
             invalidate();
@@ -533,7 +562,7 @@ export const BaseTerrainContent: React.FC = () => {
           const dx = e.point.x - lastWallPointRef.current.x;
           const dz = e.point.z - lastWallPointRef.current.z;
           const dist = Math.hypot(dx, dz);
-          if (dist >= 0.06) {
+          if (dist >= 0.15) {
             editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
             lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
             invalidate();

@@ -8,17 +8,17 @@ import {
 import { WallPath, WallPoint, WallSettings, WallGate } from './wallTypes';
 
 /**
- * Miniature diorama stone masonry scale factor.
- * Since fort walls are miniature (20mm to 100mm height),
- * coordinates are in [0.02..0.10]. Multiplying by 22.0 maps each
- * stone brick course to ~10mm x 5mm miniature scale blocks.
+ * Diorama stone masonry scale factor.
+ * Wall heights range from 10cm to 100cm (0.10m to 1.0m).
+ * Multiplying by 3.5 maps each stone brick course cleanly
+ * across height and length.
  */
-export const BRICK_UV_MULTIPLIER = 22.0;
+export const BRICK_UV_MULTIPLIER = 3.5;
 
 /**
  * Foundation sink into terrain to guarantee rock-solid grounding on steep terrain slopes.
  */
-export const WALL_EMBED_DEPTH = 0.012; // 12mm
+export const WALL_EMBED_DEPTH = 0.03; // 3cm
 
 /**
  * Samples terrain height at arbitrary continuous world coordinates (worldX, worldZ)
@@ -139,7 +139,7 @@ export function resampleWallPointsAlongTerrain(
   points: WallPoint[],
   buffer: Float32Array,
   isClosed = false,
-  stepSize = 0.04
+  stepSize = 0.15
 ): WallPoint[] {
   if (points.length < 2) {
     return points.map((p) => ({
@@ -374,7 +374,7 @@ export function generateWallBufferGeometry(
 
       const centerDist = cumulativeDist[closestIdx];
       // Gate width scaled appropriately to wall thickness (e.g. 2.2x thickness)
-      const gateWidth = Math.max(0.04, Math.min(0.12, (g.width && g.width <= 0.2 ? g.width : settings.thickness * 2.2)));
+      const gateWidth = Math.max(0.20, Math.min(0.80, (g.width && g.width >= 0.15 && g.width <= 1.2 ? g.width : settings.thickness * 2.2)));
       const halfWidth = gateWidth * 0.5;
       const norm = lateralNormals[closestIdx];
       const tan = { x: -norm.z, z: norm.x };
@@ -556,9 +556,9 @@ export function generateWallBufferGeometry(
 
   // Add Murud-Janjira Kangare along Ramparts
   if (settings.crenellations) {
-    const crenH = Math.max(0.010, Math.min(0.025, settings.crenellationHeight));
-    const merlonW = Math.max(0.012, Math.min(0.028, settings.crenellationWidth));
-    const gapW = 0.012;
+    const crenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight));
+    const merlonW = Math.max(0.06, Math.min(0.20, settings.crenellationWidth));
+    const gapW = 0.05;
     const cycle = merlonW + gapW;
     const crenThick = halfThick * 0.65;
 
@@ -800,8 +800,8 @@ export function generateWallBufferGeometry(
 
     // G. FLANKING GATEHOUSE BASTIONS (with solid top floor & crowning kangare)
     if (ag.gate.hasGatehouse !== false) {
-      const ghRadius = Math.max(0.025, Math.min(0.06, settings.thickness * 1.25));
-      const ghTopY = lintelTopY + 0.012; // Flanking towers rise slightly above portal
+      const ghRadius = Math.max(0.12, Math.min(0.40, settings.thickness * 1.35));
+      const ghTopY = lintelTopY + 0.08; // Flanking towers rise slightly (8cm) above portal
       const flankOffsets = [-halfWidth - ghRadius * 0.8, halfWidth + ghRadius * 0.8];
 
       for (const off of flankOffsets) {

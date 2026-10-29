@@ -22,6 +22,7 @@ export interface WallSettings {
   crenellations: boolean;     // alternating notched battlements (kangare)
   crenellationHeight: number; // height of merlon (0.04m to 0.15m, default 0.08m = 8cm)
   crenellationWidth: number;  // width of merlon (default 0.10m = 10cm)
+  flipCrenellations?: boolean;// flip kangare between outer and inner wall rim
 }
 
 export const DEFAULT_WALL_SETTINGS: WallSettings = {
@@ -33,7 +34,14 @@ export const DEFAULT_WALL_SETTINGS: WallSettings = {
   crenellations: true,
   crenellationHeight: 0.08,
   crenellationWidth: 0.10,
+  flipCrenellations: false,
 };
+
+export interface CustomBastionProps {
+  radius?: number;       // radius of tower in meters (0.10m to 0.60m)
+  heightOffset?: number; // extra height above wall in meters (0.0m to 0.35m)
+  isGrand?: boolean;     // whether this is a Maha Buruj (Grand Bastion)
+}
 
 export interface WallPath {
   id: string;
@@ -41,6 +49,8 @@ export interface WallPath {
   isClosed: boolean;
   manualBastionIndices?: number[]; // indices of points with manual bastions
   grandBastionIndices?: number[];  // indices of points with grand bastions (Maha Buruj)
+  excludedBastionIndices?: number[]; // indices of vertices where bastions are suppressed
+  customBastions?: Record<number, CustomBastionProps>; // per-node bastion overrides
   gates: WallGate[];
   settings: WallSettings;
   createdAt: number;

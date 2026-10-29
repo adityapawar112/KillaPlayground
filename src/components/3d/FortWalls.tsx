@@ -9,6 +9,8 @@ import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import {
   generateWallBufferGeometry,
   generateCitadelKeepGeometry,
+  detectBastionLocations,
+  sampleBilinearHeight,
   SnapResult,
 } from '@/lib/walls/wallGeometry';
 import { WallPath, WallPoint, CitadelKeep, FortStampType } from '@/lib/walls/wallTypes';
@@ -85,9 +87,9 @@ const WallDraftPreview: React.FC<{
 const SingleWallMesh: React.FC<{
   wall: WallPath;
   stateBuffer: Float32Array;
-  material: THREE.Material;
+  materials: THREE.Material[];
   isSelected: boolean;
-}> = ({ wall, stateBuffer, material, isSelected }) => {
+}> = ({ wall, stateBuffer, materials, isSelected }) => {
   const geometry = useMemo(() => {
     return generateWallBufferGeometry(wall, stateBuffer);
   }, [wall, stateBuffer]);
@@ -114,11 +116,24 @@ const SingleWallMesh: React.FC<{
   const { wallStep, activeStamp, selectedComponent } = useEditorStore();
   const showHandles = isSelected && wallStep === 'fortify';
 
+  // Compute bastions on this wall for interactive 3D handles
+  const bastionIndices = useMemo(() => {
+    return detectBastionLocations(
+      wall.points,
+      wall.isClosed,
+      wall.settings.autoBastions,
+      wall.manualBastionIndices,
+      wall.excludedBastionIndices
+    );
+  }, [wall.points, wall.isClosed, wall.settings.autoBastions, wall.manualBastionIndices, wall.excludedBastionIndices]);
+
+  const baseBastionRadius = Math.max(0.08, Math.min(0.60, wall.settings.bastionRadius || 0.25));
+
   return (
     <group name={`FortWall_${wall.id}`}>
       <mesh
         geometry={geometry}
-        material={material}
+        material={materials}
         castShadow
         receiveShadow
         onClick={handleWallClick}
@@ -139,10 +154,144 @@ const SingleWallMesh: React.FC<{
             />
           </mesh>
 
-          {/* Interactive Vertex Handles overlay */}
+          {/* Interactive Bastion Top Discs & Badges */}
+          {bastionIndices.map((bIdx) => {
+            const pt = wall.points[bIdx];
+            if (!pt) return null;
+            const custom = wall.customBastions?.[bIdx];
+            const isGrand = wall.grandBastionIndices?.includes(bIdx) || custom?.isGrand;
+            const customR = custom?.radius;
+            const customHOffset = custom?.heightOffset || 0;
+            const bastionRadius = customR ?? (isGrand ? baseBastionRadius * 1.5 : baseBastionRadius);
+            const towerH = (isGrand ? wall.settings.height * 1.25 : wall.settings.height + 0.015) + customHOffset;
+            const groundY = sampleBilinearHeight(stateBuffer, pt.x, pt.z);
+            const bTopY = groundY + towerH;
+
+            const isBastionSelected =
+              selectedComponent?.type === 'bastion' &&
+              selectedComponent.idOrIndex === bIdx &&
+              selectedComponent.wallId === wall.id;
+
+            return (
+              <group key={`bastion_handle_${bIdx}`} position={[pt.x, bTopY, pt.z]}>
+                {/* Generous Clickable Top Floor Disc */}
+                <mesh
+                  position={[0, 0.005, 0]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const editor = useEditorStore.getState();
+                    editor.setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: wall.id });
+                    editor.setSelectedWallId(wall.id);
+                    editor.setToastMessage(`${isGrand ? 'Maha Buruj' : 'Buruj'} selected.`);
+                  }}
+                >
+                  <cylinderGeometry args={[bastionRadius * 0.95, bastionRadius * 0.95, 0.02, 16]} />
+                  <meshBasicMaterial
+                    color={isBastionSelected ? '#10b981' : isGrand ? '#d97706' : '#3b82f6'}
+                    transparent
+                    opacity={isBastionSelected ? 0.75 : 0.35}
+                  />
+                </mesh>
+
+                {/* Glowing Selection Rim Ring when active */}
+                {isBastionSelected && (
+                  <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[bastionRadius * 0.95, bastionRadius * 1.15, 32]} />
+                    <meshBasicMaterial color="#10b981" transparent opacity={0.9} side={THREE.DoubleSide} />
+                  </mesh>
+                )}
+
+                {/* Floating Tower Badge Pin */}
+                <mesh
+                  position={[0, 0.12, 0]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const editor = useEditorStore.getState();
+                    editor.setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: wall.id });
+                    editor.setSelectedWallId(wall.id);
+                  }}
+                >
+                  <sphereGeometry args={[0.045, 12, 12]} />
+                  <meshStandardMaterial
+                    color={isBastionSelected ? '#10b981' : isGrand ? '#d97706' : '#2563eb'}
+                    emissive={isBastionSelected ? '#059669' : isGrand ? '#b45309' : '#1d4ed8'}
+                    emissiveIntensity={0.8}
+                  />
+                </mesh>
+              </group>
+            );
+          })}
+
+          {/* Interactive Gate Handles (Arch Volume & Badge) */}
+          {wall.gates.map((g) => {
+            const origCount = wall.isClosed && wall.points.length >= 3 ? wall.points.length : wall.points.length - 1;
+            const segIdx = Math.max(0, Math.min(origCount - 1, g.segmentIndex));
+            const pA = wall.points[segIdx];
+            const pB = wall.points[(segIdx + 1) % wall.points.length];
+            if (!pA || !pB) return null;
+
+            const t = Math.max(0.15, Math.min(0.85, g.t || 0.5));
+            const gx = pA.x + (pB.x - pA.x) * t;
+            const gz = pA.z + (pB.z - pA.z) * t;
+            const groundY = sampleBilinearHeight(stateBuffer, gx, gz);
+            const gateW = Math.max(0.20, Math.min(0.80, g.width || wall.settings.thickness * 2.2));
+            const gateH = wall.settings.height * 0.70;
+
+            const dx = pB.x - pA.x;
+            const dz = pB.z - pA.z;
+            const rotY = Math.atan2(dx, dz);
+
+            const isGateSelected =
+              selectedComponent?.type === 'gate' &&
+              selectedComponent.idOrIndex === g.id &&
+              selectedComponent.wallId === wall.id;
+
+            return (
+              <group key={`gate_handle_${g.id}`} position={[gx, groundY + gateH * 0.5, gz]} rotation={[0, rotY, 0]}>
+                {/* Generous Clickable Portal Arch Volume */}
+                <mesh
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const editor = useEditorStore.getState();
+                    editor.setSelectedComponent({ type: 'gate', idOrIndex: g.id, wallId: wall.id });
+                    editor.setSelectedWallId(wall.id);
+                    editor.setToastMessage('Maha Darwaza selected.');
+                  }}
+                >
+                  <boxGeometry args={[gateW * 1.15, gateH * 1.1, wall.settings.thickness * 1.6]} />
+                  <meshBasicMaterial
+                    color={isGateSelected ? '#10b981' : '#e85d04'}
+                    transparent
+                    opacity={isGateSelected ? 0.6 : 0.25}
+                  />
+                </mesh>
+
+                {/* Floating Gate Badge Pin */}
+                <mesh
+                  position={[0, gateH * 0.5 + 0.10, 0]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const editor = useEditorStore.getState();
+                    editor.setSelectedComponent({ type: 'gate', idOrIndex: g.id, wallId: wall.id });
+                    editor.setSelectedWallId(wall.id);
+                  }}
+                >
+                  <boxGeometry args={[0.07, 0.07, 0.07]} />
+                  <meshStandardMaterial
+                    color={isGateSelected ? '#10b981' : '#e85d04'}
+                    emissive={isGateSelected ? '#059669' : '#c2410c'}
+                    emissiveIntensity={0.8}
+                  />
+                </mesh>
+              </group>
+            );
+          })}
+
+          {/* Interactive Vertex Handles overlay (for non-bastion vertices) */}
           {wall.points.map((pt, idx) => {
-            const isManualBastion = wall.manualBastionIndices?.includes(idx);
-            const isGrand = wall.grandBastionIndices?.includes(idx);
+            const hasBastion = bastionIndices.includes(idx);
+            if (hasBastion) return null; // Bastion top handles already rendered above
+
             return (
               <mesh
                 key={`vert_${idx}`}
@@ -159,16 +308,16 @@ const SingleWallMesh: React.FC<{
                     editor.setActiveStamp(null);
                     editor.setToastMessage('Maha Buruj (Grand Bastion) placed on corner node!');
                   } else {
-                    editor.setSelectedComponent({ type: 'bastion', idOrIndex: idx, wallId: wall.id });
-                    editor.setSelectedWallId(wall.id);
+                    editor.toggleBastionOnNode(wall.id, idx);
+                    editor.setToastMessage('Bastion added on vertex!');
                   }
                 }}
               >
-                <sphereGeometry args={[isGrand ? 0.08 : isManualBastion ? 0.06 : 0.04, 16, 16]} />
+                <sphereGeometry args={[0.035, 12, 12]} />
                 <meshStandardMaterial
-                  color={isGrand ? '#d97706' : isManualBastion ? '#3b82f6' : '#f59e0b'}
-                  emissive={isGrand ? '#b45309' : isManualBastion ? '#1d4ed8' : '#d97706'}
-                  emissiveIntensity={0.8}
+                  color="#f59e0b"
+                  emissive="#d97706"
+                  emissiveIntensity={0.7}
                 />
               </mesh>
             );
@@ -185,9 +334,9 @@ const SingleWallMesh: React.FC<{
 const SingleCitadelMesh: React.FC<{
   keep: CitadelKeep;
   stateBuffer: Float32Array;
-  material: THREE.Material;
+  materials: THREE.Material[];
   isSelected: boolean;
-}> = ({ keep, stateBuffer, material, isSelected }) => {
+}> = ({ keep, stateBuffer, materials, isSelected }) => {
   const geometry = useMemo(() => {
     return generateCitadelKeepGeometry(keep, stateBuffer);
   }, [keep, stateBuffer]);
@@ -213,7 +362,7 @@ const SingleCitadelMesh: React.FC<{
     <group name={`CitadelKeep_${keep.id}`} onClick={handleClick}>
       <mesh
         geometry={geometry}
-        material={material}
+        material={materials}
         castShadow
         receiveShadow
       />
@@ -353,56 +502,97 @@ export const FortWalls: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Load Retroground PBR mossy stone brick textures
-  const textures = useTexture({
+  // 1. Load Retroground PBR mossy stone brick textures (GROUP 0: Wall and tower sides)
+  const brickTextures = useTexture({
     diffuse: '/textures/Bricks/mossy_stone_brick_128x128_pbr/mossy_stone_brick_128x128_basecolor.png',
     normal: '/textures/Bricks/mossy_stone_brick_128x128_pbr/mossy_stone_brick_128x128_normal.png',
     roughness: '/textures/Bricks/mossy_stone_brick_128x128_pbr/mossy_stone_brick_128x128_roughness.png',
     ao: '/textures/Bricks/mossy_stone_brick_128x128_pbr/mossy_stone_brick_128x128_ao.png',
   });
 
-  // Configure NearestFilter for PS1 / modern retro pixel perfection
-  useEffect(() => {
-    if (!textures) return;
-    const all = [textures.diffuse, textures.normal, textures.roughness, textures.ao];
-    all.forEach((tex) => {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.minFilter = THREE.NearestFilter;
-      tex.magFilter = THREE.NearestFilter;
-      tex.needsUpdate = true;
-    });
-  }, [textures]);
+  // 2. Load Gravel PBR textures (GROUP 1: Rampart walkways and tower floor discs)
+  const gravelTextures = useTexture({
+    diffuse: '/textures/Gravel/Gravel_01/Gravel_01_basecolor.png',
+    normal: '/textures/Gravel/Gravel_01/Gravel_01_normal.png',
+    roughness: '/textures/Gravel/Gravel_01/Gravel_01_roughness.png',
+    ao: '/textures/Gravel/Gravel_01/Gravel_01_ambientocclusion.png',
+  });
 
-  // Stone Wall Material
-  const stoneMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      map: textures.diffuse,
-      normalMap: textures.normal,
-      roughnessMap: textures.roughness,
-      aoMap: textures.ao,
+  // 3. Load Dark Solid Stone PBR textures (GROUP 2: Pointed kangare battlements and soffits)
+  const darkStoneTextures = useTexture({
+    diffuse: '/textures/Bricks/dark_stone_texture_128x128_pbr/dark_stone_texture_128x128_basecolor.png',
+    normal: '/textures/Bricks/dark_stone_texture_128x128_pbr/dark_stone_texture_128x128_normal.png',
+    roughness: '/textures/Bricks/dark_stone_texture_128x128_pbr/dark_stone_texture_128x128_roughness.png',
+    ao: '/textures/Bricks/dark_stone_texture_128x128_pbr/dark_stone_texture_128x128_ao.png',
+  });
+
+  // Configure NearestFilter for authentic retro pixel perfection across all textures
+  useEffect(() => {
+    const all = [
+      brickTextures.diffuse, brickTextures.normal, brickTextures.roughness, brickTextures.ao,
+      gravelTextures.diffuse, gravelTextures.normal, gravelTextures.roughness, gravelTextures.ao,
+      darkStoneTextures.diffuse, darkStoneTextures.normal, darkStoneTextures.roughness, darkStoneTextures.ao,
+    ];
+    all.forEach((tex) => {
+      if (tex) {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.minFilter = THREE.NearestFilter;
+        tex.magFilter = THREE.NearestFilter;
+        tex.needsUpdate = true;
+      }
+    });
+  }, [brickTextures, gravelTextures, darkStoneTextures]);
+
+  // Multi-material set: [Group 0: Stone Wall, Group 1: Gravel Walkway/Floor, Group 2: Dark Stone Kangare]
+  const wallMaterials = useMemo(() => {
+    const mat0 = new THREE.MeshStandardMaterial({
+      map: brickTextures.diffuse,
+      normalMap: brickTextures.normal,
+      roughnessMap: brickTextures.roughness,
+      aoMap: brickTextures.ao,
       roughness: 0.88,
       metalness: 0.04,
       side: THREE.DoubleSide,
       shadowSide: THREE.DoubleSide,
     });
-    return mat;
-  }, [textures]);
+    const mat1 = new THREE.MeshStandardMaterial({
+      map: gravelTextures.diffuse,
+      normalMap: gravelTextures.normal,
+      roughnessMap: gravelTextures.roughness,
+      aoMap: gravelTextures.ao,
+      roughness: 0.95,
+      metalness: 0.02,
+      side: THREE.DoubleSide,
+      shadowSide: THREE.DoubleSide,
+    });
+    const mat2 = new THREE.MeshStandardMaterial({
+      map: darkStoneTextures.diffuse,
+      normalMap: darkStoneTextures.normal,
+      roughnessMap: darkStoneTextures.roughness,
+      aoMap: darkStoneTextures.ao,
+      roughness: 0.82,
+      metalness: 0.06,
+      side: THREE.DoubleSide,
+      shadowSide: THREE.DoubleSide,
+    });
+    return [mat0, mat1, mat2];
+  }, [brickTextures, gravelTextures, darkStoneTextures]);
 
   useEffect(() => {
     return () => {
-      stoneMaterial.dispose();
+      wallMaterials.forEach((m) => m.dispose());
     };
-  }, [stoneMaterial]);
+  }, [wallMaterials]);
 
   return (
     <group name="FortWallsLayer">
       {/* Completed Fort Walls */}
       {walls.map((wall) => (
         <SingleWallMesh
-          key={`${wall.id}_${lastUpdated}_${wall.settings.uvScale}_${wall.settings.height}_${wall.settings.thickness}`}
+          key={`${wall.id}_${lastUpdated}_${wall.settings.uvScale}_${wall.settings.height}_${wall.settings.thickness}_${wall.settings.flipCrenellations}`}
           wall={wall}
           stateBuffer={stateBuffer}
-          material={stoneMaterial}
+          materials={wallMaterials}
           isSelected={selectedWallId === wall.id}
         />
       ))}
@@ -413,7 +603,7 @@ export const FortWalls: React.FC = () => {
           key={`citadel_${keep.id}_${lastUpdated}_${keep.scale}`}
           keep={keep}
           stateBuffer={stateBuffer}
-          material={stoneMaterial}
+          materials={wallMaterials}
           isSelected={
             selectedComponent?.type === 'citadel' && selectedComponent.idOrIndex === keep.id
           }

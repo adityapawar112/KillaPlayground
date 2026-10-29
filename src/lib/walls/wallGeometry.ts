@@ -89,25 +89,29 @@ export function computeCornerAngle(
  * - Automatically at sharp corner angles (> 35 deg)
  * - At start and end nodes of open paths (terminal watchtowers)
  * - User-designated manual bastion nodes
+ * - Excludes any vertices designated in excludedIndices
  */
 export function detectBastionLocations(
   points: WallPoint[],
   isClosed: boolean,
   autoBastions: boolean,
-  manualIndices: number[] = []
+  manualIndices: number[] = [],
+  excludedIndices: number[] = []
 ): number[] {
   const bastions = new Set<number>(manualIndices);
+  const excluded = new Set<number>(excludedIndices);
   const count = points.length;
-  if (count < 2) return Array.from(bastions);
+  if (count < 2) return Array.from(bastions).filter((i) => !excluded.has(i));
 
   if (!isClosed) {
-    bastions.add(0);
-    bastions.add(count - 1);
+    if (!excluded.has(0)) bastions.add(0);
+    if (!excluded.has(count - 1)) bastions.add(count - 1);
   }
 
   if (autoBastions && count >= 3) {
     if (isClosed) {
       for (let i = 0; i < count; i++) {
+        if (excluded.has(i)) continue;
         const pPrev = points[(i - 1 + count) % count];
         const pCurr = points[i];
         const pNext = points[(i + 1) % count];
@@ -117,6 +121,7 @@ export function detectBastionLocations(
       }
     } else {
       for (let i = 1; i < count - 1; i++) {
+        if (excluded.has(i)) continue;
         const pPrev = points[i - 1];
         const pCurr = points[i];
         const pNext = points[i + 1];
@@ -127,7 +132,7 @@ export function detectBastionLocations(
     }
   }
 
-  return Array.from(bastions).sort((a, b) => a - b);
+  return Array.from(bastions).filter((i) => !excluded.has(i)).sort((a, b) => a - b);
 }
 
 /**
@@ -201,14 +206,26 @@ export function calculateWallTotalLength(
 }
 
 /**
- * Procedural geometry builder helper class to accumulate vertices, normals, UVs, and indices.
+ * Procedural geometry builder helper class to accumulate vertices, normals, UVs, and indices
+ * with multi-material group support.
+ * Group 0: Stone Brick Masonry (mossy_stone_brick) - wall sides, towers, gate jambs
+ * Group 1: Walkway & Tower Floor Gravel (Gravel_01) - wall top ramparts, tower floor discs
+ * Group 2: Solid Dark Stone (dark_stone_texture) - crenellations (kangare), soffits, trims
  */
 class GeometryBuilder {
   positions: number[] = [];
   normals: number[] = [];
   uvs: number[] = [];
-  indices: number[] = [];
+  groupIndices: number[][] = [[], [], []];
+  private currentGroup = 0;
   private vertCount = 0;
+
+  setGroup(groupIndex: number) {
+    this.currentGroup = groupIndex;
+    while (this.groupIndices.length <= groupIndex) {
+      this.groupIndices.push([]);
+    }
+  }
 
   addVertex(x: number, y: number, z: number, nx: number, ny: number, nz: number, u: number, v: number): number {
     this.positions.push(x, y, z);
@@ -229,7 +246,7 @@ class GeometryBuilder {
     const i0 = this.addVertex(p0[0], p0[1], p0[2], norm[0], norm[1], norm[2], uv0[0], uv0[1]);
     const i1 = this.addVertex(p1[0], p1[1], p1[2], norm[0], norm[1], norm[2], uv1[0], uv1[1]);
     const i2 = this.addVertex(p2[0], p2[1], p2[2], norm[0], norm[1], norm[2], uv2[0], uv2[1]);
-    this.indices.push(i0, i1, i2);
+    this.groupIndices[this.currentGroup].push(i0, i1, i2);
   }
 
   addQuad(
@@ -248,8 +265,12 @@ class GeometryBuilder {
     const i2 = this.addVertex(p2[0], p2[1], p2[2], norm[0], norm[1], norm[2], uv2[0], uv2[1]);
     const i3 = this.addVertex(p3[0], p3[1], p3[2], norm[0], norm[1], norm[2], uv3[0], uv3[1]);
 
-    this.indices.push(i0, i1, i2);
-    this.indices.push(i0, i2, i3);
+    this.groupIndices[this.currentGroup].push(i0, i1, i2);
+    this.groupIndices[this.currentGroup].push(i0, i2, i3);
+  }
+
+  addTriangleIndices(i0: number, i1: number, i2: number) {
+    this.groupIndices[this.currentGroup].push(i0, i1, i2);
   }
 
   build(): THREE.BufferGeometry {
@@ -257,7 +278,17 @@ class GeometryBuilder {
     geo.setAttribute('position', new THREE.Float32BufferAttribute(this.positions, 3));
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(this.normals, 3));
     geo.setAttribute('uv', new THREE.Float32BufferAttribute(this.uvs, 2));
-    geo.setIndex(this.indices);
+
+    const flatIndices: number[] = [];
+    for (let g = 0; g < this.groupIndices.length; g++) {
+      const gList = this.groupIndices[g];
+      if (gList.length > 0) {
+        const start = flatIndices.length;
+        flatIndices.push(...gList);
+        geo.addGroup(start, gList.length, g);
+      }
+    }
+    geo.setIndex(flatIndices);
     geo.computeBoundingBox();
     geo.computeBoundingSphere();
     return geo;
@@ -269,7 +300,9 @@ class GeometryBuilder {
  * Integrates:
  * - 10x Miniature diorama scale (wall height 20mm to 100mm)
  * - Grounding foundation embedding (12mm)
- * - Authentic Murud-Janjira arched/pointed kangare along ramparts & bastion tops
+ * - Multi-material texturing: Wall masonry (Group 0), Gravel walkway/floors (Group 1), Dark stone kangare (Group 2)
+ * - Authentic outer-facing Murud-Janjira arched/pointed kangare along ramparts & bastion tops
+ * - Tower exclusion zones preventing kangare from clipping into bastions and flanking towers
  * - Watertight arched Maha Darwaza with solid flanking bastions and capped tops
  * - Multiplied miniature brick UV scale for crisp stone masonry
  */
@@ -277,7 +310,16 @@ export function generateWallBufferGeometry(
   wall: WallPath,
   buffer: Float32Array
 ): THREE.BufferGeometry {
-  const { points, isClosed, settings, gates = [], manualBastionIndices = [], grandBastionIndices = [] } = wall;
+  const {
+    points,
+    isClosed,
+    settings,
+    gates = [],
+    manualBastionIndices = [],
+    grandBastionIndices = [],
+    excludedBastionIndices = [],
+    customBastions = {},
+  } = wall;
   if (points.length < 2) {
     return new THREE.BufferGeometry();
   }
@@ -434,7 +476,8 @@ export function generateWallBufferGeometry(
     const vBotB = yBotB * effectiveUvScale;
     const vTopB = yTopB * effectiveUvScale;
 
-    // Face 1: Left Outer Wall Face (facing -N)
+    // Face 1: Left Outer Wall Face (facing -N) - GROUP 0: Stone Masonry
+    builder.setGroup(0);
     const normLeft: [number, number, number] = [-(nA.x + nB.x) * 0.5, 0, -(nA.z + nB.z) * 0.5];
     builder.addQuad(
       lbA, lbB, ltB, ltA,
@@ -442,7 +485,7 @@ export function generateWallBufferGeometry(
       [uA, vBotA], [uB, vBotB], [uB, vTopB], [uA, vTopA]
     );
 
-    // Face 2: Right Inner Wall Face (facing +N)
+    // Face 2: Right Inner Wall Face (facing +N) - GROUP 0: Stone Masonry
     const normRight: [number, number, number] = [(nA.x + nB.x) * 0.5, 0, (nA.z + nB.z) * 0.5];
     builder.addQuad(
       rbB, rbA, rtA, rtB,
@@ -450,15 +493,17 @@ export function generateWallBufferGeometry(
       [uB, vBotB], [uA, vBotA], [uA, vTopA], [uB, vTopB]
     );
 
-    // Face 3: Top Walkway Rampart (facing Up +Y)
+    // Face 3: Top Walkway Rampart (facing Up +Y) - GROUP 1: Gravel Walkway
+    builder.setGroup(1);
     builder.addQuad(
       ltA, ltB, rtB, rtA,
       [0, 1, 0],
-      [uA, 0], [uB, 0], [uB, settings.thickness * effectiveUvScale], [uA, settings.thickness * effectiveUvScale]
+      [uA * 1.5, 0], [uB * 1.5, 0], [uB * 1.5, settings.thickness * effectiveUvScale * 1.5], [uA * 1.5, settings.thickness * effectiveUvScale * 1.5]
     );
   }
 
-  // End Caps for open walls
+  // End Caps for open walls - GROUP 0: Stone Masonry
+  builder.setGroup(0);
   if (!isClosed && n >= 2) {
     const p0 = resampled[0];
     const n0 = lateralNormals[0];
@@ -509,6 +554,8 @@ export function generateWallBufferGeometry(
     kHeight: number,
     kThick: number
   ) => {
+    // Kangare are made of solid dark stone (GROUP 2)
+    builder.setGroup(2);
     const hShoulder = kHeight * 0.62;
     const hPeak = kHeight;
 
@@ -554,6 +601,63 @@ export function generateWallBufferGeometry(
     builder.addQuad(v3, v2, iv2, iv3, [0.5, 0.8, 0], [0, 0], [0.5, 0], [0.5, 0.3], [0, 0.3]);
   };
 
+  // 6. Round Bastions (Buruj & Maha Buruj)
+  const bastionIndices = detectBastionLocations(
+    points,
+    isClosed,
+    settings.autoBastions,
+    manualBastionIndices,
+    excludedBastionIndices
+  );
+
+  const baseBastionRadius = Math.max(0.08, Math.min(0.60, settings.bastionRadius || 0.25));
+  const radialSegments = 16;
+  const baseCrenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight || 0.08));
+
+  // Compute 2D polygon centroid for closed circuits to orient outer battlements outward
+  let centroidX = 0;
+  let centroidZ = 0;
+  if (points.length > 0) {
+    for (const p of points) {
+      centroidX += p.x;
+      centroidZ += p.z;
+    }
+    centroidX /= points.length;
+    centroidZ /= points.length;
+  }
+
+  // Collect tower exclusion zones so wall kangare never cut or pierce into towers
+  interface TowerExclusionZone {
+    x: number;
+    z: number;
+    radius: number;
+  }
+  const towerExclusions: TowerExclusionZone[] = [];
+
+  for (const bIdx of bastionIndices) {
+    const pt = points[bIdx];
+    if (!pt) continue;
+    const custom = customBastions[bIdx];
+    const isGrand = grandBastionIndices.includes(bIdx) || custom?.isGrand;
+    const customR = custom?.radius;
+    const bRadius = customR ?? (isGrand ? baseBastionRadius * 1.5 : baseBastionRadius);
+    towerExclusions.push({ x: pt.x, z: pt.z, radius: bRadius });
+  }
+
+  for (const ag of activeGates) {
+    if (ag.gate.hasGatehouse !== false) {
+      const ghRadius = Math.max(0.12, Math.min(0.40, settings.thickness * 1.35));
+      const flankOffsets = [-ag.halfWidth - ghRadius * 0.8, ag.halfWidth + ghRadius * 0.8];
+      for (const off of flankOffsets) {
+        towerExclusions.push({
+          x: ag.centerX + ag.tangent.x * off,
+          z: ag.centerZ + ag.tangent.z * off,
+          radius: ghRadius,
+        });
+      }
+    }
+  }
+
   // Add Murud-Janjira Kangare along Ramparts
   if (settings.crenellations) {
     const crenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight));
@@ -597,45 +701,77 @@ export function generateWallBufferGeometry(
         const mBx = pA.x + (pB.x - pA.x) * tEnd;
         const mBz = pA.z + (pB.z - pA.z) * tEnd;
 
+        const mMidX = (mAx + mBx) * 0.5;
+        const mMidZ = (mAz + mBz) * 0.5;
+
+        // Skip if kangara is inside or approaching any bastion or flanking tower
+        let insideTower = false;
+        for (const zone of towerExclusions) {
+          if (Math.hypot(mMidX - zone.x, mMidZ - zone.z) < zone.radius + 0.035) {
+            insideTower = true;
+            break;
+          }
+        }
+        if (insideTower) continue;
+
         const mNormX = nA.x + (nB.x - nA.x) * tStart;
         const mNormZ = nA.z + (nB.z - nA.z) * tStart;
         const normLen = Math.hypot(mNormX, mNormZ) || 1;
         const unitNorm: [number, number, number] = [mNormX / normLen, 0, mNormZ / normLen];
 
-        const cL: [number, number, number] = [mAx - unitNorm[0] * halfThick, mAy, mAz - unitNorm[2] * halfThick];
-        const cR: [number, number, number] = [mBx - unitNorm[0] * halfThick, mAy, mBz - unitNorm[2] * halfThick];
+        // Determine authentic outer-facing direction
+        let outwardDir = 1;
+        if (isClosed && points.length >= 3) {
+          const fromCenterX = mMidX - centroidX;
+          const fromCenterZ = mMidZ - centroidZ;
+          const dot = unitNorm[0] * fromCenterX + unitNorm[2] * fromCenterZ;
+          outwardDir = dot >= 0 ? 1 : -1;
+        } else {
+          // Open wall: outer face is towards downhill slope / lower terrain elevation
+          const hPlus = sampleBilinearHeight(buffer, mMidX + unitNorm[0] * 0.25, mMidZ + unitNorm[2] * 0.25);
+          const hMinus = sampleBilinearHeight(buffer, mMidX - unitNorm[0] * 0.25, mMidZ - unitNorm[2] * 0.25);
+          outwardDir = hPlus <= hMinus ? 1 : -1;
+        }
 
-        addPointedKangara(cL, cR, unitNorm, mAy, crenH, crenThick);
+        if (settings.flipCrenellations) {
+          outwardDir = -outwardDir;
+        }
+
+        // Outer base coordinates placed along the outer rim of the wall
+        const outOffX = unitNorm[0] * outwardDir * halfThick;
+        const outOffZ = unitNorm[2] * outwardDir * halfThick;
+
+        const cL: [number, number, number] = [mAx + outOffX, mAy, mAz + outOffZ];
+        const cR: [number, number, number] = [mBx + outOffX, mAy, mBz + outOffZ];
+
+        // Inward offset direction extends kangara thickness inward onto wall
+        const inNorm: [number, number, number] = [-unitNorm[0] * outwardDir, 0, -unitNorm[2] * outwardDir];
+
+        addPointedKangara(cL, cR, inNorm, mAy, crenH, crenThick);
       }
     }
   }
 
-  // 6. Round Bastions (Buruj & Maha Buruj) with Solid Top Floors and Crowning Kangare Rings
-  const bastionIndices = detectBastionLocations(
-    points,
-    isClosed,
-    settings.autoBastions,
-    manualBastionIndices
-  );
-
-  const baseBastionRadius = Math.max(0.08, Math.min(0.60, settings.bastionRadius || 0.25));
-  const radialSegments = 16;
-  const baseCrenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight || 0.08));
-
+  // 6. Round Bastions (Buruj & Maha Buruj)
   for (const bIdx of bastionIndices) {
     const pt = points[bIdx];
     if (!pt) continue;
 
-    const isGrand = grandBastionIndices.includes(bIdx);
-    const bastionRadius = isGrand ? baseBastionRadius * 1.5 : baseBastionRadius;
-    const towerH = isGrand ? wallH * 1.25 : wallH + 0.015;
+    const custom = customBastions[bIdx];
+    const isGrand = grandBastionIndices.includes(bIdx) || custom?.isGrand;
+    const customR = custom?.radius;
+    const customHOffset = custom?.heightOffset || 0;
+
+    const bastionRadius = customR ?? (isGrand ? baseBastionRadius * 1.5 : baseBastionRadius);
+    const towerH = (isGrand ? wallH * 1.25 : wallH + 0.015) + customHOffset;
     const crenH = isGrand ? baseCrenH * 1.25 : baseCrenH;
 
     const groundY = sampleBilinearHeight(buffer, pt.x, pt.z);
     const bBotY = groundY - embedDepth;
     const bTopY = groundY + towerH; // Stands proud of wall
 
-    // Cylinder side quads
+    // Cylinder side quads - GROUP 0: Stone Masonry
+    builder.setGroup(0);
     for (let r = 0; r < radialSegments; r++) {
       const a0 = (r / radialSegments) * Math.PI * 2;
       const a1 = ((r + 1) / radialSegments) * Math.PI * 2;
@@ -668,7 +804,8 @@ export function generateWallBufferGeometry(
       );
     }
 
-    // SOLID BASTION TOP FLOOR DISC (Watertight top)
+    // SOLID BASTION TOP FLOOR DISC (Watertight top) - GROUP 1: Gravel Floor
+    builder.setGroup(1);
     const centerTopIdx = builder.addVertex(pt.x, bTopY, pt.z, 0, 1, 0, 0.5, 0.5);
     for (let r = 0; r < radialSegments; r++) {
       const a0 = (r / radialSegments) * Math.PI * 2;
@@ -680,10 +817,10 @@ export function generateWallBufferGeometry(
 
       const i0 = builder.addVertex(x0, bTopY, z0, 0, 1, 0, 0.5 + Math.cos(a0) * 0.5, 0.5 + Math.sin(a0) * 0.5);
       const i1 = builder.addVertex(x1, bTopY, z1, 0, 1, 0, 0.5 + Math.cos(a1) * 0.5, 0.5 + Math.sin(a1) * 0.5);
-      builder.indices.push(centerTopIdx, i0, i1);
+      builder.addTriangleIndices(centerTopIdx, i0, i1);
     }
 
-    // MURUD-JANJIRA CROWNING KANGARE RING AROUND BASTION RIM
+    // MURUD-JANJIRA CROWNING KANGARE RING AROUND BASTION RIM - GROUP 2 (inside addPointedKangara)
     if (settings.crenellations) {
       const numBastionKangare = isGrand ? 14 : 10;
       const bKThick = bastionRadius * 0.22;
@@ -731,7 +868,8 @@ export function generateWallBufferGeometry(
     const jRightX = centerX + tangent.x * halfWidth;
     const jRightZ = centerZ + tangent.z * halfWidth;
 
-    // A. SOLID LEFT JAMB FACE (Facing +T into portal)
+    // A. SOLID LEFT JAMB FACE - GROUP 0: Stone Masonry
+    builder.setGroup(0);
     builder.addQuad(
       [jLeftX - normal.x * halfThick, archBotY, jLeftZ - normal.z * halfThick],
       [jLeftX + normal.x * halfThick, archBotY, jLeftZ + normal.z * halfThick],
@@ -742,7 +880,7 @@ export function generateWallBufferGeometry(
       [settings.thickness * effectiveUvScale, hArch * effectiveUvScale], [0, hArch * effectiveUvScale]
     );
 
-    // B. SOLID RIGHT JAMB FACE (Facing -T into portal)
+    // B. SOLID RIGHT JAMB FACE - GROUP 0: Stone Masonry
     builder.addQuad(
       [jRightX + normal.x * halfThick, archBotY, jRightZ + normal.z * halfThick],
       [jRightX - normal.x * halfThick, archBotY, jRightZ - normal.z * halfThick],
@@ -753,7 +891,8 @@ export function generateWallBufferGeometry(
       [settings.thickness * effectiveUvScale, hArch * effectiveUvScale], [0, hArch * effectiveUvScale]
     );
 
-    // C. ARCH SOFFIT / CEILING (Downward facing ceiling at archTopY)
+    // C. ARCH SOFFIT / CEILING - GROUP 2: Dark Stone Ceiling
+    builder.setGroup(2);
     builder.addQuad(
       [jLeftX - normal.x * halfThick, archTopY, jLeftZ - normal.z * halfThick],
       [jLeftX + normal.x * halfThick, archTopY, jLeftZ + normal.z * halfThick],
@@ -764,7 +903,8 @@ export function generateWallBufferGeometry(
       [settings.thickness * effectiveUvScale, gWidth * effectiveUvScale], [0, gWidth * effectiveUvScale]
     );
 
-    // D. LINTEL FRONT FACE (Spans from archTopY to lintelTopY)
+    // D. LINTEL FRONT FACE - GROUP 0: Stone Masonry
+    builder.setGroup(0);
     builder.addQuad(
       [jLeftX - normal.x * halfThick, archTopY, jLeftZ - normal.z * halfThick],
       [jRightX - normal.x * halfThick, archTopY, jRightZ - normal.z * halfThick],
@@ -775,7 +915,7 @@ export function generateWallBufferGeometry(
       [gWidth * effectiveUvScale, lintelTopY * effectiveUvScale], [0, lintelTopY * effectiveUvScale]
     );
 
-    // E. LINTEL BACK FACE (Spans from archTopY to lintelTopY)
+    // E. LINTEL BACK FACE - GROUP 0: Stone Masonry
     builder.addQuad(
       [jRightX + normal.x * halfThick, archTopY, jRightZ + normal.z * halfThick],
       [jLeftX + normal.x * halfThick, archTopY, jLeftZ + normal.z * halfThick],
@@ -786,22 +926,45 @@ export function generateWallBufferGeometry(
       [gWidth * effectiveUvScale, lintelTopY * effectiveUvScale], [0, lintelTopY * effectiveUvScale]
     );
 
-    // F. LINTEL TOP WALKWAY (Continuous rampart walk at lintelTopY)
+    // F. LINTEL TOP WALKWAY - GROUP 1: Gravel Walkway
+    builder.setGroup(1);
     builder.addQuad(
       [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick],
       [jRightX - normal.x * halfThick, lintelTopY, jRightZ - normal.z * halfThick],
       [jRightX + normal.x * halfThick, lintelTopY, jRightZ + normal.z * halfThick],
       [jLeftX + normal.x * halfThick, lintelTopY, jLeftZ + normal.z * halfThick],
       [0, 1, 0],
-      [0, 0], [gWidth * effectiveUvScale, 0],
-      [gWidth * effectiveUvScale, settings.thickness * effectiveUvScale], [0, settings.thickness * effectiveUvScale]
+      [0, 0], [gWidth * effectiveUvScale * 1.5, 0],
+      [gWidth * effectiveUvScale * 1.5, settings.thickness * effectiveUvScale * 1.5], [0, settings.thickness * effectiveUvScale * 1.5]
     );
 
-    // Crenellations over the gateway lintel
+    // Crenellations over the gateway lintel (outer facing)
     if (settings.crenellations) {
-      const cL: [number, number, number] = [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick];
-      const cR: [number, number, number] = [jRightX - normal.x * halfThick, lintelTopY, jRightZ - normal.z * halfThick];
-      addPointedKangara(cL, cR, [normal.x, 0, normal.z], lintelTopY, gateCrenH, halfThick * 0.65);
+      let gOutwardDir = 1;
+      if (isClosed && points.length >= 3) {
+        const fromCenterX = ag.centerX - centroidX;
+        const fromCenterZ = ag.centerZ - centroidZ;
+        const dot = ag.normal.x * fromCenterX + ag.normal.z * fromCenterZ;
+        gOutwardDir = dot >= 0 ? 1 : -1;
+      }
+      if (settings.flipCrenellations) {
+        gOutwardDir = -gOutwardDir;
+      }
+
+      const outNormX = ag.normal.x * gOutwardDir;
+      const outNormZ = ag.normal.z * gOutwardDir;
+
+      const cL: [number, number, number] = [
+        jLeftX + outNormX * halfThick,
+        lintelTopY,
+        jLeftZ + outNormZ * halfThick,
+      ];
+      const cR: [number, number, number] = [
+        jRightX + outNormX * halfThick,
+        lintelTopY,
+        jRightZ + outNormZ * halfThick,
+      ];
+      addPointedKangara(cL, cR, [-outNormX, 0, -outNormZ], lintelTopY, gateCrenH, halfThick * 0.65);
     }
 
     // G. FLANKING GATEHOUSE BASTIONS (with solid top floor & crowning kangare)
@@ -816,7 +979,8 @@ export function generateWallBufferGeometry(
         const ghGroundY = sampleBilinearHeight(buffer, ghX, ghZ);
         const ghBotY = ghGroundY - embedDepth;
 
-        // Side cylinder quads (12 segments)
+        // Side cylinder quads (12 segments) - GROUP 0: Stone Masonry
+        builder.setGroup(0);
         for (let r = 0; r < 12; r++) {
           const a0 = (r / 12) * Math.PI * 2;
           const a1 = ((r + 1) / 12) * Math.PI * 2;
@@ -838,7 +1002,8 @@ export function generateWallBufferGeometry(
           );
         }
 
-        // SOLID TOP FLOOR DISC FOR FLANKING TOWERS (Solves missing tower top)
+        // SOLID TOP FLOOR DISC FOR FLANKING TOWERS - GROUP 1: Gravel Floor
+        builder.setGroup(1);
         const ghCenterTop = builder.addVertex(ghX, ghTopY, ghZ, 0, 1, 0, 0.5, 0.5);
         for (let r = 0; r < 12; r++) {
           const a0 = (r / 12) * Math.PI * 2;
@@ -850,10 +1015,10 @@ export function generateWallBufferGeometry(
 
           const i0 = builder.addVertex(x0, ghTopY, z0, 0, 1, 0, 0.5 + Math.cos(a0) * 0.5, 0.5 + Math.sin(a0) * 0.5);
           const i1 = builder.addVertex(x1, ghTopY, z1, 0, 1, 0, 0.5 + Math.cos(a1) * 0.5, 0.5 + Math.sin(a1) * 0.5);
-          builder.indices.push(ghCenterTop, i0, i1);
+          builder.addTriangleIndices(ghCenterTop, i0, i1);
         }
 
-        // CROWNING KANGARE FOR FLANKING GATEHOUSE TOWERS
+        // CROWNING KANGARE FOR FLANKING GATEHOUSE TOWERS - GROUP 2 (inside addPointedKangara)
         if (settings.crenellations) {
           const numGHKangare = 8;
           const ghKThick = ghRadius * 0.25;
@@ -925,9 +1090,12 @@ export function generateCitadelKeepGeometry(
     halfX: number,
     halfZ: number,
     y0: number,
-    y1: number
+    y1: number,
+    sideGroup = 0,
+    topGroup = 0
   ) => {
     // 4 vertical side faces
+    builder.setGroup(sideGroup);
     // Front (-Z)
     builder.addQuad(
       [cx - halfX, y0, cz - halfZ],
@@ -969,6 +1137,7 @@ export function generateCitadelKeepGeometry(
       [halfZ * 2 * effectiveUvScale, y1 * effectiveUvScale], [0, y1 * effectiveUvScale]
     );
     // Top (+Y)
+    builder.setGroup(topGroup);
     builder.addQuad(
       [cx - halfX, y1, cz - halfZ],
       [cx - halfX, y1, cz + halfZ],
@@ -980,16 +1149,16 @@ export function generateCitadelKeepGeometry(
     );
   };
 
-  // 1. Plinth Box
-  addBox(keep.x, keep.z, plinthHalfW, plinthHalfW, baseY, plinthTopY);
+  // 1. Plinth Box (GROUP 0: Masonry)
+  addBox(keep.x, keep.z, plinthHalfW, plinthHalfW, baseY, plinthTopY, 0, 0);
 
-  // 2. Main Keep Tower Box
-  addBox(keep.x, keep.z, towerHalfW, towerHalfW, plinthTopY, towerTopY);
+  // 2. Main Keep Tower Box (GROUP 0: Masonry)
+  addBox(keep.x, keep.z, towerHalfW, towerHalfW, plinthTopY, towerTopY, 0, 0);
 
-  // 3. Overhanging Corbelled Walkway
-  addBox(keep.x, keep.z, walkwayHalfW, walkwayHalfW, towerTopY, walkwayTopY);
+  // 3. Overhanging Corbelled Walkway (Sides: Group 0, Top Floor: Group 1 Gravel)
+  addBox(keep.x, keep.z, walkwayHalfW, walkwayHalfW, towerTopY, walkwayTopY, 0, 1);
 
-  // 4. Kangare along Walkway Edge
+  // 4. Kangare along Walkway Edge (GROUP 2: Dark Stone)
   const kHeight = 0.045 * scale;
   const kWidth = 0.05 * scale;
   const kThick = 0.02 * scale;
@@ -1000,6 +1169,7 @@ export function generateCitadelKeepGeometry(
     vR: [number, number, number],
     norm: [number, number, number]
   ) => {
+    builder.setGroup(2);
     const hShoulder = kHeight * 0.6;
     const hPeak = kHeight;
     const midX = (vL[0] + vR[0]) * 0.5;
@@ -1046,7 +1216,7 @@ export function generateCitadelKeepGeometry(
   const pavRoofBaseY = pavBaseY + pillarH;
   const pavApexY = pavRoofBaseY + roofH;
 
-  // 4 Pillars
+  // 4 Pillars (GROUP 0: Masonry)
   const offsets = [
     [-pavHalfW, -pavHalfW],
     [pavHalfW, -pavHalfW],
@@ -1054,10 +1224,11 @@ export function generateCitadelKeepGeometry(
     [-pavHalfW, pavHalfW],
   ];
   for (const [ox, oz] of offsets) {
-    addBox(keep.x + ox, keep.z + oz, pillarHalfW, pillarHalfW, pavBaseY, pavRoofBaseY);
+    addBox(keep.x + ox, keep.z + oz, pillarHalfW, pillarHalfW, pavBaseY, pavRoofBaseY, 0, 0);
   }
 
-  // Pyramidal Pavilion Roof
+  // Pyramidal Pavilion Roof (GROUP 2: Dark Stone)
+  builder.setGroup(2);
   const apex: [number, number, number] = [keep.x, pavApexY, keep.z];
   const rV0: [number, number, number] = [keep.x - pavHalfW * 1.3, pavRoofBaseY, keep.z - pavHalfW * 1.3];
   const rV1: [number, number, number] = [keep.x + pavHalfW * 1.3, pavRoofBaseY, keep.z - pavHalfW * 1.3];
@@ -1074,7 +1245,7 @@ export function generateCitadelKeepGeometry(
   const poleBaseY = pavApexY;
   const poleTopY = poleBaseY + 0.16 * scale;
   const poleRadius = 0.005 * scale;
-  addBox(keep.x, keep.z, poleRadius, poleRadius, poleBaseY, poleTopY);
+  addBox(keep.x, keep.z, poleRadius, poleRadius, poleBaseY, poleTopY, 2, 2);
 
   // Saffron flag pennant (swallowtail double-triangle Maratha Bhagwa Zenda)
   const flagW = 0.08 * scale;

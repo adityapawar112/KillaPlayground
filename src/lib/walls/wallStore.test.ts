@@ -178,5 +178,61 @@ describe('Wall Store & State Integration', () => {
     terrainStore.redo();
     expect(useEditorStore.getState().citadelKeeps.length).toBe(1);
   });
+
+  it('customizes bastion radius, height, and deletes bastions and gates cleanly', () => {
+    const store = useEditorStore.getState();
+    store.addWallDraftPoint({ x: 0, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 2, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 2, y: 0, z: 2 });
+    const wallId = store.finishCurrentWall(false)!;
+
+    // Select bastion at node 1
+    store.setSelectedComponent({ type: 'bastion', idOrIndex: 1, wallId });
+    expect(useEditorStore.getState().selectedComponent).toEqual({
+      type: 'bastion',
+      idOrIndex: 1,
+      wallId,
+    });
+
+    // Update bastion properties (radius 35cm, height offset +12cm, Maha Buruj true)
+    store.updateBastionProperties(wallId, 1, {
+      radius: 0.35,
+      heightOffset: 0.12,
+      isGrand: true,
+    });
+
+    let wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.customBastions?.[1]?.radius).toBe(0.35);
+    expect(wall?.customBastions?.[1]?.heightOffset).toBe(0.12);
+    expect(wall?.grandBastionIndices).toContain(1);
+
+    // Delete bastion at node 1
+    store.removeBastionFromNode(wallId, 1);
+    wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.excludedBastionIndices).toContain(1);
+    expect(wall?.customBastions?.[1]).toBeUndefined();
+    expect(wall?.grandBastionIndices).not.toContain(1);
+    // Selection should be cleared when deleted
+    expect(useEditorStore.getState().selectedComponent).toBeNull();
+
+    // Add and delete gate
+    store.addGateToWall(wallId, 0, 0.5);
+    wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    const gateId = wall!.gates[0].id;
+    store.setSelectedComponent({ type: 'gate', idOrIndex: gateId, wallId });
+
+    // Update gate properties
+    store.updateGateProperties(wallId, gateId, { width: 0.55, height: 0.38, hasGatehouse: false });
+    wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.gates[0].width).toBe(0.55);
+    expect(wall?.gates[0].height).toBe(0.38);
+    expect(wall?.gates[0].hasGatehouse).toBe(false);
+
+    // Delete gate
+    store.removeGateFromWall(wallId, gateId);
+    wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.gates.length).toBe(0);
+    expect(useEditorStore.getState().selectedComponent).toBeNull();
+  });
 });
 

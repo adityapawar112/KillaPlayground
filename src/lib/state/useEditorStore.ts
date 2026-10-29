@@ -160,6 +160,8 @@ interface EditorState {
   clearAllWalls: () => void;
   toggleBastionOnNode: (wallId: string, nodeIndex: number) => void;
   toggleGrandBastionOnNode: (wallId: string, nodeIndex: number) => void;
+  updateBastionProperties: (wallId: string, nodeIndex: number, props: Partial<import('../walls/wallTypes').CustomBastionProps>) => void;
+  removeBastionFromNode: (wallId: string, nodeIndex: number) => void;
   addGateToWall: (wallId: string, segmentIndex: number, t?: number) => void;
   updateGateProperties: (wallId: string, gateId: string, props: Partial<WallGate>) => void;
   removeGateFromWall: (wallId: string, gateId: string) => void;
@@ -465,12 +467,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       walls: state.walls.map((w) => {
         if (w.id !== wallId) return w;
         const current = new Set(w.manualBastionIndices || []);
+        const excluded = new Set(w.excludedBastionIndices || []);
         if (current.has(nodeIndex)) {
           current.delete(nodeIndex);
         } else {
           current.add(nodeIndex);
+          excluded.delete(nodeIndex); // Un-exclude if user explicitly toggles bastion back on
         }
-        return { ...w, manualBastionIndices: Array.from(current).sort((a, b) => a - b) };
+        return {
+          ...w,
+          manualBastionIndices: Array.from(current).sort((a, b) => a - b),
+          excludedBastionIndices: Array.from(excluded).sort((a, b) => a - b),
+        };
       }),
     }));
   },
@@ -483,18 +491,77 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (w.id !== wallId) return w;
         const currentGrand = new Set(w.grandBastionIndices || []);
         const currentManual = new Set(w.manualBastionIndices || []);
+        const excluded = new Set(w.excludedBastionIndices || []);
         if (currentGrand.has(nodeIndex)) {
           currentGrand.delete(nodeIndex);
         } else {
           currentGrand.add(nodeIndex);
           currentManual.add(nodeIndex); // Grand bastion is also a bastion
+          excluded.delete(nodeIndex);
         }
         return {
           ...w,
           grandBastionIndices: Array.from(currentGrand).sort((a, b) => a - b),
           manualBastionIndices: Array.from(currentManual).sort((a, b) => a - b),
+          excludedBastionIndices: Array.from(excluded).sort((a, b) => a - b),
         };
       }),
+    }));
+  },
+  updateBastionProperties: (wallId, nodeIndex, props) => {
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        const current = w.customBastions || {};
+        const updated = {
+          ...current,
+          [nodeIndex]: { ...(current[nodeIndex] || {}), ...props },
+        };
+        let grandBastions = w.grandBastionIndices || [];
+        let manualBastions = w.manualBastionIndices || [];
+        if (props.isGrand !== undefined) {
+          if (props.isGrand) {
+            grandBastions = Array.from(new Set([...grandBastions, nodeIndex])).sort((a, b) => a - b);
+            manualBastions = Array.from(new Set([...manualBastions, nodeIndex])).sort((a, b) => a - b);
+          } else {
+            grandBastions = grandBastions.filter((idx) => idx !== nodeIndex);
+          }
+        }
+        return {
+          ...w,
+          customBastions: updated,
+          grandBastionIndices: grandBastions,
+          manualBastionIndices: manualBastions,
+        };
+      }),
+    }));
+  },
+  removeBastionFromNode: (wallId, nodeIndex) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        const manual = (w.manualBastionIndices || []).filter((idx) => idx !== nodeIndex);
+        const grand = (w.grandBastionIndices || []).filter((idx) => idx !== nodeIndex);
+        const excluded = Array.from(new Set([...(w.excludedBastionIndices || []), nodeIndex])).sort((a, b) => a - b);
+        const custom = { ...(w.customBastions || {}) };
+        delete custom[nodeIndex];
+        return {
+          ...w,
+          manualBastionIndices: manual,
+          grandBastionIndices: grand,
+          excludedBastionIndices: excluded,
+          customBastions: custom,
+        };
+      }),
+      selectedComponent:
+        state.selectedComponent?.type === 'bastion' &&
+        state.selectedComponent.idOrIndex === nodeIndex &&
+        state.selectedComponent.wallId === wallId
+          ? null
+          : state.selectedComponent,
     }));
   },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {

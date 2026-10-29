@@ -101,6 +101,18 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       const bastions = detectBastionLocations(points, false, false, [1]);
       expect(bastions).toContain(1);
     });
+
+    it('suppresses bastions when included in excludedIndices', () => {
+      const points = [
+        { x: 0, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+        { x: 4, y: 0, z: 0 },
+      ];
+      // Node 0 is normally a terminal bastion on open wall, but excluded
+      const bastions = detectBastionLocations(points, false, true, [], [0]);
+      expect(bastions).not.toContain(0);
+      expect(bastions).toContain(2);
+    });
   });
 
   describe('resampleWallPointsAlongTerrain', () => {
@@ -313,6 +325,35 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       }
       expect(foundUpwardNormal).toBe(true);
 
+      // Verify multi-material geometry groups exist (Group 0: wall masonry, Group 1: gravel floor, Group 2: dark stone)
+      expect(geo.groups.length).toBeGreaterThanOrEqual(2);
+      const groupMatIndices = geo.groups.map((g) => g.materialIndex);
+      expect(groupMatIndices).toContain(0);
+      expect(groupMatIndices).toContain(1);
+
+      geo.dispose();
+    });
+
+    it('respects custom bastion overrides for radius and heightOffset', () => {
+      const buffer = createStateBuffer(0.5, 0.0);
+      const wallWithCustomBastion: WallPath = {
+        id: 'wall_custom_bastion',
+        points: [
+          { x: 0, y: 0.5, z: 0 },
+          { x: 3, y: 0.5, z: 0 },
+        ],
+        isClosed: false,
+        gates: [],
+        settings: { ...DEFAULT_WALL_SETTINGS, crenellations: true },
+        customBastions: {
+          0: { radius: 0.45, heightOffset: 0.20 },
+        },
+        createdAt: Date.now(),
+      };
+
+      const geo = generateWallBufferGeometry(wallWithCustomBastion, buffer);
+      expect(geo.getAttribute('position').count).toBeGreaterThan(0);
+      expect(geo.groups.length).toBeGreaterThan(0);
       geo.dispose();
     });
 

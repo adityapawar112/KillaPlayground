@@ -37,7 +37,7 @@ import {
 import { useEditorStore, BrushSizeType, ToolType, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { PAINT_COLORS } from '@/lib/constants/tokens';
-import { calculateWallTotalLength } from '@/lib/walls/wallGeometry';
+import { calculateWallTotalLength, detectBastionLocations } from '@/lib/walls/wallGeometry';
 
 const STORAGE_WIDTH_KEY = 'killa_sidebar_width_v1';
 
@@ -97,6 +97,8 @@ export const LeftToolSidebar: React.FC = () => {
     setSelectedComponent,
     toggleGrandBastionOnNode,
     toggleBastionOnNode,
+    updateBastionProperties,
+    removeBastionFromNode,
     updateGateProperties,
     removeGateFromWall,
     startNewWallCircuit,
@@ -744,6 +746,26 @@ export const LeftToolSidebar: React.FC = () => {
                       {wallSettings.crenellations ? 'ON' : 'OFF'}
                     </span>
                   </button>
+
+                  {/* Flip Crenellations Side Button */}
+                  {wallSettings.crenellations && (
+                    <button
+                      onClick={() => setWallSettings({ flipCrenellations: !wallSettings.flipCrenellations })}
+                      className={`w-full py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer flex items-center justify-between ${
+                        wallSettings.flipCrenellations
+                          ? 'bg-[#FEF3C7] border-[#D97706] text-[#92400E] shadow-sm'
+                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-white'
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5">
+                        <span>🔁</span>
+                        <span>Flip Battlements (बाजू उलटा)</span>
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/10">
+                        {wallSettings.flipCrenellations ? 'Inverted' : 'Outer'}
+                      </span>
+                    </button>
+                  )}
                 </div>
 
                 {/* 2. Fortifications Stamp Shelf */}
@@ -815,6 +837,81 @@ export const LeftToolSidebar: React.FC = () => {
                   </div>
                 </div>
 
+                {/* 2b. Placed Fortifications Shelf (Click to inspect/edit) */}
+                {(() => {
+                  const currentWall = walls.find((w) => w.id === selectedWallId);
+                  if (!currentWall) return null;
+                  const bIndices = detectBastionLocations(
+                    currentWall.points,
+                    currentWall.isClosed,
+                    currentWall.settings.autoBastions,
+                    currentWall.manualBastionIndices,
+                    currentWall.excludedBastionIndices
+                  );
+                  const totalComponents = bIndices.length + (currentWall.gates?.length || 0);
+
+                  return (
+                    <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-1.5">
+                      <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                        <span>🏰 Placed Items ({totalComponents})</span>
+                        <span className="text-[10px] text-[#8D7666]">Click to inspect</span>
+                      </div>
+                      <div className="space-y-1 max-h-36 overflow-y-auto">
+                        {bIndices.map((bIdx) => {
+                          const isGrand = currentWall.grandBastionIndices?.includes(bIdx) || currentWall.customBastions?.[bIdx]?.isGrand;
+                          const isSelected = selectedComponent?.type === 'bastion' && selectedComponent.idOrIndex === bIdx;
+                          return (
+                            <button
+                              key={`shelf_b_${bIdx}`}
+                              onClick={() => {
+                                setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: currentWall.id });
+                              }}
+                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#3B82F6] text-white font-bold'
+                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <TbTower className="w-3.5 h-3.5 text-[#D97706]" />
+                                <span>{isGrand ? 'Maha Buruj' : 'Buruj'} #{bIdx + 1}</span>
+                              </span>
+                              <span className="text-[10px] opacity-80">Edit</span>
+                            </button>
+                          );
+                        })}
+                        {currentWall.gates?.map((g, gIdx) => {
+                          const isSelected = selectedComponent?.type === 'gate' && selectedComponent.idOrIndex === g.id;
+                          return (
+                            <button
+                              key={`shelf_g_${g.id}`}
+                              onClick={() => {
+                                setSelectedComponent({ type: 'gate', idOrIndex: g.id, wallId: currentWall.id });
+                              }}
+                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#10B981] text-white font-bold'
+                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <TbDoorEnter className="w-3.5 h-3.5 text-[#E85D04]" />
+                                <span>Maha Darwaza #{gIdx + 1}</span>
+                              </span>
+                              <span className="text-[10px] opacity-80">Edit</span>
+                            </button>
+                          );
+                        })}
+                        {totalComponents === 0 && (
+                          <div className="text-[10px] text-[#8D7666] italic py-1 text-center">
+                            No bastions or gates yet. Use stamps above to add them.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* 3. Contextual Component Inspector if selected */}
                 {selectedComponent && (
                   <div className="p-2.5 bg-[#EFF6FF] border border-[#3B82F6]/50 rounded-xl space-y-2">
@@ -834,6 +931,196 @@ export const LeftToolSidebar: React.FC = () => {
                       </button>
                     </div>
 
+                    {/* BASTION INSPECTOR */}
+                    {selectedComponent.type === 'bastion' && (
+                      <div className="space-y-2">
+                        {(() => {
+                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
+                          const bIdx = Number(selectedComponent.idOrIndex);
+                          if (!wall || bIdx === undefined) return null;
+                          const custom = wall.customBastions?.[bIdx];
+                          const isGrand = wall.grandBastionIndices?.includes(bIdx) || custom?.isGrand;
+                          const curRadius = custom?.radius ?? (isGrand ? (wall.settings.bastionRadius || 0.25) * 1.5 : (wall.settings.bastionRadius || 0.25));
+                          const curHOffset = custom?.heightOffset || 0;
+
+                          return (
+                            <div className="space-y-2">
+                              {/* Style Toggle */}
+                              <div className="grid grid-cols-2 gap-1 text-[10px]">
+                                <button
+                                  onClick={() => updateBastionProperties(wall.id, bIdx, { isGrand: false })}
+                                  className={`py-1 rounded border font-bold cursor-pointer transition-all ${
+                                    !isGrand ? 'bg-[#3B82F6] text-white border-[#2563EB]' : 'bg-white text-[#4B382C] border-[#D9C9B4]'
+                                  }`}
+                                >
+                                  Round Buruj
+                                </button>
+                                <button
+                                  onClick={() => updateBastionProperties(wall.id, bIdx, { isGrand: true })}
+                                  className={`py-1 rounded border font-bold cursor-pointer transition-all ${
+                                    isGrand ? 'bg-[#D97706] text-white border-[#B45309]' : 'bg-white text-[#4B382C] border-[#D9C9B4]'
+                                  }`}
+                                >
+                                  Maha Buruj (Grand)
+                                </button>
+                              </div>
+
+                              {/* Tower Radius Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Tower Radius:</span>
+                                  <span className="font-mono text-[#1E40AF]">{(curRadius * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.10"
+                                  max="0.60"
+                                  step="0.02"
+                                  value={curRadius}
+                                  onChange={(e) =>
+                                    updateBastionProperties(wall.id, bIdx, { radius: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Extra Height Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Extra Tower Height:</span>
+                                  <span className="font-mono text-[#1E40AF]">+{((curHOffset) * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.0"
+                                  max="0.30"
+                                  step="0.02"
+                                  value={curHOffset}
+                                  onChange={(e) =>
+                                    updateBastionProperties(wall.id, bIdx, { heightOffset: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Delete Bastion Button */}
+                              <button
+                                onClick={() => {
+                                  removeBastionFromNode(wall.id, bIdx);
+                                  showCursorToast(null, 'Bastion removed.');
+                                }}
+                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
+                              >
+                                <TbTrash className="w-3.5 h-3.5" />
+                                <span>Delete Bastion (बुरूज काढा)</span>
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* GATE INSPECTOR */}
+                    {selectedComponent.type === 'gate' && (
+                      <div className="space-y-2">
+                        {(() => {
+                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
+                          const gate = wall?.gates.find((g) => g.id === selectedComponent.idOrIndex);
+                          if (!wall || !gate) return null;
+                          return (
+                            <div className="space-y-2">
+                              {/* Gate Width Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Gate Width:</span>
+                                  <span className="font-mono text-[#1E40AF]">{(gate.width * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.20"
+                                  max="0.70"
+                                  step="0.05"
+                                  value={gate.width}
+                                  onChange={(e) =>
+                                    updateGateProperties(wall.id, gate.id, { width: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Arch Height Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Arch Opening Height:</span>
+                                  <span className="font-mono text-[#1E40AF]">{((gate.height || 0.28) * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.15"
+                                  max="0.50"
+                                  step="0.02"
+                                  value={gate.height || 0.28}
+                                  onChange={(e) =>
+                                    updateGateProperties(wall.id, gate.id, { height: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Flanking Towers Toggle */}
+                              <button
+                                onClick={() =>
+                                  updateGateProperties(wall.id, gate.id, {
+                                    hasGatehouse: !(gate.hasGatehouse !== false),
+                                  })
+                                }
+                                className={`w-full py-1.5 px-2 rounded-lg border text-[11px] font-semibold flex items-center justify-between transition-all cursor-pointer ${
+                                  gate.hasGatehouse !== false
+                                    ? 'bg-[#FEF3C7] border-[#D97706] text-[#92400E]'
+                                    : 'bg-white border-[#D9C9B4] text-[#4B382C]'
+                                }`}
+                              >
+                                <span>Flanking Towers (पहरेदार बुरूज)</span>
+                                <span className="font-bold">{gate.hasGatehouse !== false ? 'ON' : 'OFF'}</span>
+                              </button>
+
+                              {/* Position Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Segment Position:</span>
+                                  <span className="font-mono text-[#1E40AF]">{((gate.t || 0.5) * 100).toFixed(0)}%</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.15"
+                                  max="0.85"
+                                  step="0.05"
+                                  value={gate.t || 0.5}
+                                  onChange={(e) =>
+                                    updateGateProperties(wall.id, gate.id, { t: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Delete Gate Button */}
+                              <button
+                                onClick={() => {
+                                  removeGateFromWall(wall.id, gate.id);
+                                  showCursorToast(null, 'Gate removed.');
+                                }}
+                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
+                              >
+                                <TbTrash className="w-3.5 h-3.5" />
+                                <span>Delete Gate (दरवाजा काढा)</span>
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* CITADEL KEEP INSPECTOR */}
                     {selectedComponent.type === 'citadel' && (
                       <div className="space-y-1">
                         {(() => {
@@ -856,44 +1143,14 @@ export const LeftToolSidebar: React.FC = () => {
                                 className="w-full accent-[#1E40AF] cursor-pointer"
                               />
                               <button
-                                onClick={() => removeCitadelKeep(keep.id)}
-                                className="w-full py-1 bg-white text-[#DC2626] border border-[#FECACA] rounded text-[10px] font-bold hover:bg-[#FEE2E2] cursor-pointer"
+                                onClick={() => {
+                                  removeCitadelKeep(keep.id);
+                                  showCursorToast(null, 'Keep removed.');
+                                }}
+                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
                               >
-                                Delete Keep
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {selectedComponent.type === 'gate' && (
-                      <div className="space-y-1">
-                        {(() => {
-                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
-                          const gate = wall?.gates.find((g) => g.id === selectedComponent.idOrIndex);
-                          if (!wall || !gate) return null;
-                          return (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span>Gate Width: {(gate.width * 100).toFixed(0)}cm</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="0.20"
-                                max="0.60"
-                                step="0.05"
-                                value={gate.width}
-                                onChange={(e) =>
-                                  updateGateProperties(wall.id, gate.id, { width: parseFloat(e.target.value) })
-                                }
-                                className="w-full accent-[#1E40AF] cursor-pointer"
-                              />
-                              <button
-                                onClick={() => removeGateFromWall(wall.id, gate.id)}
-                                className="w-full py-1 bg-white text-[#DC2626] border border-[#FECACA] rounded text-[10px] font-bold hover:bg-[#FEE2E2] cursor-pointer"
-                              >
-                                Delete Gate
+                                <TbTrash className="w-3.5 h-3.5" />
+                                <span>Delete Keep</span>
                               </button>
                             </div>
                           );

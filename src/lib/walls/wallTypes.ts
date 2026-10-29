@@ -40,10 +40,32 @@ export interface WallPath {
   points: WallPoint[];
   isClosed: boolean;
   manualBastionIndices?: number[]; // indices of points with manual bastions
+  grandBastionIndices?: number[];  // indices of points with grand bastions (Maha Buruj)
   gates: WallGate[];
   settings: WallSettings;
   createdAt: number;
 }
 
 export type WallSubTool = 'draw' | 'select' | 'gate' | 'bastion';
+
+export type WallStepperStep = 'layout' | 'fortify' | 'solidified';
+
+export type FortStampType = 'buruj' | 'grand_buruj' | 'gate' | 'citadel' | null;
+
+export interface CitadelKeep {
+  id: string;
+  x: number;
+  y: number;
+  z: number;
+  scale: number;
+  rotationY: number;
+  height: number;
+  createdAt: number;
+}
+
+export interface SelectedComponentRef {
+  type: 'gate' | 'bastion' | 'citadel';
+  idOrIndex: string | number;
+  wallId?: string;
+}
 

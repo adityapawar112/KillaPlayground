@@ -13,6 +13,7 @@ import {
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
+import { calculateMagneticSnap } from '@/lib/walls/wallGeometry';
 
 /**
  * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
@@ -398,125 +399,104 @@ export const BaseTerrainContent: React.FC = () => {
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
 
-      // Handle Walls Tool Drawing & Insertion
+      // Handle Walls Tool Drawing & Stamping
       if (editor.activeTool === 'walls') {
         if (e.button !== 0 || e.altKey) return;
         e.stopPropagation();
 
-        if (editor.wallSubTool === 'select') {
-          // Find closest wall to select it into Vertex Mode
-          let closestDist = Infinity;
-          let targetWallId: string | null = null;
-          for (const wall of editor.walls) {
-            for (const pt of wall.points) {
-              const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
-              if (d < closestDist) {
-                closestDist = d;
-                targetWallId = wall.id;
-              }
+        // A. Magnetic Stamp placement
+        if (editor.activeStamp) {
+          const snap = calculateMagneticSnap(
+            editor.activeStamp,
+            e.point,
+            editor.walls,
+            editor.selectedWallId,
+            stateBuffer
+          );
+
+          if (editor.activeStamp === 'buruj') {
+            if (snap.snapped && snap.wallId && snap.nodeIndex !== undefined) {
+              editor.toggleBastionOnNode(snap.wallId, snap.nodeIndex);
+              editor.setActiveStamp(null);
+              editor.setToastMessage('Round bastion watchtower placed!');
+            } else {
+              editor.setToastMessage('Hover closer to a wall vertex (<45cm) to stamp bastion.');
             }
-          }
-          if (targetWallId && closestDist < 0.6) {
-            editor.setSelectedWallId(targetWallId);
-            editor.setToastMessage('Fort wall selected in Vertex Mode.');
-          } else {
-            editor.setSelectedWallId(null);
+          } else if (editor.activeStamp === 'grand_buruj') {
+            if (snap.snapped && snap.wallId && snap.nodeIndex !== undefined) {
+              editor.toggleGrandBastionOnNode(snap.wallId, snap.nodeIndex);
+              editor.setActiveStamp(null);
+              editor.setToastMessage('Maha Buruj (Grand Bastion) placed on corner vertex!');
+            } else {
+              editor.setToastMessage('Hover closer to a wall vertex (<45cm) to stamp grand bastion.');
+            }
+          } else if (editor.activeStamp === 'gate') {
+            if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
+              editor.addGateToWall(snap.wallId, snap.segmentIndex, snap.t);
+              editor.setActiveStamp(null);
+              editor.setToastMessage('Maha Darwaza arched gateway inserted!');
+            } else {
+              editor.setToastMessage('Hover closer to a fort wall segment (<60cm) to insert Maha Darwaza.');
+            }
+          } else if (editor.activeStamp === 'citadel') {
+            editor.addCitadelKeep({
+              x: snap.position[0],
+              y: snap.position[1],
+              z: snap.position[2],
+              scale: 1.0,
+              rotationY: 0,
+              height: 0.40,
+            });
+            editor.setActiveStamp(null);
+            editor.setToastMessage('Balekilla Citadel Keep placed on diorama!');
           }
           invalidate();
           return;
         }
 
-        if (editor.wallSubTool === 'gate') {
-          if (!editor.selectedWallId) {
-            editor.setToastMessage('Select a fort wall first in Vertex Mode to insert Maha Darwaza.');
-            return;
-          }
-          const wall = editor.walls.find((w) => w.id === editor.selectedWallId);
-          if (!wall) return;
-
-          let closestDist = Infinity;
-          let targetSegIdx = 0;
-          let targetT = 0.5;
-
-          const pts = wall.points;
-          const numSegs = wall.isClosed && pts.length >= 3 ? pts.length : pts.length - 1;
-          for (let i = 0; i < numSegs; i++) {
-            const pA = pts[i];
-            const pB = pts[(i + 1) % pts.length];
-            const segDx = pB.x - pA.x;
-            const segDz = pB.z - pA.z;
-            const segLenSq = segDx * segDx + segDz * segDz;
-            if (segLenSq < 1e-4) continue;
-            const t = Math.max(0.15, Math.min(0.85, ((e.point.x - pA.x) * segDx + (e.point.z - pA.z) * segDz) / segLenSq));
-            const projX = pA.x + segDx * t;
-            const projZ = pA.z + segDz * t;
-            const d = Math.hypot(e.point.x - projX, e.point.z - projZ);
-            if (d < closestDist) {
-              closestDist = d;
-              targetSegIdx = i;
-              targetT = t;
+        // B. Step 1 (Layout): Draw points / close loop
+        if (editor.wallStep === 'layout') {
+          const draft = editor.activeWallDraft;
+          if (draft.length >= 3) {
+            const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
+            if (dStart < 0.35) {
+              editor.proceedToFortify();
+              editor.setToastMessage('Fort perimeter wall closed into defensive circuit!');
+              invalidate();
+              return;
             }
           }
 
-          if (closestDist < 0.45) {
-            editor.addGateToWall(wall.id, targetSegIdx, targetT);
-            editor.setToastMessage('Maha Darwaza arched gateway inserted on selected wall!');
-            invalidate();
-          } else {
-            editor.setToastMessage('Click closer to a segment of the selected fort wall.');
+          if (controls) {
+            controls.enabled = false;
           }
+          isDrawingWallRef.current = true;
+          editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
+          lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          invalidate();
           return;
         }
 
-        if (editor.wallSubTool === 'bastion') {
-          if (!editor.selectedWallId) {
-            editor.setToastMessage('Select a fort wall first in Vertex Mode to toggle bastions.');
-            return;
-          }
-          const wall = editor.walls.find((w) => w.id === editor.selectedWallId);
-          if (!wall) return;
-
-          let closestDist = Infinity;
-          let targetNodeIdx = 0;
-
-          wall.points.forEach((pt, idx) => {
+        // C. Step 2 or 3: Select wall if clicked nearby
+        let closestDist = Infinity;
+        let targetWallId: string | null = null;
+        for (const wall of editor.walls) {
+          for (const pt of wall.points) {
             const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
             if (d < closestDist) {
               closestDist = d;
-              targetNodeIdx = idx;
+              targetWallId = wall.id;
             }
-          });
-
-          if (closestDist < 0.35) {
-            editor.toggleBastionOnNode(wall.id, targetNodeIdx);
-            editor.setToastMessage('Round bastion watchtower toggled on vertex!');
-            invalidate();
-          } else {
-            editor.setToastMessage('Click closer to a vertex of the selected fort wall.');
-          }
-          return;
-        }
-
-        // Standard 'draw' subtool:
-        // Check if user clicked near start node of current draft to close loop
-        const draft = editor.activeWallDraft;
-        if (draft.length >= 3) {
-          const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
-          if (dStart < 0.30) {
-            editor.finishCurrentWall(true);
-            editor.setToastMessage('Fort perimeter wall closed into defensive circuit!');
-            invalidate();
-            return;
           }
         }
-
-        if (controls) {
-          controls.enabled = false;
+        if (targetWallId && closestDist < 0.6) {
+          editor.setSelectedWallId(targetWallId);
+          if (editor.wallStep === 'solidified') {
+            editor.setWallStep('fortify');
+          }
+          editor.setToastMessage('Fort wall selected.');
+          invalidate();
         }
-        isDrawingWallRef.current = true;
-        editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
-        lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
-        invalidate();
         return;
       }
 
@@ -557,6 +537,25 @@ export const BaseTerrainContent: React.FC = () => {
 
       if (editor.activeTool === 'walls') {
         if (cursorVisible) setCursorVisible(false);
+
+        // Magnetic snap hologram tracking
+        if (editor.activeStamp) {
+          const snap = calculateMagneticSnap(
+            editor.activeStamp,
+            e.point,
+            editor.walls,
+            editor.selectedWallId,
+            stateBuffer
+          );
+          editor.setWallSnapPreview(snap);
+          invalidate();
+          return;
+        }
+
+        if (editor.wallSnapPreview) {
+          editor.setWallSnapPreview(null);
+        }
+
         if (isDrawingWallRef.current && lastWallPointRef.current) {
           e.stopPropagation();
           const dx = e.point.x - lastWallPointRef.current.x;
@@ -613,6 +612,10 @@ export const BaseTerrainContent: React.FC = () => {
   const handlePointerLeave = useCallback(() => {
     if (!isSculptingRef.current) {
       setCursorVisible(false);
+    }
+    const editor = useEditorStore.getState();
+    if (editor.wallSnapPreview) {
+      editor.setWallSnapPreview(null);
     }
   }, []);
 

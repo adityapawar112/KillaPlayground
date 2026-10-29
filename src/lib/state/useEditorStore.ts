@@ -8,7 +8,12 @@ import {
   DEFAULT_WALL_SETTINGS,
   WallGate,
   WallSubTool,
+  WallStepperStep,
+  FortStampType,
+  CitadelKeep,
+  SelectedComponentRef,
 } from '../walls/wallTypes';
+import { SnapResult } from '../walls/wallGeometry';
 
 export const SavedProjectSchema = z.object({
   id: z.string().optional(),
@@ -19,6 +24,7 @@ export const SavedProjectSchema = z.object({
   waterMode: z.string().optional().default('tarpaulin'),
   splines: z.array(z.any()).default([]),
   walls: z.array(z.any()).optional().default([]),
+  citadelKeeps: z.array(z.any()).optional().default([]),
   placedProps: z.array(z.any()).default([]),
   pondWaterFeatures: z.array(z.any()).optional().default([]),
   timestamp: z.number().optional(),
@@ -79,6 +85,7 @@ export interface SavedProject {
   data: {
     splines: SplinePath[];
     walls?: WallPath[];
+    citadelKeeps?: CitadelKeep[];
     placedProps: PlacedProp[];
     pondWaterFeatures?: PondWaterFeature[];
     fortTitle: string;
@@ -133,19 +140,37 @@ interface EditorState {
   wallSettings: WallSettings;
   wallSubTool: WallSubTool;
   selectedWallId: string | null;
+  wallStep: WallStepperStep;
+  activeStamp: FortStampType;
+  citadelKeeps: CitadelKeep[];
+  selectedComponent: SelectedComponentRef | null;
+  wallSnapPreview: SnapResult | null;
 
   setWallSettings: (settings: Partial<WallSettings>) => void;
   setWallSubTool: (subTool: WallSubTool) => void;
   setSelectedWallId: (id: string | null) => void;
+  setWallStep: (step: WallStepperStep) => void;
+  setActiveStamp: (stamp: FortStampType) => void;
+  setWallSnapPreview: (snap: SnapResult | null) => void;
+  setSelectedComponent: (comp: SelectedComponentRef | null) => void;
   addWallDraftPoint: (point: WallPoint) => void;
   finishCurrentWall: (isClosed?: boolean) => string | null;
   cancelCurrentWall: () => void;
   removeWall: (id: string) => void;
   clearAllWalls: () => void;
   toggleBastionOnNode: (wallId: string, nodeIndex: number) => void;
+  toggleGrandBastionOnNode: (wallId: string, nodeIndex: number) => void;
   addGateToWall: (wallId: string, segmentIndex: number, t?: number) => void;
+  updateGateProperties: (wallId: string, gateId: string, props: Partial<WallGate>) => void;
   removeGateFromWall: (wallId: string, gateId: string) => void;
+  addCitadelKeep: (keep: Omit<CitadelKeep, 'id' | 'createdAt'>) => string;
+  updateCitadelKeep: (id: string, updates: Partial<CitadelKeep>) => void;
+  removeCitadelKeep: (id: string) => void;
+  startNewWallCircuit: () => void;
+  proceedToFortify: () => string | null;
+  solidifyCurrentWall: () => void;
   setWalls: (walls: WallPath[]) => void;
+  setCitadelKeeps: (keeps: CitadelKeep[]) => void;
 
   // Spline Drawing State
   isDrawingSpline: boolean;
@@ -349,6 +374,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   wallSettings: { ...DEFAULT_WALL_SETTINGS },
   wallSubTool: 'draw',
   selectedWallId: null,
+  wallStep: 'layout',
+  activeStamp: null,
+  citadelKeeps: [],
+  selectedComponent: null,
+  wallSnapPreview: null,
 
   setWallSettings: (newSettings) =>
     set((state) => {
@@ -369,6 +399,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         wallSettings: wall ? { ...wall.settings } : state.wallSettings,
       };
     }),
+  setWallStep: (wallStep) => set({ wallStep }),
+  setActiveStamp: (activeStamp) => set({ activeStamp, wallSnapPreview: null }),
+  setWallSnapPreview: (wallSnapPreview) => set({ wallSnapPreview }),
+  setSelectedComponent: (selectedComponent) => set({ selectedComponent }),
   addWallDraftPoint: (point) =>
     set((state) => ({ activeWallDraft: [...state.activeWallDraft, point] })),
   finishCurrentWall: (isClosed = false) => {
@@ -385,6 +419,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       points: [...activeWallDraft],
       isClosed,
       manualBastionIndices: [],
+      grandBastionIndices: [],
       gates: [],
       settings: { ...wallSettings },
       createdAt: Date.now(),
@@ -405,6 +440,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set((state) => ({
       walls: state.walls.filter((w) => w.id !== id),
       selectedWallId: state.selectedWallId === id ? null : state.selectedWallId,
+      selectedComponent:
+        state.selectedComponent?.wallId === id ? null : state.selectedComponent,
     }));
   },
   clearAllWalls: () => {
@@ -412,7 +449,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     import('../terrain/terrainStore').then((m) => {
       m.useTerrainStore.getState().pushUndo();
     });
-    set({ walls: [], activeWallDraft: [], selectedWallId: null });
+    set({
+      walls: [],
+      activeWallDraft: [],
+      selectedWallId: null,
+      selectedComponent: null,
+      wallStep: 'layout',
+    });
   },
   toggleBastionOnNode: (wallId, nodeIndex) => {
     import('../terrain/terrainStore').then((m) => {
@@ -431,23 +474,58 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }),
     }));
   },
+  toggleGrandBastionOnNode: (wallId, nodeIndex) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        const currentGrand = new Set(w.grandBastionIndices || []);
+        const currentManual = new Set(w.manualBastionIndices || []);
+        if (currentGrand.has(nodeIndex)) {
+          currentGrand.delete(nodeIndex);
+        } else {
+          currentGrand.add(nodeIndex);
+          currentManual.add(nodeIndex); // Grand bastion is also a bastion
+        }
+        return {
+          ...w,
+          grandBastionIndices: Array.from(currentGrand).sort((a, b) => a - b),
+          manualBastionIndices: Array.from(currentManual).sort((a, b) => a - b),
+        };
+      }),
+    }));
+  },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {
     import('../terrain/terrainStore').then((m) => {
       m.useTerrainStore.getState().pushUndo();
     });
     const gateId = `gate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newGate: WallGate = {
+      id: gateId,
+      segmentIndex,
+      t,
+      width: 0.35,
+      height: 0.28,
+      hasGatehouse: true,
+    };
     set((state) => ({
       walls: state.walls.map((w) => {
         if (w.id !== wallId) return w;
-        const newGate: WallGate = {
-          id: gateId,
-          segmentIndex,
-          t,
-          width: 0.35,
-          height: 0.28,
-          hasGatehouse: true,
-        };
         return { ...w, gates: [...(w.gates || []), newGate] };
+      }),
+      selectedComponent: { type: 'gate', idOrIndex: gateId, wallId },
+    }));
+  },
+  updateGateProperties: (wallId, gateId, props) => {
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          gates: (w.gates || []).map((g) => (g.id === gateId ? { ...g, ...props } : g)),
+        };
       }),
     }));
   },
@@ -460,9 +538,88 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         if (w.id !== wallId) return w;
         return { ...w, gates: (w.gates || []).filter((g) => g.id !== gateId) };
       }),
+      selectedComponent:
+        state.selectedComponent?.type === 'gate' && state.selectedComponent.idOrIndex === gateId
+          ? null
+          : state.selectedComponent,
     }));
   },
+  addCitadelKeep: (keep) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    const id = `citadel_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newKeep: CitadelKeep = {
+      ...keep,
+      id,
+      createdAt: Date.now(),
+    };
+    set((state) => ({
+      citadelKeeps: [...state.citadelKeeps, newKeep],
+      selectedComponent: { type: 'citadel', idOrIndex: id },
+    }));
+    return id;
+  },
+  updateCitadelKeep: (id, updates) => {
+    set((state) => ({
+      citadelKeeps: state.citadelKeeps.map((k) => (k.id === id ? { ...k, ...updates } : k)),
+    }));
+  },
+  removeCitadelKeep: (id) => {
+    import('../terrain/terrainStore').then((m) => {
+      m.useTerrainStore.getState().pushUndo();
+    });
+    set((state) => ({
+      citadelKeeps: state.citadelKeeps.filter((k) => k.id !== id),
+      selectedComponent:
+        state.selectedComponent?.type === 'citadel' && state.selectedComponent.idOrIndex === id
+          ? null
+          : state.selectedComponent,
+    }));
+  },
+  startNewWallCircuit: () => {
+    set({
+      activeWallDraft: [],
+      selectedWallId: null,
+      activeStamp: null,
+      selectedComponent: null,
+      wallStep: 'layout',
+    });
+  },
+  proceedToFortify: () => {
+    const { activeWallDraft, finishCurrentWall, selectedWallId, walls } = get();
+    if (activeWallDraft.length >= 2) {
+      const first = activeWallDraft[0];
+      const last = activeWallDraft[activeWallDraft.length - 1];
+      const dx = first.x - last.x;
+      const dz = first.z - last.z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      const isClosed = activeWallDraft.length >= 3 && dist < 0.7;
+      const newId = finishCurrentWall(isClosed);
+      set({ wallStep: 'fortify', selectedWallId: newId });
+      return newId;
+    }
+    if (selectedWallId) {
+      set({ wallStep: 'fortify' });
+      return selectedWallId;
+    }
+    if (walls.length > 0) {
+      const latestId = walls[walls.length - 1].id;
+      set({ wallStep: 'fortify', selectedWallId: latestId });
+      return latestId;
+    }
+    return null;
+  },
+  solidifyCurrentWall: () => {
+    set({
+      wallStep: 'solidified',
+      selectedWallId: null,
+      activeStamp: null,
+      selectedComponent: null,
+    });
+  },
   setWalls: (walls) => set({ walls }),
+  setCitadelKeeps: (citadelKeeps) => set({ citadelKeeps }),
 
   isDrawingSpline: false,
   currentSplinePoints: [],
@@ -797,6 +954,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       walls: [],
       activeWallDraft: [],
       selectedWallId: null,
+      wallStep: 'layout',
+      activeStamp: null,
+      citadelKeeps: [],
+      selectedComponent: null,
       placedProps: [],
       pondWaterFeatures: [],
       selectedPropId: null,

@@ -6,6 +6,8 @@ import {
   detectBastionLocations,
   resampleWallPointsAlongTerrain,
   generateWallBufferGeometry,
+  generateCitadelKeepGeometry,
+  calculateMagneticSnap,
   calculateWallTotalLength,
 } from './wallGeometry';
 import { createStateBuffer, TERRAIN_SIZE, HALF_TERRAIN_SIZE } from '../terrain/terrainBuffer';
@@ -312,6 +314,82 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       expect(foundUpwardNormal).toBe(true);
 
       geo.dispose();
+    });
+
+    it('generates valid BufferGeometry for Balekilla Citadel Keep', () => {
+      const buffer = createStateBuffer(0.5, 0.0);
+      const keep = {
+        id: 'citadel_test',
+        x: 0,
+        y: 0.5,
+        z: 0,
+        scale: 1.0,
+        rotationY: 0,
+        height: 0.40,
+        createdAt: Date.now(),
+      };
+
+      const geo = generateCitadelKeepGeometry(keep, buffer);
+      expect(geo.getAttribute('position')).toBeDefined();
+      expect(geo.getAttribute('normal')).toBeDefined();
+      expect(geo.getAttribute('uv')).toBeDefined();
+      expect(geo.getAttribute('position').count).toBeGreaterThan(50);
+      expect(geo.getIndex()).toBeDefined();
+
+      geo.dispose();
+    });
+  });
+
+  describe('calculateMagneticSnap', () => {
+    const buffer = createStateBuffer(0.0, 0.0);
+    const mockWall: WallPath = {
+      id: 'snap_test_wall',
+      points: [
+        { x: 0, y: 0, z: 0 },
+        { x: 2, y: 0, z: 0 },
+        { x: 2, y: 0, z: 2 },
+      ],
+      isClosed: false,
+      gates: [],
+      settings: { ...DEFAULT_WALL_SETTINGS },
+      createdAt: Date.now(),
+    };
+
+    it('snaps buruj to nearest wall node within 0.45m', () => {
+      // Near node 1 (2, 0, 0): pointer at (2.1, 0, 0.05) -> dist ~0.11m
+      const snap = calculateMagneticSnap('buruj', { x: 2.1, y: 0, z: 0.05 }, [mockWall], 'snap_test_wall', buffer);
+      expect(snap.snapped).toBe(true);
+      expect(snap.type).toBe('vertex');
+      expect(snap.nodeIndex).toBe(1);
+      expect(snap.position[0]).toBe(2);
+      expect(snap.position[2]).toBe(0);
+    });
+
+    it('does not snap buruj when pointer is beyond 0.45m', () => {
+      // Far from any node: pointer at (5.0, 0, 5.0)
+      const snap = calculateMagneticSnap('buruj', { x: 5.0, y: 0, z: 5.0 }, [mockWall], 'snap_test_wall', buffer);
+      expect(snap.snapped).toBe(false);
+      expect(snap.type).toBe('terrain');
+      expect(snap.position[0]).toBe(5.0);
+    });
+
+    it('snaps gate to nearest wall segment within 0.60m', () => {
+      // Near segment 0 between (0,0,0) and (2,0,0): pointer at (1.0, 0, 0.2)
+      const snap = calculateMagneticSnap('gate', { x: 1.0, y: 0, z: 0.2 }, [mockWall], 'snap_test_wall', buffer);
+      expect(snap.snapped).toBe(true);
+      expect(snap.type).toBe('segment');
+      expect(snap.segmentIndex).toBe(0);
+      expect(snap.t).toBeCloseTo(0.5, 1);
+      expect(snap.tangent).toBeDefined();
+      expect(snap.normal).toBeDefined();
+    });
+
+    it('snaps citadel freely to terrain', () => {
+      const snap = calculateMagneticSnap('citadel', { x: 1.5, y: 0, z: -1.2 }, [mockWall], null, buffer);
+      expect(snap.snapped).toBe(true);
+      expect(snap.type).toBe('terrain');
+      expect(snap.position[0]).toBe(1.5);
+      expect(snap.position[2]).toBe(-1.2);
     });
   });
 });

@@ -107,5 +107,76 @@ describe('Wall Store & State Integration', () => {
     terrainStore.redo();
     expect(useEditorStore.getState().walls.length).toBe(1);
   });
+
+  it('manages 3-step crafting stepper transitions', () => {
+    const store = useEditorStore.getState();
+
+    // Starts in layout step
+    expect(store.wallStep).toBe('layout');
+
+    // Add draft points and proceed to fortify
+    store.addWallDraftPoint({ x: 0, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 3, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 3, y: 0, z: 3 });
+    const wallId = store.proceedToFortify();
+
+    expect(wallId).toBeDefined();
+    expect(useEditorStore.getState().wallStep).toBe('fortify');
+    expect(useEditorStore.getState().selectedWallId).toBe(wallId);
+    expect(useEditorStore.getState().walls.length).toBe(1);
+
+    // Solidify fort
+    store.solidifyCurrentWall();
+    expect(useEditorStore.getState().wallStep).toBe('solidified');
+    expect(useEditorStore.getState().selectedWallId).toBeNull();
+
+    // Start another circuit returns to layout
+    store.startNewWallCircuit();
+    expect(useEditorStore.getState().wallStep).toBe('layout');
+    expect(useEditorStore.getState().activeWallDraft.length).toBe(0);
+  });
+
+  it('manages grand bastions and citadel keeps with undo/redo', () => {
+    const terrainStore = useTerrainStore.getState();
+    const store = useEditorStore.getState();
+
+    // Snapshot
+    terrainStore.pushUndo();
+
+    // Build wall
+    store.addWallDraftPoint({ x: 0, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 5, y: 0, z: 0 });
+    const wallId = store.finishCurrentWall(false)!;
+
+    // Toggle Grand Bastion (Maha Buruj)
+    store.toggleGrandBastionOnNode(wallId, 1);
+    let wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.grandBastionIndices).toContain(1);
+    expect(wall?.manualBastionIndices).toContain(1);
+
+    // Add Citadel Keep
+    const keepId = store.addCitadelKeep({
+      x: 1.5,
+      y: 0.8,
+      z: 2.0,
+      scale: 1.2,
+      rotationY: 0.5,
+      height: 0.9,
+    });
+    expect(useEditorStore.getState().citadelKeeps.length).toBe(1);
+    expect(useEditorStore.getState().citadelKeeps[0].id).toBe(keepId);
+
+    // Update keep
+    store.updateCitadelKeep(keepId, { scale: 1.5 });
+    expect(useEditorStore.getState().citadelKeeps[0].scale).toBe(1.5);
+
+    // Undo keep addition
+    terrainStore.undo();
+    expect(useEditorStore.getState().citadelKeeps.length).toBe(0);
+
+    // Redo keep addition
+    terrainStore.redo();
+    expect(useEditorStore.getState().citadelKeeps.length).toBe(1);
+  });
 });
 

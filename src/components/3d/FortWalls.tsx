@@ -6,8 +6,12 @@ import { useTexture } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
-import { generateWallBufferGeometry } from '@/lib/walls/wallGeometry';
-import { WallPath, WallPoint } from '@/lib/walls/wallTypes';
+import {
+  generateWallBufferGeometry,
+  generateCitadelKeepGeometry,
+  SnapResult,
+} from '@/lib/walls/wallGeometry';
+import { WallPath, WallPoint, CitadelKeep, FortStampType } from '@/lib/walls/wallTypes';
 
 /**
  * Draft wall preview line and node markers during construction.
@@ -99,8 +103,16 @@ const SingleWallMesh: React.FC<{
     if (editor.activeTool !== 'walls' || editor.activeWallDraft.length > 0) return;
     e.stopPropagation();
     editor.setSelectedWallId(wall.id);
-    editor.setToastMessage('Fort wall selected in Vertex Mode. Adjust properties, or click Finish Wall when done.');
+    if (editor.wallStep === 'solidified') {
+      editor.setWallStep('fortify');
+      editor.setToastMessage('Wall selected in Fortify mode.');
+    } else {
+      editor.setToastMessage('Fort wall selected. Adjust properties or add bastions/gates.');
+    }
   };
+
+  const { wallStep, activeStamp, selectedComponent } = useEditorStore();
+  const showHandles = isSelected && wallStep === 'fortify';
 
   return (
     <group name={`FortWall_${wall.id}`}>
@@ -111,7 +123,7 @@ const SingleWallMesh: React.FC<{
         receiveShadow
         onClick={handleWallClick}
       />
-      {isSelected && (
+      {showHandles && (
         <group name={`VertexOverlay_${wall.id}`}>
           {/* Subtle amber wireframe highlight */}
           <mesh
@@ -127,9 +139,10 @@ const SingleWallMesh: React.FC<{
             />
           </mesh>
 
-          {/* Interactive Vertex Handles overlay (visible ONLY when wall is selected) */}
+          {/* Interactive Vertex Handles overlay */}
           {wall.points.map((pt, idx) => {
             const isManualBastion = wall.manualBastionIndices?.includes(idx);
+            const isGrand = wall.grandBastionIndices?.includes(idx);
             return (
               <mesh
                 key={`vert_${idx}`}
@@ -137,19 +150,25 @@ const SingleWallMesh: React.FC<{
                 onClick={(e) => {
                   e.stopPropagation();
                   const editor = useEditorStore.getState();
-                  if (editor.wallSubTool === 'bastion') {
+                  if (editor.activeStamp === 'buruj') {
                     editor.toggleBastionOnNode(wall.id, idx);
-                    editor.setToastMessage('Round bastion watchtower toggled on vertex!');
+                    editor.setActiveStamp(null);
+                    editor.setToastMessage('Round bastion toggled on node!');
+                  } else if (editor.activeStamp === 'grand_buruj') {
+                    editor.toggleGrandBastionOnNode(wall.id, idx);
+                    editor.setActiveStamp(null);
+                    editor.setToastMessage('Maha Buruj (Grand Bastion) placed on corner node!');
                   } else {
+                    editor.setSelectedComponent({ type: 'bastion', idOrIndex: idx, wallId: wall.id });
                     editor.setSelectedWallId(wall.id);
                   }
                 }}
               >
-                <sphereGeometry args={[isManualBastion ? 0.06 : 0.04, 16, 16]} />
+                <sphereGeometry args={[isGrand ? 0.08 : isManualBastion ? 0.06 : 0.04, 16, 16]} />
                 <meshStandardMaterial
-                  color={isManualBastion ? '#3b82f6' : '#f59e0b'}
-                  emissive={isManualBastion ? '#1d4ed8' : '#d97706'}
-                  emissiveIntensity={0.7}
+                  color={isGrand ? '#d97706' : isManualBastion ? '#3b82f6' : '#f59e0b'}
+                  emissive={isGrand ? '#b45309' : isManualBastion ? '#1d4ed8' : '#d97706'}
+                  emissiveIntensity={0.8}
                 />
               </mesh>
             );
@@ -161,11 +180,151 @@ const SingleWallMesh: React.FC<{
 };
 
 /**
+ * Single Citadel Keep Mesh component
+ */
+const SingleCitadelMesh: React.FC<{
+  keep: CitadelKeep;
+  stateBuffer: Float32Array;
+  material: THREE.Material;
+  isSelected: boolean;
+}> = ({ keep, stateBuffer, material, isSelected }) => {
+  const geometry = useMemo(() => {
+    return generateCitadelKeepGeometry(keep, stateBuffer);
+  }, [keep, stateBuffer]);
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
+
+  const handleClick = (e: any) => {
+    const editor = useEditorStore.getState();
+    if (editor.activeTool !== 'walls') return;
+    e.stopPropagation();
+    editor.setSelectedComponent({ type: 'citadel', idOrIndex: keep.id });
+    if (editor.wallStep === 'solidified') {
+      editor.setWallStep('fortify');
+    }
+    editor.setToastMessage('Balekilla Citadel Keep selected.');
+  };
+
+  return (
+    <group name={`CitadelKeep_${keep.id}`} onClick={handleClick}>
+      <mesh
+        geometry={geometry}
+        material={material}
+        castShadow
+        receiveShadow
+      />
+      {isSelected && (
+        <mesh position={[keep.x, keep.y + 0.02, keep.z]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.38 * keep.scale, 0.44 * keep.scale, 32]} />
+          <meshBasicMaterial color="#3b82f6" transparent opacity={0.8} side={THREE.DoubleSide} />
+        </mesh>
+      )}
+    </group>
+  );
+};
+
+/**
+ * Real-time Magnetic Snap Hologram Preview
+ */
+const SnapHologramPreview: React.FC<{
+  activeStamp: FortStampType;
+  snap: SnapResult | null;
+}> = ({ activeStamp, snap }) => {
+  if (!activeStamp || !snap) return null;
+
+  const [x, y, z] = snap.position;
+  const isSnapped = snap.snapped;
+  const holoColor = isSnapped ? '#10b981' : '#f59e0b';
+
+  return (
+    <group position={[x, y + 0.01, z]} rotation={[0, snap.rotationY || 0, 0]}>
+      {/* Magnetic Snap Ring Indicator */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.18, 0.24, 32]} />
+        <meshBasicMaterial
+          color={holoColor}
+          transparent
+          opacity={0.85}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Hologram 3D Silhouette */}
+      {(activeStamp === 'buruj' || activeStamp === 'grand_buruj') && (
+        <mesh position={[0, (activeStamp === 'grand_buruj' ? 0.35 : 0.25) * 0.5, 0]}>
+          <cylinderGeometry
+            args={[
+              activeStamp === 'grand_buruj' ? 0.25 : 0.16,
+              activeStamp === 'grand_buruj' ? 0.25 : 0.16,
+              activeStamp === 'grand_buruj' ? 0.35 : 0.25,
+              16,
+            ]}
+          />
+          <meshBasicMaterial
+            color={holoColor}
+            wireframe
+            transparent
+            opacity={0.65}
+          />
+        </mesh>
+      )}
+
+      {activeStamp === 'gate' && (
+        <group>
+          {/* Left Flanking Tower */}
+          <mesh position={[-0.20, 0.15, 0]}>
+            <cylinderGeometry args={[0.10, 0.10, 0.30, 12]} />
+            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
+          </mesh>
+          {/* Right Flanking Tower */}
+          <mesh position={[0.20, 0.15, 0]}>
+            <cylinderGeometry args={[0.10, 0.10, 0.30, 12]} />
+            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
+          </mesh>
+          {/* Portal Arch Lintel */}
+          <mesh position={[0, 0.22, 0]}>
+            <boxGeometry args={[0.30, 0.08, 0.12]} />
+            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
+          </mesh>
+        </group>
+      )}
+
+      {activeStamp === 'citadel' && (
+        <group>
+          <mesh position={[0, 0.25, 0]}>
+            <boxGeometry args={[0.55, 0.50, 0.55]} />
+            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
+          </mesh>
+          <mesh position={[0, 0.58, 0]}>
+            <coneGeometry args={[0.25, 0.18, 4]} />
+            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+};
+
+/**
  * FortWalls Container Component
  * Renders all completed fort walls, preview draft line, and manages textures/materials.
  */
 export const FortWalls: React.FC = () => {
-  const { walls, activeWallDraft, selectedWallId, nightMode } = useEditorStore();
+  const {
+    walls,
+    activeWallDraft,
+    selectedWallId,
+    nightMode,
+    citadelKeeps,
+    activeStamp,
+    wallSnapPreview,
+    selectedComponent,
+    setActiveStamp,
+  } = useEditorStore();
   const { stateBuffer, lastUpdated } = useTerrainStore();
   const { invalidate, scene } = useThree();
 
@@ -177,7 +336,22 @@ export const FortWalls: React.FC = () => {
 
   useEffect(() => {
     invalidate();
-  }, [walls, activeWallDraft, selectedWallId, invalidate]);
+  }, [walls, activeWallDraft, selectedWallId, citadelKeeps, activeStamp, wallSnapPreview, invalidate]);
+
+  // Cancel active stamp on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        const editor = useEditorStore.getState();
+        if (editor.activeStamp) {
+          editor.setActiveStamp(null);
+          editor.setToastMessage('Stamp mode canceled.');
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Load Retroground PBR mossy stone brick textures
   const textures = useTexture({
@@ -233,10 +407,29 @@ export const FortWalls: React.FC = () => {
         />
       ))}
 
+      {/* Freestanding Balekilla Citadel Keeps */}
+      {citadelKeeps.map((keep) => (
+        <SingleCitadelMesh
+          key={`citadel_${keep.id}_${lastUpdated}_${keep.scale}`}
+          keep={keep}
+          stateBuffer={stateBuffer}
+          material={stoneMaterial}
+          isSelected={
+            selectedComponent?.type === 'citadel' && selectedComponent.idOrIndex === keep.id
+          }
+        />
+      ))}
+
       {/* Active Construction Draft Preview */}
       <WallDraftPreview
         draftPoints={activeWallDraft}
         nightMode={nightMode}
+      />
+
+      {/* Magnetic Snap Hologram Preview */}
+      <SnapHologramPreview
+        activeStamp={activeStamp}
+        snap={wallSnapPreview}
       />
     </group>
   );

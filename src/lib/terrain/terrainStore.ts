@@ -17,7 +17,7 @@ import {
 } from './terrainBuffer';
 import { generateTerrainBlueprint } from './terrainGenerators';
 import { useEditorStore, PondWaterFeature } from '../state/useEditorStore';
-import { WallPath } from '../walls/wallTypes';
+import { WallPath, CitadelKeep } from '../walls/wallTypes';
 
 interface TerrainState {
   stateBuffer: Float32Array;
@@ -49,6 +49,8 @@ const pondUndoStack: PondWaterFeature[][] = [];
 const pondRedoStack: PondWaterFeature[][] = [];
 const wallUndoStack: WallPath[][] = [];
 const wallRedoStack: WallPath[][] = [];
+const citadelUndoStack: CitadelKeep[][] = [];
+const citadelRedoStack: CitadelKeep[][] = [];
 
 // Generate organic starter mud hill by default
 const initialBuffer = createStateBuffer(0.0, 0.0);
@@ -139,21 +141,24 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       undoStack.shift();
       pondUndoStack.shift();
       wallUndoStack.shift();
+      citadelUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
     pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
     wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
+    citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
     redoStack.length = 0;
     pondRedoStack.length = 0;
     wallRedoStack.length = 0;
+    citadelRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
-  canUndo: () => undoStack.length > 0 || wallUndoStack.length > 0,
-  canRedo: () => redoStack.length > 0 || wallRedoStack.length > 0,
+  canUndo: () => undoStack.length > 0 || wallUndoStack.length > 0 || citadelUndoStack.length > 0,
+  canRedo: () => redoStack.length > 0 || wallRedoStack.length > 0 || citadelRedoStack.length > 0,
 
   undo: () => {
-    if (undoStack.length === 0 && wallUndoStack.length === 0) return false;
+    if (undoStack.length === 0 && wallUndoStack.length === 0 && citadelUndoStack.length === 0) return false;
     const { stateBuffer, stateTexture, terrainGeometry } = get();
     if (undoStack.length > 0) {
       const prevSnapshot = undoStack.pop()!;
@@ -173,6 +178,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       useEditorStore.getState().setWalls(prevWalls);
     }
 
+    if (citadelUndoStack.length > 0) {
+      const prevKeeps = citadelUndoStack.pop()!;
+      citadelRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
+      useEditorStore.getState().setCitadelKeeps(prevKeeps);
+    }
+
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
@@ -183,7 +194,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   },
 
   redo: () => {
-    if (redoStack.length === 0 && wallRedoStack.length === 0) return false;
+    if (redoStack.length === 0 && wallRedoStack.length === 0 && citadelRedoStack.length === 0) return false;
     const { stateBuffer, stateTexture, terrainGeometry } = get();
     if (redoStack.length > 0) {
       const nextSnapshot = redoStack.pop()!;
@@ -201,6 +212,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       const nextWalls = wallRedoStack.pop()!;
       wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
       useEditorStore.getState().setWalls(nextWalls);
+    }
+
+    if (citadelRedoStack.length > 0) {
+      const nextKeeps = citadelRedoStack.pop()!;
+      citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
+      useEditorStore.getState().setCitadelKeeps(nextKeeps);
     }
 
     stateTexture.needsUpdate = true;

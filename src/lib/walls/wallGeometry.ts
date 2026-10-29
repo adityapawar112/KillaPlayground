@@ -5,7 +5,7 @@ import {
   TERRAIN_RESOLUTION,
   STATE_CHANNELS,
 } from '../terrain/terrainBuffer';
-import { WallPath, WallPoint, WallSettings, WallGate } from './wallTypes';
+import { WallPath, WallPoint, WallSettings, WallGate, CitadelKeep, FortStampType } from './wallTypes';
 
 /**
  * Diorama stone masonry scale factor.
@@ -277,7 +277,7 @@ export function generateWallBufferGeometry(
   wall: WallPath,
   buffer: Float32Array
 ): THREE.BufferGeometry {
-  const { points, isClosed, settings, gates = [], manualBastionIndices = [] } = wall;
+  const { points, isClosed, settings, gates = [], manualBastionIndices = [], grandBastionIndices = [] } = wall;
   if (points.length < 2) {
     return new THREE.BufferGeometry();
   }
@@ -610,7 +610,7 @@ export function generateWallBufferGeometry(
     }
   }
 
-  // 6. Round Bastions (Buruj) with Solid Top Floors and Crowning Kangare Rings
+  // 6. Round Bastions (Buruj & Maha Buruj) with Solid Top Floors and Crowning Kangare Rings
   const bastionIndices = detectBastionLocations(
     points,
     isClosed,
@@ -618,17 +618,22 @@ export function generateWallBufferGeometry(
     manualBastionIndices
   );
 
-  const bastionRadius = Math.max(0.03, Math.min(0.10, settings.bastionRadius));
+  const baseBastionRadius = Math.max(0.08, Math.min(0.60, settings.bastionRadius || 0.25));
   const radialSegments = 16;
-  const crenH = Math.max(0.010, Math.min(0.025, settings.crenellationHeight));
+  const baseCrenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight || 0.08));
 
   for (const bIdx of bastionIndices) {
     const pt = points[bIdx];
     if (!pt) continue;
 
+    const isGrand = grandBastionIndices.includes(bIdx);
+    const bastionRadius = isGrand ? baseBastionRadius * 1.5 : baseBastionRadius;
+    const towerH = isGrand ? wallH * 1.25 : wallH + 0.015;
+    const crenH = isGrand ? baseCrenH * 1.25 : baseCrenH;
+
     const groundY = sampleBilinearHeight(buffer, pt.x, pt.z);
     const bBotY = groundY - embedDepth;
-    const bTopY = groundY + wallH + 0.012; // Stand slightly proud of wall
+    const bTopY = groundY + towerH; // Stands proud of wall
 
     // Cylinder side quads
     for (let r = 0; r < radialSegments; r++) {
@@ -680,7 +685,7 @@ export function generateWallBufferGeometry(
 
     // MURUD-JANJIRA CROWNING KANGARE RING AROUND BASTION RIM
     if (settings.crenellations) {
-      const numBastionKangare = 10;
+      const numBastionKangare = isGrand ? 14 : 10;
       const bKThick = bastionRadius * 0.22;
 
       for (let k = 0; k < numBastionKangare; k++) {
@@ -709,6 +714,7 @@ export function generateWallBufferGeometry(
   }
 
   // 7. Maha Darwaza (Arched Gateway Portal & Flanking Round Bastions)
+  const gateCrenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight || 0.08));
   for (const ag of activeGates) {
     const { centerX, centerZ, groundY, normal, tangent, halfWidth } = ag;
     const gWidth = halfWidth * 2;
@@ -795,7 +801,7 @@ export function generateWallBufferGeometry(
     if (settings.crenellations) {
       const cL: [number, number, number] = [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick];
       const cR: [number, number, number] = [jRightX - normal.x * halfThick, lintelTopY, jRightZ - normal.z * halfThick];
-      addPointedKangara(cL, cR, [normal.x, 0, normal.z], lintelTopY, crenH, halfThick * 0.65);
+      addPointedKangara(cL, cR, [normal.x, 0, normal.z], lintelTopY, gateCrenH, halfThick * 0.65);
     }
 
     // G. FLANKING GATEHOUSE BASTIONS (with solid top floor & crowning kangare)
@@ -868,7 +874,7 @@ export function generateWallBufferGeometry(
             ];
 
             const unitInNorm: [number, number, number] = [-Math.cos(aMid), 0, -Math.sin(aMid)];
-            addPointedKangara(cL, cR, unitInNorm, ghTopY, crenH * 0.85, ghKThick);
+            addPointedKangara(cL, cR, unitInNorm, ghTopY, gateCrenH * 0.85, ghKThick);
           }
         }
       }
@@ -876,4 +882,359 @@ export function generateWallBufferGeometry(
   }
 
   return builder.build();
+}
+
+/**
+ * Procedural geometry generator for Balekilla (Citadel Keep):
+ * A majestic Maratha multi-tier stone fortress keep featuring:
+ * - Stepped stone foundation plinth
+ * - Main multi-tiered defensive stone keep body with arrow loop embrasures
+ * - Overhanging corbelled rampart with authentic Murud-Janjira pointed kangare
+ * - Upper watchtower sentry pavilion with four stone pillars and pyramidal roof
+ * - Saffron Bhagwa Zenda flagpole at center top
+ */
+export function generateCitadelKeepGeometry(
+  keep: CitadelKeep,
+  buffer: Float32Array
+): THREE.BufferGeometry {
+  const builder = new GeometryBuilder();
+  const scale = keep.scale || 1.0;
+  const effectiveUvScale = 1.0 * BRICK_UV_MULTIPLIER;
+  const embedDepth = WALL_EMBED_DEPTH * 1.5;
+
+  const groundY = sampleBilinearHeight(buffer, keep.x, keep.z);
+  const baseY = groundY - embedDepth;
+
+  // Base dimensions
+  const plinthHalfW = 0.35 * scale;
+  const plinthH = 0.10 * scale;
+  const towerHalfW = 0.28 * scale;
+  const towerH = (keep.height || 0.40) * scale;
+  const walkwayOverhang = 0.04 * scale;
+  const walkwayHalfW = towerHalfW + walkwayOverhang;
+  const walkwayH = 0.04 * scale;
+
+  const plinthTopY = baseY + plinthH;
+  const towerTopY = plinthTopY + towerH;
+  const walkwayTopY = towerTopY + walkwayH;
+
+  // Helper box with UV and normals
+  const addBox = (
+    cx: number,
+    cz: number,
+    halfX: number,
+    halfZ: number,
+    y0: number,
+    y1: number
+  ) => {
+    // 4 vertical side faces
+    // Front (-Z)
+    builder.addQuad(
+      [cx - halfX, y0, cz - halfZ],
+      [cx + halfX, y0, cz - halfZ],
+      [cx + halfX, y1, cz - halfZ],
+      [cx - halfX, y1, cz - halfZ],
+      [0, 0, -1],
+      [0, y0 * effectiveUvScale], [halfX * 2 * effectiveUvScale, y0 * effectiveUvScale],
+      [halfX * 2 * effectiveUvScale, y1 * effectiveUvScale], [0, y1 * effectiveUvScale]
+    );
+    // Back (+Z)
+    builder.addQuad(
+      [cx + halfX, y0, cz + halfZ],
+      [cx - halfX, y0, cz + halfZ],
+      [cx - halfX, y1, cz + halfZ],
+      [cx + halfX, y1, cz + halfZ],
+      [0, 0, 1],
+      [0, y0 * effectiveUvScale], [halfX * 2 * effectiveUvScale, y0 * effectiveUvScale],
+      [halfX * 2 * effectiveUvScale, y1 * effectiveUvScale], [0, y1 * effectiveUvScale]
+    );
+    // Left (-X)
+    builder.addQuad(
+      [cx - halfX, y0, cz + halfZ],
+      [cx - halfX, y0, cz - halfZ],
+      [cx - halfX, y1, cz - halfZ],
+      [cx - halfX, y1, cz + halfZ],
+      [-1, 0, 0],
+      [0, y0 * effectiveUvScale], [halfZ * 2 * effectiveUvScale, y0 * effectiveUvScale],
+      [halfZ * 2 * effectiveUvScale, y1 * effectiveUvScale], [0, y1 * effectiveUvScale]
+    );
+    // Right (+X)
+    builder.addQuad(
+      [cx + halfX, y0, cz - halfZ],
+      [cx + halfX, y0, cz + halfZ],
+      [cx + halfX, y1, cz + halfZ],
+      [cx + halfX, y1, cz - halfZ],
+      [1, 0, 0],
+      [0, y0 * effectiveUvScale], [halfZ * 2 * effectiveUvScale, y0 * effectiveUvScale],
+      [halfZ * 2 * effectiveUvScale, y1 * effectiveUvScale], [0, y1 * effectiveUvScale]
+    );
+    // Top (+Y)
+    builder.addQuad(
+      [cx - halfX, y1, cz - halfZ],
+      [cx - halfX, y1, cz + halfZ],
+      [cx + halfX, y1, cz + halfZ],
+      [cx + halfX, y1, cz - halfZ],
+      [0, 1, 0],
+      [0, 0], [0, halfZ * 2 * effectiveUvScale],
+      [halfX * 2 * effectiveUvScale, halfZ * 2 * effectiveUvScale], [halfX * 2 * effectiveUvScale, 0]
+    );
+  };
+
+  // 1. Plinth Box
+  addBox(keep.x, keep.z, plinthHalfW, plinthHalfW, baseY, plinthTopY);
+
+  // 2. Main Keep Tower Box
+  addBox(keep.x, keep.z, towerHalfW, towerHalfW, plinthTopY, towerTopY);
+
+  // 3. Overhanging Corbelled Walkway
+  addBox(keep.x, keep.z, walkwayHalfW, walkwayHalfW, towerTopY, walkwayTopY);
+
+  // 4. Kangare along Walkway Edge
+  const kHeight = 0.045 * scale;
+  const kWidth = 0.05 * scale;
+  const kThick = 0.02 * scale;
+  const kangareCountPerSide = 5;
+
+  const addKeepKangara = (
+    vL: [number, number, number],
+    vR: [number, number, number],
+    norm: [number, number, number]
+  ) => {
+    const hShoulder = kHeight * 0.6;
+    const hPeak = kHeight;
+    const midX = (vL[0] + vR[0]) * 0.5;
+    const midZ = (vL[2] + vR[2]) * 0.5;
+
+    const v0: [number, number, number] = [vL[0], walkwayTopY, vL[2]];
+    const v1: [number, number, number] = [vR[0], walkwayTopY, vR[2]];
+    const v2: [number, number, number] = [vR[0], walkwayTopY + hShoulder, vR[2]];
+    const v3: [number, number, number] = [midX, walkwayTopY + hPeak, midZ];
+    const v4: [number, number, number] = [vL[0], walkwayTopY + hShoulder, vL[2]];
+
+    builder.addQuad(v0, v1, v2, v4, norm, [0, 0], [1, 0], [1, 0.6], [0, 0.6]);
+    builder.addTriangle(v4, v2, v3, norm, [0, 0.6], [1, 0.6], [0.5, 1.0]);
+  };
+
+  // Front & Back edges
+  const stepX = (walkwayHalfW * 2) / kangareCountPerSide;
+  for (let i = 0; i < kangareCountPerSide; i++) {
+    const xL = keep.x - walkwayHalfW + i * stepX + 0.005;
+    const xR = Math.min(keep.x + walkwayHalfW, xL + kWidth);
+    // Front (-Z)
+    addKeepKangara([xL, walkwayTopY, keep.z - walkwayHalfW], [xR, walkwayTopY, keep.z - walkwayHalfW], [0, 0, -1]);
+    // Back (+Z)
+    addKeepKangara([xR, walkwayTopY, keep.z + walkwayHalfW], [xL, walkwayTopY, keep.z + walkwayHalfW], [0, 0, 1]);
+  }
+
+  // Left & Right edges
+  const stepZ = (walkwayHalfW * 2) / kangareCountPerSide;
+  for (let i = 0; i < kangareCountPerSide; i++) {
+    const zL = keep.z - walkwayHalfW + i * stepZ + 0.005;
+    const zR = Math.min(keep.z + walkwayHalfW, zL + kWidth);
+    // Left (-X)
+    addKeepKangara([keep.x - walkwayHalfW, walkwayTopY, zR], [keep.x - walkwayHalfW, walkwayTopY, zL], [-1, 0, 0]);
+    // Right (+X)
+    addKeepKangara([keep.x + walkwayHalfW, walkwayTopY, zL], [keep.x + walkwayHalfW, walkwayTopY, zR], [1, 0, 0]);
+  }
+
+  // 5. Upper Sentry Pavilion with 4 Pillars and Pyramidal Roof
+  const pavHalfW = 0.12 * scale;
+  const pillarHalfW = 0.02 * scale;
+  const pillarH = 0.12 * scale;
+  const roofH = 0.10 * scale;
+  const pavBaseY = walkwayTopY;
+  const pavRoofBaseY = pavBaseY + pillarH;
+  const pavApexY = pavRoofBaseY + roofH;
+
+  // 4 Pillars
+  const offsets = [
+    [-pavHalfW, -pavHalfW],
+    [pavHalfW, -pavHalfW],
+    [pavHalfW, pavHalfW],
+    [-pavHalfW, pavHalfW],
+  ];
+  for (const [ox, oz] of offsets) {
+    addBox(keep.x + ox, keep.z + oz, pillarHalfW, pillarHalfW, pavBaseY, pavRoofBaseY);
+  }
+
+  // Pyramidal Pavilion Roof
+  const apex: [number, number, number] = [keep.x, pavApexY, keep.z];
+  const rV0: [number, number, number] = [keep.x - pavHalfW * 1.3, pavRoofBaseY, keep.z - pavHalfW * 1.3];
+  const rV1: [number, number, number] = [keep.x + pavHalfW * 1.3, pavRoofBaseY, keep.z - pavHalfW * 1.3];
+  const rV2: [number, number, number] = [keep.x + pavHalfW * 1.3, pavRoofBaseY, keep.z + pavHalfW * 1.3];
+  const rV3: [number, number, number] = [keep.x - pavHalfW * 1.3, pavRoofBaseY, keep.z + pavHalfW * 1.3];
+
+  // 4 triangular roof slopes
+  builder.addTriangle(rV0, rV1, apex, [0, 0.7, -0.7], [0, 0], [1, 0], [0.5, 1]);
+  builder.addTriangle(rV1, rV2, apex, [0.7, 0.7, 0], [0, 0], [1, 0], [0.5, 1]);
+  builder.addTriangle(rV2, rV3, apex, [0, 0.7, 0.7], [0, 0], [1, 0], [0.5, 1]);
+  builder.addTriangle(rV3, rV0, apex, [-0.7, 0.7, 0], [0, 0], [1, 0], [0.5, 1]);
+
+  // 6. Central Saffron Flagpole & Bhagwa Zenda Pennant
+  const poleBaseY = pavApexY;
+  const poleTopY = poleBaseY + 0.16 * scale;
+  const poleRadius = 0.005 * scale;
+  addBox(keep.x, keep.z, poleRadius, poleRadius, poleBaseY, poleTopY);
+
+  // Saffron flag pennant (swallowtail double-triangle Maratha Bhagwa Zenda)
+  const flagW = 0.08 * scale;
+  const flagTopY = poleTopY;
+  const flagBotY = poleTopY - 0.06 * scale;
+  const flagMidY = (flagTopY + flagBotY) * 0.5;
+
+  const f0: [number, number, number] = [keep.x + poleRadius, flagTopY, keep.z];
+  const f1: [number, number, number] = [keep.x + poleRadius + flagW, flagTopY - 0.015 * scale, keep.z];
+  const fMid: [number, number, number] = [keep.x + poleRadius + flagW * 0.7, flagMidY, keep.z];
+  const f2: [number, number, number] = [keep.x + poleRadius + flagW, flagBotY + 0.015 * scale, keep.z];
+  const f3: [number, number, number] = [keep.x + poleRadius, flagBotY, keep.z];
+
+  // Upper triangular tail
+  builder.addTriangle(f0, f1, fMid, [0, 0, 1], [0, 1], [1, 1], [0.7, 0.5]);
+  builder.addTriangle(fMid, f1, f0, [0, 0, -1], [0.7, 0.5], [1, 1], [0, 1]);
+  // Lower triangular tail
+  builder.addTriangle(f3, fMid, f2, [0, 0, 1], [0, 0], [0.7, 0.5], [1, 0]);
+  builder.addTriangle(f2, fMid, f3, [0, 0, -1], [1, 0], [0.7, 0.5], [0, 0]);
+
+  return builder.build();
+}
+
+export interface SnapResult {
+  snapped: boolean;
+  type: 'vertex' | 'segment' | 'terrain';
+  position: [number, number, number];
+  rotationY: number;
+  wallId?: string;
+  nodeIndex?: number;
+  segmentIndex?: number;
+  t?: number;
+  normal?: { x: number; z: number };
+  tangent?: { x: number; z: number };
+}
+
+export function calculateMagneticSnap(
+  stamp: FortStampType,
+  pointerPos: { x: number; y: number; z: number },
+  walls: WallPath[],
+  activeWallId: string | null,
+  buffer: Float32Array
+): SnapResult {
+  if (!stamp) {
+    return {
+      snapped: false,
+      type: 'terrain',
+      position: [pointerPos.x, pointerPos.y, pointerPos.z],
+      rotationY: 0,
+    };
+  }
+
+  // A. Citadel stamps anywhere on terrain
+  if (stamp === 'citadel') {
+    const gy = sampleBilinearHeight(buffer, pointerPos.x, pointerPos.z);
+    return {
+      snapped: true,
+      type: 'terrain',
+      position: [pointerPos.x, gy, pointerPos.z],
+      rotationY: 0,
+    };
+  }
+
+  // Sorted walls list: active wall first
+  const targetWalls = activeWallId
+    ? [...walls.filter((w) => w.id === activeWallId), ...walls.filter((w) => w.id !== activeWallId)]
+    : walls;
+
+  // B. Buruj & Grand Buruj snap to vertices (threshold 0.45m)
+  if (stamp === 'buruj' || stamp === 'grand_buruj') {
+    let closestDist = 0.45;
+    let closestResult: SnapResult | null = null;
+
+    for (const wall of targetWalls) {
+      for (let i = 0; i < wall.points.length; i++) {
+        const pt = wall.points[i];
+        const d = Math.hypot(pt.x - pointerPos.x, pt.z - pointerPos.z);
+        if (d < closestDist) {
+          closestDist = d;
+          const gy = sampleBilinearHeight(buffer, pt.x, pt.z);
+          closestResult = {
+            snapped: true,
+            type: 'vertex',
+            position: [pt.x, gy, pt.z],
+            rotationY: 0,
+            wallId: wall.id,
+            nodeIndex: i,
+          };
+        }
+      }
+    }
+
+    if (closestResult) return closestResult;
+    const gy = sampleBilinearHeight(buffer, pointerPos.x, pointerPos.z);
+    return {
+      snapped: false,
+      type: 'terrain',
+      position: [pointerPos.x, gy, pointerPos.z],
+      rotationY: 0,
+    };
+  }
+
+  // C. Gate snaps to segments (threshold 0.60m)
+  if (stamp === 'gate') {
+    let closestDist = 0.60;
+    let closestResult: SnapResult | null = null;
+
+    for (const wall of targetWalls) {
+      const segCount = wall.isClosed && wall.points.length >= 3 ? wall.points.length : wall.points.length - 1;
+      for (let i = 0; i < segCount; i++) {
+        const pA = wall.points[i];
+        const pB = wall.points[(i + 1) % wall.points.length];
+        const vx = pB.x - pA.x;
+        const vz = pB.z - pA.z;
+        const lenSq = vx * vx + vz * vz;
+        if (lenSq < 1e-5) continue;
+
+        const rawT = ((pointerPos.x - pA.x) * vx + (pointerPos.z - pA.z) * vz) / lenSq;
+        const t = Math.max(0.15, Math.min(0.85, rawT));
+        const projX = pA.x + vx * t;
+        const projZ = pA.z + vz * t;
+        const d = Math.hypot(projX - pointerPos.x, projZ - pointerPos.z);
+
+        if (d < closestDist) {
+          closestDist = d;
+          const len = Math.sqrt(lenSq);
+          const tan = { x: vx / len, z: vz / len };
+          const norm = { x: -tan.z, z: tan.x };
+          const rotY = Math.atan2(vx, vz);
+          const gy = sampleBilinearHeight(buffer, projX, projZ);
+
+          closestResult = {
+            snapped: true,
+            type: 'segment',
+            position: [projX, gy, projZ],
+            rotationY: rotY,
+            wallId: wall.id,
+            segmentIndex: i,
+            t,
+            normal: norm,
+            tangent: tan,
+          };
+        }
+      }
+    }
+
+    if (closestResult) return closestResult;
+    const gy = sampleBilinearHeight(buffer, pointerPos.x, pointerPos.z);
+    return {
+      snapped: false,
+      type: 'terrain',
+      position: [pointerPos.x, gy, pointerPos.z],
+      rotationY: 0,
+    };
+  }
+
+  return {
+    snapped: false,
+    type: 'terrain',
+    position: [pointerPos.x, pointerPos.y, pointerPos.z],
+    rotationY: 0,
+  };
 }

@@ -2,10 +2,11 @@
 
 > Interactive 3D browser diorama celebrating the Maharashtrian Diwali folk tradition of building miniature mud forts (Diwali Killa) in honor of Chhatrapati Shivaji Maharaj.
 
-- **URL**: https://killaplayground.com/
-- **Documentation for LLMs**: https://killaplayground.com/llms.txt
-- **Sitemap**: https://killaplayground.com/sitemap.xml
-- **Robots**: https://killaplayground.com/robots.txt
+- **Primary URL**: https://www.killaplayground.games/
+- **Domain**: killaplayground.games
+- **Comprehensive LLM Guide**: https://www.killaplayground.games/llms.txt
+- **Sitemap**: https://www.killaplayground.games/sitemap.xml
+- **Robots Policies**: https://www.killaplayground.games/robots.txt
 
 ## Key Capabilities
 - **Terrain Sculpting**: 8 modes (Peak, Plateau, Ramp, Gorge, Trench, Smooth, Shader-Integrated Tarpaulin Pond, Retexture) with BVH acceleration (< 0.2ms raycasting).

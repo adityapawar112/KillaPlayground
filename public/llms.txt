@@ -2,6 +2,12 @@
 
 > Killa Playground (किल्ला प्लेग्राउंड) is an interactive, tactile 3D browser diorama and creative sandbox celebrating the Maharashtrian Diwali folk tradition of building miniature mud forts (Diwali Killa) in honor of Chhatrapati Shivaji Maharaj.
 
+- **Primary Website**: https://www.killaplayground.games/
+- **Domain**: killaplayground.games
+- **Summary LLM Guide**: https://www.killaplayground.games/llm.txt
+- **Sitemap**: https://www.killaplayground.games/sitemap.xml
+- **Robots Policies**: https://www.killaplayground.games/robots.txt
+
 ## Overview
 
 Diwali Killa Sandbox brings the cherished Indian courtyard tradition of fort crafting into the modern browser with zero server costs (100% client-side WebGL2 compute) and authentic cultural art direction. Users sculpt terrain, draw continuous parametric fort walls with stone bastions and arched gateways, place ascending stone steps and saffron flags with 3D splines, paint authentic earth pigments (Tambdi Maati, Deccan basalt, grass, sand), scatter native 3D trees and shrubs, stage festive clay figurines, and generate high-resolution multi-angle social posters in one click.
@@ -64,11 +70,11 @@ Building miniature mud forts (*Diwali Killa*) is a centuries-old cultural tradit
 
 ## Key Links & Resources
 
-- [Home & Diorama Sandbox](https://killaplayground.com/): Interactive 3D Diwali Killa sandbox application.
-- [Sitemap](https://killaplayground.com/sitemap.xml): Machine-readable XML sitemap.
-- [Robots Configuration](https://killaplayground.com/robots.txt): Crawler and indexing policies.
-- [Full LLM Specification](https://killaplayground.com/llms.txt): Detailed project documentation for language models.
-- [Summary LLM Text](https://killaplayground.com/llm.txt): Compact project overview for AI systems.
+- [Home & Diorama Sandbox](https://www.killaplayground.games/): Interactive 3D Diwali Killa sandbox application.
+- [Sitemap](https://www.killaplayground.games/sitemap.xml): Machine-readable XML sitemap.
+- [Robots Configuration](https://www.killaplayground.games/robots.txt): Crawler and indexing policies.
+- [Full LLM Specification](https://www.killaplayground.games/llms.txt): Detailed project documentation for language models.
+- [Summary LLM Text](https://www.killaplayground.games/llm.txt): Compact project overview for AI systems.
 - [GitHub Repository](https://github.com/adityak/KillaPlayground): Source code, issue tracker, and architectural specifications.
 - [Product Specifications](https://github.com/adityak/KillaPlayground/blob/main/product.md): User journey, Killa-first phases, and cultural lore.
 - [Technical Architecture](https://github.com/adityak/KillaPlayground/blob/main/architechture.md): Zero-cost tech stack, terrain heightmap state machine, and binary serialization.

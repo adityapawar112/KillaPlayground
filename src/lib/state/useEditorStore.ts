@@ -157,6 +157,12 @@ interface EditorState {
   toggleGrandBastionOnNode: (wallId: string, nodeIndex: number) => void;
   updateBastionProperties: (wallId: string, nodeIndex: number, props: Partial<import('../walls/wallTypes').CustomBastionProps>) => void;
   removeBastionFromNode: (wallId: string, nodeIndex: number) => void;
+  addTowerToWall: (wallId: string, segmentIndex: number, t?: number, radius?: number) => void;
+  updateTowerProperties: (wallId: string, towerId: string, props: Partial<import('../walls/wallTypes').WallTower>) => void;
+  removeTowerFromWall: (wallId: string, towerId: string) => void;
+  addBoxBastionToWall: (wallId: string, segmentIndex: number, t?: number, props?: Partial<import('../walls/wallTypes').WallBoxBastion>) => void;
+  updateBoxBastionProperties: (wallId: string, boxId: string, props: Partial<import('../walls/wallTypes').WallBoxBastion>) => void;
+  removeBoxBastionFromWall: (wallId: string, boxId: string) => void;
   addGateToWall: (wallId: string, segmentIndex: number, t?: number) => void;
   updateGateProperties: (wallId: string, gateId: string, props: Partial<WallGate>) => void;
   removeGateFromWall: (wallId: string, gateId: string) => void;
@@ -444,6 +450,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id,
       points: [...activeWallDraft],
       isClosed,
+      towers: [],
+      boxBastions: [],
       manualBastionIndices: [],
       grandBastionIndices: [],
       gates: [],
@@ -578,6 +586,96 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           : state.selectedComponent,
     }));
   },
+  addTowerToWall: (wallId, segmentIndex, t = 0.5, radius) => {
+    pushUndoSnapshot();
+    const towerId = `tower_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    set((state) => {
+      const wall = state.walls.find((w) => w.id === wallId);
+      const defaultRadius = wall?.settings.bastionRadius || 0.13;
+      const newTower: import('../walls/wallTypes').WallTower = {
+        id: towerId,
+        segmentIndex,
+        t,
+        radius: radius ?? defaultRadius,
+        heightOffset: 0.02,
+      };
+      return {
+        walls: state.walls.map((w) => {
+          if (w.id !== wallId) return w;
+          return { ...w, towers: [...(w.towers || []), newTower] };
+        }),
+        selectedComponent: { type: 'tower', idOrIndex: towerId, wallId },
+      };
+    });
+  },
+  updateTowerProperties: (wallId, towerId, props) => {
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          towers: (w.towers || []).map((tow) => (tow.id === towerId ? { ...tow, ...props } : tow)),
+        };
+      }),
+    }));
+  },
+  removeTowerFromWall: (wallId, towerId) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return { ...w, towers: (w.towers || []).filter((tow) => tow.id !== towerId) };
+      }),
+      selectedComponent:
+        state.selectedComponent?.type === 'tower' && state.selectedComponent.idOrIndex === towerId
+          ? null
+          : state.selectedComponent,
+    }));
+  },
+  addBoxBastionToWall: (wallId, segmentIndex, t = 0.5, props) => {
+    pushUndoSnapshot();
+    const boxId = `box_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newBox: import('../walls/wallTypes').WallBoxBastion = {
+      id: boxId,
+      segmentIndex,
+      t,
+      width: props?.width ?? 0.30,
+      depth: props?.depth ?? 0.30,
+      heightOffset: props?.heightOffset ?? 0.04,
+      flipSide: props?.flipSide ?? false,
+    };
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return { ...w, boxBastions: [...(w.boxBastions || []), newBox] };
+      }),
+      selectedComponent: { type: 'box', idOrIndex: boxId, wallId },
+    }));
+  },
+  updateBoxBastionProperties: (wallId, boxId, props) => {
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          boxBastions: (w.boxBastions || []).map((b) => (b.id === boxId ? { ...b, ...props } : b)),
+        };
+      }),
+    }));
+  },
+  removeBoxBastionFromWall: (wallId, boxId) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return { ...w, boxBastions: (w.boxBastions || []).filter((b) => b.id !== boxId) };
+      }),
+      selectedComponent:
+        state.selectedComponent?.type === 'box' && state.selectedComponent.idOrIndex === boxId
+          ? null
+          : state.selectedComponent,
+    }));
+  },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {
     pushUndoSnapshot();
     const gateId = `gate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -585,8 +683,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       id: gateId,
       segmentIndex,
       t,
-      width: 0.35,
-      height: 0.28,
+      width: 0.18,
+      height: 0.18,
       hasGatehouse: true,
     };
     set((state) => ({
@@ -700,10 +798,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedSplineId: null,
   splineConversionType: 'steps',
   splineSettings: {
-    stepWidth: 0.6,
-    stepRun: 0.22,
-    stepRise: 0.08,
-    spacing: 0.5,
+    stepWidth: 0.06,
+    stepRun: 0.025,
+    stepRise: 0.01,
+    stepOffset: 0.0,
+    stepSpacing: 0.025,
+    spacing: 0.20,
     scale: 1.0,
   },
 

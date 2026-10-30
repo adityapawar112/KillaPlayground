@@ -11,6 +11,18 @@ import { SplineConversionType, SplineSettings, InstanceTransform, DEFAULT_SPLINE
 export { sampleBilinearHeight };
 
 /**
+ * Creates a smooth 3D curve from control points.
+ * Uses LineCurve3 for 2-point segments to avoid Catmull-Rom endpoint overshoot,
+ * and centripetal CatmullRomCurve3 for 3+ points to prevent cusps and loops.
+ */
+function createCurve(points: THREE.Vector3[], tension = 0.5): THREE.Curve<THREE.Vector3> {
+  if (points.length === 2) {
+    return new THREE.LineCurve3(points[0], points[1]);
+  }
+  return new THREE.CatmullRomCurve3(points, false, 'centripetal', tension);
+}
+
+/**
  * Generates smooth 3D spline points conforming to terrain surface using CatmullRomCurve3.
  */
 export function generateSplinePointsAlongTerrain(
@@ -24,14 +36,16 @@ export function generateSplinePointsAlongTerrain(
   }
 
   const v3Points = points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
-  const curve = new THREE.CatmullRomCurve3(v3Points, false, 'catmullrom', tension);
+  const curve = createCurve(v3Points, tension);
 
   const totalSegments = points.length - 1;
   const numSamples = Math.max(2, totalSegments * samplesPerSegment);
   const spacedPoints = curve.getSpacedPoints(numSamples);
 
   return spacedPoints.map((pt) => {
-    const y = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const terrainY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    // Follow 3D curve point if elevated on walls/towers, never dip below terrain surface
+    const y = Math.max(pt.y, terrainY);
     return [pt.x, y, pt.z];
   });
 }
@@ -119,7 +133,7 @@ class StoneStepsBuilder {
       this.vertexCount += 4;
     };
 
-    const uvMultiplier = 3.5;
+    const uvMultiplier = 5.0; // Larger authentic stone block texture scale
 
     // Top face (+Y) - Flat walkable tread
     addQuad(
@@ -220,25 +234,37 @@ export function generateStoneStepsGeometry(
   const stepWidth = options?.stepWidth ?? DEFAULT_SPLINE_SETTINGS.steps.stepWidth;
   const stepRun = options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepRun;
   const stepRise = options?.stepRise ?? DEFAULT_SPLINE_SETTINGS.steps.stepRise;
+  const stepOffset = options?.stepOffset ?? DEFAULT_SPLINE_SETTINGS.steps.stepOffset ?? 0;
+  const stepSpacing = options?.stepSpacing ?? options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepSpacing ?? 0.025;
 
   const v3Points = points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
-  const curve = new THREE.CatmullRomCurve3(v3Points, false, 'catmullrom', 0.5);
+  const curve = createCurve(v3Points, 0.5);
   const totalLength = curve.getLength();
 
-  const stepCount = Math.max(1, Math.round(totalLength / stepRun));
+  // Spacing between consecutive step centers along path
+  const effectiveStepSpacing = Math.max(0.01, stepSpacing);
+  const stepCount = Math.max(1, Math.round(totalLength / effectiveStepSpacing));
   const builder = new StoneStepsBuilder();
 
   // Depth with slight overlap so consecutive steps join cleanly without light leakage
   const treadDepth = stepRun * 1.08;
-  const embedDepth = 0.08; // 8cm foundation sink into ground
+  const embedDepth = 0.008; // 8mm foundation sink into ground / wall top
 
   for (let i = 0; i < stepCount; i++) {
     const t = (i + 0.5) / stepCount;
     const pt = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
 
-    // Sample terrain elevation at the step center
-    const groundY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    // Calculate normal perpendicular to horizontal tangent for lateral offset
+    const latNormX = -tangent.z;
+    const latNormZ = tangent.x;
+    const latNormLen = Math.hypot(latNormX, latNormZ) || 1;
+    const shiftedX = pt.x + (latNormX / latNormLen) * stepOffset;
+    const shiftedZ = pt.z + (latNormZ / latNormLen) * stepOffset;
+
+    // Sample terrain elevation at the shifted step center, supporting placement atop walls/towers
+    const terrainY = buffer ? sampleBilinearHeight(buffer, shiftedX, shiftedZ) : pt.y;
+    const groundY = Math.max(pt.y, terrainY);
 
     // Calculate yaw rotation from horizontal tangent
     const yaw = Math.atan2(tangent.x, tangent.z);
@@ -247,7 +273,7 @@ export function generateStoneStepsGeometry(
     const totalBoxHeight = stepRise + embedDepth;
     const centerY = groundY + stepRise / 2 - embedDepth / 2;
 
-    builder.addBox(pt.x, centerY, pt.z, stepWidth, totalBoxHeight, treadDepth, yaw);
+    builder.addBox(shiftedX, centerY, shiftedZ, stepWidth, totalBoxHeight, treadDepth, yaw);
   }
 
   return builder.build();
@@ -270,7 +296,7 @@ export function generateFlagInstanceData(
   const scale = options?.scale ?? DEFAULT_SPLINE_SETTINGS.flags.scale;
 
   const v3Points = points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
-  const curve = new THREE.CatmullRomCurve3(v3Points, false, 'catmullrom', 0.5);
+  const curve = createCurve(v3Points, 0.5);
   const totalLength = curve.getLength();
 
   const count = Math.max(1, Math.round(totalLength / spacing));
@@ -281,11 +307,12 @@ export function generateFlagInstanceData(
     const pt = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
 
-    const groundY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const terrainY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const surfaceY = Math.max(pt.y, terrainY);
     const yaw = Math.atan2(tangent.x, tangent.z);
 
     transforms.push({
-      position: [pt.x, groundY, pt.z],
+      position: [pt.x, surfaceY, pt.z],
       rotation: [0, yaw, 0],
       scale: [scale, scale, scale],
     });
@@ -311,7 +338,7 @@ export function generateDiyaInstanceData(
   const scale = options?.scale ?? DEFAULT_SPLINE_SETTINGS.diyas.scale;
 
   const v3Points = points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
-  const curve = new THREE.CatmullRomCurve3(v3Points, false, 'catmullrom', 0.5);
+  const curve = createCurve(v3Points, 0.5);
   const totalLength = curve.getLength();
 
   const count = Math.max(1, Math.round(totalLength / spacing));
@@ -321,12 +348,13 @@ export function generateDiyaInstanceData(
     const t = Math.min(1.0, Math.max(0.0, i / count));
     const pt = curve.getPointAt(t);
 
-    const groundY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const terrainY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const surfaceY = Math.max(pt.y, terrainY);
     // Slight deterministic rotation jitter based on index for natural festive placement
     const pseudoRand = ((i * 137.5) % 360) * (Math.PI / 180);
 
     transforms.push({
-      position: [pt.x, groundY, pt.z],
+      position: [pt.x, surfaceY, pt.z],
       rotation: [0, pseudoRand, 0],
       scale: [scale, scale, scale],
     });
@@ -342,60 +370,53 @@ export function generateDiyaInstanceData(
 
 /**
  * Creates the wooden flagpole geometry (slender vertical cylinder).
+ * Scaled 10x smaller for authentic miniature fort rampart/ridge placement.
  */
 export function createFlagpoleGeometry(): THREE.CylinderGeometry {
-  // Height: 0.55m, radius: 0.008m (8mm pole)
-  const geo = new THREE.CylinderGeometry(0.007, 0.009, 0.55, 8);
-  geo.translate(0, 0.275, 0); // Position base at y = 0
+  // Height: 0.11m (11cm), radius: 0.0016m (1.6mm pole) - 2x scale baseline
+  const geo = new THREE.CylinderGeometry(0.0014, 0.0018, 0.11, 8);
+  geo.translate(0, 0.055, 0); // Position base at y = 0
   return geo;
 }
 
 /**
  * Creates the authentic Maratha swallowtail saffron flag cloth geometry.
  * Double-pointed swallowtail pennant facing outward from the flagpole (+Z local axis).
+ * Normal scale calibrated (2.0x larger than previous 10x reduced size).
  */
 export function createSwallowtailFlagGeometry(): THREE.BufferGeometry {
   const geo = new THREE.BufferGeometry();
 
-  const flagWidth = 0.32; // 32cm flag fly
-  const flagHeight = 0.22; // 22cm flag hoist
-  const topY = 0.52;
+  const flagWidth = 0.064; // 6.4cm flag fly (2x)
+  const flagHeight = 0.044; // 4.4cm flag hoist (2x)
+  const topY = 0.104;
   const bottomY = topY - flagHeight;
   const midY = (topY + bottomY) / 2;
-
-  // Vertices for Maratha twin swallowtail:
-  // 0: Mast Top (0, topY, 0)
-  // 1: Top tip (flagWidth, topY - 0.02, 0)
-  // 2: Upper tail tip (flagWidth, topY - 0.06, 0)
-  // 3: Inner notch cleft (flagWidth * 0.45, midY, 0)
-  // 4: Lower tail tip (flagWidth, bottomY + 0.04, 0)
-  // 5: Mast Bottom (0, bottomY, 0)
-  // 6: Mast Mid (0, midY, 0)
 
   const positions = new Float32Array([
     // Upper swallowtail triangle 1: Mast Top, Top Tip, Mast Mid
     0, topY, 0,
-    flagWidth, topY - 0.02, 0,
+    flagWidth, topY - 0.004, 0,
     0, midY, 0,
 
     // Upper swallowtail triangle 2: Top Tip, Upper Tail Tip, Inner Notch
-    flagWidth, topY - 0.02, 0,
-    flagWidth, topY - 0.06, 0,
+    flagWidth, topY - 0.004, 0,
+    flagWidth, topY - 0.012, 0,
     flagWidth * 0.45, midY, 0,
 
     // Upper bridge triangle: Top Tip, Inner Notch, Mast Mid
-    flagWidth, topY - 0.02, 0,
+    flagWidth, topY - 0.004, 0,
     flagWidth * 0.45, midY, 0,
     0, midY, 0,
 
     // Lower swallowtail triangle 1: Mast Mid, Inner Notch, Lower Tail Tip
     0, midY, 0,
     flagWidth * 0.45, midY, 0,
-    flagWidth, bottomY + 0.04, 0,
+    flagWidth, bottomY + 0.008, 0,
 
     // Lower swallowtail triangle 2: Mast Mid, Lower Tail Tip, Mast Bottom
     0, midY, 0,
-    flagWidth, bottomY + 0.04, 0,
+    flagWidth, bottomY + 0.008, 0,
     0, bottomY, 0,
   ]);
 
@@ -427,21 +448,23 @@ export function createSwallowtailFlagGeometry(): THREE.BufferGeometry {
 
 /**
  * Creates the terracotta diya earthen clay bowl geometry.
+ * Scaled to 0.5x of previous oversized size (rTop: 9cm, rBottom: 5cm, h: 5cm).
  */
 export function createDiyaBowlGeometry(): THREE.BufferGeometry {
-  // Truncated cone / shallow clay cup (radiusTop: 0.035m, radiusBottom: 0.02m, height: 0.02m)
-  const geo = new THREE.CylinderGeometry(0.035, 0.02, 0.02, 12);
-  geo.translate(0, 0.01, 0); // Position base at y = 0
+  // Truncated cone clay cup (radiusTop: 0.09m, radiusBottom: 0.05m, height: 0.05m)
+  const geo = new THREE.CylinderGeometry(0.09, 0.05, 0.05, 16);
+  geo.translate(0, 0.025, 0); // Position base at y = 0
   return geo;
 }
 
 /**
- * Creates the glowing flame teardrop geometry for a diya lamp.
+ * Creates the glowing flame teardrop geometry for a festive diya lamp.
+ * Scaled to 0.5x of previous oversized size (radius: 3.5cm, height: 9cm).
  */
 export function createDiyaFlameGeometry(): THREE.BufferGeometry {
-  // Pointed cone flame (radius: 0.012m, height: 0.03m)
-  const geo = new THREE.ConeGeometry(0.012, 0.03, 10);
-  geo.translate(0, 0.03, 0); // Position directly atop the diya bowl rim
+  // Pointed cone flame (radius: 0.035m, height: 0.09m)
+  const geo = new THREE.ConeGeometry(0.035, 0.09, 12);
+  geo.translate(0, 0.08, 0); // Position directly atop the diya bowl rim
   return geo;
 }
 

@@ -94,10 +94,14 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 Enables users to draw continuous wall curves or multi-segment fort ramparts conforming directly to the underlying terrain elevation. This provides an express path to building fortified killas without requiring manual soil sculpting:
 * **3-Step Crafting Stepper Flow**:
   * **Step 1: Layout & Path Tracing**: Click or drag on terrain to draft rampart curves. Start closing node rendered in green, intermediate points in yellow. Actions to "Proceed to Fortify" or "Cancel Draft".
-  * **Step 2: Fortify & Decorate**: Interactive editing mode where users can select walls, adjust physical dimensions, and use the Magnetic Snap Shelf to attach bastions, grand bastions, arched gates, or freestanding Balekilla citadel keeps. Features glowing selection rings, top badge pins, and contextual inspectors with deletion controls.
+  * **Step 2: Fortify & Decorate**: Interactive editing mode where users can select walls, adjust physical dimensions, and use the Fortifications Stamp Shelf to attach the 3 core fortification types:
+    * **Towers**: Sliding continuous round towers snapping to any point along wall segments.
+    * **Rampart Platforms**: Inward rectangular stone platforms attached flush to the wall, featuring 3D perimeter protective railings while keeping the outer wall crenellations uninterrupted.
+    * **Gates (*Maha Darwaza*)**: Arched gateways with flanking towers and continuous upper rampart walkways.
+    * *Clean Handles*: Flat top floor discs and custom selection surfaces (`BoxPlatformSelectionMesh`), eliminating floating pin spheres.
   * **Step 3: Diorama Solidified**: Locks the fort walls seamlessly into the diorama without editing handles, wireframe overlays, or pins, presenting a clean showcase view with circuit summary metrics.
 * **Miniature Tabletop Diorama Calibration**:
-  * Scaled to realistic miniature diorama measurements (10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding to eliminate floating walls.
+  * Scaled to realistic miniature diorama measurements (default 25cm height, 15cm thickness; range 10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding.
   * Sliders dynamically display physical units in centimeters (`cm`).
 * **Multi-Material PBR Texturing**:
   * Wall & Tower Facings: Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`).
@@ -106,19 +110,19 @@ Enables users to draw continuous wall curves or multi-segment fort ramparts conf
 * **Authentic Murud-Janjira Pointed Battlements (*Kangare*)**:
   * Pointed stone merlons modeled after coastal and Deccan hill forts.
   * Outer-facing battlements automatically oriented via 2D centroid polygon calculations and downhill terrain slope gradient sampling, with manual flip toggle.
-  * Automatic exclusion zones prevent crenellations from clipping through bastions or gatehouse flanking towers.
+  * Preserved continuously along outer ramparts where Rampart Platforms connect.
 * **Watertight Maha Darwaza Arched Gateway**:
   * Formed with solid stone jambs, carved archway opening, and flush upper walkway connecting the fort ramparts across the entrance.
   * Flanked by twin defensive stone towers with solid floors.
 * **Magnetic Snap Holograms**:
-  * Real-time cursor holograms snapping to vertices for bastions and along segments for gates with 0.45m / 0.60m thresholds and segment endpoint clamping.
-  * Real-time cursor toast notifications explaining actions and states.
+  * Real-time cursor holograms oriented with outward-facing wall normal for gates, and inward-facing normal for rampart platforms.
 
 #### 3.2 Spline Structure Placement Tool
-Draws smooth 3D curves across the terrain surface using `THREE.CatmullRomCurve3` and places specialized structures along the drawn path:
-* **Stone Steps (*Payrya*):** Generates stepped horizontal mud/stone boxes ascending slopes from lower courtyards to high fort plateaus[cite: 2].
-* **Bhagwa Saffron Flags:** Plants fluttering swallowtail saffron flags at uniform intervals along paths or ridges.
-* **Festive Divas (Diyas):** Arranges warm glowing oil lamps along path curves for evening illumination.
+Draws smooth 3D curves across terrain slopes and atop fort ramparts/structures using `THREE.CatmullRomCurve3` (and `LineCurve3` for 2-point segments) and places specialized features along the drawn path:
+* **Stone Steps (*Payrya*):** Generates stepped horizontal stone boxes ascending slopes or terraced plateaus with 7x larger authentic stone masonry texture scale (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
+* **Bhagwa Saffron Flags:** Plants fluttering swallowtail saffron flags at uniform intervals along paths, ridges, or wall ramparts (normalized base scale 1.0x).
+* **Festive Divas (Diyas):** Arranges warm glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
+* **Surface Occlusion Guard:** Prevents pointer events from falling through elevated fort structures to the terrain below, ensuring splines drawn on walls stay strictly on the structures.
 * *(Note: Walking paths and trails are painted directly with the Terrain Paint Tool rather than generated via splines).*
 
 ---

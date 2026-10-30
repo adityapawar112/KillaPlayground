@@ -129,11 +129,14 @@ graph TD
 - **Delivers**:
   - **3-Step Crafting Stepper Flow**:
     - **Step 1 (Layout & Tracing)**: Click or drag on terrain to draft wall circuits. Instant feedback with green start closing node, yellow mid nodes, and direct "Proceed to Fortify" or "Cancel Draft" actions.
-    - **Step 2 (Fortify & Decorate)**: Interactive editing mode with magnetic snap holograms for placing standard Bastions (*Buruj*), corner Grand Bastions (*Maha Buruj*), arched fortified gates (*Maha Darwaza*), and freestanding Balekilla Citadel Keeps. Features visual 3D selection rings, top badge pins, and dedicated inspectors with deletion and dimension controls.
+    - **Step 2 (Fortify & Decorate)**: Interactive editing mode with magnetic snap holograms for placing the 3 authentic fortification types:
+      - **Towers**: Sliding continuous round towers snapping to any point along wall segments.
+      - **Rampart Platforms**: Rectangular stone platforms attached flush to the wall, extending inward into the fort courtyard with authentic 3D protective railings (preserving continuous wall crenellations along the outer battlement face).
+      - **Gates (*Maha Darwaza*)**: Arched gateways with flanking towers and flush continuous upper walkway.
+      - *Note*: Removed legacy citadel keeps and sphere pin markers; replaced with flat clickable top surfaces (`BoxPlatformSelectionMesh` and tower top discs).
     - **Step 3 (Diorama Solidified)**: Seamlessly locks fort walls into the diorama presentation without editing handles, wireframe overlays, or placement badges. Allows one-click switching back to edit or building additional circuits.
   - **Miniature Diorama Metric Calibration**:
-    - Re-calibrated scale from oversized meters to realistic miniature diorama dimensions: wall height from 10cm to 100cm (0.10m to 1.0m) with 12mm ground foundation embedding.
-    - Wall thickness calibrated from 5cm to 40cm (0.05m to 0.40m).
+    - Calibrated default wall height around 25cm (`0.25m`) and thickness to 15cm (`0.15m`) with 12mm ground foundation embedding.
     - Slider readouts dynamically formatted in centimeters (`cm`) for intuitive physical tabletop ergonomics.
   - **Multi-Material PBR Texture Grouping**:
     - Procedural `BufferGeometry` segmented into 3 distinct material groups (`geo.addGroup(start, count, materialIndex)`):
@@ -144,23 +147,22 @@ graph TD
   - **Authentic Murud-Janjira Pointed Crenellations (*Kangare*)**:
     - Shaped pointed stone battlements directly matching coastal and Deccan Maratha rampart profiles.
     - **Outer-Facing Orientation**: Automatically detected using 2D polygon centroid testing for closed fort circuits and downhill terrain slope gradient sampling for open wall runs, with manual flip override.
-    - **Tower Exclusion Zones**: Automatically calculates cylindrical exclusion zones for all bastions and flanking gatehouse towers, eliminating unsightly battlement clipping inside towers.
+    - **Continuous Rampart Parapets**: Preserves crenellations across Rampart Platform attachment points, with cylindrical exclusion zones for sliding round towers.
   - **Watertight Maha Darwaza Arched Gateway**:
     - Procedurally carved arched entrance with solid jambs, extruded arch soffit, and continuous top walkway flush with the fort rampart path.
     - Flanked by twin stone bastions with capped walkway floors.
   - **Real-Time Magnetic Snap Hologram Engine**:
-    - Real-time raycast snapping with generous Euclidean thresholds (0.45m for buruj vertex snapping, 0.60m for arched gate segment snapping).
-    - Clamped segment interpolation ($t \in [0.15, 0.85]$) ensuring gates never intersect bastion nodes.
+    - Real-time raycast snapping with inward and outward normal calculations (Gate ghost aligned with outward-facing normal, Rampart Platform ghost aligned with inward courtyard normal).
     - Holographic 3D preview showing aligned placement orientation and status toast notifications.
   - **Synchronous Undo/Redo Engine**:
-    - Integrated with the diorama's 15-slot circular history (`Ctrl+Z` / `Ctrl+Y`), capturing pre-mutation state synchronously to guarantee 100% reliable state rollback across all wall, bastion, gate, and citadel operations.
+    - Integrated with the diorama's 15-slot circular history (`Ctrl+Z` / `Ctrl+Y`), capturing pre-mutation state synchronously to guarantee 100% reliable state rollback across all wall, tower, platform, and gate operations.
 
 ### Acceptance Criteria
 - [x] User can click and drag to draw a wall that follows terrain contours.
-- [x] Wall height updates interactively via slider in miniature centimeters (10cm - 100cm).
-- [x] Round bastions (*buruj*) automatically spawn at corners or snap to vertices via magnetic hologram.
+- [x] Wall height updates interactively via slider in miniature centimeters (10cm - 100cm, default 25cm).
+- [x] Sliding round towers snap continuously along wall segments via magnetic hologram.
+- [x] Inward Rampart Platforms attach to walls with protective 3D perimeter railings while preserving outer wall crenellations.
 - [x] Fort gates (*Maha Darwaza*) insert cleanly along wall segments with continuous top walkway.
-- [x] Crenellations (*kangare*) render outer-facing pointed battlements with tower exclusion zones.
 - [x] Multi-material PBR texturing applies stone brick, gravel, and dark stone across geometry groups.
 - [x] 3-Step stepper (`Layout` -> `Fortify` -> `Solidified`) isolates editing handles from final diorama.
 
@@ -171,19 +173,25 @@ graph TD
 - **Status**: `completed`
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
-  - **Interactive 3D Curve Drawing**:
-    - Draws smooth 3D spline paths across terrain surfaces using `THREE.CatmullRomCurve3`.
-  - **Linear Structure Conversions**:
-    - **Stone Steps (*Payrya*)**: Generates stepped horizontal mud/stone boxes ascending slopes from lower courtyards to high fort plateaus.
-    - **Bhagwa Saffron Flags**: Automatically arranges waving swallowtail saffron flags at uniform intervals along the path.
-    - **Festive Divas (Diyas)**: Places glowing terracotta oil lamps along drawn curves for festive illumination.
-  - *(Note: Walkway paths are handled via the Terrain Paint Tool rather than splines).*
+  - **Interactive 3D Curve Drawing Engine**:
+    - Draws smooth 3D curves across terrain slopes and atop fort walls/structures using centripetal `THREE.CatmullRomCurve3` (and `THREE.LineCurve3` for 2-point segments).
+    - Raycast occlusion guard on terrain prevents accidental duplicate points on the ground when drafting over elevated fort ramparts.
+    - Capturing pointerdown handling disables OrbitControls while actively drawing splines.
+  - **3 Core Linear Structure Conversions**:
+    - **Stone Steps (*Payrya*)**: Generates stepped horizontal stone boxes ascending slopes. Features 7x larger authentic stone masonry texture scale (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
+    - **Bhagwa Saffron Flags**: Plants fluttering swallowtail saffron flags at uniform intervals along paths, ridges, or wall ramparts (normalized base scale 1.0x).
+    - **Festive Divas (Diyas)**: Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
+  - **Live HUD & Property Synchronization**:
+    - Selecting any placed spline structure in the 3D scene immediately opens its property inspector and dynamic re-rendering (`invalidate()`).
+    - Clean English display voice in English and Hindi modes without cluttering Marathi subtext.
 
 ### Acceptance Criteria
-- [x] Spline curve drawing cleanly samples 3D surface points across slopes.
-- [x] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient.
-- [x] Converting to Flags places spaced saffron flags with wind sway vertex shader.
-- [x] Converting to Divas arranges warm glowing oil lamps along the drawn path.
+- [x] Spline curve drawing cleanly samples 3D surface points across terrain slopes and fort walls.
+- [x] Occlusion trapping prevents spline points from leaking through walls to the ground underneath.
+- [x] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient with offset and spacing sliders.
+- [x] Converting to Flags places spaced saffron flags with waving swallowtail geometry and pole mast.
+- [x] Converting to Divas arranges warm glowing terracotta oil lamps with flame teardrops along drawn curves.
+- [x] Selecting placed splines dynamically updates 3D diorama geometry upon moving property sliders.
 
 ---
 

@@ -311,22 +311,28 @@ The interface gives the 3D diorama maximum breathing room. Floating panels use w
 **`walls-stepper-panel`**
 - 3-Step Fort Crafting Stepper:
   - **Step 1 (Layout / Tracing):** Interactive draft tracing. Green start closing node (`#10b981`), yellow intermediate nodes (`#f59e0b`), amber line preview. Action buttons: Primary `"Proceed to Fortify"` (green `#10b981`) and Secondary `"Cancel Draft"`.
-  - **Step 2 (Fortify & Decorate):** Magnetic Snap Stamp Shelf featuring Buruj (Round Bastion), Maha Buruj (Grand Bastion), Maha Darwaza (Arched Gateway), and Balekilla (Citadel Keep). Visual 3D selection handles with glowing cyan/emerald rings (`#10b981`) and floating badge pins (`#2563eb`). Contextual Bastion & Gate inspectors with dimension sliders and delete buttons (`#ef4444`).
-  - **Step 3 (Diorama Solidified):** Diorama lock-in state (`#059669`) hiding all wireframes and handles. Displays fort circuit summary cards (total length, wall count, gates, citadels) with `"Build Another Wall Circuit"` CTA.
+  - **Step 2 (Fortify & Decorate):** Fortifications Stamp Shelf featuring the 3 authentic fortification types:
+    1. **Tower** (*Round tower*): Sliding continuous cylindrical bastions snapping along wall segments.
+    2. **Rampart Platform** (*Inward platform*): Flush inward stone platform with 3D protective railings, keeping outer rampart crenellations intact.
+    3. **Gate** (*Arched Gateway*): Arched portal flanked by stone towers with continuous walkway.
+    - Flat 3D selection handles with emerald/cyan highlight surfaces (`BoxPlatformSelectionMesh` and tower top discs), eliminating floating pin spheres.
+    - Contextual component inspectors with dimension sliders, inward/outer flip toggles, and delete buttons (`#dc2626`).
+  - **Step 3 (Diorama Solidified):** Diorama lock-in state (`#059669`) hiding all wireframes and handles. Displays fort circuit summary cards (total length, wall count, gates) with `"Build Another Wall Circuit"` CTA.
 - **Physical Diorama Scale Tokens:**
-  - Wall Height: 10cm to 100cm (formatted as `X cm`).
-  - Wall Thickness: 5cm to 40cm (formatted as `X cm`).
+  - Wall Height: 10cm to 100cm (default: 25cm, formatted as `X cm`).
+  - Wall Thickness: 5cm to 40cm (default: 15cm, formatted as `X cm`).
   - Foundation Embed: 12mm subterranean base skirt.
 - **Hologram Tokens:**
-  - Snapped Vertex Target: Concentric emerald disk ring (`#10b981`) with 70% opacity.
-  - Snapped Gate Archway: Transparent blue arch wireframe volume (`#3b82f6`) with orientation arrows.
-  - Cursor Toast: Floating dark basalt pill (`#23211E`) explaining interaction feedback.
+  - Snapped Wall Target: Magnetic snap indicator ring (`#10b981` snapped, `#f59e0b` hovering).
+  - Gate Hologram: Double flanking towers and portal arch volume aligned with outward-facing wall normal.
+  - Rampart Platform Hologram: Rectangular box wireframe attached to wall, extending inward into courtyard along inward normal.
 
 **`spline-context-menu`**
-- Floating pill-panel anchored to the drawn spline path:
-  1. **Stone Steps** (*Payrya* stepped terracing ascending slopes)
-  2. **Bhagwa Flags** (Uniformly spaced waving swallowtail saffron flags)
-  3. **Glowing Divas** (Festive terracotta oil lamps lining the curve)
+- Contextual properties drawer and dock for spline structures:
+  1. **Stone Steps** (*Payrya* stepped stone blocks with 7x larger masonry texture, lateral offset slider `-15cm` to `+15cm`, and stair spacing slider `1cm` to `10cm`).
+  2. **Bhagwa Flags** (Uniformly spaced waving swallowtail saffron flags with wooden mast poles, normalized 1.0x base scale).
+  3. **Glowing Divas** (Terracotta oil lamps with warm amber flame teardrops, normalized 1.0x base scale).
+- Full raycast occlusion support allowing continuous paths atop walls, towers, platforms, and terrain slopes without duplicate points on the ground underneath.
 
 ### Terrain Texture Palette
 

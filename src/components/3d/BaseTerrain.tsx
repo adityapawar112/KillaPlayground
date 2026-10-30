@@ -416,21 +416,21 @@ export const BaseTerrainContent: React.FC = () => {
             stateBuffer
           );
 
-          if (editor.activeStamp === 'buruj') {
-            if (snap.snapped && snap.wallId && snap.nodeIndex !== undefined) {
-              editor.toggleBastionOnNode(snap.wallId, snap.nodeIndex);
+          if (editor.activeStamp === 'tower' || editor.activeStamp === 'buruj') {
+            if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
+              editor.addTowerToWall(snap.wallId, snap.segmentIndex, snap.t);
               editor.setActiveStamp(null);
-              editor.setToastMessage('Round bastion watchtower placed!');
+              editor.setToastMessage('Tower placed on wall!');
             } else {
-              editor.setToastMessage('Hover closer to a wall vertex (<45cm) to stamp bastion.');
+              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place tower.');
             }
-          } else if (editor.activeStamp === 'grand_buruj') {
-            if (snap.snapped && snap.wallId && snap.nodeIndex !== undefined) {
-              editor.toggleGrandBastionOnNode(snap.wallId, snap.nodeIndex);
+          } else if (editor.activeStamp === 'box' || editor.activeStamp === 'grand_buruj') {
+            if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
+              editor.addBoxBastionToWall(snap.wallId, snap.segmentIndex, snap.t);
               editor.setActiveStamp(null);
-              editor.setToastMessage('Maha Buruj (Grand Bastion) placed on corner vertex!');
+              editor.setToastMessage('Rampart Platform placed on wall!');
             } else {
-              editor.setToastMessage('Hover closer to a wall vertex (<45cm) to stamp grand bastion.');
+              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place box bastion.');
             }
           } else if (editor.activeStamp === 'gate') {
             if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
@@ -438,19 +438,8 @@ export const BaseTerrainContent: React.FC = () => {
               editor.setActiveStamp(null);
               editor.setToastMessage('Maha Darwaza arched gateway inserted!');
             } else {
-              editor.setToastMessage('Hover closer to a fort wall segment (<60cm) to insert Maha Darwaza.');
+              editor.setToastMessage('Hover closer to a fort wall segment (<35cm) to insert Maha Darwaza.');
             }
-          } else if (editor.activeStamp === 'citadel') {
-            editor.addCitadelKeep({
-              x: snap.position[0],
-              y: snap.position[1],
-              z: snap.position[2],
-              scale: 1.0,
-              rotationY: 0,
-              height: 0.40,
-            });
-            editor.setActiveStamp(null);
-            editor.setToastMessage('Balekilla Citadel Keep placed on diorama!');
           }
           invalidate();
           return;
@@ -505,6 +494,10 @@ export const BaseTerrainContent: React.FC = () => {
       // Handle Spline Tool Drawing
       if (editor.activeTool === 'spline') {
         if (e.button !== 0 || e.altKey) return;
+        // If cursor raycast hit any structure in front of the terrain (walls, bastions, towers, platforms), do not draw on terrain under it
+        if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
+          return;
+        }
         e.stopPropagation();
 
         if (controls) {
@@ -593,15 +586,24 @@ export const BaseTerrainContent: React.FC = () => {
 
       if (editor.activeTool === 'spline') {
         if (cursorVisible) setCursorVisible(false);
-        if (isDrawingSplineRef.current && lastSplinePointRef.current) {
-          e.stopPropagation();
-          const dx = e.point.x - lastSplinePointRef.current.x;
-          const dz = e.point.z - lastSplinePointRef.current.z;
-          const dist = Math.hypot(dx, dz);
-          if (dist >= 0.20) {
-            editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
-            lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
-            invalidate();
+        // If cursor raycast hit any structure in front of the terrain (walls, bastions, towers, platforms), do not draw on terrain under it
+        if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
+          return;
+        }
+        if (isDrawingSplineRef.current || (e.buttons === 1 && editor.isDrawingSpline)) {
+          const pts = editor.currentSplinePoints;
+          const last = lastSplinePointRef.current || (pts.length > 0 ? { x: pts[pts.length - 1][0], y: pts[pts.length - 1][1], z: pts[pts.length - 1][2] } : null);
+          if (last) {
+            const dx = e.point.x - last.x;
+            const dy = e.point.y - last.y;
+            const dz = e.point.z - last.z;
+            const dist = Math.hypot(dx, dy, dz);
+            if (dist >= 0.15) {
+              e.stopPropagation();
+              editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+              lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+              invalidate();
+            }
           }
         }
         return;

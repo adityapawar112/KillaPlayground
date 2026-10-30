@@ -109,24 +109,28 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
        * **Group 0 (Wall & Tower Sides):** Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`) with retro pixel `NearestFilter` and repeat wrapping.
        * **Group 1 (Walkways & Tower Floors):** Crushed gravel (`Gravel_01`) for rampart walkway strips and circular tower floor disks.
        * **Group 2 (Battlements & Trims):** Solid dark basalt stone (`dark_stone_texture_128x128_pbr`) for pointed crenellations (*kangare*), gateway soffits, and plinths.
-     * *Authentic Murud-Janjira Pointed Crenellations:* Custom procedural merlons with pointed tops and arrow slit embrasures, oriented outward using 2D polygon centroid testing (closed paths) and downhill terrain gradient sampling (open paths).
-     * *Tower Exclusion Zones:* Automatically excludes wall crenellations within the cylindrical footprint of bastions ($r = \text{bastionRadius}$) and flanking gatehouse towers ($r = 0.20\text{m}$), preventing internal geometry clipping.
-     * *Watertight Maha Darwaza Arched Gate:* Procedurally cuts wall ribbons, constructs solid side jambs and arched soffits, and builds a continuous upper walkway over the lintel connecting to flanking stone towers.
-     * *Miniature Tabletop Scaling:* 10x miniature scaling (wall height: 10cm to 100cm, thickness: 5cm to 40cm, foundation embedding: 12mm).
+     * *3 Authentic Fortifications:*
+       * **Sliding Round Towers:** Continuous segment positioning with masonry walls, gravel floor discs, and pointed crenellations.
+       * **Inward Rampart Platforms:** Rectangular stone bastions attached flush to the wall, extending strictly into the courtyard with 3D protective railings along the 3 exposed rims, leaving outer wall battlements uninterrupted.
+       * **Maha Darwaza Arched Gates:** Procedurally carved arched openings with solid side jambs and flush upper walkways over the lintel.
+     * *Murud-Janjira Pointed Crenellations:* Custom procedural merlons with pointed tops, oriented outward using 2D polygon centroid testing (closed paths) and downhill terrain gradient sampling (open paths).
+     * *Miniature Tabletop Scaling:* Miniature calibration (default wall height: 25cm, thickness: 15cm; range: 10cm–100cm, foundation embedding: 12mm).
    * **Magnetic Snap Hologram Engine (`calculateMagneticSnap`):**
-     * Linear raycast snapping algorithm with Euclidean thresholds: 0.45m for Buruj vertex snapping and 0.60m for arched gate segment snapping.
-     * Interpolation parameter $t$ is clamped to $[0.15, 0.85]$ along the segment, preventing gates from colliding with corner bastions.
-     * Renders real-time holographic snap previews with green/amber rings, arch volumes, and orientation indicators.
+     * Linear raycast snapping algorithm with Euclidean threshold: 0.35m for all 3 fortifications along segments.
+     * Calculates inward normal $\vec{N}_{\text{in}}$ and outward normal $\vec{N}_{\text{out}}$:
+       * Gate ghost rotation is oriented with outward-facing normal $\vec{N}_{\text{out}}$ so entry portals face outward.
+       * Rampart Platform ghost rotation is oriented with inward-facing normal $\vec{N}_{\text{in}}$ so platform bodies extend into the courtyard with the attached face centered on the wall.
    * **State Machine & Synchronous Undo Architecture:**
      * 3-Step Stepper: `layout` (drawing) $\rightarrow$ `fortify` (interactive editing & magnetic placement) $\rightarrow$ `solidified` (clean diorama presentation).
      * `useEditorStore` integrates top-level synchronous `pushUndoSnapshot()` directly preceding store mutations, capturing pre-mutation states synchronously and eliminating microtask race conditions with `terrainStore`.
 
 3. **Spline Tool (Linear Structure Placement):**
-   * Draws 3D curves along the terrain surface using `THREE.CatmullRomCurve3`.
+   * Draws smooth 3D curves along terrain slopes and atop fort structures using `createCurve` (centripetal `THREE.CatmullRomCurve3` for 3+ points, `THREE.LineCurve3` for 2-point segments).
+   * **Raycast Occlusion Defense:** Terrain listener ignores pointer events when intersected by a closer fort structure, preventing dual-layer points on the ground underneath.
    * **Conversion Options:**
-     * *Stone Steps (*Payrya*):* Generates stepped horizontal terraces ascending slopes.
-     * *Bhagwa Flag Lines:* Arranges waving swallowtail saffron flags at uniform intervals.
-     * *Divas / Diyas:* Places glowing terracotta oil lamps along path curves for evening illumination.
+     * *Stone Steps (*Payrya*):* Generates stepped stone terraces with 7x larger masonry texture (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
+     * *Bhagwa Flag Lines:* Arranges waving swallowtail saffron flags at uniform intervals (normalized base scale 1.0x).
+     * *Divas / Diyas:* Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
    * *(Note: Walking paths are painted using the Terrain Paint Tool).*
 
 4. **Terrain Paint Tool (Surface Texture Brush):**

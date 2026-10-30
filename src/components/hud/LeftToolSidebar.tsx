@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import {
   TbMountain,
   TbTrendingDown,
@@ -42,6 +42,7 @@ import { useEditorStore, BrushSizeType, ToolType, TerrainSubTool } from '@/lib/s
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { PAINT_COLORS } from '@/lib/constants/tokens';
 import { calculateWallTotalLength, detectBastionLocations } from '@/lib/walls/wallGeometry';
+import { SplineConversionType, SplineSettings } from '@/lib/spline/splineTypes';
 
 const STORAGE_WIDTH_KEY = 'killa_sidebar_width_v1';
 
@@ -103,6 +104,10 @@ export const LeftToolSidebar: React.FC = () => {
     toggleBastionOnNode,
     updateBastionProperties,
     removeBastionFromNode,
+    updateTowerProperties,
+    removeTowerFromWall,
+    updateBoxBastionProperties,
+    removeBoxBastionFromWall,
     updateGateProperties,
     removeGateFromWall,
     startNewWallCircuit,
@@ -131,30 +136,37 @@ export const LeftToolSidebar: React.FC = () => {
     clearAllSplines,
     updateSplineType,
     updateSplineSettings,
+    locale,
   } = useEditorStore();
 
+  const selectedSpline = useMemo(
+    () => splines.find((s) => s.id === selectedSplineId) || null,
+    [splines, selectedSplineId]
+  );
+  const effectiveConversionType = selectedSpline ? selectedSpline.type : splineConversionType;
+  const effectiveSettings = (selectedSpline ? selectedSpline.settings : splineSettings) ?? splineSettings;
+
+  const handleConversionTypeChange = useCallback(
+    (type: SplineConversionType) => {
+      setSplineConversionType(type);
+      if (selectedSplineId) {
+        updateSplineType(selectedSplineId, type);
+      }
+    },
+    [selectedSplineId, setSplineConversionType, updateSplineType]
+  );
+
+  const handleSplineSettingChange = useCallback(
+    (patch: Partial<SplineSettings>) => {
+      setSplineSettings(patch);
+      if (selectedSplineId) {
+        updateSplineSettings(selectedSplineId, patch);
+      }
+    },
+    [selectedSplineId, setSplineSettings, updateSplineSettings]
+  );
+
   const { t } = useTranslation();
-
-  // Floating cursor toast notification for disabled buttons/properties
-  const [cursorToast, setCursorToast] = useState<{
-    message: string;
-    x: number;
-    y: number;
-  } | null>(null);
-  const cursorToastTimer = useRef<NodeJS.Timeout | null>(null);
-
-  const showCursorToast = (e: React.MouseEvent | null, message: string) => {
-    if (cursorToastTimer.current) {
-      clearTimeout(cursorToastTimer.current);
-    }
-    const x = e ? e.clientX : 320;
-    const y = e ? e.clientY : 300;
-    setCursorToast({ message, x, y });
-    cursorToastTimer.current = setTimeout(() => {
-      setCursorToast(null);
-    }, 2800);
-    setToastMessage(message);
-  };
 
   // Adjustable Width State (default: 290px, min: 230px, max: 460px)
   const [sidebarWidth, setSidebarWidth] = useState<number>(290);
@@ -504,8 +516,6 @@ export const LeftToolSidebar: React.FC = () => {
                   if (wallStep === 'layout') {
                     if (activeWallDraft.length >= 2 || selectedWallId || walls.length > 0) {
                       proceedToFortify();
-                    } else {
-                      showCursorToast(null, 'Draft a wall or select an existing wall first.');
                     }
                   } else {
                     setWallStep('fortify');
@@ -573,14 +583,11 @@ export const LeftToolSidebar: React.FC = () => {
 
                   <div className="grid grid-cols-2 gap-1.5 pt-1">
                     <button
-                      onClick={(e) => {
-                        if (activeWallDraft.length < 2) {
-                          showCursorToast(e, 'Click on the terrain to place at least 2 nodes first.');
-                          return;
-                        }
+                      onClick={() => {
+                        if (activeWallDraft.length < 2) return;
                         const newId = proceedToFortify();
                         if (newId) {
-                          showCursorToast(null, 'Wall created! Now fortify and style your ramparts.');
+                          setToastMessage('Wall created! Now fortify and style your ramparts.');
                         }
                       }}
                       className={`py-2 px-2 text-[11px] font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1 ${
@@ -594,7 +601,6 @@ export const LeftToolSidebar: React.FC = () => {
                     <button
                       onClick={() => {
                         cancelCurrentWall();
-                        showCursorToast(null, 'Draft canceled.');
                       }}
                       className="py-2 px-2 bg-[#FAF8F5] text-[#8F4938] border border-[#D9C9B4] text-[11px] font-semibold rounded-lg hover:bg-[#EAE0D3] cursor-pointer transition-all"
                     >
@@ -670,7 +676,7 @@ export const LeftToolSidebar: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Wall Height Slider (Scale in Centimeters up to 100cm) */}
+                  {/* Wall Height Slider (Scale in Centimeters up to 60cm, default 25cm) */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-[#4B382C]">{t.tools.walls.height}:</span>
@@ -681,8 +687,8 @@ export const LeftToolSidebar: React.FC = () => {
                     <input
                       type="range"
                       min="0.10"
-                      max="1.00"
-                      step="0.05"
+                      max="0.60"
+                      step="0.02"
                       value={wallSettings.height}
                       onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
                       className="w-full accent-[#4B382C] cursor-pointer"
@@ -690,15 +696,15 @@ export const LeftToolSidebar: React.FC = () => {
                     {/* Height presets */}
                     <div className="grid grid-cols-3 gap-1 pt-0.5">
                       {[
-                        { label: 'Low 25cm', val: 0.25 },
-                        { label: 'Default 50cm', val: 0.50 },
-                        { label: 'Citadel 80cm', val: 0.80 },
+                        { label: 'Low 15cm', val: 0.15 },
+                        { label: 'Default 25cm', val: 0.25 },
+                        { label: 'Citadel 40cm', val: 0.40 },
                       ].map((preset) => (
                         <button
                           key={preset.val}
                           onClick={() => setWallSettings({ height: preset.val })}
                           className={`py-0.5 text-[10px] rounded border transition-all cursor-pointer ${
-                            Math.abs(wallSettings.height - preset.val) < 0.04
+                            Math.abs(wallSettings.height - preset.val) < 0.03
                               ? 'bg-[#4B382C] text-white border-[#38281E]'
                               : 'bg-[#FAF8F5] text-[#5C4638] border-[#D9C9B4] hover:bg-[#EAE0D3]'
                           }`}
@@ -720,8 +726,8 @@ export const LeftToolSidebar: React.FC = () => {
                     <input
                       type="range"
                       min="0.05"
-                      max="0.40"
-                      step="0.02"
+                      max="0.30"
+                      step="0.01"
                       value={wallSettings.thickness}
                       onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
                       className="w-full accent-[#8F4938] cursor-pointer"
@@ -779,7 +785,7 @@ export const LeftToolSidebar: React.FC = () => {
                     >
                       <span className="flex items-center gap-1.5">
                         <span>🔁</span>
-                        <span>Flip Battlements (बाजू उलटा)</span>
+                        <span>Flip Battlements{locale === 'mr' ? ' (बाजू उलटा)' : ''}</span>
                       </span>
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/10">
                         {wallSettings.flipCrenellations ? 'Inverted' : 'Outer'}
@@ -798,36 +804,36 @@ export const LeftToolSidebar: React.FC = () => {
                     <span className="text-[10px] text-[#8D7666]">Magnetic Snap</span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {/* Stamp 1: Round Buruj */}
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {/* Fortification 1: Tower */}
                     <button
-                      onClick={() => setActiveStamp(activeStamp === 'buruj' ? null : 'buruj')}
+                      onClick={() => setActiveStamp(activeStamp === 'tower' ? null : 'tower')}
                       className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
-                        activeStamp === 'buruj'
+                        activeStamp === 'tower'
                           ? 'bg-[#FEF3C7] border-[#D97706] shadow-sm text-[#92400E] font-bold scale-[1.02]'
                           : 'bg-white border-[#D9C9B4] text-[#4B382C] hover:bg-[#F5EFE6]'
                       }`}
                     >
                       <TbTower className="w-5 h-5 text-[#8F4938] mb-1" />
-                      <span className="text-[11px] font-semibold">{t.tools.walls.stampBuruj}</span>
-                      <span className="text-[9px] text-[#8D7666]">Snaps to vertices</span>
+                      <span className="text-[11px] font-semibold">Tower</span>
+                      <span className="text-[9px] text-[#8D7666]">Round tower</span>
                     </button>
 
-                    {/* Stamp 2: Grand Bastion */}
+                    {/* Fortification 2: Rampart Platform */}
                     <button
-                      onClick={() => setActiveStamp(activeStamp === 'grand_buruj' ? null : 'grand_buruj')}
+                      onClick={() => setActiveStamp(activeStamp === 'box' ? null : 'box')}
                       className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
-                        activeStamp === 'grand_buruj'
+                        activeStamp === 'box'
                           ? 'bg-[#FEF3C7] border-[#D97706] shadow-sm text-[#92400E] font-bold scale-[1.02]'
                           : 'bg-white border-[#D9C9B4] text-[#4B382C] hover:bg-[#F5EFE6]'
                       }`}
                     >
-                      <TbTower className="w-5 h-5 text-[#D97706] mb-1" />
-                      <span className="text-[11px] font-semibold">{t.tools.walls.stampGrandBuruj}</span>
-                      <span className="text-[9px] text-[#8D7666]">1.5x Giant Tower</span>
+                      <TbBuildingFortress className="w-5 h-5 text-[#D97706] mb-1" />
+                      <span className="text-[11px] font-semibold">Rampart Platform</span>
+                      <span className="text-[9px] text-[#8D7666]">Inward platform</span>
                     </button>
 
-                    {/* Stamp 3: Maha Darwaza */}
+                    {/* Fortification 3: Gate */}
                     <button
                       onClick={() => setActiveStamp(activeStamp === 'gate' ? null : 'gate')}
                       className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
@@ -837,22 +843,8 @@ export const LeftToolSidebar: React.FC = () => {
                       }`}
                     >
                       <TbDoorEnter className="w-5 h-5 text-[#E85D04] mb-1" />
-                      <span className="text-[11px] font-semibold">{t.tools.walls.stampGate}</span>
-                      <span className="text-[9px] text-[#8D7666]">Snaps to segment</span>
-                    </button>
-
-                    {/* Stamp 4: Citadel Keep */}
-                    <button
-                      onClick={() => setActiveStamp(activeStamp === 'citadel' ? null : 'citadel')}
-                      className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
-                        activeStamp === 'citadel'
-                          ? 'bg-[#FEF3C7] border-[#D97706] shadow-sm text-[#92400E] font-bold scale-[1.02]'
-                          : 'bg-white border-[#D9C9B4] text-[#4B382C] hover:bg-[#F5EFE6]'
-                      }`}
-                    >
-                      <TbBuildingFortress className="w-5 h-5 text-[#16A34A] mb-1" />
-                      <span className="text-[11px] font-semibold">{t.tools.walls.stampCitadel}</span>
-                      <span className="text-[9px] text-[#8D7666]">Stamps on terrain</span>
+                      <span className="text-[11px] font-semibold">Gate</span>
+                      <span className="text-[9px] text-[#8D7666]">{locale === 'mr' ? 'महा दरवाजा' : 'Arched Gateway'}</span>
                     </button>
                   </div>
                 </div>
@@ -868,33 +860,58 @@ export const LeftToolSidebar: React.FC = () => {
                     currentWall.manualBastionIndices,
                     currentWall.excludedBastionIndices
                   );
-                  const totalComponents = bIndices.length + (currentWall.gates?.length || 0);
+                  const totalComponents =
+                    bIndices.length +
+                    (currentWall.towers?.length || 0) +
+                    (currentWall.boxBastions?.length || 0) +
+                    (currentWall.gates?.length || 0);
 
                   return (
                     <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-1.5">
                       <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                        <span>🏰 Placed Items ({totalComponents})</span>
+                        <span>🏰 Fortifications ({totalComponents})</span>
                         <span className="text-[10px] text-[#8D7666]">Click to inspect</span>
                       </div>
                       <div className="space-y-1 max-h-36 overflow-y-auto">
-                        {bIndices.map((bIdx) => {
-                          const isGrand = currentWall.grandBastionIndices?.includes(bIdx) || currentWall.customBastions?.[bIdx]?.isGrand;
-                          const isSelected = selectedComponent?.type === 'bastion' && selectedComponent.idOrIndex === bIdx;
+                        {currentWall.towers?.map((tw, twIdx) => {
+                          const isSelected = selectedComponent?.type === 'tower' && selectedComponent.idOrIndex === tw.id;
                           return (
                             <button
-                              key={`shelf_b_${bIdx}`}
+                              key={`shelf_tw_${tw.id}`}
                               onClick={() => {
-                                setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: currentWall.id });
+                                setSelectedComponent({ type: 'tower', idOrIndex: tw.id, wallId: currentWall.id });
                               }}
                               className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'bg-[#3B82F6] text-white font-bold'
+                                  ? 'bg-[#10B981] text-white font-bold'
                                   : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
                               }`}
                             >
                               <span className="flex items-center gap-1.5">
-                                <TbTower className="w-3.5 h-3.5 text-[#D97706]" />
-                                <span>{isGrand ? 'Maha Buruj' : 'Buruj'} #{bIdx + 1}</span>
+                                <TbTower className="w-3.5 h-3.5 text-[#8F4938]" />
+                                <span>Tower #{twIdx + 1}</span>
+                              </span>
+                              <span className="text-[10px] opacity-80">Edit</span>
+                            </button>
+                          );
+                        })}
+                        {currentWall.boxBastions?.map((bx, bxIdx) => {
+                          const isSelected = selectedComponent?.type === 'box' && selectedComponent.idOrIndex === bx.id;
+                          return (
+                            <button
+                              key={`shelf_bx_${bx.id}`}
+                              onClick={() => {
+                                setSelectedComponent({ type: 'box', idOrIndex: bx.id, wallId: currentWall.id });
+                              }}
+                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#10B981] text-white font-bold'
+                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <TbBuildingFortress className="w-3.5 h-3.5 text-[#D97706]" />
+                                <span>Rampart Platform #{bxIdx + 1}</span>
                               </span>
                               <span className="text-[10px] opacity-80">Edit</span>
                             </button>
@@ -916,7 +933,29 @@ export const LeftToolSidebar: React.FC = () => {
                             >
                               <span className="flex items-center gap-1.5">
                                 <TbDoorEnter className="w-3.5 h-3.5 text-[#E85D04]" />
-                                <span>Maha Darwaza #{gIdx + 1}</span>
+                                <span>Gate #{gIdx + 1}</span>
+                              </span>
+                              <span className="text-[10px] opacity-80">Edit</span>
+                            </button>
+                          );
+                        })}
+                        {bIndices.map((bIdx) => {
+                          const isSelected = selectedComponent?.type === 'bastion' && selectedComponent.idOrIndex === bIdx;
+                          return (
+                            <button
+                              key={`shelf_b_${bIdx}`}
+                              onClick={() => {
+                                setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: currentWall.id });
+                              }}
+                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#10B981] text-white font-bold'
+                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1.5">
+                                <TbTower className="w-3.5 h-3.5 text-[#8F4938]" />
+                                <span>Corner Tower ({bIdx})</span>
                               </span>
                               <span className="text-[10px] opacity-80">Edit</span>
                             </button>
@@ -924,7 +963,7 @@ export const LeftToolSidebar: React.FC = () => {
                         })}
                         {totalComponents === 0 && (
                           <div className="text-[10px] text-[#8D7666] italic py-1 text-center">
-                            No bastions or gates yet. Use stamps above to add them.
+                            No fortifications added yet. Click a stamp above to place on the wall.
                           </div>
                         )}
                       </div>
@@ -937,11 +976,13 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="p-2.5 bg-[#EFF6FF] border border-[#3B82F6]/50 rounded-xl space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-[#1E40AF]">
                       <span>
-                        {selectedComponent.type === 'gate'
-                          ? '🚪 Maha Darwaza'
-                          : selectedComponent.type === 'citadel'
-                          ? '🚩 Balekilla Citadel Keep'
-                          : '🏰 Bastion Tower'}
+                        {selectedComponent.type === 'tower'
+                          ? '🏰 Sliding Tower'
+                          : selectedComponent.type === 'box'
+                          ? '🛡️ Rampart Platform'
+                          : selectedComponent.type === 'gate'
+                          ? (locale === 'mr' ? '🚪 महा दरवाजा' : '🚪 Arched Gateway')
+                          : '🏰 Corner Bastion'}
                       </span>
                       <button
                         onClick={() => setSelectedComponent(null)}
@@ -951,7 +992,207 @@ export const LeftToolSidebar: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* BASTION INSPECTOR */}
+                    {/* TOWER INSPECTOR */}
+                    {selectedComponent.type === 'tower' && (
+                      <div className="space-y-2">
+                        {(() => {
+                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
+                          const tower = wall?.towers?.find((tw) => tw.id === selectedComponent.idOrIndex);
+                          if (!wall || !tower) return null;
+
+                          return (
+                            <div className="space-y-2">
+                              {/* Tower Radius Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Tower Radius:</span>
+                                  <span className="font-mono text-[#1E40AF]">{(tower.radius * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.06"
+                                  max="0.35"
+                                  step="0.01"
+                                  value={tower.radius}
+                                  onChange={(e) =>
+                                    updateTowerProperties(wall.id, tower.id, { radius: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Extra Height Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Extra Tower Height:</span>
+                                  <span className="font-mono text-[#1E40AF]">+{((tower.heightOffset || 0.02) * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.0"
+                                  max="0.15"
+                                  step="0.01"
+                                  value={tower.heightOffset || 0.02}
+                                  onChange={(e) =>
+                                    updateTowerProperties(wall.id, tower.id, { heightOffset: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Segment Position Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Wall Position:</span>
+                                  <span className="font-mono text-[#1E40AF]">{((tower.t || 0.5) * 100).toFixed(0)}%</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.05"
+                                  max="0.95"
+                                  step="0.02"
+                                  value={tower.t || 0.5}
+                                  onChange={(e) =>
+                                    updateTowerProperties(wall.id, tower.id, { t: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Delete Tower Button */}
+                              <button
+                                onClick={() => {
+                                  removeTowerFromWall(wall.id, tower.id);
+                                  setToastMessage('Tower removed.');
+                                }}
+                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
+                              >
+                                <TbTrash className="w-3.5 h-3.5" />
+                                <span>Delete Tower</span>
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* RAMPART PLATFORM INSPECTOR */}
+                    {selectedComponent.type === 'box' && (
+                      <div className="space-y-2">
+                        {(() => {
+                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
+                          const box = wall?.boxBastions?.find((bx) => bx.id === selectedComponent.idOrIndex);
+                          if (!wall || !box) return null;
+
+                          return (
+                            <div className="space-y-2">
+                              {/* Box Width Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Width along Wall:</span>
+                                  <span className="font-mono text-[#1E40AF]">{(box.width * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.15"
+                                  max="0.80"
+                                  step="0.02"
+                                  value={box.width}
+                                  onChange={(e) =>
+                                    updateBoxBastionProperties(wall.id, box.id, { width: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Inward Depth Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Inward Depth:</span>
+                                  <span className="font-mono text-[#1E40AF]">{(box.depth * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.15"
+                                  max="0.80"
+                                  step="0.02"
+                                  value={box.depth}
+                                  onChange={(e) =>
+                                    updateBoxBastionProperties(wall.id, box.id, { depth: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Extra Height Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Extra Height:</span>
+                                  <span className="font-mono text-[#1E40AF]">+{((box.heightOffset || 0.04) * 100).toFixed(0)}cm</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.0"
+                                  max="0.15"
+                                  step="0.01"
+                                  value={box.heightOffset || 0.04}
+                                  onChange={(e) =>
+                                    updateBoxBastionProperties(wall.id, box.id, { heightOffset: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Flip Side Toggle */}
+                              <button
+                                onClick={() =>
+                                  updateBoxBastionProperties(wall.id, box.id, {
+                                    flipSide: !box.flipSide,
+                                  })
+                                }
+                                className="w-full py-1.5 px-2 bg-white border border-[#D9C9B4] hover:bg-[#F5EFE6] rounded-lg text-[11px] font-semibold text-[#4B382C] flex items-center justify-between transition-all cursor-pointer"
+                              >
+                                <span>Orientation: {box.flipSide ? 'Outer Face' : 'Inward Courtyard'}</span>
+                                <span className="font-bold text-[#1E40AF]">Flip Side</span>
+                              </button>
+
+                              {/* Segment Position Slider */}
+                              <div className="space-y-0.5">
+                                <div className="flex items-center justify-between text-[11px]">
+                                  <span className="font-semibold text-[#1E40AF]">Wall Position:</span>
+                                  <span className="font-mono text-[#1E40AF]">{((box.t || 0.5) * 100).toFixed(0)}%</span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.05"
+                                  max="0.95"
+                                  step="0.02"
+                                  value={box.t || 0.5}
+                                  onChange={(e) =>
+                                    updateBoxBastionProperties(wall.id, box.id, { t: parseFloat(e.target.value) })
+                                  }
+                                  className="w-full accent-[#1E40AF] cursor-pointer"
+                                />
+                              </div>
+
+                              {/* Delete Rampart Platform Button */}
+                              <button
+                                onClick={() => {
+                                  removeBoxBastionFromWall(wall.id, box.id);
+                                  setToastMessage('Rampart Platform removed.');
+                                }}
+                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
+                              >
+                                <TbTrash className="w-3.5 h-3.5" />
+                                <span>Delete Rampart Platform</span>
+                              </button>
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    )}
+
+                    {/* CORNER BASTION INSPECTOR */}
                     {selectedComponent.type === 'bastion' && (
                       <div className="space-y-2">
                         {(() => {
@@ -965,26 +1206,6 @@ export const LeftToolSidebar: React.FC = () => {
 
                           return (
                             <div className="space-y-2">
-                              {/* Style Toggle */}
-                              <div className="grid grid-cols-2 gap-1 text-[10px]">
-                                <button
-                                  onClick={() => updateBastionProperties(wall.id, bIdx, { isGrand: false })}
-                                  className={`py-1 rounded border font-bold cursor-pointer transition-all ${
-                                    !isGrand ? 'bg-[#3B82F6] text-white border-[#2563EB]' : 'bg-white text-[#4B382C] border-[#D9C9B4]'
-                                  }`}
-                                >
-                                  Round Buruj
-                                </button>
-                                <button
-                                  onClick={() => updateBastionProperties(wall.id, bIdx, { isGrand: true })}
-                                  className={`py-1 rounded border font-bold cursor-pointer transition-all ${
-                                    isGrand ? 'bg-[#D97706] text-white border-[#B45309]' : 'bg-white text-[#4B382C] border-[#D9C9B4]'
-                                  }`}
-                                >
-                                  Maha Buruj (Grand)
-                                </button>
-                              </div>
-
                               {/* Tower Radius Slider */}
                               <div className="space-y-0.5">
                                 <div className="flex items-center justify-between text-[11px]">
@@ -993,9 +1214,9 @@ export const LeftToolSidebar: React.FC = () => {
                                 </div>
                                 <input
                                   type="range"
-                                  min="0.10"
-                                  max="0.60"
-                                  step="0.02"
+                                  min="0.06"
+                                  max="0.30"
+                                  step="0.01"
                                   value={curRadius}
                                   onChange={(e) =>
                                     updateBastionProperties(wall.id, bIdx, { radius: parseFloat(e.target.value) })
@@ -1013,8 +1234,8 @@ export const LeftToolSidebar: React.FC = () => {
                                 <input
                                   type="range"
                                   min="0.0"
-                                  max="0.30"
-                                  step="0.02"
+                                  max="0.15"
+                                  step="0.01"
                                   value={curHOffset}
                                   onChange={(e) =>
                                     updateBastionProperties(wall.id, bIdx, { heightOffset: parseFloat(e.target.value) })
@@ -1027,12 +1248,12 @@ export const LeftToolSidebar: React.FC = () => {
                               <button
                                 onClick={() => {
                                   removeBastionFromNode(wall.id, bIdx);
-                                  showCursorToast(null, 'Bastion removed.');
+                                  setToastMessage('Bastion removed.');
                                 }}
                                 className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
                               >
                                 <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Bastion (बुरूज काढा)</span>
+                                <span>Delete Bastion</span>
                               </button>
                             </div>
                           );
@@ -1057,9 +1278,9 @@ export const LeftToolSidebar: React.FC = () => {
                                 </div>
                                 <input
                                   type="range"
-                                  min="0.20"
-                                  max="0.70"
-                                  step="0.05"
+                                  min="0.10"
+                                  max="0.35"
+                                  step="0.01"
                                   value={gate.width}
                                   onChange={(e) =>
                                     updateGateProperties(wall.id, gate.id, { width: parseFloat(e.target.value) })
@@ -1072,14 +1293,14 @@ export const LeftToolSidebar: React.FC = () => {
                               <div className="space-y-0.5">
                                 <div className="flex items-center justify-between text-[11px]">
                                   <span className="font-semibold text-[#1E40AF]">Arch Opening Height:</span>
-                                  <span className="font-mono text-[#1E40AF]">{((gate.height || 0.28) * 100).toFixed(0)}cm</span>
+                                  <span className="font-mono text-[#1E40AF]">{((gate.height || 0.18) * 100).toFixed(0)}cm</span>
                                 </div>
                                 <input
                                   type="range"
-                                  min="0.15"
-                                  max="0.50"
-                                  step="0.02"
-                                  value={gate.height || 0.28}
+                                  min="0.10"
+                                  max="0.30"
+                                  step="0.01"
+                                  value={gate.height || 0.18}
                                   onChange={(e) =>
                                     updateGateProperties(wall.id, gate.id, { height: parseFloat(e.target.value) })
                                   }
@@ -1100,7 +1321,7 @@ export const LeftToolSidebar: React.FC = () => {
                                     : 'bg-white border-[#D9C9B4] text-[#4B382C]'
                                 }`}
                               >
-                                <span>Flanking Towers (पहरेदार बुरूज)</span>
+                                <span>Flanking Towers</span>
                                 <span className="font-bold">{gate.hasGatehouse !== false ? 'ON' : 'OFF'}</span>
                               </button>
 
@@ -1127,50 +1348,12 @@ export const LeftToolSidebar: React.FC = () => {
                               <button
                                 onClick={() => {
                                   removeGateFromWall(wall.id, gate.id);
-                                  showCursorToast(null, 'Gate removed.');
+                                  setToastMessage('Gate removed.');
                                 }}
                                 className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
                               >
                                 <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Gate (दरवाजा काढा)</span>
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {/* CITADEL KEEP INSPECTOR */}
-                    {selectedComponent.type === 'citadel' && (
-                      <div className="space-y-1">
-                        {(() => {
-                          const keep = citadelKeeps.find((k) => k.id === selectedComponent.idOrIndex);
-                          if (!keep) return null;
-                          return (
-                            <div className="space-y-1.5">
-                              <div className="flex items-center justify-between text-[11px]">
-                                <span>Scale: {keep.scale.toFixed(1)}x</span>
-                              </div>
-                              <input
-                                type="range"
-                                min="0.5"
-                                max="2.5"
-                                step="0.1"
-                                value={keep.scale}
-                                onChange={(e) =>
-                                  updateCitadelKeep(keep.id, { scale: parseFloat(e.target.value) })
-                                }
-                                className="w-full accent-[#1E40AF] cursor-pointer"
-                              />
-                              <button
-                                onClick={() => {
-                                  removeCitadelKeep(keep.id);
-                                  showCursorToast(null, 'Keep removed.');
-                                }}
-                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
-                              >
-                                <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Keep</span>
+                                <span>Delete Gate</span>
                               </button>
                             </div>
                           );
@@ -1185,7 +1368,7 @@ export const LeftToolSidebar: React.FC = () => {
                   <button
                     onClick={() => {
                       solidifyCurrentWall();
-                      showCursorToast(null, 'Fort solidified into diorama!');
+                      setToastMessage('Fort solidified into diorama!');
                     }}
                     className="w-full py-2 px-3 bg-[#16A34A] text-white text-xs font-bold rounded-xl hover:bg-[#15803D] cursor-pointer shadow-sm transition-all flex items-center justify-center gap-1.5"
                   >
@@ -1206,7 +1389,7 @@ export const LeftToolSidebar: React.FC = () => {
                       onClick={() => {
                         if (selectedWallId) {
                           removeWall(selectedWallId);
-                          showCursorToast(null, 'Wall deleted.');
+                          setToastMessage('Wall deleted.');
                           if (walls.length <= 1) {
                             setWallStep('layout');
                           }
@@ -1280,7 +1463,7 @@ export const LeftToolSidebar: React.FC = () => {
                               onClick={() => {
                                 setSelectedWallId(w.id);
                                 setWallStep('fortify');
-                                showCursorToast(null, `Editing Wall #${idx + 1}`);
+                                setToastMessage(`Editing Wall #${idx + 1}`);
                               }}
                               className="px-2 py-1 bg-[#4B382C] text-white rounded text-[10px] font-semibold hover:bg-[#38281E] cursor-pointer"
                             >
@@ -1289,7 +1472,7 @@ export const LeftToolSidebar: React.FC = () => {
                             <button
                               onClick={() => {
                                 removeWall(w.id);
-                                showCursorToast(null, 'Wall removed.');
+                                setToastMessage('Wall removed.');
                               }}
                               className="p-1 text-[#DC2626] hover:bg-[#FEE2E2] rounded cursor-pointer"
                               title="Delete Wall"
@@ -1307,7 +1490,7 @@ export const LeftToolSidebar: React.FC = () => {
                 <button
                   onClick={() => {
                     startNewWallCircuit();
-                    showCursorToast(null, 'Started new wall circuit. Click on terrain to draw.');
+                    setToastMessage('Started new wall circuit. Click on terrain to draw.');
                   }}
                   className="w-full py-2.5 px-3 bg-[#4B382C] text-white text-xs font-bold rounded-xl hover:bg-[#38281E] cursor-pointer shadow-sm transition-all flex items-center justify-center gap-1.5"
                 >
@@ -1334,7 +1517,7 @@ export const LeftToolSidebar: React.FC = () => {
         {/* ------------------------------------------------------------ */}
         {activeTool === 'spline' && (
           <div className="space-y-4">
-            {/* 1. Header & Instructions */}
+            {/* 1. Header */}
             <div className="p-3 bg-[#EADECF] rounded-xl border border-[#D9C9B4] space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
@@ -1345,10 +1528,25 @@ export const LeftToolSidebar: React.FC = () => {
                   {splines.length} placed
                 </span>
               </div>
-              <p className="text-[11px] text-[#634E40] leading-snug">
-                Click or drag on the terrain to draw smooth 3D paths ascending mountain slopes.
-              </p>
             </div>
+
+            {/* Selected Feature Inspector Banner */}
+            {selectedSpline && (
+              <div className="flex items-center justify-between p-2.5 bg-[#FEF3C7] rounded-xl border border-[#F59E0B]/60 shadow-sm animate-in fade-in">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse" />
+                  <span className="text-xs font-bold text-[#92400E]">
+                    Editing {selectedSpline.type === 'steps' ? 'Stone Steps' : selectedSpline.type === 'flags' ? 'Bhagwa Flags' : 'Diyas'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSelectedSplineId(null)}
+                  className="px-2 py-0.5 text-[11px] font-semibold text-[#B45309] hover:bg-[#FDE68A] rounded transition-colors cursor-pointer"
+                >
+                  Deselect
+                </button>
+              </div>
+            )}
 
             {/* 2. Interactive Drafting Controls */}
             {currentSplinePoints.length > 0 && (
@@ -1368,7 +1566,7 @@ export const LeftToolSidebar: React.FC = () => {
                     onClick={() => {
                       const id = finishSpline();
                       if (id) {
-                        setToastMessage('Spline structure placed on terrain!');
+                        setToastMessage('Spline structure placed!');
                       }
                     }}
                     disabled={currentSplinePoints.length < 2}
@@ -1393,65 +1591,62 @@ export const LeftToolSidebar: React.FC = () => {
               <label className="text-xs font-bold text-[#4B382C]">Feature Type:</label>
               <div className="grid grid-cols-3 gap-1.5 bg-[#EADECF] p-1.5 rounded-xl border border-[#D9C9B4]">
                 <button
-                  onClick={() => setSplineConversionType('steps')}
+                  onClick={() => handleConversionTypeChange('steps')}
                   className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                    splineConversionType === 'steps'
+                    effectiveConversionType === 'steps'
                       ? 'bg-[#4B382C] text-white shadow-sm'
                       : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
                   }`}
                 >
                   <TbStairs className="w-4 h-4 text-[#F59E0B]" />
                   <span className="text-[11px] font-bold leading-tight">Stone Steps</span>
-                  <span className="text-[9px] opacity-80">पायऱ्या</span>
                 </button>
 
                 <button
-                  onClick={() => setSplineConversionType('flags')}
+                  onClick={() => handleConversionTypeChange('flags')}
                   className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                    splineConversionType === 'flags'
+                    effectiveConversionType === 'flags'
                       ? 'bg-[#4B382C] text-white shadow-sm'
                       : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
                   }`}
                 >
                   <TbFlag className="w-4 h-4 text-[#FF7722]" />
                   <span className="text-[11px] font-bold leading-tight">Flags</span>
-                  <span className="text-[9px] opacity-80">भगवा ध्वज</span>
                 </button>
 
                 <button
-                  onClick={() => setSplineConversionType('diyas')}
+                  onClick={() => handleConversionTypeChange('diyas')}
                   className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                    splineConversionType === 'diyas'
+                    effectiveConversionType === 'diyas'
                       ? 'bg-[#4B382C] text-white shadow-sm'
                       : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
                   }`}
                 >
                   <TbFlame className="w-4 h-4 text-[#F59E0B]" />
                   <span className="text-[11px] font-bold leading-tight">Diyas</span>
-                  <span className="text-[9px] opacity-80">दिवे / पणत्या</span>
                 </button>
               </div>
             </div>
 
             {/* 4. Contextual Parameter Sliders */}
             <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-              {splineConversionType === 'steps' && (
+              {effectiveConversionType === 'steps' && (
                 <>
                   {/* Step Width Slider */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Stair Width:</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {Math.round((splineSettings.stepWidth ?? 0.6) * 100)} cm
+                        {Math.round((effectiveSettings.stepWidth ?? 0.06) * 100)} cm
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.3}
-                      max={1.5}
-                      step={0.05}
-                      value={splineSettings.stepWidth ?? 0.6}
-                      onChange={(e) => setSplineSettings({ stepWidth: parseFloat(e.target.value) })}
+                      min={0.02}
+                      max={0.15}
+                      step={0.005}
+                      value={effectiveSettings.stepWidth ?? 0.06}
+                      onChange={(e) => handleSplineSettingChange({ stepWidth: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
@@ -1461,16 +1656,16 @@ export const LeftToolSidebar: React.FC = () => {
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Tread Depth (Run):</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {Math.round((splineSettings.stepRun ?? 0.22) * 100)} cm
+                        {((effectiveSettings.stepRun ?? 0.025) * 100).toFixed(1)} cm
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.15}
-                      max={0.4}
-                      step={0.01}
-                      value={splineSettings.stepRun ?? 0.22}
-                      onChange={(e) => setSplineSettings({ stepRun: parseFloat(e.target.value) })}
+                      min={0.01}
+                      max={0.06}
+                      step={0.005}
+                      value={effectiveSettings.stepRun ?? 0.025}
+                      onChange={(e) => handleSplineSettingChange({ stepRun: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
@@ -1480,39 +1675,77 @@ export const LeftToolSidebar: React.FC = () => {
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Step Rise Height:</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {Math.round((splineSettings.stepRise ?? 0.08) * 100)} cm
+                        {((effectiveSettings.stepRise ?? 0.01) * 100).toFixed(1)} cm
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.04}
-                      max={0.20}
-                      step={0.01}
-                      value={splineSettings.stepRise ?? 0.08}
-                      onChange={(e) => setSplineSettings({ stepRise: parseFloat(e.target.value) })}
+                      min={0.005}
+                      max={0.03}
+                      step={0.002}
+                      value={effectiveSettings.stepRise ?? 0.01}
+                      onChange={(e) => handleSplineSettingChange({ stepRise: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Path Offset (Left / Right) Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Path Offset (Left / Right):</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {((effectiveSettings.stepOffset ?? 0.0) * 100).toFixed(1)} cm
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-0.15}
+                      max={0.15}
+                      step={0.005}
+                      value={effectiveSettings.stepOffset ?? 0.0}
+                      onChange={(e) => handleSplineSettingChange({ stepOffset: parseFloat(e.target.value) })}
+                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Stair Spacing Slider */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-semibold text-[#4B382C]">Stair Spacing:</span>
+                      <span className="font-mono font-bold text-[#B85F45]">
+                        {((effectiveSettings.stepSpacing ?? 0.025) * 100).toFixed(1)} cm
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.01}
+                      max={0.10}
+                      step={0.005}
+                      value={effectiveSettings.stepSpacing ?? 0.025}
+                      onChange={(e) => handleSplineSettingChange({ stepSpacing: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
                 </>
               )}
 
-              {splineConversionType === 'flags' && (
+              {effectiveConversionType === 'flags' && (
                 <>
                   {/* Flag Spacing Slider */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Flag Spacing:</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {(splineSettings.spacing ?? 0.8).toFixed(1)} m
+                        {Math.round((effectiveSettings.spacing ?? 0.20) * 100)} cm
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.4}
-                      max={2.5}
-                      step={0.1}
-                      value={splineSettings.spacing ?? 0.8}
-                      onChange={(e) => setSplineSettings({ spacing: parseFloat(e.target.value) })}
+                      min={0.05}
+                      max={0.50}
+                      step={0.01}
+                      value={effectiveSettings.spacing ?? 0.20}
+                      onChange={(e) => handleSplineSettingChange({ spacing: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
@@ -1522,39 +1755,39 @@ export const LeftToolSidebar: React.FC = () => {
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Flag Scale:</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {(splineSettings.scale ?? 1.0).toFixed(1)}x
+                        {(effectiveSettings.scale ?? 1.0).toFixed(1)}x
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.6}
-                      max={1.8}
+                      min={0.2}
+                      max={3.0}
                       step={0.1}
-                      value={splineSettings.scale ?? 1.0}
-                      onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
+                      value={effectiveSettings.scale ?? 1.0}
+                      onChange={(e) => handleSplineSettingChange({ scale: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
                 </>
               )}
 
-              {splineConversionType === 'diyas' && (
+              {effectiveConversionType === 'diyas' && (
                 <>
                   {/* Diya Spacing Slider */}
                   <div className="space-y-1">
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Diya Spacing:</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {(splineSettings.spacing ?? 0.35).toFixed(2)} m
+                        {Math.round((effectiveSettings.spacing ?? 0.35) * 100)} cm
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.2}
-                      max={1.5}
-                      step={0.05}
-                      value={splineSettings.spacing ?? 0.35}
-                      onChange={(e) => setSplineSettings({ spacing: parseFloat(e.target.value) })}
+                      min={0.10}
+                      max={1.0}
+                      step={0.02}
+                      value={effectiveSettings.spacing ?? 0.35}
+                      onChange={(e) => handleSplineSettingChange({ spacing: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
@@ -1564,16 +1797,16 @@ export const LeftToolSidebar: React.FC = () => {
                     <div className="flex justify-between items-center text-xs">
                       <span className="font-semibold text-[#4B382C]">Diya Scale:</span>
                       <span className="font-mono font-bold text-[#B85F45]">
-                        {(splineSettings.scale ?? 1.0).toFixed(1)}x
+                        {(effectiveSettings.scale ?? 1.0).toFixed(1)}x
                       </span>
                     </div>
                     <input
                       type="range"
-                      min={0.6}
-                      max={1.8}
+                      min={0.2}
+                      max={3.0}
                       step={0.1}
-                      value={splineSettings.scale ?? 1.0}
-                      onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
+                      value={effectiveSettings.scale ?? 1.0}
+                      onChange={(e) => handleSplineSettingChange({ scale: parseFloat(e.target.value) })}
                       className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
@@ -1596,8 +1829,8 @@ export const LeftToolSidebar: React.FC = () => {
               </div>
 
               {splines.length === 0 ? (
-                <div className="p-3 bg-[#EADECF]/50 rounded-xl border border-dashed border-[#D9C9B4] text-center text-xs text-[#8D7666]">
-                  No spline structures placed yet. Draw on the terrain to add steps, flags, or diyas!
+                <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center text-xs text-[#8D7666]">
+                  No spline structures placed.
                 </div>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
@@ -1613,7 +1846,7 @@ export const LeftToolSidebar: React.FC = () => {
                     return (
                       <div
                         key={spline.id}
-                        onClick={() => setSelectedSplineId(spline.id)}
+                        onClick={() => setSelectedSplineId(isSelected ? null : spline.id)}
                         className={`p-2 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
                           isSelected
                             ? 'bg-[#FEF3C7] border-[#F59E0B] shadow-sm'
@@ -1989,18 +2222,6 @@ export const LeftToolSidebar: React.FC = () => {
       >
         <div className="w-[1.5px] h-8 rounded-full bg-[#B39E8C] group-hover:bg-[#B85F45] transition-colors" />
       </div>
-      {/* ============================================================ */}
-      {/* 5. FLOATING CURSOR TOAST FOR DISABLED BUTTONS & PROPERTIES   */}
-      {/* ============================================================ */}
-      {cursorToast && (
-        <div
-          style={{ left: cursorToast.x + 10, top: cursorToast.y - 12 }}
-          className="fixed z-50 pointer-events-none transform -translate-y-full bg-[#2B1E16]/95 backdrop-blur-md text-[#FFF8EB] border border-[#F59E0B]/70 px-3 py-1.5 rounded-lg text-xs shadow-xl max-w-xs font-medium animate-in fade-in zoom-in-95 duration-150 flex items-center gap-1.5"
-        >
-          <span className="text-[#F59E0B] text-sm">🔒</span>
-          <span>{cursorToast.message}</span>
-        </div>
-      )}
     </aside>
   </>
   );

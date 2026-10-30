@@ -287,10 +287,10 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       const geoGate = generateWallBufferGeometry(wallWithGate, buffer);
       expect(geoGate.getAttribute('position').count).toBeGreaterThan(0);
 
-      // Bounding box should enclose the gatehouse height at 10cm-100cm scale
+      // Bounding box should enclose the gatehouse height at 10cm-60cm scale
       geoGate.computeBoundingBox();
-      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(0.30);
-      expect(geoGate.boundingBox!.max.y).toBeLessThanOrEqual(0.70);
+      expect(geoGate.boundingBox!.max.y).toBeGreaterThanOrEqual(0.20);
+      expect(geoGate.boundingBox!.max.y).toBeLessThanOrEqual(0.50);
 
       geoGate.dispose();
     });
@@ -392,29 +392,42 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       ],
       isClosed: false,
       gates: [],
+      towers: [],
+      boxBastions: [],
       settings: { ...DEFAULT_WALL_SETTINGS },
       createdAt: Date.now(),
     };
 
-    it('snaps buruj to nearest wall node within 0.45m', () => {
-      // Near node 1 (2, 0, 0): pointer at (2.1, 0, 0.05) -> dist ~0.11m
-      const snap = calculateMagneticSnap('buruj', { x: 2.1, y: 0, z: 0.05 }, [mockWall], 'snap_test_wall', buffer);
+    it('snaps tower to nearest wall segment within 0.35m', () => {
+      // Near segment 0 between (0,0,0) and (2,0,0): pointer at (1.0, 0, 0.1) -> dist 0.10m
+      const snap = calculateMagneticSnap('tower', { x: 1.0, y: 0, z: 0.1 }, [mockWall], 'snap_test_wall', buffer);
       expect(snap.snapped).toBe(true);
-      expect(snap.type).toBe('vertex');
-      expect(snap.nodeIndex).toBe(1);
-      expect(snap.position[0]).toBe(2);
-      expect(snap.position[2]).toBe(0);
+      expect(snap.type).toBe('segment');
+      expect(snap.segmentIndex).toBe(0);
+      expect(snap.t).toBeCloseTo(0.5, 1);
+      expect(snap.position[0]).toBeCloseTo(1.0, 1);
     });
 
-    it('does not snap buruj when pointer is beyond 0.45m', () => {
-      // Far from any node: pointer at (5.0, 0, 5.0)
-      const snap = calculateMagneticSnap('buruj', { x: 5.0, y: 0, z: 5.0 }, [mockWall], 'snap_test_wall', buffer);
+    it('snaps the box to nearest wall segment within 0.35m with rotation matching inward normal', () => {
+      // Near segment 0 between (0,0,0) and (2,0,0): pointer at (1.2, 0, 0.15)
+      const snap = calculateMagneticSnap('box', { x: 1.2, y: 0, z: 0.15 }, [mockWall], 'snap_test_wall', buffer);
+      expect(snap.snapped).toBe(true);
+      expect(snap.type).toBe('segment');
+      expect(snap.segmentIndex).toBe(0);
+      expect(snap.t).toBeCloseTo(0.6, 1);
+      expect(snap.inwardNormal).toBeDefined();
+      expect(snap.rotationY).toBeCloseTo(Math.atan2(snap.inwardNormal!.x, snap.inwardNormal!.z), 2);
+    });
+
+    it('does not snap tower when pointer is beyond 0.35m', () => {
+      // Far from any segment: pointer at (5.0, 0, 5.0)
+      const snap = calculateMagneticSnap('tower', { x: 5.0, y: 0, z: 5.0 }, [mockWall], 'snap_test_wall', buffer);
       expect(snap.snapped).toBe(false);
       expect(snap.type).toBe('terrain');
       expect(snap.position[0]).toBe(5.0);
     });
 
-    it('snaps gate to nearest wall segment within 0.60m', () => {
+    it('snaps gate to nearest wall segment within 0.35m with rotation matching outward normal', () => {
       // Near segment 0 between (0,0,0) and (2,0,0): pointer at (1.0, 0, 0.2)
       const snap = calculateMagneticSnap('gate', { x: 1.0, y: 0, z: 0.2 }, [mockWall], 'snap_test_wall', buffer);
       expect(snap.snapped).toBe(true);
@@ -423,14 +436,25 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       expect(snap.t).toBeCloseTo(0.5, 1);
       expect(snap.tangent).toBeDefined();
       expect(snap.normal).toBeDefined();
+      expect(snap.outwardNormal).toBeDefined();
+      expect(snap.rotationY).toBeCloseTo(Math.atan2(snap.outwardNormal!.x, snap.outwardNormal!.z), 2);
     });
 
-    it('snaps citadel freely to terrain', () => {
-      const snap = calculateMagneticSnap('citadel', { x: 1.5, y: 0, z: -1.2 }, [mockWall], null, buffer);
-      expect(snap.snapped).toBe(true);
-      expect(snap.type).toBe('terrain');
-      expect(snap.position[0]).toBe(1.5);
-      expect(snap.position[2]).toBe(-1.2);
+    it('generates valid geometry for walls with towers and box bastions', () => {
+      const wallWithForts: WallPath = {
+        ...mockWall,
+        towers: [
+          { id: 'tw_1', segmentIndex: 0, t: 0.5, radius: 0.13, heightOffset: 0.02 },
+        ],
+        boxBastions: [
+          { id: 'bx_1', segmentIndex: 1, t: 0.5, width: 0.30, depth: 0.30, heightOffset: 0.04, flipSide: false },
+        ],
+      };
+      const geo = generateWallBufferGeometry(wallWithForts, buffer);
+      expect(geo.attributes.position.count).toBeGreaterThan(0);
+      expect(geo.attributes.normal.count).toBeGreaterThan(0);
+      expect(geo.attributes.uv.count).toBeGreaterThan(0);
+      geo.dispose();
     });
   });
 });

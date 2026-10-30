@@ -103,15 +103,17 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
   onSelect,
   stoneMaterial,
 }) => {
+  const { invalidate } = useThree();
   const geometry = useMemo(() => {
     return generateStoneStepsGeometry(spline.points, buffer, spline.settings);
   }, [spline.points, buffer, spline.settings]);
 
   useEffect(() => {
+    invalidate();
     return () => {
       geometry.dispose();
     };
-  }, [geometry]);
+  }, [geometry, invalidate]);
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onSelect(); }}>
@@ -156,6 +158,7 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
   poleMaterial,
   flagMaterial,
 }) => {
+  const { invalidate } = useThree();
   const poleMeshRef = useRef<THREE.InstancedMesh>(null);
   const flagMeshRef = useRef<THREE.InstancedMesh>(null);
 
@@ -183,24 +186,43 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
     flagMesh.instanceMatrix.needsUpdate = true;
     poleMesh.computeBoundingSphere();
     flagMesh.computeBoundingSphere();
-  }, [transforms]);
+    invalidate();
+  }, [transforms, invalidate]);
+
+  const selectionLineGeo = useMemo(() => {
+    if (!isSelected || spline.points.length < 2) return null;
+    const curvePoints = generateSplinePointsAlongTerrain(spline.points, buffer, 0.5, 8);
+    const v3s = curvePoints.map((p) => new THREE.Vector3(p[0], p[1] + 0.03, p[2]));
+    return new THREE.BufferGeometry().setFromPoints(v3s);
+  }, [isSelected, spline.points, buffer]);
+
+  useEffect(() => {
+    return () => {
+      selectionLineGeo?.dispose();
+    };
+  }, [selectionLineGeo]);
 
   if (transforms.length === 0) return null;
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onSelect(); }} name={`FlagGroup_${spline.id}`}>
       <instancedMesh
+        key={`pole_${transforms.length}`}
         ref={poleMeshRef}
         args={[poleGeo, poleMaterial, transforms.length]}
         castShadow
         receiveShadow
       />
       <instancedMesh
+        key={`flag_${transforms.length}`}
         ref={flagMeshRef}
         args={[flagGeo, flagMaterial, transforms.length]}
         castShadow
         receiveShadow
       />
+      {isSelected && selectionLineGeo && (
+        <primitive object={new THREE.Line(selectionLineGeo, new THREE.LineBasicMaterial({ color: '#F59E0B', linewidth: 3 }))} />
+      )}
     </group>
   );
 };
@@ -229,6 +251,7 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
   bowlMaterial,
   flameMaterial,
 }) => {
+  const { invalidate } = useThree();
   const bowlMeshRef = useRef<THREE.InstancedMesh>(null);
   const flameMeshRef = useRef<THREE.InstancedMesh>(null);
 
@@ -256,22 +279,41 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
     flameMesh.instanceMatrix.needsUpdate = true;
     bowlMesh.computeBoundingSphere();
     flameMesh.computeBoundingSphere();
-  }, [transforms]);
+    invalidate();
+  }, [transforms, invalidate]);
+
+  const selectionLineGeo = useMemo(() => {
+    if (!isSelected || spline.points.length < 2) return null;
+    const curvePoints = generateSplinePointsAlongTerrain(spline.points, buffer, 0.5, 8);
+    const v3s = curvePoints.map((p) => new THREE.Vector3(p[0], p[1] + 0.03, p[2]));
+    return new THREE.BufferGeometry().setFromPoints(v3s);
+  }, [isSelected, spline.points, buffer]);
+
+  useEffect(() => {
+    return () => {
+      selectionLineGeo?.dispose();
+    };
+  }, [selectionLineGeo]);
 
   if (transforms.length === 0) return null;
 
   return (
     <group onClick={(e) => { e.stopPropagation(); onSelect(); }} name={`DiyaGroup_${spline.id}`}>
       <instancedMesh
+        key={`bowl_${transforms.length}`}
         ref={bowlMeshRef}
         args={[bowlGeo, bowlMaterial, transforms.length]}
         castShadow
         receiveShadow
       />
       <instancedMesh
+        key={`flame_${transforms.length}`}
         ref={flameMeshRef}
         args={[flameGeo, flameMaterial, transforms.length]}
       />
+      {isSelected && selectionLineGeo && (
+        <primitive object={new THREE.Line(selectionLineGeo, new THREE.LineBasicMaterial({ color: '#F59E0B', linewidth: 3 }))} />
+      )}
     </group>
   );
 };
@@ -435,6 +477,12 @@ export const SplineStructures: React.FC = () => {
     diyaFlameGeo,
   ]);
 
+  const { invalidate } = useThree();
+
+  useEffect(() => {
+    invalidate();
+  }, [splines, selectedSplineId, isDrawingSpline, currentSplinePoints, invalidate]);
+
   // Per-frame animation for flag wind flutter and diya flame flicker
   useFrame((state) => {
     const time = state.clock.elapsedTime;
@@ -460,11 +508,12 @@ export const SplineStructures: React.FC = () => {
       {splines.map((spline) => {
         const isSelected = selectedSplineId === spline.id;
         const handleSelect = () => setSelectedSplineId(spline.id);
+        const dynamicKey = `${spline.id}_${spline.type}_${JSON.stringify(spline.settings || {})}`;
 
         if (spline.type === 'steps') {
           return (
             <StoneStepsMesh
-              key={spline.id}
+              key={dynamicKey}
               spline={spline}
               buffer={stateBuffer}
               isSelected={isSelected}
@@ -477,7 +526,7 @@ export const SplineStructures: React.FC = () => {
         if (spline.type === 'flags') {
           return (
             <FlagInstances
-              key={spline.id}
+              key={dynamicKey}
               spline={spline}
               buffer={stateBuffer}
               isSelected={isSelected}
@@ -493,7 +542,7 @@ export const SplineStructures: React.FC = () => {
         if (spline.type === 'diyas') {
           return (
             <DiyaInstances
-              key={spline.id}
+              key={dynamicKey}
               spline={spline}
               buffer={stateBuffer}
               isSelected={isSelected}

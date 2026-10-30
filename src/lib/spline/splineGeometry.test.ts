@@ -61,6 +61,19 @@ describe('splineGeometry', () => {
         expect(pt[1]).toBeGreaterThanOrEqual(0);
       }
     });
+
+    it('preserves elevation when placed on top of fort walls higher than terrain', () => {
+      const buffer = createMockTerrainBuffer(0.1);
+      // Terrain height at x=0, z=0 is around 0.35m. Wall top is at 1.2m
+      const points: [number, number, number][] = [
+        [0, 1.2, -1],
+        [0, 1.2, 1],
+      ];
+      const sampled = generateSplinePointsAlongTerrain(points, buffer, 0.5, 5);
+      for (const pt of sampled) {
+        expect(pt[1]).toBeGreaterThanOrEqual(1.0);
+      }
+    });
   });
 
   describe('generateStoneStepsGeometry', () => {
@@ -109,6 +122,33 @@ describe('splineGeometry', () => {
       geo.boundingBox!.getSize(size);
       expect(size.x).toBeGreaterThan(0);
       expect(size.z).toBeGreaterThan(0);
+    });
+
+    it('applies lateral stepOffset shifting stairs perpendicular to tangent', () => {
+      const points: [number, number, number][] = [
+        [0, 0, 0],
+        [0, 0, 2],
+      ];
+      // Tangent is along +Z, perpendicular is along -X / +X
+      const geoCenter = generateStoneStepsGeometry(points, undefined, {
+        stepWidth: 0.10,
+        stepOffset: 0.0,
+      });
+      const geoShifted = generateStoneStepsGeometry(points, undefined, {
+        stepWidth: 0.10,
+        stepOffset: 0.15,
+      });
+
+      geoCenter.computeBoundingBox();
+      geoShifted.computeBoundingBox();
+
+      const centerMidX = (geoCenter.boundingBox!.min.x + geoCenter.boundingBox!.max.x) / 2;
+      const shiftedMidX = (geoShifted.boundingBox!.min.x + geoShifted.boundingBox!.max.x) / 2;
+
+      expect(Math.abs(shiftedMidX - centerMidX)).toBeGreaterThan(0.05);
+
+      geoCenter.dispose();
+      geoShifted.dispose();
     });
   });
 

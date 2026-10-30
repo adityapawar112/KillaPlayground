@@ -67,6 +67,7 @@ export const ContextualDock: React.FC = () => {
     currentSplinePoints,
     finishSpline,
     cancelSpline,
+    locale,
   } = useEditorStore();
 
   const { t } = useTranslation();
@@ -539,7 +540,7 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <span>Steps (पायऱ्या)</span>
+              <span>{locale === 'mr' ? 'पायऱ्या' : 'Steps'}</span>
             </button>
             <button
               onClick={() => setSplineConversionType('flags')}
@@ -549,7 +550,7 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <span>Flags (ध्वज)</span>
+              <span>{locale === 'mr' ? 'ध्वज' : 'Flags'}</span>
             </button>
             <button
               onClick={() => setSplineConversionType('diyas')}
@@ -559,7 +560,7 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <span>Diyas (पणत्या)</span>
+              <span>{locale === 'mr' ? 'पणत्या' : 'Diyas'}</span>
             </button>
           </div>
 

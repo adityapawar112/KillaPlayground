@@ -3,17 +3,17 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { useTexture } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
+import { useThree, ThreeEvent } from '@react-three/fiber';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import {
   generateWallBufferGeometry,
-  generateCitadelKeepGeometry,
   detectBastionLocations,
   sampleBilinearHeight,
+  calculateMagneticSnap,
   SnapResult,
 } from '@/lib/walls/wallGeometry';
-import { WallPath, WallPoint, CitadelKeep, FortStampType } from '@/lib/walls/wallTypes';
+import { WallPath, WallPoint, FortStampType } from '@/lib/walls/wallTypes';
 
 /**
  * Draft wall preview line and node markers during construction.
@@ -82,6 +82,51 @@ const WallDraftPreview: React.FC<{
 };
 
 /**
+ * Interactive selection surface matching the exact top floor quad of a Rampart Platform.
+ */
+const BoxPlatformSelectionMesh: React.FC<{
+  tc0: [number, number, number];
+  tc1: [number, number, number];
+  tc2: [number, number, number];
+  tc3: [number, number, number];
+  boxTopY: number;
+  isSelected: boolean;
+  onClick: (e: ThreeEvent<MouseEvent>) => void;
+}> = ({ tc0, tc1, tc2, tc3, boxTopY, isSelected, onClick }) => {
+  const geo = useMemo(() => {
+    const g = new THREE.BufferGeometry();
+    const y = boxTopY + 0.003; // slightly above top floor gravel to prevent z-fighting
+    const positions = new Float32Array([
+      tc0[0], y, tc0[2],
+      tc1[0], y, tc1[2],
+      tc2[0], y, tc2[2],
+      tc3[0], y, tc3[2],
+    ]);
+    const normals = new Float32Array([0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]);
+    const indices = [0, 1, 2, 0, 2, 3];
+    g.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    g.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    g.setIndex(indices);
+    return g;
+  }, [tc0, tc1, tc2, tc3, boxTopY]);
+
+  useEffect(() => {
+    return () => geo.dispose();
+  }, [geo]);
+
+  return (
+    <mesh geometry={geo} onClick={onClick}>
+      <meshBasicMaterial
+        color={isSelected ? '#10b981' : '#06b6d4'}
+        transparent
+        opacity={isSelected ? 0.70 : 0.25}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+};
+
+/**
  * Single Wall Mesh rendering the procedural fort ramparts, bastions, and arched gates.
  */
 const SingleWallMesh: React.FC<{
@@ -90,6 +135,7 @@ const SingleWallMesh: React.FC<{
   materials: THREE.Material[];
   isSelected: boolean;
 }> = ({ wall, stateBuffer, materials, isSelected }) => {
+  const { invalidate } = useThree();
   const geometry = useMemo(() => {
     // shortcut: Wall geometry regenerates when terrain heightmap changes, upgrade to dirty-chunk local vertex displacement if terrain sculpting lags with >50 walls
     return generateWallBufferGeometry(wall, stateBuffer);
@@ -108,6 +154,34 @@ const SingleWallMesh: React.FC<{
     const editor = useEditorStore.getState();
     if (editor.activeTool !== 'walls' || editor.activeWallDraft.length > 0) return;
     e.stopPropagation();
+
+    // If an active stamp is selected, stamp on the wall at the raycast point
+    if (editor.activeStamp) {
+      const snap = calculateMagneticSnap(
+        editor.activeStamp,
+        e.point,
+        editor.walls,
+        wall.id,
+        stateBuffer
+      );
+      if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
+        if (editor.activeStamp === 'tower' || editor.activeStamp === 'buruj') {
+          editor.addTowerToWall(snap.wallId, snap.segmentIndex, snap.t);
+          editor.setActiveStamp(null);
+          editor.setToastMessage('Tower placed on wall!');
+        } else if (editor.activeStamp === 'box' || editor.activeStamp === 'grand_buruj') {
+          editor.addBoxBastionToWall(snap.wallId, snap.segmentIndex, snap.t);
+          editor.setActiveStamp(null);
+          editor.setToastMessage('Rampart Platform placed on wall!');
+        } else if (editor.activeStamp === 'gate') {
+          editor.addGateToWall(snap.wallId, snap.segmentIndex, snap.t);
+          editor.setActiveStamp(null);
+          editor.setToastMessage('Maha Darwaza arched gateway inserted!');
+        }
+      }
+      return;
+    }
+
     editor.setSelectedWallId(wall.id);
     if (editor.wallStep === 'solidified') {
       editor.setWallStep('fortify');
@@ -117,8 +191,54 @@ const SingleWallMesh: React.FC<{
     }
   };
 
-  const { wallStep, activeStamp, selectedComponent } = useEditorStore();
-  const showHandles = isSelected && wallStep === 'fortify';
+  const handleWallPointerDown = (e: any) => {
+    const editor = useEditorStore.getState();
+    if (editor.activeTool === 'spline') {
+      if (e.button !== 0 || e.altKey) return;
+      e.stopPropagation();
+      const rawControls = (window as any).__orbitControls;
+      if (rawControls) rawControls.enabled = false;
+      if (!editor.isDrawingSpline) {
+        editor.startSpline();
+      }
+      editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+      invalidate();
+    }
+  };
+
+  const handleWallPointerMove = (e: any) => {
+    const editor = useEditorStore.getState();
+    if (editor.activeTool === 'walls' && editor.activeStamp) {
+      const snap = calculateMagneticSnap(
+        editor.activeStamp,
+        e.point,
+        editor.walls,
+        wall.id,
+        stateBuffer
+      );
+      editor.setWallSnapPreview(snap);
+      return;
+    }
+
+    if (editor.activeTool === 'spline') {
+      // Unconditionally stop propagation so terrain underneath never receives this event
+      e.stopPropagation();
+      if (editor.isDrawingSpline && e.buttons === 1) {
+        const pts = editor.currentSplinePoints;
+        if (pts.length > 0) {
+          const last = pts[pts.length - 1];
+          const dist = Math.hypot(e.point.x - last[0], e.point.y - last[1], e.point.z - last[2]);
+          if (dist >= 0.15) {
+            editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+            invalidate();
+          }
+        }
+      }
+    }
+  };
+
+  const { wallStep, activeStamp, selectedComponent, activeTool } = useEditorStore();
+  const showHandles = isSelected && wallStep === 'fortify' && activeTool === 'walls';
 
   // Compute bastions on this wall for interactive 3D handles
   const bastionIndices = useMemo(() => {
@@ -141,6 +261,8 @@ const SingleWallMesh: React.FC<{
         castShadow
         receiveShadow
         onClick={handleWallClick}
+        onPointerDown={handleWallPointerDown}
+        onPointerMove={handleWallPointerMove}
       />
       {showHandles && (
         <group name={`VertexOverlay_${wall.id}`}>
@@ -158,7 +280,7 @@ const SingleWallMesh: React.FC<{
             />
           </mesh>
 
-          {/* Interactive Bastion Top Discs & Badges */}
+          {/* Interactive Bastion Top Discs (Auto Bastions) */}
           {bastionIndices.map((bIdx) => {
             const pt = wall.points[bIdx];
             if (!pt) return null;
@@ -204,29 +326,135 @@ const SingleWallMesh: React.FC<{
                     <meshBasicMaterial color="#10b981" transparent opacity={0.9} side={THREE.DoubleSide} />
                   </mesh>
                 )}
-
-                {/* Floating Tower Badge Pin */}
-                <mesh
-                  position={[0, 0.12, 0]}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const editor = useEditorStore.getState();
-                    editor.setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: wall.id });
-                    editor.setSelectedWallId(wall.id);
-                  }}
-                >
-                  <sphereGeometry args={[0.045, 12, 12]} />
-                  <meshStandardMaterial
-                    color={isBastionSelected ? '#10b981' : isGrand ? '#d97706' : '#2563eb'}
-                    emissive={isBastionSelected ? '#059669' : isGrand ? '#b45309' : '#1d4ed8'}
-                    emissiveIntensity={0.8}
-                  />
-                </mesh>
               </group>
             );
           })}
 
-          {/* Interactive Gate Handles (Arch Volume & Badge) */}
+          {/* Interactive Sliding Round Towers (Blue selection plane on top) */}
+          {wall.towers?.map((tw) => {
+            const origCount = wall.isClosed && wall.points.length >= 3 ? wall.points.length : wall.points.length - 1;
+            const segIdx = Math.max(0, Math.min(origCount - 1, tw.segmentIndex));
+            const pA = wall.points[segIdx];
+            const pB = wall.points[(segIdx + 1) % wall.points.length];
+            if (!pA || !pB) return null;
+
+            const t = Math.max(0.05, Math.min(0.95, tw.t || 0.5));
+            const twX = pA.x + (pB.x - pA.x) * t;
+            const twZ = pA.z + (pB.z - pA.z) * t;
+            const twRadius = Math.max(0.06, Math.min(0.35, tw.radius || 0.13));
+            const twH = wall.settings.height + (tw.heightOffset || 0.02);
+            const groundY = sampleBilinearHeight(stateBuffer, twX, twZ);
+            const twTopY = groundY + twH;
+
+            const isTowerSelected =
+              selectedComponent?.type === 'tower' &&
+              selectedComponent.idOrIndex === tw.id &&
+              selectedComponent.wallId === wall.id;
+
+            return (
+              <group key={`tower_handle_${tw.id}`} position={[twX, twTopY, twZ]}>
+                {/* Generous Clickable Top Floor Disc */}
+                <mesh
+                  position={[0, 0.005, 0]}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const editor = useEditorStore.getState();
+                    editor.setSelectedComponent({ type: 'tower', idOrIndex: tw.id, wallId: wall.id });
+                    editor.setSelectedWallId(wall.id);
+                    editor.setToastMessage('Tower selected.');
+                  }}
+                >
+                  <cylinderGeometry args={[twRadius * 0.95, twRadius * 0.95, 0.015, 16]} />
+                  <meshBasicMaterial
+                    color={isTowerSelected ? '#10b981' : '#3b82f6'}
+                    transparent
+                    opacity={isTowerSelected ? 0.75 : 0.35}
+                  />
+                </mesh>
+
+                {isTowerSelected && (
+                  <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <ringGeometry args={[twRadius * 0.95, twRadius * 1.15, 32]} />
+                    <meshBasicMaterial color="#10b981" transparent opacity={0.9} side={THREE.DoubleSide} />
+                  </mesh>
+                )}
+              </group>
+            );
+          })}
+
+          {/* Interactive Inward Rampart Platforms (Exact top floor selection surface) */}
+          {wall.boxBastions?.map((bx) => {
+            const origCount = wall.isClosed && wall.points.length >= 3 ? wall.points.length : wall.points.length - 1;
+            const segIdx = Math.max(0, Math.min(origCount - 1, bx.segmentIndex));
+            const pA = wall.points[segIdx];
+            const pB = wall.points[(segIdx + 1) % wall.points.length];
+            if (!pA || !pB) return null;
+
+            const t = Math.max(0.05, Math.min(0.95, bx.t || 0.5));
+            const attachX = pA.x + (pB.x - pA.x) * t;
+            const attachZ = pA.z + (pB.z - pA.z) * t;
+
+            const dx = pB.x - pA.x;
+            const dz = pB.z - pA.z;
+            const len = Math.hypot(dx, dz) || 1;
+            const tan = { x: dx / len, z: dz / len };
+            const norm = { x: -tan.z, z: tan.x };
+
+            let inDir = 1;
+            if (wall.isClosed && wall.points.length >= 3) {
+              let cX = 0, cZ = 0;
+              for (const p of wall.points) { cX += p.x; cZ += p.z; }
+              cX /= wall.points.length; cZ /= wall.points.length;
+              inDir = (norm.x * (cX - attachX) + norm.z * (cZ - attachZ)) >= 0 ? 1 : -1;
+            } else {
+              const hPlus = sampleBilinearHeight(stateBuffer, attachX + norm.x * 0.3, attachZ + norm.z * 0.3);
+              const hMinus = sampleBilinearHeight(stateBuffer, attachX - norm.x * 0.3, attachZ - norm.z * 0.3);
+              inDir = hPlus >= hMinus ? 1 : -1;
+            }
+            if (bx.flipSide) inDir = -inDir;
+
+            const inNorm = { x: norm.x * inDir, z: norm.z * inDir };
+            const bWidth = Math.max(0.15, Math.min(0.80, bx.width || 0.30));
+            const bDepth = Math.max(0.15, Math.min(0.80, bx.depth || 0.30));
+            const halfW = bWidth * 0.5;
+
+            const boxCenterX = attachX + inNorm.x * (bDepth * 0.5);
+            const boxCenterZ = attachZ + inNorm.z * (bDepth * 0.5);
+            const groundY = sampleBilinearHeight(stateBuffer, boxCenterX, boxCenterZ);
+            const boxTopY = groundY + wall.settings.height + (bx.heightOffset || 0.04);
+
+            // Exact 4 top corners matching the 3D geometry
+            const tc0: [number, number, number] = [attachX - tan.x * halfW, boxTopY, attachZ - tan.z * halfW];
+            const tc1: [number, number, number] = [attachX + tan.x * halfW, boxTopY, attachZ + tan.z * halfW];
+            const tc2: [number, number, number] = [attachX + tan.x * halfW + inNorm.x * bDepth, boxTopY, attachZ + tan.z * halfW + inNorm.z * bDepth];
+            const tc3: [number, number, number] = [attachX - tan.x * halfW + inNorm.x * bDepth, boxTopY, attachZ - tan.z * halfW + inNorm.z * bDepth];
+
+            const isBoxSelected =
+              selectedComponent?.type === 'box' &&
+              selectedComponent.idOrIndex === bx.id &&
+              selectedComponent.wallId === wall.id;
+
+            return (
+              <BoxPlatformSelectionMesh
+                key={`box_handle_${bx.id}`}
+                tc0={tc0}
+                tc1={tc1}
+                tc2={tc2}
+                tc3={tc3}
+                boxTopY={boxTopY}
+                isSelected={isBoxSelected}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const editor = useEditorStore.getState();
+                  editor.setSelectedComponent({ type: 'box', idOrIndex: bx.id, wallId: wall.id });
+                  editor.setSelectedWallId(wall.id);
+                  editor.setToastMessage('Rampart Platform selected.');
+                }}
+              />
+            );
+          })}
+
+          {/* Interactive Gate Handles (Portal Arch Volume) */}
           {wall.gates.map((g) => {
             const origCount = wall.isClosed && wall.points.length >= 3 ? wall.points.length : wall.points.length - 1;
             const segIdx = Math.max(0, Math.min(origCount - 1, g.segmentIndex));
@@ -252,7 +480,7 @@ const SingleWallMesh: React.FC<{
 
             return (
               <group key={`gate_handle_${g.id}`} position={[gx, groundY + gateH * 0.5, gz]} rotation={[0, rotY, 0]}>
-                {/* Generous Clickable Portal Arch Volume */}
+                {/* Generous Clickable Portal Arch Volume - local Z runs along wall segment, local X through thickness */}
                 <mesh
                   onClick={(e) => {
                     e.stopPropagation();
@@ -262,122 +490,17 @@ const SingleWallMesh: React.FC<{
                     editor.setToastMessage('Maha Darwaza selected.');
                   }}
                 >
-                  <boxGeometry args={[gateW * 1.15, gateH * 1.1, wall.settings.thickness * 1.6]} />
+                  <boxGeometry args={[wall.settings.thickness * 1.5, gateH * 1.05, gateW * 1.05]} />
                   <meshBasicMaterial
                     color={isGateSelected ? '#10b981' : '#e85d04'}
                     transparent
                     opacity={isGateSelected ? 0.6 : 0.25}
                   />
                 </mesh>
-
-                {/* Floating Gate Badge Pin */}
-                <mesh
-                  position={[0, gateH * 0.5 + 0.10, 0]}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const editor = useEditorStore.getState();
-                    editor.setSelectedComponent({ type: 'gate', idOrIndex: g.id, wallId: wall.id });
-                    editor.setSelectedWallId(wall.id);
-                  }}
-                >
-                  <boxGeometry args={[0.07, 0.07, 0.07]} />
-                  <meshStandardMaterial
-                    color={isGateSelected ? '#10b981' : '#e85d04'}
-                    emissive={isGateSelected ? '#059669' : '#c2410c'}
-                    emissiveIntensity={0.8}
-                  />
-                </mesh>
               </group>
             );
           })}
-
-          {/* Interactive Vertex Handles overlay (for non-bastion vertices) */}
-          {wall.points.map((pt, idx) => {
-            const hasBastion = bastionIndices.includes(idx);
-            if (hasBastion) return null; // Bastion top handles already rendered above
-
-            return (
-              <mesh
-                key={`vert_${idx}`}
-                position={[pt.x, pt.y + wall.settings.height + 0.05, pt.z]}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const editor = useEditorStore.getState();
-                  if (editor.activeStamp === 'buruj') {
-                    editor.toggleBastionOnNode(wall.id, idx);
-                    editor.setActiveStamp(null);
-                    editor.setToastMessage('Round bastion toggled on node!');
-                  } else if (editor.activeStamp === 'grand_buruj') {
-                    editor.toggleGrandBastionOnNode(wall.id, idx);
-                    editor.setActiveStamp(null);
-                    editor.setToastMessage('Maha Buruj (Grand Bastion) placed on corner node!');
-                  } else {
-                    editor.toggleBastionOnNode(wall.id, idx);
-                    editor.setToastMessage('Bastion added on vertex!');
-                  }
-                }}
-              >
-                <sphereGeometry args={[0.035, 12, 12]} />
-                <meshStandardMaterial
-                  color="#f59e0b"
-                  emissive="#d97706"
-                  emissiveIntensity={0.7}
-                />
-              </mesh>
-            );
-          })}
         </group>
-      )}
-    </group>
-  );
-};
-
-/**
- * Single Citadel Keep Mesh component
- */
-const SingleCitadelMesh: React.FC<{
-  keep: CitadelKeep;
-  stateBuffer: Float32Array;
-  materials: THREE.Material[];
-  isSelected: boolean;
-}> = ({ keep, stateBuffer, materials, isSelected }) => {
-  const geometry = useMemo(() => {
-    return generateCitadelKeepGeometry(keep, stateBuffer);
-  }, [keep, stateBuffer]);
-
-  useEffect(() => {
-    return () => {
-      geometry.dispose();
-    };
-  }, [geometry]);
-
-  const hasValidGeometry = Boolean(geometry.attributes.position && geometry.attributes.position.count > 0);
-  if (!hasValidGeometry) return null;
-
-  const handleClick = (e: any) => {
-    const editor = useEditorStore.getState();
-    if (editor.activeTool !== 'walls') return;
-    e.stopPropagation();
-    editor.setSelectedComponent({ type: 'citadel', idOrIndex: keep.id });
-    if (editor.wallStep === 'solidified') {
-      editor.setWallStep('fortify');
-    }
-    editor.setToastMessage('Balekilla Citadel Keep selected.');
-  };
-
-  return (
-    <group name={`CitadelKeep_${keep.id}`} onClick={handleClick}>
-      <mesh
-        geometry={geometry}
-        material={materials}
-        castShadow
-        receiveShadow
-      />
-      {isSelected && (
-        <mesh position={[keep.x, keep.y + 0.02, keep.z]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.38 * keep.scale, 0.44 * keep.scale, 32]} />
-          <meshBasicMaterial color="#3b82f6" transparent opacity={0.8} side={THREE.DoubleSide} />
-        </mesh>
       )}
     </group>
   );
@@ -409,17 +532,10 @@ const SnapHologramPreview: React.FC<{
         />
       </mesh>
 
-      {/* Hologram 3D Silhouette */}
-      {(activeStamp === 'buruj' || activeStamp === 'grand_buruj') && (
-        <mesh position={[0, (activeStamp === 'grand_buruj' ? 0.35 : 0.25) * 0.5, 0]}>
-          <cylinderGeometry
-            args={[
-              activeStamp === 'grand_buruj' ? 0.25 : 0.16,
-              activeStamp === 'grand_buruj' ? 0.25 : 0.16,
-              activeStamp === 'grand_buruj' ? 0.35 : 0.25,
-              16,
-            ]}
-          />
+      {/* Hologram 3D Silhouette: Tower (Sliding round cylinder) */}
+      {(activeStamp === 'tower' || activeStamp === 'buruj') && (
+        <mesh position={[0, 0.15, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.30, 16]} />
           <meshBasicMaterial
             color={holoColor}
             wireframe
@@ -429,34 +545,35 @@ const SnapHologramPreview: React.FC<{
         </mesh>
       )}
 
-      {activeStamp === 'gate' && (
-        <group>
-          {/* Left Flanking Tower */}
-          <mesh position={[-0.20, 0.15, 0]}>
-            <cylinderGeometry args={[0.10, 0.10, 0.30, 12]} />
-            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
-          </mesh>
-          {/* Right Flanking Tower */}
-          <mesh position={[0.20, 0.15, 0]}>
-            <cylinderGeometry args={[0.10, 0.10, 0.30, 12]} />
-            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
-          </mesh>
-          {/* Portal Arch Lintel */}
-          <mesh position={[0, 0.22, 0]}>
-            <boxGeometry args={[0.30, 0.08, 0.12]} />
-            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
-          </mesh>
-        </group>
+      {/* Hologram 3D Silhouette: Rampart Platform (Face stuck to wall, extending inward into courtyard) */}
+      {(activeStamp === 'box' || activeStamp === 'grand_buruj') && (
+        <mesh position={[0, 0.15, 0.15]}>
+          <boxGeometry args={[0.30, 0.30, 0.30]} />
+          <meshBasicMaterial
+            color={holoColor}
+            wireframe
+            transparent
+            opacity={0.65}
+          />
+        </mesh>
       )}
 
-      {activeStamp === 'citadel' && (
+      {/* Hologram 3D Silhouette: Gate (Rotation matches outward-facing normal of the wall) */}
+      {activeStamp === 'gate' && (
         <group>
-          <mesh position={[0, 0.25, 0]}>
-            <boxGeometry args={[0.55, 0.50, 0.55]} />
+          {/* Left Flanking Tower along wall */}
+          <mesh position={[-0.15, 0.14, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.28, 12]} />
             <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
           </mesh>
-          <mesh position={[0, 0.58, 0]}>
-            <coneGeometry args={[0.25, 0.18, 4]} />
+          {/* Right Flanking Tower along wall */}
+          <mesh position={[0.15, 0.14, 0]}>
+            <cylinderGeometry args={[0.08, 0.08, 0.28, 12]} />
+            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
+          </mesh>
+          {/* Portal Arch Lintel spanning across gateway */}
+          <mesh position={[0, 0.18, 0]}>
+            <boxGeometry args={[0.22, 0.06, 0.12]} />
             <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
           </mesh>
         </group>
@@ -475,7 +592,6 @@ export const FortWalls: React.FC = () => {
     activeWallDraft,
     selectedWallId,
     nightMode,
-    citadelKeeps,
     activeStamp,
     wallSnapPreview,
     selectedComponent,
@@ -492,9 +608,9 @@ export const FortWalls: React.FC = () => {
 
   useEffect(() => {
     invalidate();
-  }, [walls, activeWallDraft, selectedWallId, citadelKeeps, activeStamp, wallSnapPreview, invalidate]);
+  }, [walls, activeWallDraft, selectedWallId, activeStamp, wallSnapPreview, invalidate]);
 
-  // Cancel active stamp on Escape key
+  // Cancel active stamp on Escape key & guarantee OrbitControls enabled on pointerup
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -505,8 +621,18 @@ export const FortWalls: React.FC = () => {
         }
       }
     };
+    const handlePointerUp = () => {
+      const rawControls = (window as any).__orbitControls;
+      if (rawControls && !rawControls.enabled) {
+        rawControls.enabled = true;
+      }
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
   }, []);
 
   // 1. Load Retroground PBR mossy stone brick textures (GROUP 0: Wall and tower sides)
@@ -612,19 +738,6 @@ export const FortWalls: React.FC = () => {
           stateBuffer={stateBuffer}
           materials={wallMaterials}
           isSelected={selectedWallId === wall.id}
-        />
-      ))}
-
-      {/* Freestanding Balekilla Citadel Keeps */}
-      {citadelKeeps.map((keep) => (
-        <SingleCitadelMesh
-          key={`citadel_${keep.id}_${lastUpdated}_${keep.scale}`}
-          keep={keep}
-          stateBuffer={stateBuffer}
-          materials={wallMaterials}
-          isSelected={
-            selectedComponent?.type === 'citadel' && selectedComponent.idOrIndex === keep.id
-          }
         />
       ))}
 

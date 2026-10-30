@@ -302,6 +302,39 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     };
   }, []);
 
+  // Intercept pointerdown during spline and wall drawing to prevent camera orbit spin
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handlePointerDown = (e: PointerEvent) => {
+      const editor = useEditorStore.getState();
+      // If left-click without Alt while activeTool is spline or walls layout step:
+      if (
+        (editor.activeTool === 'spline' || (editor.activeTool === 'walls' && editor.wallStep === 'layout')) &&
+        e.button === 0 &&
+        !e.altKey
+      ) {
+        if (controlsRef.current) {
+          controlsRef.current.enabled = false;
+        }
+      }
+    };
+
+    const handlePointerUp = () => {
+      if (controlsRef.current && !controlsRef.current.enabled) {
+        controlsRef.current.enabled = true;
+      }
+    };
+
+    container.addEventListener('pointerdown', handlePointerDown, { capture: true });
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => {
+      container.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+  }, []);
+
   // Zoom delta handler
   const handleZoom = useCallback((delta: number) => {
     if (!controlsRef.current) return;

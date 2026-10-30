@@ -39,30 +39,30 @@ graph TD
 - **Blocked by**: None (can start immediately)
 - **Delivers**:
   - Initialized Next.js 15 (App Router) + TypeScript + Tailwind CSS application.
-  - Complete 3D dependencies (`three`, `@react-three/fiber`, `@react-three/drei`, `three-mesh-bvh`, `three-custom-shader-material`, `fflate`, `zustand`, `zod`, `lucide-react`, `lazy-brush`, `canvas-confetti`).
+  - Complete 3D dependencies (`three`, `@react-three/fiber`, `@react-three/drei`, `three-mesh-bvh`, `three-custom-shader-material`, `fflate`, `zustand`, `zod`, `react-icons/tb`, `lazy-brush`, `canvas-confetti`).
   - Integrated design tokens from `design.md`:
     - Sun-baked canvas (`#F9F6F0`), Dark Brown mineral ink (`#4B382C`).
     - 6-Color Earth Palette: Terracotta (`#B85F45`), Burnt Clay (`#8F4938`), Sand (`#D8C09D`), Camel (`#B58B63`), Olive (`#777A57`), Basalt Charcoal (`#23211E`).
     - Festive Accents: Bhagwa Saffron (`#E85D04`), Chuna White (`#FAF8F5`), Sprouted Halim Green (`#65A30D`), Crinkled Sea Blue (`#0284C7`), Diya Amber (`#F59E0B`).
   - Google Fonts preloaded in `<head>`: `Yatra One`, `Modak`, and `Inter`.
   - Full-bleed responsive diorama canvas shell with non-blocking floating HUD mounts.
-  - **Comprehensive Responsive HUD & Viewport Ergonomics**:
-    - **In-Flow Branding**: Fixed brand title collision with Help menu dropdown by moving "The Killa Playground" into natural toolbar flex flow beside the shield logo.
-    - **Responsive Hamburger Navigation Drawer**: On screens `< 1280px` (`< xl`), collapses horizontal menus into a hamburger button with slide-over drawer rendered below the top bar (`top-[41px]`), featuring a dynamic hamburger-to-X toggle.
-    - **Camera Viewport Relocation**: Moved Top (Z), Front (Y), Side (X), Center (Home), and Zoom In/Out controls from the sidebar into the secondary top bar.
-    - **2-Row Symbols-Only Toolbar**: On `< xl` viewports (mobile, tablet, and windowed desktop), secondary toolbar automatically renders 2 rows of symbol buttons (Row 1: 10 Tools; Row 2: Camera presets & zoom), eliminating all horizontal scrollbars and cutoffs.
-    - **Symmetric Minimized HUD Toggles**: "Tools & Views" minimized button is pinned to the right edge (`right-2`), while "Properties" minimized button is pinned to the left edge (`left-2`) and dynamically hangs off the secondary toolbar when expanded.
-    - **100% Properties-Dedicated Sidebar**: Removed camera box and horizontal splitter from the left sidebar, giving tool properties and sliders full vertical scrolling space.
-    - **Bottom Instructions Auto-Hide**: Viewport navigation tip strip hidden on smaller screens (`hidden md:flex`).
-    - **Decluttering**: Stripped verbose info cards, guidance blurbs, and redundant labels from tool properties, terrain drawer, and startup modals.
+  - **Decoupled 5-Zone HUD Layout Architecture**:
+    - **Zone 1: Primary App Menu Bar (`AppMenuBar.tsx`)**: Global brand, fort blueprint selector, menus (`File`, `Edit`, `View`, `Language`, `Help`), `EN`|`म`|`हि` language switch, 15-slot undo/redo, night diya mode toggle, and auto-dismissing toast notifications with manual close (`✕`). Pinned top-0 (41px).
+    - **Zone 2: Secondary Top Tool Bar (`TopToolBar.tsx`)**: 10 construction/soil tools + camera presets (Z, Y, X, Center, Zoom). Fully minimizable with dynamic hanging tab `[⛰️ Tools & Views ▾]`.
+    - **Zone 3: Left Tool Properties Sidebar (`LeftToolSidebar.tsx`)**: Hosts universal/unplaced parameters and initial drafting settings. Resizable from 250px to 480px with tactile 6-dot grip handle. Minimizable with hanging tab `[⚙️ Properties ▾]`.
+    - **Zone 4: Vertical Tool Mode Strip (`ToolModeSidebar.tsx`)**: Dedicated 68px vertical strip docked to left sidebar edge. Vertical icon + label buttons for tool-specific operations. Minimizable with hanging tab `[🎯 Modes ▾]`.
+    - **Zone 5: Right Scene Outliner & Contextual Inspector (`RightToolSidebar.tsx`)**: Resizable 260px to 460px with tactile grip. Dual-pane: upper `DIORAMA ELEMENTS` tree with expand/collapse, element counts, focus, delete, and hover highlight; lower `ELEMENT PROPERTIES` inspector for selected objects. Minimizable with hanging tab `[🏰 Outliner ▾]`.
+  - **Anti-Collision Minimized Guide Tab Positioning**:
+    - Coordinated dynamic left and right offsets ensuring all permutations of open and minimized panels never overlap or clip headers.
 
 ### Acceptance Criteria
 - [x] Application compiles and runs with `npm run dev` at `http://localhost:3000`.
 - [x] Canvas viewport expands to 100vw × 100vh with `#F9F6F0` foundation.
 - [x] Fonts `Yatra One`, `Modak`, and `Inter` load cleanly with zero FOUT.
 - [x] Tailwind tokens configured and verified with test elements.
-- [x] Responsive layout adapts cleanly across mobile (375px/390px), tablet/windowed (820px/1032px), and wide desktop (1280px+) with zero visual overlaps or clipped toolbars.
+- [x] Responsive layout adapts cleanly across mobile, tablet, and wide desktop with zero visual overlaps or clipped toolbars.
 - [x] Camera controls relocated to secondary toolbar, leaving left sidebar 100% for tool properties.
+- [x] Minimized guide tabs line up side-by-side with zero overlap across all open/minimized combinations.
 
 ---
 
@@ -92,22 +92,18 @@ graph TD
 - **Blocked by**: `Ticket 02`
 - **Delivers**:
   - **Direct Terrain Mesh Sculpting**:
-    - **Elevate**: Raises mountain mounds, ridges, and hillocks with smooth radial falloff.
-    - **Lower**: Digs terrain down to carve moat beds, trenches, and valleys.
+    - **Peak**: Raises mountain mounds, ridges, and hillocks with smooth radial falloff.
+    - **Gorge / Trench**: Digs terrain down to carve moat channels, ravines, and valleys.
     - **Plateau / Level**: Flattens sampled vertices to a target plane height $H_{target}$, creating flat courtyards and fort hilltops.
     - **Smooth**: Multi-tap adaptive kernel blur that effectively softens sharp terraces and jagged spikes into rolling earthen curves.
-    - **Slope / Ramps**: Calibrated inclination subtool with angle presets (15°, 30°, 45°, 60°) and angle slider for grading smooth ghat paths and fort ascents.
-    - **Pond Excavation (Option A: Shader-Integrated)**: Excavates crater basins directly in the terrain heightmap and renders authentic blue tarpaulin PBR water with specular ripples directly on the flat basin floor (`wetness > 0.68`), surrounded by dark glistening wet mud (*chikhal*) on crater banks (`wetness` tapering from 0.70 to 0.02) all the way up to the depression rim edge. Eliminates separate meshes, prevents cliff leaks, prevents water plane stacking, and restores 100% cleanly on undo.
-  - **3D Surface Normal Indicator**: Brush cursor reticle ring dynamically aligns with the exact surface normal of the terrain under the cursor, eliminating z-fighting and rendering flush across hillsides and cliffs.
-  - **Authentic Blue Tarpaulin Water Pipeline**: Uses PBR textures (`basecolor`, `normal`, `roughness`, `ao`, `metallic`) from `/textures/Water/blue_tarp_texture_128x128_pbr` for all water (diorama moat + pond basin floors).
+    - **Ramp**: Calibrated inclination subtool with angle presets (15°, 30°, 45°, 60°) for grading smooth paths and fort ascents.
+    - **Pond Excavation (Shader-Integrated)**: Excavates crater basins directly in the terrain heightmap and renders authentic blue tarpaulin PBR water with specular ripples directly on the flat basin floor (`wetness > 0.68`), surrounded by dark glistening wet mud (*chikhal*) on crater banks up to the depression rim edge. Eliminates separate meshes, prevents cliff leaks, and restores 100% cleanly on undo.
+    - **Retexture**: Restores natural unexcavated soil and basalt surfaces.
   - **Ergonomic Wheel Shortcuts**:
     - `Shift + Scroll Wheel`: Increase / decrease brush size.
-    - `Ctrl + Scroll Wheel`: Adjust sculpt speed / secondary slider.
-    - `Alt + Scroll Wheel`: Adjust plateau height / slope angle (tertiary slider).
+    - `Ctrl + Scroll Wheel`: Adjust sculpt speed / strength slider.
+    - `Alt + Scroll Wheel`: Adjust plateau height / slope angle.
     - Intercepted in capture phase with complete suppression of camera zoom.
-  - **Pond Basin Undo/Redo Engine**:
-    - Synchronized with 15-slot circular history (`Ctrl+Z` / `Ctrl+Y`).
-    - Dedicated "Undo Pond" button in Contextual Dock restores both terrain elevation and clears wet mud/water texels without residual artifacts.
 
 ### Acceptance Criteria
 - [x] Elevating terrain smoothly raises organic hills and hilltops.
@@ -115,8 +111,6 @@ graph TD
 - [x] Plateau tool flattens elevated peaks into level fort construction decks.
 - [x] Smoothing tool removes jagged vertices without resetting height.
 - [x] Slope tool creates clean graded ramps at 15°, 30°, 45°, 60° presets.
-- [x] Brush cursor ring orients flush to terrain surface normal without z-fighting.
-- [x] Shift/Ctrl/Alt + Wheel adjust sliders and prevent OrbitControls zoom.
 - [x] Excavating ponds renders shader-integrated blue tarpaulin water on basin floors and dark wet mud along banks with full undo/redo support.
 - [x] Vertex modifications execute in dirty bounding box ranges without full geometry reallocations.
 
@@ -127,44 +121,44 @@ graph TD
 - **Status**: `completed`
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
-  - **3-Step Crafting Stepper Flow**:
-    - **Step 1 (Layout & Tracing)**: Click or drag on terrain to draft wall circuits. Instant feedback with green start closing node, yellow mid nodes, and direct "Proceed to Fortify" or "Cancel Draft" actions.
-    - **Step 2 (Fortify & Decorate)**: Interactive editing mode with magnetic snap holograms for placing the 3 authentic fortification types:
-      - **Towers**: Sliding continuous round towers snapping to any point along wall segments.
-      - **Rampart Platforms**: Rectangular stone platforms attached flush to the wall, extending inward into the fort courtyard with authentic 3D protective railings (preserving continuous wall crenellations along the outer battlement face).
-      - **Gates (*Maha Darwaza*)**: Arched gateways with flanking towers and flush continuous upper walkway.
-      - *Note*: Removed legacy citadel keeps and sphere pin markers; replaced with flat clickable top surfaces (`BoxPlatformSelectionMesh` and tower top discs).
-    - **Step 3 (Diorama Solidified)**: Seamlessly locks fort walls into the diorama presentation without editing handles, wireframe overlays, or placement badges. Allows one-click switching back to edit or building additional circuits.
-  - **Miniature Diorama Metric Calibration**:
-    - Calibrated default wall height around 25cm (`0.25m`) and thickness to 15cm (`0.15m`) with 12mm ground foundation embedding.
-    - Slider readouts dynamically formatted in centimeters (`cm`) for intuitive physical tabletop ergonomics.
-  - **Multi-Material PBR Texture Grouping**:
+  - **Decoupled 3-Mode Interaction**:
+    - **Select Mode**: Inspects walls, corner bastions, watchtowers, rampart platforms, and gates in the Right Scene Outliner and Contextual Inspector. Displays 3D hover highlights (`#E85D04`) and changes cursor to pointer. Selection retention preserves IDs when switching between inspect and edit modes.
+    - **Draw Mode**: Click on terrain to draft rampart curves. Start closing node rendered in green, intermediate points in yellow. Features direct "Finish Wall" or "Cancel Draft" actions.
+    - **Fortify Mode**: Allows continuous placement of the 3 authentic fortification types via magnetic snap holograms:
+      - **Watchtowers**: Sliding continuous round towers snapping to any point along wall segments.
+      - **Rampart Bastions**: Inward rectangular stone platforms attached flush to the wall, featuring 3D perimeter protective railings while keeping the outer wall crenellations uninterrupted.
+      - **Arched Gateways (*Maha Darwaza*)**: Arched entrances with flanking towers and continuous upper rampart walkways.
+  - **Multi-Material PBR Texturing**:
     - Procedural `BufferGeometry` segmented into 3 distinct material groups (`geo.addGroup(start, count, materialIndex)`):
       - **Group 0 (Wall & Tower Sides)**: `mossy_stone_brick_128x128_pbr` (basecolor, normal, roughness, AO).
-      - **Group 1 (Walkways & Tower Floors)**: `Gravel_01` PBR gravel for rampart walkways and circular bastion floor decks.
+      - **Group 1 (Walkways & Tower Floors)**: `dark_stone_floor_128x128_pbr` dressed basalt floor slabs for rampart walkways, circular tower/bastion floor decks, and gate lintels.
       - **Group 2 (Battlements & Stone Trims)**: `dark_stone_texture_128x128_pbr` solid dark stone for crenellations (*kangare*), gate soffits, lintel trims, and plinths.
     - Stable material lifecycle in `useMemo([], [])` with `THREE.NearestFilter` and repeat wrapping for authentic retro pixel aesthetic.
-  - **Authentic Murud-Janjira Pointed Crenellations (*Kangare*)**:
+  - **Flat 3D Selection Surfaces**:
+    - Clickable top floor discs on towers and bastions, portal arch volume meshes on gates, and `BoxPlatformSelectionMesh` on rampart bastions, eliminating floating pin spheres.
+  - **Pointer & OrbitControls Isolation**:
+    - Strict `e.button === 0` guards on all 3D click handlers ensure right-click and middle-click drag are exclusively reserved for camera navigation without selecting or stamping components.
+  - **Miniature Diorama Metric Calibration**:
+    - Calibrated default wall height around 25cm (`0.25m`) and thickness to 15cm (`0.15m`) with 12mm ground foundation embedding. Readouts dynamically formatted in centimeters (`cm`).
+  - **Authentic Murud-Janjira Pointed Crenellations**:
     - Shaped pointed stone battlements directly matching coastal and Deccan Maratha rampart profiles.
-    - **Outer-Facing Orientation**: Automatically detected using 2D polygon centroid testing for closed fort circuits and downhill terrain slope gradient sampling for open wall runs, with manual flip override.
-    - **Continuous Rampart Parapets**: Preserves crenellations across Rampart Platform attachment points, with cylindrical exclusion zones for sliding round towers.
+    - Outer-facing orientation automatically detected using 2D polygon centroid testing for closed fort circuits and downhill terrain slope gradient sampling for open wall runs, with manual flip override.
   - **Watertight Maha Darwaza Arched Gateway**:
-    - Procedurally carved arched entrance with solid jambs, extruded arch soffit, and continuous top walkway flush with the fort rampart path.
-    - Flanked by twin stone bastions with capped walkway floors.
-  - **Real-Time Magnetic Snap Hologram Engine**:
-    - Real-time raycast snapping with inward and outward normal calculations (Gate ghost aligned with outward-facing normal, Rampart Platform ghost aligned with inward courtyard normal).
-    - Holographic 3D preview showing aligned placement orientation and status toast notifications.
-  - **Synchronous Undo/Redo Engine**:
-    - Integrated with the diorama's 15-slot circular history (`Ctrl+Z` / `Ctrl+Y`), capturing pre-mutation state synchronously to guarantee 100% reliable state rollback across all wall, tower, platform, and gate operations.
+    - Procedurally carved arched entrance with solid jambs, extruded arch soffit, and continuous top walkway flush with the fort rampart path. Flanked by twin stone bastions.
+  - **Real-Time Magnetic Snap Holograms**:
+    - Real-time raycast snapping with inward and outward normal calculations (Gate ghost aligned with outward normal, Rampart Bastion ghost aligned with inward courtyard normal).
+  - **Defensive Settings Resolution**:
+    - Safe fallbacks (`wall.settings || DEFAULT_WALL_SETTINGS`) preventing runtime exceptions on uninitialized objects.
 
 ### Acceptance Criteria
-- [x] User can click and drag to draw a wall that follows terrain contours.
-- [x] Wall height updates interactively via slider in miniature centimeters (10cm - 100cm, default 25cm).
-- [x] Sliding round towers snap continuously along wall segments via magnetic hologram.
-- [x] Inward Rampart Platforms attach to walls with protective 3D perimeter railings while preserving outer wall crenellations.
+- [x] User can click to draft walls that follow terrain contours with "Finish Wall" CTA.
+- [x] Wall height and thickness update interactively via sliders in physical centimeters (10cm - 100cm, default 25cm).
+- [x] Watchtowers snap continuously along wall segments via magnetic holograms with continuous placement enabled.
+- [x] Rampart Bastions attach to walls with protective 3D perimeter railings while preserving outer wall crenellations.
 - [x] Fort gates (*Maha Darwaza*) insert cleanly along wall segments with continuous top walkway.
-- [x] Multi-material PBR texturing applies stone brick, gravel, and dark stone across geometry groups.
-- [x] 3-Step stepper (`Layout` -> `Fortify` -> `Solidified`) isolates editing handles from final diorama.
+- [x] Multi-material PBR texturing applies stone brick, dark stone floor, and solid basalt stone across geometry groups.
+- [x] Right-click drag orbits camera without selecting or stamping components.
+- [x] Selection persists cleanly when switching from Select to Fortify mode with pre-activated stamp.
 
 ---
 
@@ -173,25 +167,25 @@ graph TD
 - **Status**: `completed`
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
-  - **Interactive 3D Curve Drawing Engine**:
-    - Draws smooth 3D curves across terrain slopes and atop fort walls/structures using centripetal `THREE.CatmullRomCurve3` (and `THREE.LineCurve3` for 2-point segments).
-    - Raycast occlusion guard on terrain prevents accidental duplicate points on the ground when drafting over elevated fort ramparts.
-    - Capturing pointerdown handling disables OrbitControls while actively drawing splines.
+  - **Decoupled 3-Mode Interaction**:
+    - **Select Mode**: Direct physical mesh raycasting on stone steps, saffron flags, and diyas without terrain proximity hijacking. Displays glowing hover outlines (`#E85D04`).
+    - **Draw Mode**: Drafts path curves across terrain slopes and atop fort structures using centripetal `THREE.CatmullRomCurve3` (and `LineCurve3` for 2-point segments). Raycast occlusion guard on terrain prevents accidental duplicate points underneath.
+    - **Transform Mode**: Translates selected paths in camera-relative directions (Forward, Backward, Left, Right, Up, Down), rotates curves, or adjusts individual item scale without losing active selection.
   - **3 Core Linear Structure Conversions**:
-    - **Stone Steps (*Payrya*)**: Generates stepped horizontal stone boxes ascending slopes. Features 7x larger authentic stone masonry texture scale (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
+    - **Stone Steps**: Generates stepped horizontal stone boxes ascending slopes. Features 7x larger authentic stone masonry texture scale (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
     - **Bhagwa Saffron Flags**: Plants fluttering swallowtail saffron flags at uniform intervals along paths, ridges, or wall ramparts (normalized base scale 1.0x).
-    - **Festive Divas (Diyas)**: Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
-  - **Live HUD & Property Synchronization**:
-    - Selecting any placed spline structure in the 3D scene immediately opens its property inspector and dynamic re-rendering (`invalidate()`).
-    - Clean English display voice in English and Hindi modes without cluttering Marathi subtext.
+    - **Festive Diyas**: Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
+  - **Clean English UI Voice**:
+    - Removed parenthetical Marathi words from UI labels; all language switching handled cleanly through `useTranslation()` (`translations.ts`).
 
 ### Acceptance Criteria
 - [x] Spline curve drawing cleanly samples 3D surface points across terrain slopes and fort walls.
 - [x] Occlusion trapping prevents spline points from leaking through walls to the ground underneath.
 - [x] Converting to Stone Steps produces walkable stepped terracing conforming to slope gradient with offset and spacing sliders.
 - [x] Converting to Flags places spaced saffron flags with waving swallowtail geometry and pole mast.
-- [x] Converting to Divas arranges warm glowing terracotta oil lamps with flame teardrops along drawn curves.
-- [x] Selecting placed splines dynamically updates 3D diorama geometry upon moving property sliders.
+- [x] Converting to Diyas arranges warm glowing terracotta oil lamps with flame teardrops along drawn curves.
+- [x] Direct physical mesh picking isolates nearby splines without ground proximity hijacking.
+- [x] Camera-relative transform controls smoothly translate, rotate, and scale placed spline features.
 
 ---
 

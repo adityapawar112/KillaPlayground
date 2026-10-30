@@ -23,8 +23,8 @@ Every architectural choice in this document climbs the **7-Rung Ladder of Lazine
 | **3D Engine** | **Three.js + `@react-three/fiber` + `@react-three/drei`** | Declarative scene graph, built-in `<OrbitControls>`, `<Instances>`, `<Decal>`, `<Extrude>`, and GLTF loader caching. | ₹0 |
 | **Raycasting** | **`three-mesh-bvh` + `@react-three/drei` (`<Bvh>`)** | Wraps the terrain mesh in a Bounding Volume Hierarchy so pointer raycasts take `< 0.2ms` instead of `14ms`. | ₹0 |
 | **Shader Extension** | **`three-custom-shader-material` (CSM)** | Injects multi-texture blending (dirt, sand, grass, gravel, rock), wetness gloss, and retro pixel-art sampling without rewriting shadows or lights. | ₹0 |
-| **UI & Toolbar** | **Tailwind CSS + Radix UI / Shadcn UI + `lucide-react`** | Zero-effort accessible sliders (brush size), popovers (texture picker), and drawers (figurine browser). | ₹0 |
-| **Client State** | **Zustand** (UI/Tool state ONLY) | Holds active tool (`terrain`, `walls`, `spline`, `terrain_paint`, `foliage_paint`, `figurines`, and deferred soil tools), brush size, and placed figurine array. Never holds 60Hz vertex data. | ₹0 |
+| **UI & Toolbar** | **Tailwind CSS + Radix UI / Shadcn UI + `react-icons/tb`** | Zero-effort accessible sliders, resizable docks, outliner file tree, and tactile control strips. | ₹0 |
+| **Client State** | **Zustand** (UI/Tool state ONLY) | Holds active tool, modes, selection IDs, panel widths, and placed object metadata. Never holds 60Hz vertex data. | ₹0 |
 | **Payload Compression** | **`fflate`** | Compresses raw heightmap + paint weights + prop JSON by ~85% in `< 8ms` on the client so we don't need file-storage buckets for every small fort. | ₹0 |
 | **Validation** | **Zod** | Validates incoming JSON/binary payloads on the save API route to prevent malformed data or oversized payload attacks. | ₹0 |
 | **Database & Storage** | **Supabase (Free Tier: Postgres + Storage)** | 500MB Postgres database + 1GB Object Storage for compressed killa states and shared poster thumbnails. | ₹0 |
@@ -81,36 +81,38 @@ The diorama is structured into two complementary geometric layers:
 
 2. **The Structure & Prop Layer (Walls, Splines, Foliage & Figurines):**
    * Structures exist as discrete meshes positioned atop the terrain surface.
-   * Walls and splines conform to terrain elevation dynamically.
+   * Walls and splines conform to terrain elevation dynamically via bilinear height sampling.
    * Figurines, pre-built buildings, and foliage instances calculate their base Y-coordinates and ground normal alignment via BVH raycasting.
 
 ---
 
-### 4.2 Tool Taxonomy: Primary Killa Suite vs. Deferred Soil Pipeline
+### 4.2 Tool Taxonomy: Primary Fort Construction Suite vs. Deferred Soil Pipeline
 
-To give users the fastest, most joyful path to crafting a complete fort, tools are divided into the **Primary Killa Suite** (implement first) and the **Tactile Soil Pipeline** (deferred advanced simulation).
+To give users the fastest, most joyful path to crafting a complete fort, tools are divided into the **Primary Killa Suite** (implemented first) and the **Tactile Soil Pipeline** (deferred advanced simulation).
 
 #### A. Primary Fort Construction Suite (6 High-Velocity Tools)
 
 1. **Terrain Tool (Base Mesh Manipulation):**
    * Directly sculpts the mountain terrain mesh:
-     * *Elevate:* Raises organic hillocks and ridges.
-     * *Lower:* Depresses valleys and defensive moats.
-     * *Plateau / Level:* Flattens sampled vertices to $H_{target}$ for building platforms and courtyards.
-     * *Smooth:* Softens steep edges using a 3x3 box blur filter.
-     * *Pond Excavation:* Depresses terrain below $Y < 0.08$ to automatically uncover the water plane.
+     * *Peak:* Raises organic mountain mounds and ridges with smooth radial falloff.
+     * *Plateau:* Flattens sampled vertices to $H_{target}$ for building platforms and courtyards.
+     * *Ramp:* Carves linear graded slopes conforming to set angles.
+     * *Gorge:* Excavates valleys and ravines.
+     * *Trench:* Cuts narrow defensive moat channels.
+     * *Smooth:* Softens steep edges using an adaptive kernel blur filter.
+     * *Pond Excavation:* Shader-integrated crater basin carving depression height and rendering authentic blue tarpaulin water on flat floors (`wetness > 0.68`) with glistening dark wet mud on crater banks.
+     * *Retexture:* Restores natural soil and basalt surface coats.
 
 2. **Walls Tool (Parametric Fort Ramparts & Bastions):**
    * Spline/segment-driven parametric procedural geometry pipeline conforming directly to terrain elevation.
-   * Built specifically for builders who want fort ramparts immediately without soil sculpting.
    * **Procedural Geometry Engine (`wallGeometry.ts` & `GeometryBuilder`):**
      * *Resampling & Bilinear Height Sampling:* Resamples centerline wall vertices uniformly at 0.04m intervals, computing bilinear heights (`sampleBilinearHeight`) from `stateBuffer` with continuous elevation adherence.
      * *Multi-Material Group Partitioning (`BufferGeometry.addGroup`):*
        * **Group 0 (Wall & Tower Sides):** Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`) with retro pixel `NearestFilter` and repeat wrapping.
-       * **Group 1 (Walkways & Tower Floors):** Crushed gravel (`Gravel_01`) for rampart walkway strips and circular tower floor disks.
+       * **Group 1 (Walkways & Tower Floors):** Dressed dark stone floor paving slabs (`dark_stone_floor_128x128_pbr`) for rampart walkway strips, circular tower floor disks, bastion decks, and gate lintels.
        * **Group 2 (Battlements & Trims):** Solid dark basalt stone (`dark_stone_texture_128x128_pbr`) for pointed crenellations (*kangare*), gateway soffits, and plinths.
      * *3 Authentic Fortifications:*
-       * **Sliding Round Towers:** Continuous segment positioning with masonry walls, gravel floor discs, and pointed crenellations.
+       * **Sliding Round Towers:** Continuous segment positioning with masonry walls, dark stone floor discs, and pointed crenellations.
        * **Inward Rampart Platforms:** Rectangular stone bastions attached flush to the wall, extending strictly into the courtyard with 3D protective railings along the 3 exposed rims, leaving outer wall battlements uninterrupted.
        * **Maha Darwaza Arched Gates:** Procedurally carved arched openings with solid side jambs and flush upper walkways over the lintel.
      * *Murud-Janjira Pointed Crenellations:* Custom procedural merlons with pointed tops, oriented outward using 2D polygon centroid testing (closed paths) and downhill terrain gradient sampling (open paths).
@@ -120,18 +122,14 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * Calculates inward normal $\vec{N}_{\text{in}}$ and outward normal $\vec{N}_{\text{out}}$:
        * Gate ghost rotation is oriented with outward-facing normal $\vec{N}_{\text{out}}$ so entry portals face outward.
        * Rampart Platform ghost rotation is oriented with inward-facing normal $\vec{N}_{\text{in}}$ so platform bodies extend into the courtyard with the attached face centered on the wall.
-   * **State Machine & Synchronous Undo Architecture:**
-     * 3-Step Stepper: `layout` (drawing) $\rightarrow$ `fortify` (interactive editing & magnetic placement) $\rightarrow$ `solidified` (clean diorama presentation).
-     * `useEditorStore` integrates top-level synchronous `pushUndoSnapshot()` directly preceding store mutations, capturing pre-mutation states synchronously and eliminating microtask race conditions with `terrainStore`.
 
 3. **Spline Tool (Linear Structure Placement):**
    * Draws smooth 3D curves along terrain slopes and atop fort structures using `createCurve` (centripetal `THREE.CatmullRomCurve3` for 3+ points, `THREE.LineCurve3` for 2-point segments).
    * **Raycast Occlusion Defense:** Terrain listener ignores pointer events when intersected by a closer fort structure, preventing dual-layer points on the ground underneath.
    * **Conversion Options:**
-     * *Stone Steps (*Payrya*):* Generates stepped stone terraces with 7x larger masonry texture (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
+     * *Stone Steps:* Generates stepped stone terraces with 7x larger masonry texture (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
      * *Bhagwa Flag Lines:* Arranges waving swallowtail saffron flags at uniform intervals (normalized base scale 1.0x).
-     * *Divas / Diyas:* Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
-   * *(Note: Walking paths are painted using the Terrain Paint Tool).*
+     * *Festive Diyas:* Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
 
 4. **Terrain Paint Tool (Surface Texture Brush):**
    * Directly paints textures onto the terrain mesh without affecting structures, walls, or figurines.
@@ -141,7 +139,6 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
 5. **Foliage Paint Tool (3D Nature Scatter Brush):**
    * Scatter brush that places low-poly 3D nature props directly onto terrain.
    * **Selectable Assets:** Trees (banyan, neem, acacia), Rocks (basalt boulders, pebbles), Shrubs (mountain bushes), 3D Grass Sprout Models (*Halim* seedlings).
-   * **Controls:** Scatter radius, density slider, random scale jitter, random rotation.
    * **Performance:** Single draw call per asset type via `<Instances>`.
 
 6. **Figurines & Architecture Tool (3D Asset Browser):**
@@ -149,23 +146,65 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * *Royalty & Sinhasan:* Shivaji Maharaj on the royal throne (*Sinhasan*), canopy (*Meghdambari*).
      * *Mavale:* Spearmen, swordsmen, sentries.
      * *Musicians:* Tutari horn blowers, Dhol-Tasha drummers.
-     * *Buildings & Fort Architecture:* Pre-built watchtowers, bastions, temple shrines, fort houses, stone arches. (Allows instant architectural staging for time-constrained users).
+     * *Buildings & Fort Architecture:* Pre-built watchtowers, bastions, temple shrines, fort houses, stone arches.
      * *Artillery & Yard Props:* Cannons, carts, barrels, paper boats, terracotta diyas.
-   * Raycast drag-and-drop placement, rotation handle, and ground alignment.
 
 ---
 
-#### B. Deferred Tactile Soil Pipeline (Advanced Organic Simulation)
+### 4.3 Decoupled 5-Zone HUD Layout & Resizing Engine
+The user interface is architected into 5 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
+
+1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switch, undo/redo, night diya mode, and auto-dismissing toast notifications.
+2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts 10 tool buttons and camera view controls. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
+3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Minimizes into `[⚙️ Properties ▾]`.
+4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Walls (`Select`, `Draw`, `Fortify`), Spline (`Select`, `Draw`, `Transform`), and Terrain (8 sculpting modes). Minimizes into `[🎯 Modes ▾]`.
+5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions; lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Minimizes into `[🏰 Outliner ▾]`.
+
+#### Anti-Collision Minimized Guide Tab Positioning Logic
+To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:
+- **Left Edge Positioning**:
+  - Both Left & Modes minimized: `Properties ▾` at `8px`, `Modes ▾` at `114px`.
+  - Modes strip open + Left minimized: `Properties ▾` at `76px` (clearing 68px mode strip).
+  - Left open + Modes minimized: `Modes ▾` at `${leftSidebarWidth + 8}px`.
+- **Right Edge Positioning**:
+  - Both Outliner & TopBar minimized: `Outliner ▾` at `8px`, `Tools & Views ▾` at `104px`.
+  - Outliner open + TopBar minimized: `Tools & Views ▾` at `${rightSidebarWidth + 8}px`.
+  - Terrain tool active (no Outliner): `Tools & Views ▾` at `8px`.
+- **Vertical Top Alignment**:
+  - Secondary Top Bar open: `top-[112px] xl:top-[81px]`
+  - Secondary Top Bar minimized: `top-[41px]`
+
+---
+
+### 4.4 Pointer Raycast Architecture & Interaction Security
+1. **Strict OrbitControls Isolation (`e.button === 0`)**:
+   - In `@react-three/fiber`, click events trigger on mouse button release. Right-click and middle-click drag are strictly reserved for camera rotation and panning.
+   - All 3D selection and stamp placing handlers start with:
+     ```typescript
+     if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+     ```
+     ensuring camera navigation never inadvertently selects, deselects, or stamps diorama components.
+2. **Direct Physical Mesh Raycasting (Zero Ground Proximity Hijacking)**:
+   - Structure selection raycasts directly against physical geometries (`mesh` and `instancedMesh` with updated instance matrices and bounding boxes).
+   - Coarse radial ground distance checks on empty terrain are prohibited, ensuring adjacent splines and walls never cross-select.
+3. **Selection Retention on Mode Switches**:
+   - Switching from `select` to `fortify` preserves `selectedWallId` and auto-activates the default `tower` stamp.
+   - Switching from `select` to `transform` preserves `selectedSplineId` for immediate camera-relative translation, rotation, and scaling.
+   - Only switching into `draw` mode resets selection to isolate drafting pipelines.
+
+---
+
+### 4.5 Deferred Tactile Soil Pipeline (Advanced Organic Simulation)
 An optional authentic simulation layer to be implemented in a subsequent phase:
 1. **Soil Tool:** Adds loose dry soil mounds onto the diorama base.
-2. **Water Tool:** Pours water over soil mounds, increasing wetness and specular gloss (`cracked_red_ground_1k`).
+2. **Water Tool:** Pours water over soil mounds, increasing wetness and specular gloss.
 3. **Shaping Tool:** Hand trowel pushing (left/right vertical walls) and top patting (horizontal plateaus).
 4. **Drying & Mud Locking Tool:** Hardens wet mud into immutable stone (`lockState = 1.0`).
 5. **Freehand Mud Paint Tool:** Large/medium/fine brush with `lazy-brush` stabilizer for hand-painting dark basalt base coats and white lime (*chuna*) mortar lines over dried mud masses.
 
 ---
 
-### 4.3 Client-Side 4-Angle Festive Poster Generator (₹0 Server Cost)
+### 4.6 Client-Side 4-Angle Festive Poster Generator (₹0 Server Cost)
 Do not send screenshots to a backend server. Generate the entire high-res collage inside the user's browser in `< 400ms`:
 
 ```typescript

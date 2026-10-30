@@ -32,8 +32,8 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 │
 ▼
 [3. Walls & Spline Structures]
-├── Parametric Walls: Height, Bastions/Towers, Gates, Gatehouse, Crenellations, Brick Scale
-└── Spline Structures: Stepped Stairs (Payrya), Saffron Flag Lines, Glowing Diya Rows
+├── Parametric Walls: Height, Thickness, Bastions/Towers, Gates, Crenellations
+└── Spline Structures: Stone Steps, Saffron Flag Lines, Glowing Diya Rows
 │
 ▼
 [4. Terrain Painting Studio]
@@ -92,38 +92,41 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 
 #### 3.1 Parametric Walls Tool
 Enables users to draw continuous wall curves or multi-segment fort ramparts conforming directly to the underlying terrain elevation. This provides an express path to building fortified killas without requiring manual soil sculpting:
-* **3-Step Crafting Stepper Flow**:
-  * **Step 1: Layout & Path Tracing**: Click or drag on terrain to draft rampart curves. Start closing node rendered in green, intermediate points in yellow. Actions to "Proceed to Fortify" or "Cancel Draft".
-  * **Step 2: Fortify & Decorate**: Interactive editing mode where users can select walls, adjust physical dimensions, and use the Fortifications Stamp Shelf to attach the 3 core fortification types:
-    * **Towers**: Sliding continuous round towers snapping to any point along wall segments.
-    * **Rampart Platforms**: Inward rectangular stone platforms attached flush to the wall, featuring 3D perimeter protective railings while keeping the outer wall crenellations uninterrupted.
-    * **Gates (*Maha Darwaza*)**: Arched gateways with flanking towers and continuous upper rampart walkways.
-    * *Clean Handles*: Flat top floor discs and custom selection surfaces (`BoxPlatformSelectionMesh`), eliminating floating pin spheres.
-  * **Step 3: Diorama Solidified**: Locks the fort walls seamlessly into the diorama without editing handles, wireframe overlays, or pins, presenting a clean showcase view with circuit summary metrics.
+* **Decoupled 3-Mode Interaction**:
+  * **Select Mode**: Click any wall, bastion, or gate to inspect its properties in the Right Sidebar, rename it, delete it, or highlight hovered components in 3D.
+  * **Draw Mode**: Click on terrain to draft rampart curves. Start closing node rendered in green, intermediate points in yellow. Features direct "Finish Wall" or "Cancel Draft" actions.
+  * **Fortify Mode**: Allows continuous placement of the 3 authentic fortification types via magnetic snap holograms:
+    * **Watchtowers**: Sliding continuous round towers snapping to any point along wall segments.
+    * **Rampart Bastions**: Inward rectangular stone platforms attached flush to the wall, featuring 3D perimeter protective railings while keeping the outer wall crenellations uninterrupted.
+    * **Arched Gateways**: Arched entrances with flanking towers and continuous upper rampart walkways.
 * **Miniature Tabletop Diorama Calibration**:
   * Scaled to realistic miniature diorama measurements (default 25cm height, 15cm thickness; range 10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding.
   * Sliders dynamically display physical units in centimeters (`cm`).
 * **Multi-Material PBR Texturing**:
   * Wall & Tower Facings: Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`).
-  * Rampart Walkways & Tower Floor Decks: Crushed gravel (`Gravel_01`).
-  * Battlements (*Kangare*) & Trims: Solid dark basalt stone (`dark_stone_texture_128x128_pbr`).
-* **Authentic Murud-Janjira Pointed Battlements (*Kangare*)**:
+  * Rampart Walkways & Tower Floor Decks: Dressed dark basalt stone floor paving slabs (`dark_stone_floor_128x128_pbr`).
+  * Battlements & Trims: Solid dark basalt stone (`dark_stone_texture_128x128_pbr`).
+* **Authentic Murud-Janjira Pointed Battlements**:
   * Pointed stone merlons modeled after coastal and Deccan hill forts.
   * Outer-facing battlements automatically oriented via 2D centroid polygon calculations and downhill terrain slope gradient sampling, with manual flip toggle.
-  * Preserved continuously along outer ramparts where Rampart Platforms connect.
+  * Preserved continuously along outer ramparts where Rampart Bastions connect.
 * **Watertight Maha Darwaza Arched Gateway**:
   * Formed with solid stone jambs, carved archway opening, and flush upper walkway connecting the fort ramparts across the entrance.
   * Flanked by twin defensive stone towers with solid floors.
 * **Magnetic Snap Holograms**:
-  * Real-time cursor holograms oriented with outward-facing wall normal for gates, and inward-facing normal for rampart platforms.
+  * Real-time cursor holograms oriented with outward-facing wall normal for gates, and inward-facing normal for rampart bastions.
 
 #### 3.2 Spline Structure Placement Tool
 Draws smooth 3D curves across terrain slopes and atop fort ramparts/structures using `THREE.CatmullRomCurve3` (and `LineCurve3` for 2-point segments) and places specialized features along the drawn path:
-* **Stone Steps (*Payrya*):** Generates stepped horizontal stone boxes ascending slopes or terraced plateaus with 7x larger authentic stone masonry texture scale (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
-* **Bhagwa Saffron Flags:** Plants fluttering swallowtail saffron flags at uniform intervals along paths, ridges, or wall ramparts (normalized base scale 1.0x).
-* **Festive Divas (Diyas):** Arranges warm glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
+* **Decoupled 3-Mode Interaction**:
+  * **Select Mode**: Direct physical mesh raycast selection of steps, flags, or diyas without coarse terrain proximity interference.
+  * **Draw Mode**: Draft path lines with real-time length readouts and "Finish Path" action.
+  * **Transform Mode**: Move paths in camera-relative directions (Forward, Backward, Left, Right, Up, Down), rotate curves, or adjust individual feature scale.
+* **Feature Conversions**:
+  * **Stone Steps:** Generates stepped horizontal stone boxes ascending slopes or terraced plateaus with 7x larger authentic stone masonry texture scale, lateral offset slider, and stair spacing slider.
+  * **Bhagwa Saffron Flags:** Plants fluttering swallowtail saffron flags at uniform intervals along paths, ridges, or wall ramparts.
+  * **Festive Diyas:** Arranges warm glowing terracotta oil lamps along path curves for evening illumination.
 * **Surface Occlusion Guard:** Prevents pointer events from falling through elevated fort structures to the terrain below, ensuring splines drawn on walls stay strictly on the structures.
-* *(Note: Walking paths and trails are painted directly with the Terrain Paint Tool rather than generated via splines).*
 
 ---
 

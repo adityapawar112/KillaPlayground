@@ -1,0 +1,16 @@
+# Killa Playground (किल्ला प्लेग्राउंड)
+
+> Interactive 3D browser diorama celebrating the Maharashtrian Diwali folk tradition of building miniature mud forts (Diwali Killa) in honor of Chhatrapati Shivaji Maharaj.
+
+- **URL**: https://killaplayground.com/
+- **Documentation for LLMs**: https://killaplayground.com/llms.txt
+- **Sitemap**: https://killaplayground.com/sitemap.xml
+- **Robots**: https://killaplayground.com/robots.txt
+
+## Key Capabilities
+- **Terrain Sculpting**: 8 modes (Peak, Plateau, Ramp, Gorge, Trench, Smooth, Shader-Integrated Tarpaulin Pond, Retexture) with BVH acceleration (< 0.2ms raycasting).
+- **Parametric Walls**: Procedural ramparts with sliding watchtowers, inward rampart bastions, arched gates, pointed Murud-Janjira battlements, and dark basalt stone floor paving.
+- **3D Splines**: Stone steps, waving saffron flags (Bhagwa Dhwaj), and festive glowing oil lamps (Diyas).
+- **Retro 3D Art Direction**: 128x128 pixel-art textures with nearest-neighbor filtering under dynamic PBR sunlight.
+- **Client-Side Poster Studio**: 4-angle festive collage poster (1080x1920) generated in-browser with authentic Devanagari typography.
+- **Tech Stack**: Next.js 15, React 19, Three.js, React Three Fiber, three-mesh-bvh, Zustand, Tailwind CSS, fflate, zero server cost (₹0).

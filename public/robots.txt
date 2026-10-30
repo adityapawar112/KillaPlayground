@@ -1,0 +1,31 @@
+# robots.txt for Killa Playground
+# https://killaplayground.com
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# Sitemaps
+Sitemap: https://killaplayground.com/sitemap.xml
+
+# LLM & AI Discovery Files
+# Specification: https://llmstxt.org/
+# Full LLM documentation: https://killaplayground.com/llms.txt
+# Summary LLM documentation: https://killaplayground.com/llm.txt
+User-agent: GPTBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /

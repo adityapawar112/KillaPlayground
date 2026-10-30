@@ -1,0 +1,76 @@
+# Killa Playground
+
+> Killa Playground (किल्ला प्लेग्राउंड) is an interactive, tactile 3D browser diorama and creative sandbox celebrating the Maharashtrian Diwali folk tradition of building miniature mud forts (Diwali Killa) in honor of Chhatrapati Shivaji Maharaj.
+
+## Overview
+
+Diwali Killa Sandbox brings the cherished Indian courtyard tradition of fort crafting into the modern browser with zero server costs (100% client-side WebGL2 compute) and authentic cultural art direction. Users sculpt terrain, draw continuous parametric fort walls with stone bastions and arched gateways, place ascending stone steps and saffron flags with 3D splines, paint authentic earth pigments (Tambdi Maati, Deccan basalt, grass, sand), scatter native 3D trees and shrubs, stage festive clay figurines, and generate high-resolution multi-angle social posters in one click.
+
+## Cultural Context & Lore
+
+Building miniature mud forts (*Diwali Killa*) is a centuries-old cultural tradition in Maharashtra, India. During the Diwali festive season, children and families gather in building courtyards, society grounds, and village squares to build replicas of historic Maratha hill and sea forts (such as *Raigad*, *Pratapgad*, *Sinhagad*, *Shivneri*, *Murud-Janjira*, and *Vijaydurg*).
+- **Courtyard Brick Retaining Base**: Mud mounds are held at the foundation by a protective ring of red terracotta construction bricks.
+- **Tambdi Maati**: Rich red laterite soil characteristic of the Sahyadri mountains.
+- **Chikhal & Water Tanks**: Wet, moldable mud (*chikhal*) shaped into plateaus (*machi*) and water tanks (*taki*).
+- **Tatbandi & Buruj**: Perimeter stone defensive ramparts (*tatbandi*) punctuated by semi-circular watchtowers and bastions (*buruj*).
+- **Maha Darwaza**: Iconic fortified entrance archways flanked by twin circular stone bastions with high lintel walkways.
+- **Kangare**: Outer-facing pointed stone battlements along wall parapets.
+- **Bhagwa Dhwaj**: Swallowing-tail saffron flags of the Maratha Empire waving along bastions and citadel peaks.
+- **Diyas / Divas**: Small terracotta oil lamps lit during Diwali night to illuminate fort battlements.
+- **Mavale**: Miniature clay figurines representing the soldiers, swordsmen, spearmen, and citizens of Chhatrapati Shivaji Maharaj's army.
+
+## Core Features & Capabilities
+
+- **3D Terrain Sculpting**:
+  - Direct vertex height manipulation across 65,536 vertices with three-mesh-bvh acceleration (< 0.2ms raycasting).
+  - 8 operational sculpting modes: Peak (elevate), Plateau (flatten), Ramp (graded slope), Gorge (valley excavation), Trench (defensive moat), Smooth (adaptive blur), Pond (shader-integrated water basin with blue tarpaulin PBR ripples and glistening wet mud banks), and Retexture (soil restoration).
+- **Parametric Fort Walls**:
+  - Interactive spline/segment wall drafting conforming directly to terrain elevations.
+  - Multi-material PBR texturing: Group 0 (mossy stone brick masonry), Group 1 (dressed dark basalt stone floor paving slabs for rampart walkways and tower decks), and Group 2 (solid dark basalt stone for pointed crenellations and gate soffits).
+  - 3 authentic fortifications with magnetic snap holograms: Sliding Round Watchtowers, Inward Rampart Bastions (with 3D perimeter protective railings), and Arched Maha Darwaza Gateways.
+  - Outer-facing Murud-Janjira pointed crenellations with automatic 2D centroid polygon orientation and manual flip override.
+  - 3 decoupled modes: Select (hover highlight & inspector), Draw (path drafting), and Fortify (continuous stamp placement).
+- **3D Spline Structure Studio**:
+  - Smooth Catmull-Rom curves drawn across terrain slopes and atop fort structures with raycast occlusion defense.
+  - 3 structure conversions: Stone Steps (Payrya) with 7x larger masonry texture scale, Bhagwa Saffron Flags (Dhwaj), and Festive Diyas (Divas).
+  - 3 decoupled modes: Select (physical mesh raycast picking), Draw (path drafting), and Transform (camera-relative directional translate, rotate, and scale).
+- **Modern Retro / PS1 Art Direction (Flavor A)**:
+  - Authentic 128x128 pixel-art retro textures (Binbun Retroground) filtered with `THREE.NearestFilter` (no mipmap blur) for crisp, tactile miniature diorama crunch under dynamic PBR sunlight and real-time shadows.
+- **Decoupled 5-Zone HUD Layout**:
+  - Primary App Menu Bar (41px, brand, fort blueprint selector, menus, language switch, undo/redo, night diya mode).
+  - Secondary Top Bar (10 tools + camera presets, fully minimizable).
+  - Left Tool Properties Sidebar (resizable 250-480px, tactile 6-dot grip, minimizable).
+  - Vertical Tool Mode Strip (68px, vertical icon+label layout, minimizable).
+  - Right Scene Outliner & Inspector (resizable 260-460px, scene element tree + contextual object inspector).
+  - Non-colliding minimized hanging folder guide tabs ([Properties ▾], [Modes ▾], [Tools & Views ▾], [Outliner ▾]) with dynamic mathematical offset coordination.
+- **Client-Side 4-Angle Festive Poster Studio**:
+  - Zero-server-cost OffscreenCanvas (1080x1920) capturing 4 cinematic camera matrices (Bird's-Eye, Maha Darwaza low angle, Throne close-up, and Golden-hour / Night Diya view) with authentic Devanagari calligraphy (`Yatra One`, `Modak`).
+  - Instant high-resolution PNG/JPG download and permanent 3D link sharing.
+- **Internationalization**:
+  - Trilingual UI support across English (`en`), Marathi (`mr`), and Hindi (`hi`).
+  - Clean English interface without cluttered parenthetical transliterations.
+
+## Technology Stack
+
+- **Runtime**: Next.js 15 (App Router, React 19)
+- **3D Engine**: Three.js, `@react-three/fiber`, `@react-three/drei`
+- **Raycasting**: `three-mesh-bvh` (< 0.2ms BVH-accelerated raycasts)
+- **Shaders**: `three-custom-shader-material` (CSM) for multi-texture splatting and wetness gloss
+- **State Layer**: Zustand (UI and tool state) + TypedArray Float32Array stateBuffer for terrain
+- **Compression**: `fflate` (< 25 KB .killa compressed state packages)
+- **Styling**: Tailwind CSS + `react-icons/tb`
+- **Fonts**: `Yatra One` (architectural Devanagari display), `Modak` (festive celebratory display), `Inter` (UI microcopy)
+- **Cost**: ₹0 (100% Client-Side Compute)
+
+## Key Links & Resources
+
+- [Home & Diorama Sandbox](https://killaplayground.com/): Interactive 3D Diwali Killa sandbox application.
+- [Sitemap](https://killaplayground.com/sitemap.xml): Machine-readable XML sitemap.
+- [Robots Configuration](https://killaplayground.com/robots.txt): Crawler and indexing policies.
+- [Full LLM Specification](https://killaplayground.com/llms.txt): Detailed project documentation for language models.
+- [Summary LLM Text](https://killaplayground.com/llm.txt): Compact project overview for AI systems.
+- [GitHub Repository](https://github.com/adityak/KillaPlayground): Source code, issue tracker, and architectural specifications.
+- [Product Specifications](https://github.com/adityak/KillaPlayground/blob/main/product.md): User journey, Killa-first phases, and cultural lore.
+- [Technical Architecture](https://github.com/adityak/KillaPlayground/blob/main/architechture.md): Zero-cost tech stack, terrain heightmap state machine, and binary serialization.
+- [Design System & Guidelines](https://github.com/adityak/KillaPlayground/blob/main/design.md): Sun-baked courtyard canvas (#F9F6F0), 6 earth-tone palette, typography, and HUD construction guidelines.
+- [Asset Credits & Attributions](https://github.com/adityak/KillaPlayground/blob/main/credits.md): 3D texture and model creator attributions.

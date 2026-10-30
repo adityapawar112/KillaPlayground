@@ -11,6 +11,9 @@
   * `Rock/Rock_02`: Escarpment cliff rock faces (Deccan Basalt Stone)
   * `Dirt/Dirt_02`: Hydrated / watered dark glistening wet mud
   * `Gravel/Gravel_06`: Pathways and stone masonry trails
+  * `Bricks/mossy_stone_brick_128x128_pbr`: Fort wall perimeter masonry and tower cylinders
+  * `Bricks/dark_stone_floor_128x128_pbr`: Fort rampart walkways, tower/bastion floor decks, and gate lintels
+  * `Bricks/dark_stone_texture_128x128_pbr`: Kangare crenellations, corbelled trim, and stone step treads
   * `Grass/Grass_01`: Sprouted mustard greens / *Halim* / greenery on fort slopes
   * Filtered with `THREE.NearestFilter` (no mipmaps) for crisp, crunchy pixel-art terrain rendering under modern dynamic PBR lighting (Flavor A: *Valheim* / Modern Retro).
 

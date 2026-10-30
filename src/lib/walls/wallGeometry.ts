@@ -209,7 +209,7 @@ export function calculateWallTotalLength(
  * Procedural geometry builder helper class to accumulate vertices, normals, UVs, and indices
  * with multi-material group support.
  * Group 0: Stone Brick Masonry (mossy_stone_brick) - wall sides, towers, gate jambs
- * Group 1: Walkway & Tower Floor Gravel (Gravel_01) - wall top ramparts, tower floor discs
+ * Group 1: Walkway & Tower Floor Dark Stone (dark_stone_floor) - wall top ramparts, tower floor discs
  * Group 2: Solid Dark Stone (dark_stone_texture) - crenellations (kangare), soffits, trims
  *
  * // shortcut: unindexed quad vertex emission (duplicated shared vertices), upgrade to spatial hash index map if fort vertex count exceeds 50,000 vertices
@@ -302,7 +302,7 @@ class GeometryBuilder {
  * Integrates:
  * - 10x Miniature diorama scale (wall height 20mm to 100mm)
  * - Grounding foundation embedding (12mm)
- * - Multi-material texturing: Wall masonry (Group 0), Gravel walkway/floors (Group 1), Dark stone kangare (Group 2)
+ * - Multi-material texturing: Wall masonry (Group 0), Dark stone floor walkway/floors (Group 1), Dark stone kangare (Group 2)
  * - Authentic outer-facing Murud-Janjira arched/pointed kangare along ramparts & bastion tops
  * - Tower exclusion zones preventing kangare from clipping into bastions and flanking towers
  * - Watertight arched Maha Darwaza with solid flanking bastions and capped tops
@@ -496,7 +496,7 @@ export function generateWallBufferGeometry(
       [uB, vBotB], [uA, vBotA], [uA, vTopA], [uB, vTopB]
     );
 
-    // Face 3: Top Walkway Rampart (facing Up +Y) - GROUP 1: Gravel Walkway
+    // Face 3: Top Walkway Rampart (facing Up +Y) - GROUP 1: Dark Stone Floor Walkway
     builder.setGroup(1);
     builder.addQuad(
       ltA, ltB, rtB, rtA,
@@ -824,7 +824,7 @@ export function generateWallBufferGeometry(
       );
     }
 
-    // SOLID BASTION TOP FLOOR DISC (Watertight top) - GROUP 1: Gravel Floor
+    // SOLID BASTION TOP FLOOR DISC (Watertight top) - GROUP 1: Dark Stone Floor
     builder.setGroup(1);
     const centerTopIdx = builder.addVertex(pt.x, bTopY, pt.z, 0, 1, 0, 0.5, 0.5);
     for (let r = 0; r < radialSegments; r++) {
@@ -922,7 +922,7 @@ export function generateWallBufferGeometry(
       );
     }
 
-    // SOLID TOP FLOOR DISC - GROUP 1: Gravel Floor
+    // SOLID TOP FLOOR DISC - GROUP 1: Dark Stone Floor
     builder.setGroup(1);
     const centerTopIdx = builder.addVertex(twX, twTopY, twZ, 0, 1, 0, 0.5, 0.5);
     for (let r = 0; r < radialSegments; r++) {
@@ -1059,7 +1059,7 @@ export function generateWallBufferGeometry(
       [bWidth * effectiveUvScale, boxTopY * effectiveUvScale], [0, boxTopY * effectiveUvScale]
     );
 
-    // GROUP 1: Top floor gravel quad
+    // GROUP 1: Top floor dark stone slab quad
     builder.setGroup(1);
     builder.addQuad(
       tc0, tc1, tc2, tc3,
@@ -1214,7 +1214,7 @@ export function generateWallBufferGeometry(
       [gWidth * effectiveUvScale, lintelTopY * effectiveUvScale], [0, lintelTopY * effectiveUvScale]
     );
 
-    // F. LINTEL TOP WALKWAY - GROUP 1: Gravel Walkway
+    // F. LINTEL TOP WALKWAY - GROUP 1: Dark Stone Floor Walkway
     builder.setGroup(1);
     builder.addQuad(
       [jLeftX - normal.x * halfThick, lintelTopY, jLeftZ - normal.z * halfThick],
@@ -1290,7 +1290,7 @@ export function generateWallBufferGeometry(
           );
         }
 
-        // SOLID TOP FLOOR DISC FOR FLANKING TOWERS - GROUP 1: Gravel Floor
+        // SOLID TOP FLOOR DISC FOR FLANKING TOWERS - GROUP 1: Dark Stone Floor
         builder.setGroup(1);
         const ghCenterTop = builder.addVertex(ghX, ghTopY, ghZ, 0, 1, 0, 0.5, 0.5);
         for (let r = 0; r < 12; r++) {
@@ -1443,7 +1443,7 @@ export function generateCitadelKeepGeometry(
   // 2. Main Keep Tower Box (GROUP 0: Masonry)
   addBox(keep.x, keep.z, towerHalfW, towerHalfW, plinthTopY, towerTopY, 0, 0);
 
-  // 3. Overhanging Corbelled Walkway (Sides: Group 0, Top Floor: Group 1 Gravel)
+  // 3. Overhanging Corbelled Walkway (Sides: Group 0, Top Floor: Group 1 Dark Stone Floor)
   addBox(keep.x, keep.z, walkwayHalfW, walkwayHalfW, towerTopY, walkwayTopY, 0, 1);
 
   // 4. Kangare along Walkway Edge (GROUP 2: Dark Stone)

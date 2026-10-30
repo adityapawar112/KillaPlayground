@@ -325,7 +325,7 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
       }
       expect(foundUpwardNormal).toBe(true);
 
-      // Verify multi-material geometry groups exist (Group 0: wall masonry, Group 1: gravel floor, Group 2: dark stone)
+      // Verify multi-material geometry groups exist (Group 0: wall masonry, Group 1: dark stone floor, Group 2: dark stone)
       expect(geo.groups.length).toBeGreaterThanOrEqual(2);
       const groupMatIndices = geo.groups.map((g) => g.materialIndex);
       expect(groupMatIndices).toContain(0);

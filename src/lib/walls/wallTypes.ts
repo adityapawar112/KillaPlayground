@@ -6,6 +6,7 @@ export interface WallPoint {
 
 export interface WallGate {
   id: string;
+  name?: string;
   segmentIndex: number; // segment between points[i] and points[i+1]
   t: number;            // 0.0 to 1.0 along the segment (default 0.5)
   width: number;        // gate width in meters (default 0.18m = 18cm)
@@ -38,9 +39,10 @@ export const DEFAULT_WALL_SETTINGS: WallSettings = {
 };
 
 export interface CustomBastionProps {
+  name?: string;
   radius?: number;       // radius of tower in meters (0.06m to 0.35m)
-  heightOffset?: number; // extra height above wall in meters (0.0m to 0.20m)
-  isGrand?: boolean;     // whether this is a Maha Buruj
+  heightOffset?: number; // extra height above wall in meters (0.0m to 0.30m)
+  isGrand?: boolean;     // legacy field
 }
 
 /**
@@ -49,6 +51,7 @@ export interface CustomBastionProps {
  */
 export interface WallTower {
   id: string;
+  name?: string;
   segmentIndex: number; // segment between points[i] and points[i+1]
   t: number;            // 0.0 to 1.0 along the segment (default 0.5)
   radius: number;       // radius of cylinder in meters (default: 0.13m = 13cm)
@@ -61,6 +64,7 @@ export interface WallTower {
  */
 export interface WallBoxBastion {
   id: string;
+  name?: string;
   segmentIndex: number; // segment between points[i] and points[i+1]
   t: number;            // 0.0 to 1.0 along the segment (default 0.5)
   width: number;        // width along the wall in meters (default: 0.30m = 30cm)
@@ -71,6 +75,7 @@ export interface WallBoxBastion {
 
 export interface WallPath {
   id: string;
+  name?: string;
   points: WallPoint[];
   isClosed: boolean;
   towers?: WallTower[];             // Round towers placed along segments
@@ -85,6 +90,8 @@ export interface WallPath {
 }
 
 export type WallSubTool = 'draw' | 'select' | 'gate' | 'bastion';
+
+export type WallMode = 'select' | 'draw' | 'fortify';
 
 export type WallStepperStep = 'layout' | 'fortify' | 'solidified';
 

@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { AppMenuBar } from '@/components/hud/AppMenuBar';
 import { TopToolBar } from '@/components/hud/TopToolBar';
 import { LeftToolSidebar } from '@/components/hud/LeftToolSidebar';
+import { ToolModeSidebar } from '@/components/hud/ToolModeSidebar';
+import { RightToolSidebar } from '@/components/hud/RightToolSidebar';
 import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
@@ -173,6 +175,12 @@ export default function HomePage() {
 
       {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
       <LeftToolSidebar />
+
+      {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
+      <ToolModeSidebar />
+
+      {/* Right Resizable Sidebar: Outliner + Contextual Inspector */}
+      <RightToolSidebar />
 
       {/* Unobtrusive Bottom Controls Strip */}
       <BottomStatusBar />

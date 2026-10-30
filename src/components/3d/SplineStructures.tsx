@@ -92,7 +92,9 @@ interface StoneStepsMeshProps {
   spline: SplinePath;
   buffer: Float32Array;
   isSelected: boolean;
+  isHovered?: boolean;
   onSelect: () => void;
+  onHover: (hovered: boolean) => void;
   stoneMaterial: THREE.Material;
 }
 
@@ -100,7 +102,9 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
   spline,
   buffer,
   isSelected,
+  isHovered,
   onSelect,
+  onHover,
   stoneMaterial,
 }) => {
   const { invalidate } = useThree();
@@ -116,7 +120,15 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
   }, [geometry, invalidate]);
 
   return (
-    <group onClick={(e) => { e.stopPropagation(); onSelect(); }}>
+    <group
+      onClick={(e) => {
+        if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+      onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
+      onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
+    >
       <mesh
         geometry={geometry}
         material={stoneMaterial}
@@ -124,10 +136,10 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
         receiveShadow
         name={`StoneSteps_${spline.id}`}
       />
-      {isSelected && (
+      {(isSelected || isHovered) && (
         <lineSegments>
           <edgesGeometry args={[geometry, 35]} />
-          <lineBasicMaterial color="#F59E0B" linewidth={2} />
+          <lineBasicMaterial color={isHovered && !isSelected ? '#E85D04' : '#F59E0B'} linewidth={2} />
         </lineSegments>
       )}
     </group>
@@ -141,7 +153,9 @@ interface FlagInstancesProps {
   spline: SplinePath;
   buffer: Float32Array;
   isSelected: boolean;
+  isHovered?: boolean;
   onSelect: () => void;
+  onHover: (hovered: boolean) => void;
   poleGeo: THREE.CylinderGeometry;
   flagGeo: THREE.BufferGeometry;
   poleMaterial: THREE.Material;
@@ -152,7 +166,9 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
   spline,
   buffer,
   isSelected,
+  isHovered,
   onSelect,
+  onHover,
   poleGeo,
   flagGeo,
   poleMaterial,
@@ -205,7 +221,16 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
   if (transforms.length === 0) return null;
 
   return (
-    <group onClick={(e) => { e.stopPropagation(); onSelect(); }} name={`FlagGroup_${spline.id}`}>
+    <group
+      onClick={(e) => {
+        if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+      onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
+      onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
+      name={`FlagGroup_${spline.id}`}
+    >
       <instancedMesh
         key={`pole_${transforms.length}`}
         ref={poleMeshRef}
@@ -220,8 +245,8 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
         castShadow
         receiveShadow
       />
-      {isSelected && selectionLineGeo && (
-        <primitive object={new THREE.Line(selectionLineGeo, new THREE.LineBasicMaterial({ color: '#F59E0B', linewidth: 3 }))} />
+      {(isSelected || isHovered) && selectionLineGeo && (
+        <primitive object={new THREE.Line(selectionLineGeo, new THREE.LineBasicMaterial({ color: isHovered && !isSelected ? '#E85D04' : '#F59E0B', linewidth: 3 }))} />
       )}
     </group>
   );
@@ -234,7 +259,9 @@ interface DiyaInstancesProps {
   spline: SplinePath;
   buffer: Float32Array;
   isSelected: boolean;
+  isHovered?: boolean;
   onSelect: () => void;
+  onHover: (hovered: boolean) => void;
   bowlGeo: THREE.BufferGeometry;
   flameGeo: THREE.BufferGeometry;
   bowlMaterial: THREE.Material;
@@ -245,7 +272,9 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
   spline,
   buffer,
   isSelected,
+  isHovered,
   onSelect,
+  onHover,
   bowlGeo,
   flameGeo,
   bowlMaterial,
@@ -298,7 +327,16 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
   if (transforms.length === 0) return null;
 
   return (
-    <group onClick={(e) => { e.stopPropagation(); onSelect(); }} name={`DiyaGroup_${spline.id}`}>
+    <group
+      onClick={(e) => {
+        if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+      onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
+      onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
+      name={`DiyaGroup_${spline.id}`}
+    >
       <instancedMesh
         key={`bowl_${transforms.length}`}
         ref={bowlMeshRef}
@@ -311,8 +349,8 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
         ref={flameMeshRef}
         args={[flameGeo, flameMaterial, transforms.length]}
       />
-      {isSelected && selectionLineGeo && (
-        <primitive object={new THREE.Line(selectionLineGeo, new THREE.LineBasicMaterial({ color: '#F59E0B', linewidth: 3 }))} />
+      {(isSelected || isHovered) && selectionLineGeo && (
+        <primitive object={new THREE.Line(selectionLineGeo, new THREE.LineBasicMaterial({ color: isHovered && !isSelected ? '#E85D04' : '#F59E0B', linewidth: 3 }))} />
       )}
     </group>
   );
@@ -323,11 +361,16 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
 // ============================================================================
 export const SplineStructures: React.FC = () => {
   const {
+    activeTool,
     splines,
     currentSplinePoints,
     isDrawingSpline,
     selectedSplineId,
     setSelectedSplineId,
+    hoveredElement,
+    setHoveredElement,
+    splineMode,
+    setToastMessage,
   } = useEditorStore();
 
   const stateBuffer = useTerrainStore((s) => s.stateBuffer);
@@ -500,14 +543,26 @@ export const SplineStructures: React.FC = () => {
   return (
     <group name="SplineStructuresContainer">
       {/* 1. Interactive Draft Spline Curve & Nodes Preview */}
-      {isDrawingSpline && currentSplinePoints.length > 0 && (
+      {activeTool === 'spline' && splineMode === 'draw' && isDrawingSpline && currentSplinePoints.length > 0 && (
         <DraftSplinePreview points={currentSplinePoints} />
       )}
 
       {/* 2. Placed Spline Structures */}
       {splines.map((spline) => {
         const isSelected = selectedSplineId === spline.id;
-        const handleSelect = () => setSelectedSplineId(spline.id);
+        const isHovered = hoveredElement?.type === 'spline' && hoveredElement.id === spline.id;
+        const handleSelect = () => {
+          if (activeTool === 'spline' && (splineMode === 'select' || splineMode === 'transform')) {
+            setSelectedSplineId(spline.id);
+            setToastMessage(`${spline.name || spline.type} selected.`);
+          }
+        };
+        const handleHover = (hovered: boolean) => {
+          if (activeTool === 'spline' && (splineMode === 'select' || splineMode === 'transform')) {
+            document.body.style.cursor = hovered ? 'pointer' : 'default';
+            setHoveredElement(hovered ? { type: 'spline', id: spline.id } : null);
+          }
+        };
         const dynamicKey = `${spline.id}_${spline.type}_${JSON.stringify(spline.settings || {})}`;
 
         if (spline.type === 'steps') {
@@ -517,7 +572,9 @@ export const SplineStructures: React.FC = () => {
               spline={spline}
               buffer={stateBuffer}
               isSelected={isSelected}
+              isHovered={isHovered}
               onSelect={handleSelect}
+              onHover={handleHover}
               stoneMaterial={stoneMaterial}
             />
           );
@@ -530,7 +587,9 @@ export const SplineStructures: React.FC = () => {
               spline={spline}
               buffer={stateBuffer}
               isSelected={isSelected}
+              isHovered={isHovered}
               onSelect={handleSelect}
+              onHover={handleHover}
               poleGeo={poleGeo}
               flagGeo={flagGeo}
               poleMaterial={poleMaterial}
@@ -546,7 +605,9 @@ export const SplineStructures: React.FC = () => {
               spline={spline}
               buffer={stateBuffer}
               isSelected={isSelected}
+              isHovered={isHovered}
               onSelect={handleSelect}
+              onHover={handleHover}
               bowlGeo={diyaBowlGeo}
               flameGeo={diyaFlameGeo}
               bowlMaterial={diyaBowlMaterial}

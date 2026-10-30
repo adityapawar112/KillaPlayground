@@ -9,14 +9,20 @@ import {
   DEFAULT_WALL_SETTINGS,
   WallGate,
   WallSubTool,
+  WallMode,
   WallStepperStep,
   FortStampType,
   CitadelKeep,
   SelectedComponentRef,
 } from '../walls/wallTypes';
 import { SnapResult } from '../walls/wallGeometry';
-import { SplineConversionType, SplineSettings, SplinePath } from '../spline/splineTypes';
-export type { SplineConversionType, SplineSettings, SplinePath };
+import { SplineConversionType, SplineSettings, SplinePath, SplineMode } from '../spline/splineTypes';
+export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode };
+
+export interface HoveredElement {
+  type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop';
+  id: string;
+}
 
 export const SavedProjectSchema = z.object({
   id: z.string().optional(),
@@ -51,7 +57,16 @@ export type ToolType =
   | 'grass';
 
 export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
-export type TerrainSubTool = 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope' | 'soil';
+export type TerrainSubTool =
+  | 'elevate'
+  | 'plateau'
+  | 'slope'
+  | 'lower'
+  | 'trench'
+  | 'smooth'
+  | 'pond'
+  | 'soil'
+  | 'retexture';
 export type FoliageSubTool = 'grass' | 'path';
 
 export type BrushSizeType = 'large' | 'medium' | 'fine';
@@ -131,6 +146,8 @@ interface EditorState {
 
   // Parametric Fort Walls State
   walls: WallPath[];
+  wallMode: WallMode;
+  setWallMode: (mode: WallMode) => void;
   activeWallDraft: WallPoint[];
   wallSettings: WallSettings;
   wallSubTool: WallSubTool;
@@ -140,6 +157,13 @@ interface EditorState {
   citadelKeeps: CitadelKeep[];
   selectedComponent: SelectedComponentRef | null;
   wallSnapPreview: SnapResult | null;
+  hoveredElement: HoveredElement | null;
+  setHoveredElement: (el: HoveredElement | null) => void;
+
+  updateWallName: (wallId: string, name: string) => void;
+  updateTowerName: (wallId: string, towerId: string, name: string) => void;
+  updateBoxBastionName: (wallId: string, boxId: string, name: string) => void;
+  updateGateName: (wallId: string, gateId: string, name: string) => void;
 
   setWallSettings: (settings: Partial<WallSettings>) => void;
   setWallSubTool: (subTool: WallSubTool) => void;
@@ -176,6 +200,8 @@ interface EditorState {
   setCitadelKeeps: (keeps: CitadelKeep[]) => void;
 
   // Spline Drawing State
+  splineMode: SplineMode;
+  setSplineMode: (mode: SplineMode) => void;
   isDrawingSpline: boolean;
   currentSplinePoints: [number, number, number][];
   splines: SplinePath[];
@@ -202,6 +228,14 @@ interface EditorState {
   toggleLeftToolbar: () => void;
   isMobileSidebarMinimized: boolean;
   toggleMobileSidebar: () => void;
+  leftSidebarWidth: number;
+  setLeftSidebarWidth: (w: number) => void;
+  isToolModeMinimized: boolean;
+  toggleToolMode: () => void;
+  isRightSidebarMinimized: boolean;
+  toggleRightSidebar: () => void;
+  rightSidebarWidth: number;
+  setRightSidebarWidth: (w: number) => void;
   showContextualDock: boolean;
   toggleContextualDock: () => void;
   isMobileTopBarMinimized: boolean;
@@ -280,6 +314,11 @@ interface EditorState {
   setSplineSettings: (settings: Partial<SplineSettings>) => void;
   updateSplineType: (id: string, type: SplineConversionType) => void;
   updateSplineSettings: (id: string, settings: Partial<SplineSettings>) => void;
+  updateSplineName: (splineId: string, name: string) => void;
+  translateSpline: (id: string, dx: number, dyOrDz: number, dz?: number) => void;
+  rotateSpline: (id: string, angleDeg: number) => void;
+  scaleSpline: (id: string, factor: number) => void;
+  scaleSplineItem: (id: string, factor: number) => void;
 
   // Prop Actions
   addProp: (prop: Omit<PlacedProp, 'id'>) => string;
@@ -396,6 +435,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   // Parametric Fort Walls Implementation
   walls: [],
+  wallMode: 'draw',
+  setWallMode: (wallMode) =>
+    set((state) => ({
+      wallMode,
+      selectedWallId: wallMode === 'draw' ? null : state.selectedWallId,
+      selectedComponent: wallMode === 'draw' ? null : state.selectedComponent,
+      activeWallDraft: [],
+      activeStamp: wallMode === 'fortify' ? (state.activeStamp || 'tower') : null,
+      wallSnapPreview: null,
+      hoveredElement: null,
+    })),
+  hoveredElement: null,
+  setHoveredElement: (hoveredElement) => set({ hoveredElement }),
   activeWallDraft: [],
   wallSettings: { ...DEFAULT_WALL_SETTINGS },
   wallSubTool: 'draw',
@@ -405,6 +457,41 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   citadelKeeps: [],
   selectedComponent: null,
   wallSnapPreview: null,
+
+  updateWallName: (wallId, name) =>
+    set((state) => ({
+      walls: state.walls.map((w) => (w.id === wallId ? { ...w, name } : w)),
+    })),
+  updateTowerName: (wallId, towerId, name) =>
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          towers: (w.towers || []).map((t) => (t.id === towerId ? { ...t, name } : t)),
+        };
+      }),
+    })),
+  updateBoxBastionName: (wallId, boxId, name) =>
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          boxBastions: (w.boxBastions || []).map((b) => (b.id === boxId ? { ...b, name } : b)),
+        };
+      }),
+    })),
+  updateGateName: (wallId, gateId, name) =>
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          gates: (w.gates || []).map((g) => (g.id === gateId ? { ...g, name } : g)),
+        };
+      }),
+    })),
 
   setWallSettings: (newSettings) =>
     set((state) => {
@@ -462,7 +549,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       walls: [...walls, newWall],
       activeWallDraft: [],
-      selectedWallId: id,
+      selectedWallId: null,
     });
     return id;
   },
@@ -792,6 +879,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setWalls: (walls) => set({ walls }),
   setCitadelKeeps: (citadelKeeps) => set({ citadelKeeps }),
 
+  splineMode: 'draw',
+  setSplineMode: (splineMode) =>
+    set((state) => ({
+      splineMode,
+      selectedSplineId: splineMode === 'draw' ? null : state.selectedSplineId,
+      currentSplinePoints: [],
+      isDrawingSpline: false,
+      hoveredElement: null,
+    })),
   isDrawingSpline: false,
   currentSplinePoints: [],
   splines: [],
@@ -820,6 +916,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleLeftToolbar: () => set((state) => ({ showLeftToolbar: !state.showLeftToolbar })),
   isMobileSidebarMinimized: false,
   toggleMobileSidebar: () => set((state) => ({ isMobileSidebarMinimized: !state.isMobileSidebarMinimized })),
+  leftSidebarWidth: 310,
+  setLeftSidebarWidth: (w: number) => set({ leftSidebarWidth: w }),
+  isToolModeMinimized: false,
+  toggleToolMode: () => set((state) => ({ isToolModeMinimized: !state.isToolModeMinimized })),
+  isRightSidebarMinimized: false,
+  toggleRightSidebar: () => set((state) => ({ isRightSidebarMinimized: !state.isRightSidebarMinimized })),
+  rightSidebarWidth: 310,
+  setRightSidebarWidth: (w: number) => set({ rightSidebarWidth: w }),
   showContextualDock: true,
   toggleContextualDock: () => set((state) => ({ showContextualDock: !state.showContextualDock })),
   isMobileTopBarMinimized: false,
@@ -1015,6 +1119,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       activeTool: tool,
       isPropDrawerOpen: tool === 'prop',
+      selectedWallId: null,
+      selectedComponent: null,
+      activeWallDraft: [],
+      activeStamp: null,
+      wallSnapPreview: null,
+      selectedSplineId: null,
+      currentSplinePoints: [],
+      isDrawingSpline: false,
+      selectedPropId: null,
+      hoveredElement: null,
     });
   },
   setBrushRadius: (r) => set({ brushRadius: r }),
@@ -1059,7 +1173,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         splines: [...splines, newSpline],
         isDrawingSpline: false,
         currentSplinePoints: [],
-        selectedSplineId: id,
+        selectedSplineId: null,
       });
       return id;
     } else {
@@ -1102,6 +1216,104 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       splines: state.splines.map((s) =>
         s.id === id ? { ...s, settings: { ...s.settings, ...settings } } : s
       ),
+    }));
+  },
+  updateSplineName: (id, name) => {
+    set((state) => ({
+      splines: state.splines.map((s) => (s.id === id ? { ...s, name } : s)),
+    }));
+  },
+  translateSpline: (id, dx, dyOrDz = 0, dz) => {
+    pushUndoSnapshot();
+    const dy = dz !== undefined ? dyOrDz : 0;
+    const actualDz = dz !== undefined ? dz : dyOrDz;
+    set((state) => ({
+      splines: state.splines.map((s) => {
+        if (s.id !== id) return s;
+        return {
+          ...s,
+          points: s.points.map(([x, y, z]) => [x + dx, y + dy, z + actualDz] as [number, number, number]),
+        };
+      }),
+    }));
+  },
+  rotateSpline: (id, angleDeg) => {
+    pushUndoSnapshot();
+    const rad = (angleDeg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    set((state) => ({
+      splines: state.splines.map((s) => {
+        if (s.id !== id || s.points.length === 0) return s;
+        let cx = 0, cz = 0;
+        for (const [x, , z] of s.points) {
+          cx += x;
+          cz += z;
+        }
+        cx /= s.points.length;
+        cz /= s.points.length;
+        return {
+          ...s,
+          points: s.points.map(([x, y, z]) => {
+            const rx = x - cx;
+            const rz = z - cz;
+            const nx = cx + rx * cos - rz * sin;
+            const nz = cz + rx * sin + rz * cos;
+            return [nx, y, nz] as [number, number, number];
+          }),
+        };
+      }),
+    }));
+  },
+  scaleSpline: (id, factor) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      splines: state.splines.map((s) => {
+        if (s.id !== id || s.points.length === 0) return s;
+        let cx = 0, cz = 0;
+        for (const [x, , z] of s.points) {
+          cx += x;
+          cz += z;
+        }
+        cx /= s.points.length;
+        cz /= s.points.length;
+        return {
+          ...s,
+          points: s.points.map(([x, y, z]) => {
+            const rx = x - cx;
+            const rz = z - cz;
+            return [cx + rx * factor, y, cz + rz * factor] as [number, number, number];
+          }),
+        };
+      }),
+    }));
+  },
+  scaleSplineItem: (id, factor) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      splines: state.splines.map((s) => {
+        if (s.id !== id) return s;
+        const current = s.settings || {};
+        if (s.type === 'steps') {
+          return {
+            ...s,
+            settings: {
+              ...current,
+              stepWidth: Math.max(0.02, Math.min(0.35, (current.stepWidth ?? 0.06) * factor)),
+              stepRun: Math.max(0.01, Math.min(0.12, (current.stepRun ?? 0.025) * factor)),
+              stepRise: Math.max(0.005, Math.min(0.05, (current.stepRise ?? 0.01) * factor)),
+            },
+          };
+        } else {
+          return {
+            ...s,
+            settings: {
+              ...current,
+              scale: Math.max(0.3, Math.min(3.0, (current.scale ?? 1.0) * factor)),
+            },
+          };
+        }
+      }),
     }));
   },
 

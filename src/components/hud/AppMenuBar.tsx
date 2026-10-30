@@ -169,6 +169,15 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     setIsMobileMenuOpen(false);
   };
 
+  // Auto-dismiss transient toast after 3.5 seconds
+  useEffect(() => {
+    if (!toastMessage) return;
+    const timer = setTimeout(() => {
+      setToastMessage(null);
+    }, 3500);
+    return () => clearTimeout(timer);
+  }, [toastMessage, setToastMessage]);
+
   return (
     <div className="fixed top-0 left-0 right-0 z-40 flex flex-col items-center pointer-events-none select-none">
       {/* Hidden file input for importing project files */}
@@ -954,8 +963,15 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
 
       {/* Transient Toast Notification */}
       {toastMessage && (
-        <div className="fixed top-24 z-50 px-4 py-2 bg-[#23211E] text-white text-xs font-semibold rounded-xl shadow-2xl border border-[#FAF8F5]/20 animate-in fade-in slide-in-from-top-2 duration-200">
-          {toastMessage}
+        <div className="fixed top-24 z-50 flex items-center gap-2.5 px-4 py-2 bg-[#23211E]/95 text-white text-xs font-semibold rounded-xl shadow-2xl border border-[#FAF8F5]/20 animate-in fade-in slide-in-from-top-2 duration-200 pointer-events-auto">
+          <span>{toastMessage}</span>
+          <button
+            onClick={() => setToastMessage(null)}
+            className="p-0.5 hover:bg-white/20 rounded-md transition-colors text-white/70 hover:text-white cursor-pointer"
+            title="Dismiss notification"
+          >
+            <TbX className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </div>

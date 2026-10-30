@@ -406,8 +406,8 @@ export const BaseTerrainContent: React.FC = () => {
         if (e.button !== 0 || e.altKey) return;
         e.stopPropagation();
 
-        // A. Magnetic Stamp placement
-        if (editor.activeStamp) {
+        // A. Magnetic Stamp placement (Fortify mode only)
+        if (editor.wallMode === 'fortify' && editor.activeStamp) {
           const snap = calculateMagneticSnap(
             editor.activeStamp,
             e.point,
@@ -419,34 +419,31 @@ export const BaseTerrainContent: React.FC = () => {
           if (editor.activeStamp === 'tower' || editor.activeStamp === 'buruj') {
             if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
               editor.addTowerToWall(snap.wallId, snap.segmentIndex, snap.t);
-              editor.setActiveStamp(null);
-              editor.setToastMessage('Tower placed on wall!');
+              editor.setToastMessage('Watchtower placed! Click along wall to place another.');
             } else {
-              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place tower.');
+              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place watchtower.');
             }
-          } else if (editor.activeStamp === 'box' || editor.activeStamp === 'grand_buruj') {
+          } else if (editor.activeStamp === 'box') {
             if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
               editor.addBoxBastionToWall(snap.wallId, snap.segmentIndex, snap.t);
-              editor.setActiveStamp(null);
-              editor.setToastMessage('Rampart Platform placed on wall!');
+              editor.setToastMessage('Rampart Bastion placed! Click along wall to place another.');
             } else {
-              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place box bastion.');
+              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place rampart bastion.');
             }
           } else if (editor.activeStamp === 'gate') {
             if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
               editor.addGateToWall(snap.wallId, snap.segmentIndex, snap.t);
-              editor.setActiveStamp(null);
-              editor.setToastMessage('Maha Darwaza arched gateway inserted!');
+              editor.setToastMessage('Arched Gateway inserted! Click along wall to place another.');
             } else {
-              editor.setToastMessage('Hover closer to a fort wall segment (<35cm) to insert Maha Darwaza.');
+              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place arched gateway.');
             }
           }
           invalidate();
           return;
         }
 
-        // B. Step 1 (Layout): Draw points / close loop
-        if (editor.wallStep === 'layout') {
+        // B. Draw mode: Draw points / close loop
+        if (editor.wallMode === 'draw') {
           const draft = editor.activeWallDraft;
           if (draft.length >= 3) {
             const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
@@ -468,32 +465,32 @@ export const BaseTerrainContent: React.FC = () => {
           return;
         }
 
-        // C. Step 2 or 3: Select wall if clicked nearby
-        let closestDist = Infinity;
-        let targetWallId: string | null = null;
-        for (const wall of editor.walls) {
-          for (const pt of wall.points) {
-            const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
-            if (d < closestDist) {
-              closestDist = d;
-              targetWallId = wall.id;
+        // C. Select mode: Select wall if clicked nearby
+        if (editor.wallMode === 'select') {
+          let closestDist = Infinity;
+          let targetWallId: string | null = null;
+          for (const wall of editor.walls) {
+            for (const pt of wall.points) {
+              const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
+              if (d < closestDist) {
+                closestDist = d;
+                targetWallId = wall.id;
+              }
             }
           }
-        }
-        if (targetWallId && closestDist < 0.6) {
-          editor.setSelectedWallId(targetWallId);
-          if (editor.wallStep === 'solidified') {
-            editor.setWallStep('fortify');
+          if (targetWallId && closestDist < 0.6) {
+            editor.setSelectedWallId(targetWallId);
+            editor.setSelectedComponent(null);
+            editor.setToastMessage('Fort wall selected.');
+            invalidate();
           }
-          editor.setToastMessage('Fort wall selected.');
-          invalidate();
+          return;
         }
-        return;
       }
 
       // Handle Spline Tool Drawing
       if (editor.activeTool === 'spline') {
-        if (e.button !== 0 || e.altKey) return;
+        if (e.button !== 0 || e.altKey || editor.splineMode !== 'draw') return;
         // If cursor raycast hit any structure in front of the terrain (walls, bastions, towers, platforms), do not draw on terrain under it
         if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
           return;
@@ -552,8 +549,8 @@ export const BaseTerrainContent: React.FC = () => {
       if (editor.activeTool === 'walls') {
         if (cursorVisible) setCursorVisible(false);
 
-        // Magnetic snap hologram tracking
-        if (editor.activeStamp) {
+        // Magnetic snap hologram tracking (Fortify mode only)
+        if (editor.wallMode === 'fortify' && editor.activeStamp) {
           const snap = calculateMagneticSnap(
             editor.activeStamp,
             e.point,
@@ -570,7 +567,7 @@ export const BaseTerrainContent: React.FC = () => {
           editor.setWallSnapPreview(null);
         }
 
-        if (isDrawingWallRef.current && lastWallPointRef.current) {
+        if (editor.wallMode === 'draw' && isDrawingWallRef.current && lastWallPointRef.current) {
           e.stopPropagation();
           const dx = e.point.x - lastWallPointRef.current.x;
           const dz = e.point.z - lastWallPointRef.current.z;
@@ -590,7 +587,7 @@ export const BaseTerrainContent: React.FC = () => {
         if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
           return;
         }
-        if (isDrawingSplineRef.current || (e.buttons === 1 && editor.isDrawingSpline)) {
+        if (editor.splineMode === 'draw' && (isDrawingSplineRef.current || (e.buttons === 1 && editor.isDrawingSpline))) {
           const pts = editor.currentSplinePoints;
           const last = lastSplinePointRef.current || (pts.length > 0 ? { x: pts[pts.length - 1][0], y: pts[pts.length - 1][1], z: pts[pts.length - 1][2] } : null);
           if (last) {

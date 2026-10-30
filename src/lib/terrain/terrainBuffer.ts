@@ -302,7 +302,7 @@ export function syncStateToGeometry(
 }
 
 export interface TerrainBrushOptions {
-  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope' | 'soil';
+  operation: 'elevate' | 'lower' | 'plateau' | 'smooth' | 'pond' | 'slope' | 'soil' | 'trench' | 'retexture';
   radius: number;       // in world units (meters)
   strength: number;     // delta / speed multiplier
   targetHeight?: number;
@@ -385,7 +385,7 @@ export function applyTerrainBrush(
           buffer[idx + 1] = Math.max(0.0, buffer[idx + 1] - delta * 3.0);
         }
         modified = true;
-      } else if (operation === 'lower') {
+      } else if (operation === 'lower' || operation === 'trench') {
         const delta = strength * falloff;
         buffer[idx + 0] = Math.max(minHeight, currentHeight - delta);
         modified = true;
@@ -464,7 +464,7 @@ export function applyTerrainBrush(
         const factor = Math.min(1.0, strength * 2.5 * falloff);
         buffer[idx + 0] = currentHeight + (clampedTarget - currentHeight) * factor;
         modified = true;
-      } else if (operation === 'soil') {
+      } else if (operation === 'soil' || operation === 'retexture') {
         // Paint default terrain texture: clears wetness (removes blue tarp & wet mud) and foliage
         const eraseFactor = Math.min(1.0, strength * 3.0 * falloff);
         if (buffer[idx + 1] > 0.0) {

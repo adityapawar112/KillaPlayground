@@ -50,16 +50,16 @@ describe('Wall Store & State Integration', () => {
     store.addWallDraftPoint({ x: 3, y: 0, z: 0 });
     const wallId = store.finishCurrentWall(false)!;
 
-    // Wall creation automatically enters vertex mode (selectedWallId is set)
-    expect(useEditorStore.getState().selectedWallId).toBe(wallId);
-
-    // Clicking finish wall sets selectedWallId to null (exiting vertex mode)
-    store.setSelectedWallId(null);
+    // Wall creation does NOT auto-select the placed wall (clean continuous drawing)
     expect(useEditorStore.getState().selectedWallId).toBeNull();
 
-    // Selecting wall re-enters vertex mode and syncs wall settings
+    // Selecting wall enters selection/vertex mode and syncs wall settings
     store.setSelectedWallId(wallId);
     expect(useEditorStore.getState().selectedWallId).toBe(wallId);
+
+    // Deselecting wall sets selectedWallId to null
+    store.setSelectedWallId(null);
+    expect(useEditorStore.getState().selectedWallId).toBeNull();
   });
 
   it('toggles bastions and inserts gates into existing walls', () => {
@@ -233,6 +233,41 @@ describe('Wall Store & State Integration', () => {
     wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
     expect(wall?.gates.length).toBe(0);
     expect(useEditorStore.getState().selectedComponent).toBeNull();
+  });
+
+  it('supports wallMode transitions and continuous fort stamp workflows', () => {
+    const store = useEditorStore.getState();
+
+    // Default wallMode is 'draw'
+    expect(store.wallMode).toBe('draw');
+
+    store.setWallMode('fortify');
+    expect(useEditorStore.getState().wallMode).toBe('fortify');
+
+    store.setActiveStamp('tower');
+    expect(useEditorStore.getState().activeStamp).toBe('tower');
+
+    // Create a wall to stamp on
+    store.addWallDraftPoint({ x: 0, y: 0, z: 0 });
+    store.addWallDraftPoint({ x: 5, y: 0, z: 0 });
+    const wallId = store.finishCurrentWall(false)!;
+
+    // Stamping adds tower but retains activeStamp for continuous placement
+    store.addTowerToWall(wallId, 0, 0.2);
+    expect(useEditorStore.getState().activeStamp).toBe('tower');
+
+    store.addTowerToWall(wallId, 0, 0.7);
+    let wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.towers?.length).toBe(2);
+
+    // Renaming wall and tower
+    store.updateWallName(wallId, 'North Rampart');
+    const towerId = wall!.towers![0].id;
+    store.updateTowerName(wallId, towerId, 'Ganesh Buruj');
+
+    wall = useEditorStore.getState().walls.find((w) => w.id === wallId);
+    expect(wall?.name).toBe('North Rampart');
+    expect(wall?.towers?.[0].name).toBe('Ganesh Buruj');
   });
 });
 

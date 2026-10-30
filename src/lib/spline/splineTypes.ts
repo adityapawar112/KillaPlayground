@@ -5,6 +5,8 @@
 
 export type SplineConversionType = 'steps' | 'flags' | 'diyas';
 
+export type SplineMode = 'select' | 'draw' | 'transform';
+
 export interface SplineSettings {
   // Steps parameters
   stepWidth?: number;   // width perpendicular to path in meters (default: 0.06m = 6cm)
@@ -20,6 +22,7 @@ export interface SplineSettings {
 
 export interface SplinePath {
   id: string;
+  name?: string;
   points: [number, number, number][];
   type: SplineConversionType;
   settings?: SplineSettings;

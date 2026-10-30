@@ -54,10 +54,24 @@ export const TopToolBar: React.FC = () => {
     isMobileTopBarMinimized,
     toggleMobileTopBar,
     setCameraViewPreset,
+    isRightSidebarMinimized,
+    rightSidebarWidth,
   } = useEditorStore();
   const { t } = useTranslation();
 
   if (!showContextualDock) return null;
+
+  // Right sidebar is present for walls, spline, and prop (not terrain)
+  const isRightSidebarActive = activeTool !== 'terrain';
+  const isRightPanelOpen = isRightSidebarActive && !isRightSidebarMinimized;
+  const isOutlinerTabPresent = isRightSidebarActive && isRightSidebarMinimized;
+
+  // Position Tools & Views tab so it NEVER overlaps Right Sidebar or Outliner tab
+  const toolsAndViewsRight = isRightPanelOpen
+    ? `${rightSidebarWidth + 8}px`
+    : isOutlinerTabPresent
+    ? '104px'
+    : '8px';
 
   const toolDetails: Record<
     ToolType | 'shape_side',
@@ -140,9 +154,12 @@ export const TopToolBar: React.FC = () => {
 
   return (
     <>
-      {/* Minimized Toggle Pill (< xl): Pinned to the RIGHT side */}
+      {/* Minimized Toggle Pill: Dynamic right offset to prevent overlap */}
       {isMobileTopBarMinimized && (
-        <div className="xl:hidden fixed top-[41px] right-2 z-30 pointer-events-auto">
+        <div
+          style={{ right: toolsAndViewsRight }}
+          className="fixed top-[41px] z-30 pointer-events-auto transition-all duration-200"
+        >
           <button
             onClick={toggleMobileTopBar}
             className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
@@ -159,7 +176,7 @@ export const TopToolBar: React.FC = () => {
       <nav
         aria-label="Top Tool Modes"
         className={`fixed top-[41px] left-0 right-0 z-30 bg-[#E4D8CB] border-b border-[#CDBCAB] shadow-xs select-none pointer-events-auto transition-transform duration-200 ${
-          isMobileTopBarMinimized ? 'hidden xl:flex' : 'flex flex-col xl:flex-row'
+          isMobileTopBarMinimized ? 'hidden' : 'flex flex-col xl:flex-row'
         }`}
       >
         {/* ======================================================== */}
@@ -332,6 +349,16 @@ export const TopToolBar: React.FC = () => {
                 <TbZoomOut className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            {/* Minimize Desktop Top Bar Button */}
+            <div className="w-[1.5px] h-4 bg-[#C5B3A1] mx-0.5" />
+            <button
+              onClick={toggleMobileTopBar}
+              className="p-1 rounded hover:bg-[#DFCDBD] text-[#4B382C] transition-colors cursor-pointer"
+              title="Minimize Secondary Top Bar"
+            >
+              <TbChevronUp className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </nav>

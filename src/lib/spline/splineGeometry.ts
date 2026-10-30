@@ -231,11 +231,12 @@ export function generateStoneStepsGeometry(
     return new THREE.BufferGeometry();
   }
 
-  const stepWidth = options?.stepWidth ?? DEFAULT_SPLINE_SETTINGS.steps.stepWidth;
-  const stepRun = options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepRun;
-  const stepRise = options?.stepRise ?? DEFAULT_SPLINE_SETTINGS.steps.stepRise;
+  const scale = options?.scale ?? 1.0;
+  const stepWidth = (options?.stepWidth ?? DEFAULT_SPLINE_SETTINGS.steps.stepWidth) * scale;
+  const stepRun = (options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepRun) * scale;
+  const stepRise = (options?.stepRise ?? DEFAULT_SPLINE_SETTINGS.steps.stepRise) * scale;
   const stepOffset = options?.stepOffset ?? DEFAULT_SPLINE_SETTINGS.steps.stepOffset ?? 0;
-  const stepSpacing = options?.stepSpacing ?? options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepSpacing ?? 0.025;
+  const stepSpacing = (options?.stepSpacing ?? options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepSpacing ?? 0.025) * scale;
 
   const v3Points = points.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
   const curve = createCurve(v3Points, 0.5);
@@ -307,12 +308,19 @@ export function generateFlagInstanceData(
     const pt = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
 
-    const terrainY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const latNormX = -tangent.z;
+    const latNormZ = tangent.x;
+    const latNormLen = Math.hypot(latNormX, latNormZ) || 1;
+    const offset = options?.stepOffset ?? 0;
+    const posX = pt.x + (latNormX / latNormLen) * offset;
+    const posZ = pt.z + (latNormZ / latNormLen) * offset;
+
+    const terrainY = buffer ? sampleBilinearHeight(buffer, posX, posZ) : pt.y;
     const surfaceY = Math.max(pt.y, terrainY);
     const yaw = Math.atan2(tangent.x, tangent.z);
 
     transforms.push({
-      position: [pt.x, surfaceY, pt.z],
+      position: [posX, surfaceY, posZ],
       rotation: [0, yaw, 0],
       scale: [scale, scale, scale],
     });
@@ -347,14 +355,22 @@ export function generateDiyaInstanceData(
   for (let i = 0; i <= count; i++) {
     const t = Math.min(1.0, Math.max(0.0, i / count));
     const pt = curve.getPointAt(t);
+    const tangent = curve.getTangentAt(t);
 
-    const terrainY = buffer ? sampleBilinearHeight(buffer, pt.x, pt.z) : pt.y;
+    const latNormX = -tangent.z;
+    const latNormZ = tangent.x;
+    const latNormLen = Math.hypot(latNormX, latNormZ) || 1;
+    const offset = options?.stepOffset ?? 0;
+    const posX = pt.x + (latNormX / latNormLen) * offset;
+    const posZ = pt.z + (latNormZ / latNormLen) * offset;
+
+    const terrainY = buffer ? sampleBilinearHeight(buffer, posX, posZ) : pt.y;
     const surfaceY = Math.max(pt.y, terrainY);
     // Slight deterministic rotation jitter based on index for natural festive placement
     const pseudoRand = ((i * 137.5) % 360) * (Math.PI / 180);
 
     transforms.push({
-      position: [pt.x, surfaceY, pt.z],
+      position: [posX, surfaceY, posZ],
       rotation: [0, pseudoRand, 0],
       scale: [scale, scale, scale],
     });

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import * as THREE from 'three';
 import {
   TbMountain,
   TbTrendingDown,
@@ -12,16 +13,11 @@ import {
   TbCheck,
   TbSparkles,
   TbPlant2,
-  TbArrowsLeft,
-  TbArrowsRight,
-  TbArrowDownBar,
   TbLock,
-  TbSun,
   TbBuildingFortress,
   TbRoute,
   TbUsersGroup,
   TbDropletHalf2,
-  TbLayersSubtract,
   TbAdjustmentsHorizontal,
   TbChevronLeft,
   TbChevronDown,
@@ -30,173 +26,111 @@ import {
   TbDoorEnter,
   TbTower,
   TbTrash,
-  TbRuler2,
   TbPlus,
-  TbShieldCheck,
   TbFlag,
   TbFlame,
   TbStairs,
   TbX,
+  TbArrowsMove,
+  TbEdit,
 } from 'react-icons/tb';
-import { useEditorStore, BrushSizeType, ToolType, TerrainSubTool } from '@/lib/state/useEditorStore';
+import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import { PAINT_COLORS } from '@/lib/constants/tokens';
-import { calculateWallTotalLength, detectBastionLocations } from '@/lib/walls/wallGeometry';
-import { SplineConversionType, SplineSettings } from '@/lib/spline/splineTypes';
+import { SplineConversionType } from '@/lib/spline/splineTypes';
+import { FortStampType } from '@/lib/walls/wallTypes';
 
 const STORAGE_WIDTH_KEY = 'killa_sidebar_width_v1';
 
 export const LeftToolSidebar: React.FC = () => {
   const {
     activeTool,
-    setActiveTool,
-    shapeSubTool,
-    setShapeSubTool,
     terrainSubTool,
-    setTerrainSubTool,
     plateauHeight,
     setPlateauHeight,
     slopeAngle,
     setSlopeAngle,
-    slopeAlignment,
-    setSlopeAlignment,
-    slopeIncline,
-    setSlopeIncline,
-    foliageSubTool,
-    setFoliageSubTool,
     brushRadius,
     setBrushRadius,
     brushStrength,
     setBrushStrength,
-    brushSize,
-    setBrushSize,
-    steadyHand,
-    setSteadyHand,
     paintColor,
     setPaintColor,
-    waterMode,
-    setWaterMode,
     mudLocked,
     setMudLocked,
     showLeftToolbar,
     showContextualDock,
     isMobileSidebarMinimized,
     toggleMobileSidebar,
+    isToolModeMinimized,
     isMobileTopBarMinimized,
     setPropDrawerOpen,
     walls,
+    wallMode,
+    setWallMode,
     activeWallDraft,
     wallSettings,
-    wallSubTool,
-    selectedWallId,
-    setSelectedWallId,
-    wallStep,
-    setWallStep,
-    activeStamp,
-    setActiveStamp,
-    citadelKeeps,
-    addCitadelKeep,
-    updateCitadelKeep,
-    removeCitadelKeep,
-    selectedComponent,
-    setSelectedComponent,
-    toggleGrandBastionOnNode,
-    toggleBastionOnNode,
-    updateBastionProperties,
-    removeBastionFromNode,
-    updateTowerProperties,
-    removeTowerFromWall,
-    updateBoxBastionProperties,
-    removeBoxBastionFromWall,
-    updateGateProperties,
-    removeGateFromWall,
-    startNewWallCircuit,
-    proceedToFortify,
-    solidifyCurrentWall,
-    removeWall,
-    setToastMessage,
     setWallSettings,
-    setWallSubTool,
     finishCurrentWall,
     cancelCurrentWall,
-    clearAllWalls,
+    selectedWallId,
+    setSelectedWallId,
+    selectedComponent,
+    setSelectedComponent,
+    removeWall,
+    removeTowerFromWall,
+    removeBoxBastionFromWall,
+    removeGateFromWall,
+    removeBastionFromNode,
+    activeStamp,
+    setActiveStamp,
+    splineMode,
+    setSplineMode,
     splines,
-    currentSplinePoints,
-    isDrawingSpline,
     selectedSplineId,
     setSelectedSplineId,
+    deleteSpline,
+    currentSplinePoints,
     splineConversionType,
     setSplineConversionType,
     splineSettings,
     setSplineSettings,
-    startSpline,
     finishSpline,
     cancelSpline,
-    deleteSpline,
-    clearAllSplines,
-    updateSplineType,
-    updateSplineSettings,
-    locale,
+    translateSpline,
+    rotateSpline,
+    scaleSplineItem,
+    setToastMessage,
+    setCameraViewPreset,
+    leftSidebarWidth: sidebarWidth,
+    setLeftSidebarWidth: setSidebarWidth,
   } = useEditorStore();
-
-  const selectedSpline = useMemo(
-    () => splines.find((s) => s.id === selectedSplineId) || null,
-    [splines, selectedSplineId]
-  );
-  const effectiveConversionType = selectedSpline ? selectedSpline.type : splineConversionType;
-  const effectiveSettings = (selectedSpline ? selectedSpline.settings : splineSettings) ?? splineSettings;
-
-  const handleConversionTypeChange = useCallback(
-    (type: SplineConversionType) => {
-      setSplineConversionType(type);
-      if (selectedSplineId) {
-        updateSplineType(selectedSplineId, type);
-      }
-    },
-    [selectedSplineId, setSplineConversionType, updateSplineType]
-  );
-
-  const handleSplineSettingChange = useCallback(
-    (patch: Partial<SplineSettings>) => {
-      setSplineSettings(patch);
-      if (selectedSplineId) {
-        updateSplineSettings(selectedSplineId, patch);
-      }
-    },
-    [selectedSplineId, setSplineSettings, updateSplineSettings]
-  );
 
   const { t } = useTranslation();
 
-  // Adjustable Width State (default: 290px, min: 230px, max: 460px)
-  const [sidebarWidth, setSidebarWidth] = useState<number>(290);
-  const isDraggingWidthRef = useRef(false);
+  // Sidebar resizable width
+  const isDraggingWidthRef = useRef<boolean>(false);
 
-  // Load user saved layout preferences from localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const savedW = localStorage.getItem(STORAGE_WIDTH_KEY);
-        if (savedW) {
-          const parsedW = parseInt(savedW, 10);
-          if (parsedW >= 230 && parsedW <= 460) setSidebarWidth(parsedW);
+    try {
+      const saved = localStorage.getItem(STORAGE_WIDTH_KEY);
+      if (saved) {
+        const val = parseInt(saved, 10);
+        if (!isNaN(val) && val >= 250 && val <= 480) {
+          setSidebarWidth(val);
         }
-      } catch {
-        // Fallback to defaults
       }
-    }
+    } catch {}
   }, []);
 
-  // Handle Width Resize
-  const handleWidthMouseDown = (e: React.MouseEvent) => {
+  const handleResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
     isDraggingWidthRef.current = true;
-    document.body.style.cursor = 'col-resize';
+    document.body.style.cursor = 'ew-resize';
     document.body.style.userSelect = 'none';
 
-    const onMouseMove = (moveEvent: MouseEvent) => {
+    const onMouseMove = (moveEvt: MouseEvent) => {
       if (!isDraggingWidthRef.current) return;
-      const newWidth = Math.max(230, Math.min(460, moveEvent.clientX));
+      const newWidth = Math.max(250, Math.min(480, moveEvt.clientX));
       setSidebarWidth(newWidth);
     };
 
@@ -207,10 +141,7 @@ export const LeftToolSidebar: React.FC = () => {
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
       try {
-        setSidebarWidth((curr) => {
-          localStorage.setItem(STORAGE_WIDTH_KEY, curr.toString());
-          return curr;
-        });
+        localStorage.setItem(STORAGE_WIDTH_KEY, sidebarWidth.toString());
       } catch {}
     };
 
@@ -218,15 +149,75 @@ export const LeftToolSidebar: React.FC = () => {
     window.addEventListener('mouseup', onMouseUp);
   };
 
+  const handleConversionTypeChange = useCallback(
+    (type: SplineConversionType) => {
+      setSplineConversionType(type);
+    },
+    [setSplineConversionType]
+  );
+
+  // Compute camera-relative axes for directional navigation on XZ plane
+  const getCameraAxes = () => {
+    if (typeof window !== 'undefined') {
+      const rawControls = (window as any).__orbitControls;
+      if (rawControls && rawControls.object) {
+        const cam = rawControls.object as THREE.Camera;
+        const forward = new THREE.Vector3();
+        if (typeof cam.getWorldDirection === 'function') {
+          cam.getWorldDirection(forward);
+          forward.y = 0;
+          if (forward.lengthSq() > 0.001) {
+            forward.normalize();
+            const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
+            return {
+              forward: { x: forward.x, z: forward.z },
+              right: { x: right.x, z: right.z },
+            };
+          }
+        }
+      }
+    }
+    return { forward: { x: 0, z: -1 }, right: { x: 1, z: 0 } };
+  };
+
+  const moveSplineCameraRelative = (dir: 'forward' | 'backward' | 'left' | 'right' | 'up' | 'down') => {
+    if (!selectedSplineId) return;
+    const { forward, right } = getCameraAxes();
+    const STEP = 0.15;
+    const V_STEP = 0.03; // 3cm vertical step
+
+    if (dir === 'forward') {
+      translateSpline(selectedSplineId, forward.x * STEP, 0, forward.z * STEP);
+    } else if (dir === 'backward') {
+      translateSpline(selectedSplineId, -forward.x * STEP, 0, -forward.z * STEP);
+    } else if (dir === 'right') {
+      translateSpline(selectedSplineId, right.x * STEP, 0, right.z * STEP);
+    } else if (dir === 'left') {
+      translateSpline(selectedSplineId, -right.x * STEP, 0, -right.z * STEP);
+    } else if (dir === 'up') {
+      translateSpline(selectedSplineId, 0, V_STEP, 0);
+    } else if (dir === 'down') {
+      translateSpline(selectedSplineId, 0, -V_STEP, 0);
+    }
+  };
+
   if (!showLeftToolbar) return null;
+
+  const selectedWall = walls.find((w) => w.id === selectedWallId);
+  const selectedSpline = splines.find((s) => s.id === selectedSplineId);
+
+  const isModePanelOpen =
+    ['walls', 'spline', 'terrain'].includes(activeTool) && !isToolModeMinimized;
+  const propertiesTabLeft = isModePanelOpen ? '76px' : '8px';
 
   return (
     <>
-      {/* Minimized Properties Button (< xl): Pinned to the LEFT side, hanging off top bar or secondary toolbar */}
+      {/* Minimized Hanging Guide Tab (Pinned to top-left below top bar) */}
       {isMobileSidebarMinimized && (
         <div
-          className={`xl:hidden fixed left-2 z-30 pointer-events-auto transition-all duration-200 ${
-            !showContextualDock || isMobileTopBarMinimized ? 'top-[41px]' : 'top-[112px]'
+          style={{ left: propertiesTabLeft }}
+          className={`fixed z-30 pointer-events-auto transition-all duration-200 ${
+            !showContextualDock || isMobileTopBarMinimized ? 'top-[41px]' : 'top-[112px] xl:top-[81px]'
           }`}
         >
           <button
@@ -241,11 +232,12 @@ export const LeftToolSidebar: React.FC = () => {
         </div>
       )}
 
+      {/* Docked Left Sidebar */}
       <aside
         aria-label="Editor Sidebar"
         style={{ width: `${sidebarWidth}px` }}
         className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
-          isMobileSidebarMinimized ? '-translate-x-full xl:translate-x-0' : 'translate-x-0'
+          isMobileSidebarMinimized ? '-translate-x-full' : 'translate-x-0'
         } ${
           !showContextualDock
             ? 'top-[41px]'
@@ -254,1975 +246,953 @@ export const LeftToolSidebar: React.FC = () => {
             : 'top-[112px] xl:top-[81px]'
         }`}
       >
-        {/* Tool Header (Top of Sidebar) */}
+        {/* Right Resizing Edge with Tactile Grip Dots */}
+        <div
+          onMouseDown={handleResizeStart}
+          title="Drag to resize panel"
+          className="group absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-[#B85F45]/30 transition-colors z-30 flex items-center justify-center"
+        >
+          <div className="flex flex-col items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+          </div>
+        </div>
+
+        {/* Sidebar Header */}
         <div className="flex items-center justify-between p-3 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
           <div className="flex items-center gap-1.5 text-[#4B382C]">
             <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
-            <span className="text-[11px] font-bold uppercase tracking-wider">
-              Tool Properties
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Tool Properties</span>
           </div>
+
           <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#E4D8CB] text-[#5C4638] uppercase">
+            <span className="text-[10px] font-bold bg-[#E0D3C3] text-[#5C4638] px-2 py-0.5 rounded-full uppercase tracking-wider">
               {activeTool}
             </span>
-            {/* Minimize Option (< xl) */}
             <button
               onClick={toggleMobileSidebar}
-              className="xl:hidden p-1 rounded-md bg-[#FAF8F5] text-[#5C4638] hover:bg-[#DCCEC0] border border-[#D9C9B4] cursor-pointer"
-              title="Minimize Properties"
+              title="Minimize Sidebar"
+              className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
             >
-              <TbChevronLeft className="w-3.5 h-3.5" />
+              <TbChevronLeft className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Scrollable Tool Properties Section */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-4 overflow-x-hidden min-h-0">
-
-        {/* ------------------------------------------------------------ */}
-        {/* A. TERRAIN TOOL PROPERTIES                                   */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'terrain' && (
-          <div className="space-y-3.5">
-            {/* Subtool Selector Grid */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#4B382C]">Sculpt Mode:</label>
-              <div className="grid grid-cols-2 gap-1.5">
-                <button
-                  onClick={() => setTerrainSubTool('elevate')}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    terrainSubTool === 'elevate'
-                      ? 'bg-[#E85D04] text-white shadow-sm'
-                      : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                  }`}
-                >
-                  <TbMountain className="w-3.5 h-3.5" />
-                  <span>Elevate</span>
-                </button>
-
-                <button
-                  onClick={() => setTerrainSubTool('lower')}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    terrainSubTool === 'lower'
-                      ? 'bg-[#8F4938] text-white shadow-sm'
-                      : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                  }`}
-                >
-                  <TbTrendingDown className="w-3.5 h-3.5" />
-                  <span>Lower</span>
-                </button>
-
-                <button
-                  onClick={() => setTerrainSubTool('plateau')}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    terrainSubTool === 'plateau'
-                      ? 'bg-[#B58B63] text-white shadow-sm'
-                      : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                  }`}
-                >
-                  <TbMinus className="w-3.5 h-3.5" />
-                  <span>Plateau</span>
-                </button>
-
-                <button
-                  onClick={() => setTerrainSubTool('smooth')}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    terrainSubTool === 'smooth'
-                      ? 'bg-[#777A57] text-white shadow-sm'
-                      : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                  }`}
-                >
-                  <TbWaveSine className="w-3.5 h-3.5" />
-                  <span>Smooth</span>
-                </button>
-
-                <button
-                  onClick={() => setTerrainSubTool('slope')}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    terrainSubTool === 'slope'
-                      ? 'bg-[#D97706] text-white shadow-sm'
-                      : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                  }`}
-                >
-                  <TbArrowUpRight className="w-3.5 h-3.5" />
-                  <span>Slope</span>
-                </button>
-
-                <button
-                  onClick={() => setTerrainSubTool('pond')}
-                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                    terrainSubTool === 'pond'
-                      ? 'bg-[#0284C7] text-white shadow-sm'
-                      : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                  }`}
-                >
-                  <TbRipple className="w-3.5 h-3.5" />
-                  <span>Pond Basin</span>
-                </button>
-              </div>
-
-              {/* Default Soil Brush (Erase water/grass) */}
-              <button
-                onClick={() => setTerrainSubTool('soil')}
-                className={`w-full mt-1.5 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  terrainSubTool === 'soil'
-                    ? 'bg-[#4B382C] text-white shadow-sm'
-                    : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                }`}
-                title="Paints standard dry soil texture and erases standing water / foliage"
-              >
-                <TbPlant2 className="w-3.5 h-3.5 text-[#588157]" />
-                <span>Default Soil (Erase Water)</span>
-              </button>
-            </div>
-
-            {/* Brush Radius Slider */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Brush Radius:</span>
-                <div className="flex items-center gap-1">
-                  <span className="font-mono text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
-                  <span className="text-[9px] font-mono text-[#8D7666] bg-[#E4D8CB] px-1 rounded">Shift+Scroll</span>
-                </div>
-              </div>
-              <input
-                type="range"
-                min="0.2"
-                max="3.0"
-                step="0.1"
-                value={brushRadius}
-                onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                className="w-full accent-[#4B382C] cursor-pointer"
-              />
-            </div>
-
-            {/* Sculpt Strength Slider */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Strength:</span>
-                <div className="flex items-center gap-1">
-                  <span className="font-mono text-[#8D7666]">{Math.round(brushStrength * 100)}%</span>
-                  <span className="text-[9px] font-mono text-[#8D7666] bg-[#E4D8CB] px-1 rounded">Ctrl+Scroll</span>
-                </div>
-              </div>
-              <input
-                type="range"
-                min="0.05"
-                max="1.0"
-                step="0.05"
-                value={brushStrength}
-                onChange={(e) => setBrushStrength(parseFloat(e.target.value))}
-                className="w-full accent-[#4B382C] cursor-pointer"
-              />
-            </div>
-
-            {/* Plateau Height (if Plateau active) */}
-            {terrainSubTool === 'plateau' && (
-              <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D9C9B4] space-y-1">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-[#B58B63]">Plateau Height:</span>
-                  <span className="font-mono text-[#8D7666]">{plateauHeight.toFixed(1)}m</span>
-                </div>
-                <input
-                  type="range"
-                  min="0.1"
-                  max="3.0"
-                  step="0.1"
-                  value={plateauHeight}
-                  onChange={(e) => setPlateauHeight(parseFloat(e.target.value))}
-                  className="w-full accent-[#B58B63] cursor-pointer"
-                />
-              </div>
-            )}
-
-            {/* Slope Controls (if Slope active) */}
-            {terrainSubTool === 'slope' && (
-              <div className="p-2.5 rounded-xl bg-[#FAF8F5] border border-[#D9C9B4] space-y-2.5">
+        {/* Scrollable Tool Content */}
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-4 text-xs text-[#4B382C]">
+          {/* ======================================================== */}
+          {/* 1. WALLS TOOL PROPERTIES                                  */}
+          {/* ======================================================== */}
+          {activeTool === 'walls' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
                 <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setSlopeIncline(slopeIncline === 'incline' ? 'decline' : 'incline')}
-                    className="flex-1 py-1 px-2 rounded-lg text-xs font-semibold bg-[#EADECF] hover:bg-[#DFCDBD] text-[#D97706] border border-[#D9C9B4] transition-all cursor-pointer text-center"
-                  >
-                    {slopeIncline === 'incline' ? '▲ Incline' : '▼ Decline'}
-                  </button>
-                  <button
-                    onClick={() => setSlopeAlignment(slopeAlignment === 'camera' ? 'terrain' : 'camera')}
-                    className="flex-1 py-1 px-2 rounded-lg text-xs font-semibold bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border border-[#D9C9B4] transition-all cursor-pointer text-center"
-                  >
-                    {slopeAlignment === 'camera' ? 'View Aligned' : 'Terrain Aligned'}
-                  </button>
+                  <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                  <span className="font-bold text-[#4B382C]">
+                    {wallMode === 'draw'
+                      ? 'Rampart Drafting'
+                      : wallMode === 'fortify'
+                      ? 'Fortification Studio'
+                      : 'Selection Mode'}
+                  </span>
                 </div>
+                <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                  {wallMode} mode
+                </span>
+              </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-[#4B382C]">Slope Angle:</span>
-                    <span className="font-mono font-bold text-[#D97706]">{slopeAngle}°</span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-1">
-                    {[15, 30, 45, 60].map((deg) => (
+              {/* A. DRAW MODE */}
+              {wallMode === 'draw' && (
+                <div className="space-y-3.5">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="font-semibold text-[#5C4638]">Draft Points:</span>
+                      <span className="font-bold text-[#B85F45]">
+                        {activeWallDraft.length} {activeWallDraft.length < 2 ? '(Min 2 needed)' : '✓ Ready'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
                       <button
-                        key={deg}
-                        onClick={() => setSlopeAngle(deg)}
-                        className={`py-1 rounded text-xs font-bold transition-all cursor-pointer ${
-                          slopeAngle === deg
-                            ? 'bg-[#D97706] text-white shadow-xs'
-                            : 'bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]'
+                        onClick={() => {
+                          const id = finishCurrentWall();
+                          if (id) {
+                            setToastMessage('Wall placed on fort perimeter!');
+                          }
+                        }}
+                        disabled={activeWallDraft.length < 2}
+                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ${
+                          activeWallDraft.length >= 2
+                            ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
+                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
                         }`}
                       >
-                        {deg}°
+                        <TbCheck className="w-4 h-4" />
+                        Finish Wall
                       </button>
-                    ))}
-                  </div>
-                  <input
-                    type="range"
-                    min="5"
-                    max="75"
-                    step="1"
-                    value={slopeAngle}
-                    onChange={(e) => setSlopeAngle(parseInt(e.target.value, 10))}
-                    className="w-full accent-[#D97706] cursor-pointer mt-1"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
-        {/* ------------------------------------------------------------ */}
-        {/* B. PARAMETRIC FORT WALLS & BASTIONS (3-STEP STEPPER)        */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'walls' && (
-          <div className="space-y-3.5">
-            {/* Stepper Progress Bar Header */}
-            <div className="bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] flex items-center justify-between text-[11px] font-semibold">
-              <button
-                onClick={() => {
-                  setWallStep('layout');
-                }}
-                className={`flex-1 py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer ${
-                  wallStep === 'layout'
-                    ? 'bg-[#4B382C] text-white shadow-xs font-bold'
-                    : 'text-[#634E40] hover:text-[#2B1E16]'
-                }`}
-              >
-                {t.tools.walls.stepLayout}
-              </button>
-
-              <span className="text-[#A89687] text-[10px] px-0.5">➔</span>
-
-              <button
-                onClick={() => {
-                  if (wallStep === 'layout') {
-                    if (activeWallDraft.length >= 2 || selectedWallId || walls.length > 0) {
-                      proceedToFortify();
-                    }
-                  } else {
-                    setWallStep('fortify');
-                  }
-                }}
-                className={`flex-1 py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer ${
-                  wallStep === 'fortify'
-                    ? 'bg-[#E85D04] text-white shadow-xs font-bold'
-                    : 'text-[#634E40] hover:text-[#2B1E16]'
-                }`}
-              >
-                {t.tools.walls.stepFortify}
-              </button>
-
-              <span className="text-[#A89687] text-[10px] px-0.5">➔</span>
-
-              <button
-                onClick={() => {
-                  solidifyCurrentWall();
-                }}
-                className={`flex-1 py-1 px-1.5 rounded-lg text-center transition-all cursor-pointer ${
-                  wallStep === 'solidified'
-                    ? 'bg-[#16A34A] text-white shadow-xs font-bold'
-                    : 'text-[#634E40] hover:text-[#2B1E16]'
-                }`}
-              >
-                {t.tools.walls.stepSolidify}
-              </button>
-            </div>
-
-            {/* STEP 1: LAYOUT (आराखडा) */}
-            {wallStep === 'layout' && (
-              <div className="space-y-3">
-                <div className="p-2.5 bg-[#FFF8EB] border border-[#F59E0B]/50 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#92400E]">
-                    <div className="flex items-center gap-1.5">
-                      <TbPencil className="w-4 h-4 text-[#D97706]" />
-                      <span>{t.tools.walls.step1Title}</span>
-                    </div>
-                    <span className="bg-[#FDE68A] text-[#92400E] px-1.5 py-0.5 rounded text-[10px] font-mono">
-                      {activeWallDraft.length} {t.tools.walls.nodesCount}
-                    </span>
-                  </div>
-                  <p className="text-[10px] text-[#78350F] leading-tight">
-                    {t.tools.walls.step1Desc}
-                  </p>
-                  <div className="text-[10px] text-[#B45309] font-medium bg-[#FEF3C7] p-1.5 rounded-lg flex items-center justify-between">
-                    <span>
-                      {activeWallDraft.length >= 3 &&
-                      Math.hypot(
-                        activeWallDraft[0].x - activeWallDraft[activeWallDraft.length - 1].x,
-                        activeWallDraft[0].z - activeWallDraft[activeWallDraft.length - 1].z
-                      ) < 0.7
-                        ? '⭕ Circuit Closed'
-                        : activeWallDraft.length >= 2
-                        ? '〰️ Open Rampart'
-                        : 'Click terrain to start'}
-                    </span>
-                    <span>
-                      {activeWallDraft.length >= 2
-                        ? `${calculateWallTotalLength(activeWallDraft, false).toFixed(1)}m length`
-                        : '0.0m'}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-1.5 pt-1">
-                    <button
-                      onClick={() => {
-                        if (activeWallDraft.length < 2) return;
-                        const newId = proceedToFortify();
-                        if (newId) {
-                          setToastMessage('Wall created! Now fortify and style your ramparts.');
-                        }
-                      }}
-                      className={`py-2 px-2 text-[11px] font-bold rounded-lg shadow-sm transition-all flex items-center justify-center gap-1 ${
-                        activeWallDraft.length >= 2
-                          ? 'bg-[#16A34A] text-white hover:bg-[#15803D] cursor-pointer'
-                          : 'bg-[#D9C9B4] text-[#786558] cursor-not-allowed opacity-75'
-                      }`}
-                    >
-                      <span>{t.tools.walls.step1Next}</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        cancelCurrentWall();
-                      }}
-                      className="py-2 px-2 bg-[#FAF8F5] text-[#8F4938] border border-[#D9C9B4] text-[11px] font-semibold rounded-lg hover:bg-[#EAE0D3] cursor-pointer transition-all"
-                    >
-                      {t.tools.walls.cancelDraft}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Existing Walls Quick Select if available */}
-                {walls.length > 0 && (
-                  <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-1.5">
-                    <div className="text-xs font-bold text-[#4B382C] flex items-center justify-between">
-                      <span>Existing Walls ({walls.length})</span>
-                      <button
-                        onClick={() => proceedToFortify()}
-                        className="text-[10px] text-[#D97706] hover:underline cursor-pointer"
-                      >
-                        Edit Latest Wall ➔
-                      </button>
-                    </div>
-                    <div className="space-y-1 max-h-32 overflow-y-auto">
-                      {walls.map((w, idx) => (
-                        <div
-                          key={w.id}
-                          onClick={() => {
-                            setSelectedWallId(w.id);
-                            setWallStep('fortify');
-                          }}
-                          className={`p-1.5 rounded-lg text-[10px] border flex items-center justify-between cursor-pointer transition-all ${
-                            selectedWallId === w.id
-                              ? 'bg-[#FEF3C7] border-[#D97706] font-bold text-[#92400E]'
-                              : 'bg-white border-[#EADECF] hover:bg-[#F5EFE6] text-[#634E40]'
-                          }`}
-                        >
-                          <span>Wall #{idx + 1} ({w.points.length} nodes)</span>
-                          <span className="font-mono">{calculateWallTotalLength(w.points, w.isClosed).toFixed(1)}m</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* STEP 2: FORTIFY & STYLE (तटबंदी व बुरूज) */}
-            {wallStep === 'fortify' && (
-              <div className="space-y-3">
-                {/* Active Stamp notice if any */}
-                {activeStamp && (
-                  <div className="p-2 bg-[#FEF3C7] border border-[#D97706] rounded-xl flex items-center justify-between text-[11px] text-[#92400E] animate-pulse">
-                    <div className="flex items-center gap-1.5 font-bold">
-                      <TbSparkles className="w-4 h-4 text-[#D97706]" />
-                      <span>Hover & click in 3D to stamp!</span>
-                    </div>
-                    <button
-                      onClick={() => setActiveStamp(null)}
-                      className="px-2 py-0.5 bg-[#B45309] text-white rounded text-[10px] font-semibold hover:bg-[#92400E] cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-
-                {/* 1. Rampart Architecture Sliders */}
-                <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-2.5">
-                  <div className="text-xs font-bold text-[#4B382C] flex items-center justify-between">
-                    <span className="flex items-center gap-1">
-                      <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
-                      Rampart Architecture
-                    </span>
-                    <span className="text-[10px] text-[#8D7666] font-mono">
-                      {(wallSettings.height * 100).toFixed(0)}cm / {(wallSettings.thickness * 100).toFixed(0)}cm
-                    </span>
-                  </div>
-
-                  {/* Wall Height Slider (Scale in Centimeters up to 60cm, default 25cm) */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[#4B382C]">{t.tools.walls.height}:</span>
-                      <span className="font-mono text-[#8D7666]">
-                        {(wallSettings.height * 100).toFixed(0)}cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.10"
-                      max="0.60"
-                      step="0.02"
-                      value={wallSettings.height}
-                      onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
-                      className="w-full accent-[#4B382C] cursor-pointer"
-                    />
-                    {/* Height presets */}
-                    <div className="grid grid-cols-3 gap-1 pt-0.5">
-                      {[
-                        { label: 'Low 15cm', val: 0.15 },
-                        { label: 'Default 25cm', val: 0.25 },
-                        { label: 'Citadel 40cm', val: 0.40 },
-                      ].map((preset) => (
+                      {activeWallDraft.length > 0 && (
                         <button
-                          key={preset.val}
-                          onClick={() => setWallSettings({ height: preset.val })}
-                          className={`py-0.5 text-[10px] rounded border transition-all cursor-pointer ${
-                            Math.abs(wallSettings.height - preset.val) < 0.03
-                              ? 'bg-[#4B382C] text-white border-[#38281E]'
-                              : 'bg-[#FAF8F5] text-[#5C4638] border-[#D9C9B4] hover:bg-[#EAE0D3]'
-                          }`}
+                          onClick={cancelCurrentWall}
+                          title="Cancel Draft"
+                          className="p-2 rounded-xl bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer"
                         >
-                          {preset.label}
+                          <TbX className="w-4 h-4" />
                         </button>
-                      ))}
+                      )}
                     </div>
                   </div>
 
-                  {/* Wall Thickness Slider */}
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[#4B382C]">{t.tools.walls.thickness}:</span>
-                      <span className="font-mono text-[#8D7666]">
-                        {(wallSettings.thickness * 100).toFixed(0)}cm
-                      </span>
+                  {/* Creation Sliders */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Wall Height</span>
+                        <span className="text-[#8D7666]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.10"
+                        max="0.60"
+                        step="0.02"
+                        value={wallSettings.height || 0.25}
+                        onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
                     </div>
-                    <input
-                      type="range"
-                      min="0.05"
-                      max="0.30"
-                      step="0.01"
-                      value={wallSettings.thickness}
-                      onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
-                      className="w-full accent-[#8F4938] cursor-pointer"
-                    />
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Wall Thickness</span>
+                        <span className="text-[#8D7666]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.06"
+                        max="0.30"
+                        step="0.01"
+                        value={wallSettings.thickness || 0.15}
+                        onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] font-semibold text-[#4B382C]">Battlements (Crenellations)</span>
+                      <input
+                        type="checkbox"
+                        checked={wallSettings.crenellations}
+                        onChange={(e) => setWallSettings({ crenellations: e.target.checked })}
+                        className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                      />
+                    </div>
+
+                    {wallSettings.crenellations && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-semibold text-[#4B382C]">Flip Battlements Rim</span>
+                        <input
+                          type="checkbox"
+                          checked={wallSettings.flipCrenellations ?? false}
+                          onChange={(e) => setWallSettings({ flipCrenellations: e.target.checked })}
+                          className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                        />
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-[#4B382C]">Corner Auto-Bastions</span>
+                      <input
+                        type="checkbox"
+                        checked={wallSettings.autoBastions}
+                        onChange={(e) => setWallSettings({ autoBastions: e.target.checked })}
+                        className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                      />
+                    </div>
+
+                    {wallSettings.autoBastions && (
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Bastion Radius</span>
+                          <span className="text-[#8D7666]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.06"
+                          max="0.35"
+                          step="0.01"
+                          value={wallSettings.bastionRadius || 0.13}
+                          onChange={(e) => setWallSettings({ bastionRadius: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+                    )}
                   </div>
-
-                  {/* Brick Tiling & Kangare */}
-                  <div className="space-y-1 pt-1 border-t border-[#EADECF]">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-[#4B382C]">{t.tools.walls.uvScale}:</span>
-                      <span className="font-mono text-[#8D7666]">{wallSettings.uvScale.toFixed(1)}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="3.0"
-                      step="0.1"
-                      value={wallSettings.uvScale}
-                      onChange={(e) => setWallSettings({ uvScale: parseFloat(e.target.value) })}
-                      className="w-full accent-[#B58B63] cursor-pointer"
-                    />
-                  </div>
-
-                  {/* Pointed Kangare Toggle */}
-                  <button
-                    onClick={() => setWallSettings({ crenellations: !wallSettings.crenellations })}
-                    className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer ${
-                      wallSettings.crenellations
-                        ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
-                        : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <TbBuildingFortress className="w-4 h-4 text-[#E85D04]" />
-                      <span className="text-xs font-semibold">{t.tools.walls.crenellations}</span>
-                    </div>
-                    <span
-                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        wallSettings.crenellations ? 'bg-black/30 text-[#FAF8F5]' : 'bg-[#E4D8CB]'
-                      }`}
-                    >
-                      {wallSettings.crenellations ? 'ON' : 'OFF'}
-                    </span>
-                  </button>
-
-                  {/* Flip Crenellations Side Button */}
-                  {wallSettings.crenellations && (
-                    <button
-                      onClick={() => setWallSettings({ flipCrenellations: !wallSettings.flipCrenellations })}
-                      className={`w-full py-1.5 px-2 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer flex items-center justify-between ${
-                        wallSettings.flipCrenellations
-                          ? 'bg-[#FEF3C7] border-[#D97706] text-[#92400E] shadow-sm'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-white'
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <span>🔁</span>
-                        <span>Flip Battlements{locale === 'mr' ? ' (बाजू उलटा)' : ''}</span>
-                      </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/10">
-                        {wallSettings.flipCrenellations ? 'Inverted' : 'Outer'}
-                      </span>
-                    </button>
-                  )}
                 </div>
+              )}
 
-                {/* 2. Fortifications Stamp Shelf */}
-                <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                    <span className="flex items-center gap-1">
-                      <TbTower className="w-3.5 h-3.5 text-[#D97706]" />
-                      {t.tools.walls.stampShelfTitle}
-                    </span>
-                    <span className="text-[10px] text-[#8D7666]">Magnetic Snap</span>
+              {/* B. FORTIFY MODE */}
+              {wallMode === 'fortify' && (
+                <div className="space-y-3.5">
+                  <div className="text-[11px] text-[#634E40] leading-relaxed">
+                    Choose a fortification to place continuously along ramparts.
                   </div>
 
                   <div className="grid grid-cols-3 gap-1.5">
-                    {/* Fortification 1: Tower */}
-                    <button
-                      onClick={() => setActiveStamp(activeStamp === 'tower' ? null : 'tower')}
-                      className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
-                        activeStamp === 'tower'
-                          ? 'bg-[#FEF3C7] border-[#D97706] shadow-sm text-[#92400E] font-bold scale-[1.02]'
-                          : 'bg-white border-[#D9C9B4] text-[#4B382C] hover:bg-[#F5EFE6]'
-                      }`}
-                    >
-                      <TbTower className="w-5 h-5 text-[#8F4938] mb-1" />
-                      <span className="text-[11px] font-semibold">Tower</span>
-                      <span className="text-[9px] text-[#8D7666]">Round tower</span>
-                    </button>
+                    {[
+                      { id: 'tower' as FortStampType, label: 'Watchtower', desc: 'Round tower', icon: TbTower },
+                      { id: 'box' as FortStampType, label: 'Rampart Bastion', desc: 'Platform bastion', icon: TbBuildingFortress },
+                      { id: 'gate' as FortStampType, label: 'Arched Gateway', desc: 'Fortified arch', icon: TbDoorEnter },
+                    ].map((stamp) => {
+                      const Icon = stamp.icon;
+                      const isStampActive = activeStamp === stamp.id;
 
-                    {/* Fortification 2: Rampart Platform */}
-                    <button
-                      onClick={() => setActiveStamp(activeStamp === 'box' ? null : 'box')}
-                      className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
-                        activeStamp === 'box'
-                          ? 'bg-[#FEF3C7] border-[#D97706] shadow-sm text-[#92400E] font-bold scale-[1.02]'
-                          : 'bg-white border-[#D9C9B4] text-[#4B382C] hover:bg-[#F5EFE6]'
-                      }`}
-                    >
-                      <TbBuildingFortress className="w-5 h-5 text-[#D97706] mb-1" />
-                      <span className="text-[11px] font-semibold">Rampart Platform</span>
-                      <span className="text-[9px] text-[#8D7666]">Inward platform</span>
-                    </button>
-
-                    {/* Fortification 3: Gate */}
-                    <button
-                      onClick={() => setActiveStamp(activeStamp === 'gate' ? null : 'gate')}
-                      className={`p-2 rounded-xl border flex flex-col items-center text-center transition-all cursor-pointer ${
-                        activeStamp === 'gate'
-                          ? 'bg-[#FEF3C7] border-[#D97706] shadow-sm text-[#92400E] font-bold scale-[1.02]'
-                          : 'bg-white border-[#D9C9B4] text-[#4B382C] hover:bg-[#F5EFE6]'
-                      }`}
-                    >
-                      <TbDoorEnter className="w-5 h-5 text-[#E85D04] mb-1" />
-                      <span className="text-[11px] font-semibold">Gate</span>
-                      <span className="text-[9px] text-[#8D7666]">{locale === 'mr' ? 'महा दरवाजा' : 'Arched Gateway'}</span>
-                    </button>
+                      return (
+                        <button
+                          key={stamp.id}
+                          onClick={() => setActiveStamp(isStampActive ? null : stamp.id)}
+                          className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
+                            isStampActive
+                              ? 'bg-[#4B382C] text-[#FAF8F5] border-[#38281E] shadow-md ring-2 ring-[#B85F45]'
+                              : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-[#EADECF]'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5 mb-1 text-[#B85F45]" />
+                          <span className="font-bold text-[10px] leading-tight">{stamp.label}</span>
+                          <span className="text-[8px] text-[#8D7666] leading-tight mt-0.5">{stamp.desc}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                </div>
 
-                {/* 2b. Placed Fortifications Shelf (Click to inspect/edit) */}
-                {(() => {
-                  const currentWall = walls.find((w) => w.id === selectedWallId);
-                  if (!currentWall) return null;
-                  const bIndices = detectBastionLocations(
-                    currentWall.points,
-                    currentWall.isClosed,
-                    currentWall.settings.autoBastions,
-                    currentWall.manualBastionIndices,
-                    currentWall.excludedBastionIndices
-                  );
-                  const totalComponents =
-                    bIndices.length +
-                    (currentWall.towers?.length || 0) +
-                    (currentWall.boxBastions?.length || 0) +
-                    (currentWall.gates?.length || 0);
-
-                  return (
-                    <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-1.5">
-                      <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                        <span>🏰 Fortifications ({totalComponents})</span>
-                        <span className="text-[10px] text-[#8D7666]">Click to inspect</span>
+                  {activeStamp && (
+                    <div className="p-3 bg-[#EAE2D7] rounded-xl border border-[#B85F45]/40 space-y-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-[#8F4938]">
+                        <TbSparkles className="w-4 h-4" />
+                        Continuous Stamping Active
                       </div>
-                      <div className="space-y-1 max-h-36 overflow-y-auto">
-                        {currentWall.towers?.map((tw, twIdx) => {
-                          const isSelected = selectedComponent?.type === 'tower' && selectedComponent.idOrIndex === tw.id;
-                          return (
-                            <button
-                              key={`shelf_tw_${tw.id}`}
-                              onClick={() => {
-                                setSelectedComponent({ type: 'tower', idOrIndex: tw.id, wallId: currentWall.id });
-                              }}
-                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#10B981] text-white font-bold'
-                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
-                              }`}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <TbTower className="w-3.5 h-3.5 text-[#8F4938]" />
-                                <span>Tower #{twIdx + 1}</span>
-                              </span>
-                              <span className="text-[10px] opacity-80">Edit</span>
-                            </button>
-                          );
-                        })}
-                        {currentWall.boxBastions?.map((bx, bxIdx) => {
-                          const isSelected = selectedComponent?.type === 'box' && selectedComponent.idOrIndex === bx.id;
-                          return (
-                            <button
-                              key={`shelf_bx_${bx.id}`}
-                              onClick={() => {
-                                setSelectedComponent({ type: 'box', idOrIndex: bx.id, wallId: currentWall.id });
-                              }}
-                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#10B981] text-white font-bold'
-                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
-                              }`}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <TbBuildingFortress className="w-3.5 h-3.5 text-[#D97706]" />
-                                <span>Rampart Platform #{bxIdx + 1}</span>
-                              </span>
-                              <span className="text-[10px] opacity-80">Edit</span>
-                            </button>
-                          );
-                        })}
-                        {currentWall.gates?.map((g, gIdx) => {
-                          const isSelected = selectedComponent?.type === 'gate' && selectedComponent.idOrIndex === g.id;
-                          return (
-                            <button
-                              key={`shelf_g_${g.id}`}
-                              onClick={() => {
-                                setSelectedComponent({ type: 'gate', idOrIndex: g.id, wallId: currentWall.id });
-                              }}
-                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#10B981] text-white font-bold'
-                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
-                              }`}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <TbDoorEnter className="w-3.5 h-3.5 text-[#E85D04]" />
-                                <span>Gate #{gIdx + 1}</span>
-                              </span>
-                              <span className="text-[10px] opacity-80">Edit</span>
-                            </button>
-                          );
-                        })}
-                        {bIndices.map((bIdx) => {
-                          const isSelected = selectedComponent?.type === 'bastion' && selectedComponent.idOrIndex === bIdx;
-                          return (
-                            <button
-                              key={`shelf_b_${bIdx}`}
-                              onClick={() => {
-                                setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: currentWall.id });
-                              }}
-                              className={`w-full py-1 px-2 rounded-lg text-[11px] font-medium flex items-center justify-between transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#10B981] text-white font-bold'
-                                  : 'bg-white text-[#4B382C] border border-[#EADECF] hover:bg-[#F5EFE6]'
-                              }`}
-                            >
-                              <span className="flex items-center gap-1.5">
-                                <TbTower className="w-3.5 h-3.5 text-[#8F4938]" />
-                                <span>Corner Tower ({bIdx})</span>
-                              </span>
-                              <span className="text-[10px] opacity-80">Edit</span>
-                            </button>
-                          );
-                        })}
-                        {totalComponents === 0 && (
-                          <div className="text-[10px] text-[#8D7666] italic py-1 text-center">
-                            No fortifications added yet. Click a stamp above to place on the wall.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })()}
-
-                {/* 3. Contextual Component Inspector if selected */}
-                {selectedComponent && (
-                  <div className="p-2.5 bg-[#EFF6FF] border border-[#3B82F6]/50 rounded-xl space-y-2">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#1E40AF]">
-                      <span>
-                        {selectedComponent.type === 'tower'
-                          ? '🏰 Sliding Tower'
-                          : selectedComponent.type === 'box'
-                          ? '🛡️ Rampart Platform'
-                          : selectedComponent.type === 'gate'
-                          ? (locale === 'mr' ? '🚪 महा दरवाजा' : '🚪 Arched Gateway')
-                          : '🏰 Corner Bastion'}
-                      </span>
+                      <p className="text-[11px] text-[#634E40] leading-snug">
+                        Click along any rampart to place. You can place multiple fortifications in a row!
+                      </p>
                       <button
-                        onClick={() => setSelectedComponent(null)}
-                        className="text-[10px] text-[#3B82F6] hover:underline cursor-pointer"
+                        onClick={() => setActiveStamp(null)}
+                        className="w-full py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] rounded-lg hover:bg-[#DFCDBD] cursor-pointer"
                       >
-                        Close
+                        Done Stamping
                       </button>
                     </div>
-
-                    {/* TOWER INSPECTOR */}
-                    {selectedComponent.type === 'tower' && (
-                      <div className="space-y-2">
-                        {(() => {
-                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
-                          const tower = wall?.towers?.find((tw) => tw.id === selectedComponent.idOrIndex);
-                          if (!wall || !tower) return null;
-
-                          return (
-                            <div className="space-y-2">
-                              {/* Tower Radius Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Tower Radius:</span>
-                                  <span className="font-mono text-[#1E40AF]">{(tower.radius * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.06"
-                                  max="0.35"
-                                  step="0.01"
-                                  value={tower.radius}
-                                  onChange={(e) =>
-                                    updateTowerProperties(wall.id, tower.id, { radius: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Extra Height Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Extra Tower Height:</span>
-                                  <span className="font-mono text-[#1E40AF]">+{((tower.heightOffset || 0.02) * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.0"
-                                  max="0.15"
-                                  step="0.01"
-                                  value={tower.heightOffset || 0.02}
-                                  onChange={(e) =>
-                                    updateTowerProperties(wall.id, tower.id, { heightOffset: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Segment Position Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Wall Position:</span>
-                                  <span className="font-mono text-[#1E40AF]">{((tower.t || 0.5) * 100).toFixed(0)}%</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.05"
-                                  max="0.95"
-                                  step="0.02"
-                                  value={tower.t || 0.5}
-                                  onChange={(e) =>
-                                    updateTowerProperties(wall.id, tower.id, { t: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Delete Tower Button */}
-                              <button
-                                onClick={() => {
-                                  removeTowerFromWall(wall.id, tower.id);
-                                  setToastMessage('Tower removed.');
-                                }}
-                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
-                              >
-                                <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Tower</span>
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {/* RAMPART PLATFORM INSPECTOR */}
-                    {selectedComponent.type === 'box' && (
-                      <div className="space-y-2">
-                        {(() => {
-                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
-                          const box = wall?.boxBastions?.find((bx) => bx.id === selectedComponent.idOrIndex);
-                          if (!wall || !box) return null;
-
-                          return (
-                            <div className="space-y-2">
-                              {/* Box Width Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Width along Wall:</span>
-                                  <span className="font-mono text-[#1E40AF]">{(box.width * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.15"
-                                  max="0.80"
-                                  step="0.02"
-                                  value={box.width}
-                                  onChange={(e) =>
-                                    updateBoxBastionProperties(wall.id, box.id, { width: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Inward Depth Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Inward Depth:</span>
-                                  <span className="font-mono text-[#1E40AF]">{(box.depth * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.15"
-                                  max="0.80"
-                                  step="0.02"
-                                  value={box.depth}
-                                  onChange={(e) =>
-                                    updateBoxBastionProperties(wall.id, box.id, { depth: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Extra Height Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Extra Height:</span>
-                                  <span className="font-mono text-[#1E40AF]">+{((box.heightOffset || 0.04) * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.0"
-                                  max="0.15"
-                                  step="0.01"
-                                  value={box.heightOffset || 0.04}
-                                  onChange={(e) =>
-                                    updateBoxBastionProperties(wall.id, box.id, { heightOffset: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Flip Side Toggle */}
-                              <button
-                                onClick={() =>
-                                  updateBoxBastionProperties(wall.id, box.id, {
-                                    flipSide: !box.flipSide,
-                                  })
-                                }
-                                className="w-full py-1.5 px-2 bg-white border border-[#D9C9B4] hover:bg-[#F5EFE6] rounded-lg text-[11px] font-semibold text-[#4B382C] flex items-center justify-between transition-all cursor-pointer"
-                              >
-                                <span>Orientation: {box.flipSide ? 'Outer Face' : 'Inward Courtyard'}</span>
-                                <span className="font-bold text-[#1E40AF]">Flip Side</span>
-                              </button>
-
-                              {/* Segment Position Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Wall Position:</span>
-                                  <span className="font-mono text-[#1E40AF]">{((box.t || 0.5) * 100).toFixed(0)}%</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.05"
-                                  max="0.95"
-                                  step="0.02"
-                                  value={box.t || 0.5}
-                                  onChange={(e) =>
-                                    updateBoxBastionProperties(wall.id, box.id, { t: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Delete Rampart Platform Button */}
-                              <button
-                                onClick={() => {
-                                  removeBoxBastionFromWall(wall.id, box.id);
-                                  setToastMessage('Rampart Platform removed.');
-                                }}
-                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
-                              >
-                                <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Rampart Platform</span>
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {/* CORNER BASTION INSPECTOR */}
-                    {selectedComponent.type === 'bastion' && (
-                      <div className="space-y-2">
-                        {(() => {
-                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
-                          const bIdx = Number(selectedComponent.idOrIndex);
-                          if (!wall || bIdx === undefined) return null;
-                          const custom = wall.customBastions?.[bIdx];
-                          const isGrand = wall.grandBastionIndices?.includes(bIdx) || custom?.isGrand;
-                          const curRadius = custom?.radius ?? (isGrand ? (wall.settings.bastionRadius || 0.25) * 1.5 : (wall.settings.bastionRadius || 0.25));
-                          const curHOffset = custom?.heightOffset || 0;
-
-                          return (
-                            <div className="space-y-2">
-                              {/* Tower Radius Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Tower Radius:</span>
-                                  <span className="font-mono text-[#1E40AF]">{(curRadius * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.06"
-                                  max="0.30"
-                                  step="0.01"
-                                  value={curRadius}
-                                  onChange={(e) =>
-                                    updateBastionProperties(wall.id, bIdx, { radius: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Extra Height Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Extra Tower Height:</span>
-                                  <span className="font-mono text-[#1E40AF]">+{((curHOffset) * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.0"
-                                  max="0.15"
-                                  step="0.01"
-                                  value={curHOffset}
-                                  onChange={(e) =>
-                                    updateBastionProperties(wall.id, bIdx, { heightOffset: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Delete Bastion Button */}
-                              <button
-                                onClick={() => {
-                                  removeBastionFromNode(wall.id, bIdx);
-                                  setToastMessage('Bastion removed.');
-                                }}
-                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
-                              >
-                                <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Bastion</span>
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {/* GATE INSPECTOR */}
-                    {selectedComponent.type === 'gate' && (
-                      <div className="space-y-2">
-                        {(() => {
-                          const wall = walls.find((w) => w.id === selectedComponent.wallId);
-                          const gate = wall?.gates.find((g) => g.id === selectedComponent.idOrIndex);
-                          if (!wall || !gate) return null;
-                          return (
-                            <div className="space-y-2">
-                              {/* Gate Width Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Gate Width:</span>
-                                  <span className="font-mono text-[#1E40AF]">{(gate.width * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.10"
-                                  max="0.35"
-                                  step="0.01"
-                                  value={gate.width}
-                                  onChange={(e) =>
-                                    updateGateProperties(wall.id, gate.id, { width: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Arch Height Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Arch Opening Height:</span>
-                                  <span className="font-mono text-[#1E40AF]">{((gate.height || 0.18) * 100).toFixed(0)}cm</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.10"
-                                  max="0.30"
-                                  step="0.01"
-                                  value={gate.height || 0.18}
-                                  onChange={(e) =>
-                                    updateGateProperties(wall.id, gate.id, { height: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Flanking Towers Toggle */}
-                              <button
-                                onClick={() =>
-                                  updateGateProperties(wall.id, gate.id, {
-                                    hasGatehouse: !(gate.hasGatehouse !== false),
-                                  })
-                                }
-                                className={`w-full py-1.5 px-2 rounded-lg border text-[11px] font-semibold flex items-center justify-between transition-all cursor-pointer ${
-                                  gate.hasGatehouse !== false
-                                    ? 'bg-[#FEF3C7] border-[#D97706] text-[#92400E]'
-                                    : 'bg-white border-[#D9C9B4] text-[#4B382C]'
-                                }`}
-                              >
-                                <span>Flanking Towers</span>
-                                <span className="font-bold">{gate.hasGatehouse !== false ? 'ON' : 'OFF'}</span>
-                              </button>
-
-                              {/* Position Slider */}
-                              <div className="space-y-0.5">
-                                <div className="flex items-center justify-between text-[11px]">
-                                  <span className="font-semibold text-[#1E40AF]">Segment Position:</span>
-                                  <span className="font-mono text-[#1E40AF]">{((gate.t || 0.5) * 100).toFixed(0)}%</span>
-                                </div>
-                                <input
-                                  type="range"
-                                  min="0.15"
-                                  max="0.85"
-                                  step="0.05"
-                                  value={gate.t || 0.5}
-                                  onChange={(e) =>
-                                    updateGateProperties(wall.id, gate.id, { t: parseFloat(e.target.value) })
-                                  }
-                                  className="w-full accent-[#1E40AF] cursor-pointer"
-                                />
-                              </div>
-
-                              {/* Delete Gate Button */}
-                              <button
-                                onClick={() => {
-                                  removeGateFromWall(wall.id, gate.id);
-                                  setToastMessage('Gate removed.');
-                                }}
-                                className="w-full py-1.5 bg-white text-[#DC2626] border border-[#FECACA] rounded-lg text-[11px] font-bold hover:bg-[#FEE2E2] cursor-pointer flex items-center justify-center gap-1 transition-all"
-                              >
-                                <TbTrash className="w-3.5 h-3.5" />
-                                <span>Delete Gate</span>
-                              </button>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 4. Action Buttons (Solidify / Return to Step 1 / Delete) */}
-                <div className="space-y-1.5 pt-1">
-                  <button
-                    onClick={() => {
-                      solidifyCurrentWall();
-                      setToastMessage('Fort solidified into diorama!');
-                    }}
-                    className="w-full py-2 px-3 bg-[#16A34A] text-white text-xs font-bold rounded-xl hover:bg-[#15803D] cursor-pointer shadow-sm transition-all flex items-center justify-center gap-1.5"
-                  >
-                    <TbCheck className="w-4 h-4" />
-                    <span>{t.tools.walls.step2Solidify}</span>
-                  </button>
-
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button
-                      onClick={() => {
-                        setWallStep('layout');
-                      }}
-                      className="py-1.5 px-2 bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] text-[11px] font-semibold rounded-lg hover:bg-[#EAE0D3] cursor-pointer transition-all flex items-center justify-center gap-1"
-                    >
-                      <span>{t.tools.walls.step2EditPath}</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (selectedWallId) {
-                          removeWall(selectedWallId);
-                          setToastMessage('Wall deleted.');
-                          if (walls.length <= 1) {
-                            setWallStep('layout');
-                          }
-                        }
-                      }}
-                      className="py-1.5 px-2 bg-[#FAF8F5] text-[#DC2626] border border-[#FECACA] text-[11px] font-semibold rounded-lg hover:bg-[#FEE2E2] cursor-pointer transition-all flex items-center justify-center gap-1"
-                    >
-                      <TbTrash className="w-3.5 h-3.5" />
-                      <span>Delete Wall</span>
-                    </button>
-                  </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* STEP 3: SOLIDIFIED DIORAMA OVERVIEW (पक्की करा) */}
-            {wallStep === 'solidified' && (
-              <div className="space-y-3">
-                {/* Defense Summary Card */}
-                <div className="p-3 bg-[#F0FDF4] border border-[#86EFAC] rounded-xl space-y-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#166534]">
-                    <TbShieldCheck className="w-4 h-4 text-[#16A34A]" />
-                    <span>{t.tools.walls.step3Title}</span>
-                  </div>
-                  <p className="text-[10px] text-[#15803D] leading-tight">
-                    {t.tools.walls.step3Desc}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-1.5 pt-1 text-[11px]">
-                    <div className="bg-white/80 p-2 rounded-lg border border-[#BBF7D0]">
-                      <div className="text-[10px] text-[#15803D]">Total Length</div>
-                      <div className="text-sm font-bold text-[#166534] font-mono">
-                        {walls.reduce((sum, w) => sum + calculateWallTotalLength(w.points, w.isClosed), 0).toFixed(1)}m
-                      </div>
-                    </div>
-                    <div className="bg-white/80 p-2 rounded-lg border border-[#BBF7D0]">
-                      <div className="text-[10px] text-[#15803D]">Fort Walls</div>
-                      <div className="text-sm font-bold text-[#166534] font-mono">{walls.length}</div>
-                    </div>
-                    <div className="bg-white/80 p-2 rounded-lg border border-[#BBF7D0]">
-                      <div className="text-[10px] text-[#15803D]">Gates Placed</div>
-                      <div className="text-sm font-bold text-[#166534] font-mono">
-                        {walls.reduce((sum, w) => sum + (w.gates?.length || 0), 0)}
-                      </div>
-                    </div>
-                    <div className="bg-white/80 p-2 rounded-lg border border-[#BBF7D0]">
-                      <div className="text-[10px] text-[#15803D]">Citadel Keeps</div>
-                      <div className="text-sm font-bold text-[#166534] font-mono">{citadelKeeps.length}</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Walls List */}
-                {walls.length > 0 && (
-                  <div className="p-2.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl space-y-1.5">
-                    <span className="text-xs font-bold text-[#4B382C]">Diorama Fort Circuits</span>
-                    <div className="space-y-1.5 max-h-40 overflow-y-auto">
-                      {walls.map((w, idx) => (
-                        <div
-                          key={w.id}
-                          className="p-2 bg-white rounded-lg border border-[#EADECF] flex items-center justify-between text-[11px]"
-                        >
-                          <div>
-                            <div className="font-bold text-[#4B382C]">Wall #{idx + 1}</div>
-                            <div className="text-[10px] text-[#8D7666]">
-                              {w.points.length} nodes • {calculateWallTotalLength(w.points, w.isClosed).toFixed(1)}m
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => {
-                                setSelectedWallId(w.id);
-                                setWallStep('fortify');
-                                setToastMessage(`Editing Wall #${idx + 1}`);
-                              }}
-                              className="px-2 py-1 bg-[#4B382C] text-white rounded text-[10px] font-semibold hover:bg-[#38281E] cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                removeWall(w.id);
-                                setToastMessage('Wall removed.');
-                              }}
-                              className="p-1 text-[#DC2626] hover:bg-[#FEE2E2] rounded cursor-pointer"
-                              title="Delete Wall"
-                            >
-                              <TbTrash className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+              {/* C. SELECT MODE: With Deselect, Delete, Edit buttons */}
+              {wallMode === 'select' && (
+                <div className="space-y-3">
+                  {selectedWall ? (
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
+                      <div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">Selected Wall</div>
+                        <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
+                          {selectedWall.name || 'Defensive Rampart'}
+                          {selectedComponent && (
+                            <span className="text-[#B85F45] ml-1">
+                              ({selectedComponent.type === 'bastion' ? `Rampart Bastion ${Number(selectedComponent.idOrIndex) + 1}` : selectedComponent.type === 'tower' ? 'Watchtower' : selectedComponent.type === 'box' ? 'Rampart Bastion' : 'Arched Gateway'})
+                            </span>
+                          )}
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Deselect / Delete / Edit Buttons */}
+                      <div className="space-y-1.5 pt-1">
+                        <button
+                          onClick={() => {
+                            setSelectedWallId(null);
+                            setSelectedComponent(null);
+                          }}
+                          className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbX className="w-3.5 h-3.5" />
+                          Deselect
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (selectedComponent && selectedWall) {
+                              if (selectedComponent.type === 'bastion') {
+                                removeBastionFromNode(selectedWall.id, Number(selectedComponent.idOrIndex));
+                              } else if (selectedComponent.type === 'tower') {
+                                removeTowerFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
+                              } else if (selectedComponent.type === 'box') {
+                                removeBoxBastionFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
+                              } else if (selectedComponent.type === 'gate') {
+                                removeGateFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
+                              }
+                              setSelectedComponent(null);
+                            } else if (selectedWall) {
+                              removeWall(selectedWall.id);
+                              setSelectedWallId(null);
+                            }
+                          }}
+                          className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbTrash className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+
+                        <button
+                          onClick={() => setWallMode('fortify')}
+                          className="w-full py-1.5 text-xs font-semibold bg-[#4B382C] text-[#FAF8F5] rounded-lg hover:bg-[#38281E] cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbEdit className="w-3.5 h-3.5" />
+                          Fortify Wall
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-xs text-[#634E40] space-y-2">
+                      <div className="font-bold text-[#4B382C] flex items-center gap-1.5">
+                        <TbPointer className="w-4 h-4 text-[#B85F45]" />
+                        Select & Inspect
+                      </div>
+                      <p className="leading-relaxed">
+                        Click any wall, bastion, or gate on the 3D diorama or from the <strong>Fort Outliner</strong> on the right to view its dimensions, rename it, or remove it.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
-                {/* Primary Action: Build Another Wall Circuit */}
-                <button
-                  onClick={() => {
-                    startNewWallCircuit();
-                    setToastMessage('Started new wall circuit. Click on terrain to draw.');
-                  }}
-                  className="w-full py-2.5 px-3 bg-[#4B382C] text-white text-xs font-bold rounded-xl hover:bg-[#38281E] cursor-pointer shadow-sm transition-all flex items-center justify-center gap-1.5"
-                >
-                  <TbPlus className="w-4 h-4" />
-                  <span>{t.tools.walls.step3NewWall}</span>
-                </button>
-
-                {walls.length > 0 && (
-                  <button
-                    onClick={clearAllWalls}
-                    className="w-full py-1.5 px-2 bg-[#FAF8F5] text-[#DC2626] border border-[#FECACA] hover:bg-[#FEE2E2] rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1"
-                  >
-                    <TbTrash className="w-3.5 h-3.5" />
-                    <span>{t.tools.walls.clearAll}</span>
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------ */}
-        {/* SPLINE STRUCTURE PLACEMENT STUDIO PROPERTIES                 */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'spline' && (
-          <div className="space-y-4">
-            {/* 1. Header */}
-            <div className="p-3 bg-[#EADECF] rounded-xl border border-[#D9C9B4] space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
-                  <TbRoute className="w-4 h-4 text-[#F59E0B]" />
-                  <span>Spline Structure Studio</span>
+          {/* ======================================================== */}
+          {/* 2. SPLINE / PATHS TOOL PROPERTIES                         */}
+          {/* ======================================================== */}
+          {activeTool === 'spline' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                <div className="flex items-center gap-1.5">
+                  <TbRoute className="w-4 h-4 text-[#B85F45]" />
+                  <span className="font-bold text-[#4B382C]">
+                    {splineMode === 'draw'
+                      ? 'Path Drafting'
+                      : splineMode === 'transform'
+                      ? 'Nudge & Transform'
+                      : 'Selection Mode'}
+                  </span>
+                </div>
+                <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                  {splineMode} mode
                 </span>
-                <span className="text-[10px] font-semibold text-[#8D7666] bg-[#FAF8F5] px-1.5 py-0.5 rounded">
-                  {splines.length} placed
-                </span>
-              </div>
-            </div>
-
-            {/* Selected Feature Inspector Banner */}
-            {selectedSpline && (
-              <div className="flex items-center justify-between p-2.5 bg-[#FEF3C7] rounded-xl border border-[#F59E0B]/60 shadow-sm animate-in fade-in">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#D97706] animate-pulse" />
-                  <span className="text-xs font-bold text-[#92400E]">
-                    Editing {selectedSpline.type === 'steps' ? 'Stone Steps' : selectedSpline.type === 'flags' ? 'Bhagwa Flags' : 'Diyas'}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSelectedSplineId(null)}
-                  className="px-2 py-0.5 text-[11px] font-semibold text-[#B45309] hover:bg-[#FDE68A] rounded transition-colors cursor-pointer"
-                >
-                  Deselect
-                </button>
-              </div>
-            )}
-
-            {/* 2. Interactive Drafting Controls */}
-            {currentSplinePoints.length > 0 && (
-              <div className="p-3 bg-[#FEF3C7] rounded-xl border border-[#F59E0B]/50 space-y-2.5 shadow-sm animate-in fade-in">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-[#92400E] flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#F59E0B] animate-ping" />
-                    <span>Path Drafting in Progress</span>
-                  </span>
-                  <span className="font-mono font-bold text-[#B45309] text-[11px]">
-                    {currentSplinePoints.length} points
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => {
-                      const id = finishSpline();
-                      if (id) {
-                        setToastMessage('Spline structure placed!');
-                      }
-                    }}
-                    disabled={currentSplinePoints.length < 2}
-                    className="py-2 px-3 rounded-lg bg-[#059669] hover:bg-[#047857] disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <TbCheck className="w-4 h-4" />
-                    <span>Finish Path</span>
-                  </button>
-                  <button
-                    onClick={cancelSpline}
-                    className="py-2 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                  >
-                    <TbX className="w-4 h-4" />
-                    <span>Cancel</span>
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* 3. Spline Conversion Sub-Tool Switcher */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#4B382C]">Feature Type:</label>
-              <div className="grid grid-cols-3 gap-1.5 bg-[#EADECF] p-1.5 rounded-xl border border-[#D9C9B4]">
-                <button
-                  onClick={() => handleConversionTypeChange('steps')}
-                  className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                    effectiveConversionType === 'steps'
-                      ? 'bg-[#4B382C] text-white shadow-sm'
-                      : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
-                  }`}
-                >
-                  <TbStairs className="w-4 h-4 text-[#F59E0B]" />
-                  <span className="text-[11px] font-bold leading-tight">Stone Steps</span>
-                </button>
-
-                <button
-                  onClick={() => handleConversionTypeChange('flags')}
-                  className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                    effectiveConversionType === 'flags'
-                      ? 'bg-[#4B382C] text-white shadow-sm'
-                      : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
-                  }`}
-                >
-                  <TbFlag className="w-4 h-4 text-[#FF7722]" />
-                  <span className="text-[11px] font-bold leading-tight">Flags</span>
-                </button>
-
-                <button
-                  onClick={() => handleConversionTypeChange('diyas')}
-                  className={`py-2 px-1 rounded-lg text-center flex flex-col items-center gap-1 transition-all cursor-pointer ${
-                    effectiveConversionType === 'diyas'
-                      ? 'bg-[#4B382C] text-white shadow-sm'
-                      : 'text-[#634E40] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
-                  }`}
-                >
-                  <TbFlame className="w-4 h-4 text-[#F59E0B]" />
-                  <span className="text-[11px] font-bold leading-tight">Diyas</span>
-                </button>
-              </div>
-            </div>
-
-            {/* 4. Contextual Parameter Sliders */}
-            <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-              {effectiveConversionType === 'steps' && (
-                <>
-                  {/* Step Width Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Stair Width:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {Math.round((effectiveSettings.stepWidth ?? 0.06) * 100)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.02}
-                      max={0.15}
-                      step={0.005}
-                      value={effectiveSettings.stepWidth ?? 0.06}
-                      onChange={(e) => handleSplineSettingChange({ stepWidth: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Step Tread Depth / Run Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Tread Depth (Run):</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {((effectiveSettings.stepRun ?? 0.025) * 100).toFixed(1)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.01}
-                      max={0.06}
-                      step={0.005}
-                      value={effectiveSettings.stepRun ?? 0.025}
-                      onChange={(e) => handleSplineSettingChange({ stepRun: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Step Riser Height Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Step Rise Height:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {((effectiveSettings.stepRise ?? 0.01) * 100).toFixed(1)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.005}
-                      max={0.03}
-                      step={0.002}
-                      value={effectiveSettings.stepRise ?? 0.01}
-                      onChange={(e) => handleSplineSettingChange({ stepRise: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Path Offset (Left / Right) Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Path Offset (Left / Right):</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {((effectiveSettings.stepOffset ?? 0.0) * 100).toFixed(1)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-0.15}
-                      max={0.15}
-                      step={0.005}
-                      value={effectiveSettings.stepOffset ?? 0.0}
-                      onChange={(e) => handleSplineSettingChange({ stepOffset: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Stair Spacing Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Stair Spacing:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {((effectiveSettings.stepSpacing ?? 0.025) * 100).toFixed(1)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.01}
-                      max={0.10}
-                      step={0.005}
-                      value={effectiveSettings.stepSpacing ?? 0.025}
-                      onChange={(e) => handleSplineSettingChange({ stepSpacing: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-                </>
-              )}
-
-              {effectiveConversionType === 'flags' && (
-                <>
-                  {/* Flag Spacing Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Flag Spacing:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {Math.round((effectiveSettings.spacing ?? 0.20) * 100)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.05}
-                      max={0.50}
-                      step={0.01}
-                      value={effectiveSettings.spacing ?? 0.20}
-                      onChange={(e) => handleSplineSettingChange({ spacing: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Flag Scale Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Flag Scale:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {(effectiveSettings.scale ?? 1.0).toFixed(1)}x
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.2}
-                      max={3.0}
-                      step={0.1}
-                      value={effectiveSettings.scale ?? 1.0}
-                      onChange={(e) => handleSplineSettingChange({ scale: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-                </>
-              )}
-
-              {effectiveConversionType === 'diyas' && (
-                <>
-                  {/* Diya Spacing Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Diya Spacing:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {Math.round((effectiveSettings.spacing ?? 0.35) * 100)} cm
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.10}
-                      max={1.0}
-                      step={0.02}
-                      value={effectiveSettings.spacing ?? 0.35}
-                      onChange={(e) => handleSplineSettingChange({ spacing: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Diya Scale Slider */}
-                  <div className="space-y-1">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-semibold text-[#4B382C]">Diya Scale:</span>
-                      <span className="font-mono font-bold text-[#B85F45]">
-                        {(effectiveSettings.scale ?? 1.0).toFixed(1)}x
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.2}
-                      max={3.0}
-                      step={0.1}
-                      value={effectiveSettings.scale ?? 1.0}
-                      onChange={(e) => handleSplineSettingChange({ scale: parseFloat(e.target.value) })}
-                      className="w-full h-1.5 bg-[#EADECF] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* 5. Placed Spline List Shelf */}
-            <div className="space-y-2 pt-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-[#4B382C]">Placed Features ({splines.length}):</span>
-                {splines.length > 0 && (
-                  <button
-                    onClick={clearAllSplines}
-                    className="text-[11px] text-[#DC2626] hover:underline cursor-pointer font-medium"
-                  >
-                    Clear All
-                  </button>
-                )}
               </div>
 
-              {splines.length === 0 ? (
-                <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center text-xs text-[#8D7666]">
-                  No spline structures placed.
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                  {splines.map((spline, idx) => {
-                    const isSelected = selectedSplineId === spline.id;
-                    const typeLabel =
-                      spline.type === 'steps'
-                        ? 'Stone Steps'
-                        : spline.type === 'flags'
-                        ? 'Saffron Flags'
-                        : 'Festive Diyas';
+              {/* A. DRAW MODE */}
+              {splineMode === 'draw' && (
+                <div className="space-y-3.5">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="font-semibold text-[#5C4638]">Path Points:</span>
+                      <span className="font-bold text-[#B85F45]">
+                        {currentSplinePoints.length} {currentSplinePoints.length < 2 ? '(Min 2 needed)' : '✓ Ready'}
+                      </span>
+                    </div>
 
-                    return (
-                      <div
-                        key={spline.id}
-                        onClick={() => setSelectedSplineId(isSelected ? null : spline.id)}
-                        className={`p-2 rounded-lg border text-xs transition-all cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-[#FEF3C7] border-[#F59E0B] shadow-sm'
-                            : 'bg-[#FAF8F5] border-[#D9C9B4] hover:bg-white'
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => {
+                          const id = finishSpline();
+                          if (id) {
+                            setToastMessage('Path created on fort terrain!');
+                          }
+                        }}
+                        disabled={currentSplinePoints.length < 2}
+                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ${
+                          currentSplinePoints.length >= 2
+                            ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
+                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <div className="flex items-center gap-2">
-                          {spline.type === 'steps' && <TbStairs className="w-4 h-4 text-[#8D7666]" />}
-                          {spline.type === 'flags' && <TbFlag className="w-4 h-4 text-[#FF7722]" />}
-                          {spline.type === 'diyas' && <TbFlame className="w-4 h-4 text-[#F59E0B]" />}
-                          <div>
-                            <div className="font-bold text-[#4B382C]">
-                              #{idx + 1} {typeLabel}
-                            </div>
-                            <div className="text-[10px] text-[#8D7666]">
-                              {spline.points.length} nodes
-                            </div>
+                        <TbCheck className="w-4 h-4" />
+                        Finish Path
+                      </button>
+
+                      {currentSplinePoints.length > 0 && (
+                        <button
+                          onClick={cancelSpline}
+                          title="Cancel Path"
+                          className="p-2 rounded-xl bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer"
+                        >
+                          <TbX className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3 Spline Types */}
+                  <div>
+                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">Feature Type to Place</label>
+                    <div className="grid grid-cols-3 gap-1.5 mt-1">
+                      {[
+                        { id: 'steps' as SplineConversionType, label: 'Steps', icon: TbStairs },
+                        { id: 'flags' as SplineConversionType, label: 'Flags', icon: TbFlag },
+                        { id: 'diyas' as SplineConversionType, label: 'Diyas', icon: TbFlame },
+                      ].map((t) => {
+                        const Icon = t.icon;
+                        const isSelected = splineConversionType === t.id;
+
+                        return (
+                          <button
+                            key={t.id}
+                            onClick={() => handleConversionTypeChange(t.id)}
+                            className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-center transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#4B382C] text-[#FAF8F5] border-[#38281E] shadow-sm'
+                                : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-[#EADECF]'
+                            }`}
+                          >
+                            <Icon className="w-4 h-4 mb-0.5 text-[#B85F45]" />
+                            <span className="font-semibold text-[10px]">{t.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Specs */}
+                  {splineConversionType === 'steps' && (
+                    <div className="space-y-2.5">
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Stair Width</span>
+                          <span className="text-[#8D7666]">{((splineSettings.stepWidth || 0.06) * 100).toFixed(0)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.03"
+                          max="0.15"
+                          step="0.01"
+                          value={splineSettings.stepWidth || 0.06}
+                          onChange={(e) => setSplineSettings({ stepWidth: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Tread Depth</span>
+                          <span className="text-[#8D7666]">{((splineSettings.stepRun || 0.025) * 100).toFixed(1)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.015"
+                          max="0.06"
+                          step="0.005"
+                          value={splineSettings.stepRun || 0.025}
+                          onChange={(e) => setSplineSettings({ stepRun: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Step Rise Height</span>
+                          <span className="text-[#8D7666]">{((splineSettings.stepRise || 0.01) * 100).toFixed(1)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.005"
+                          max="0.03"
+                          step="0.002"
+                          value={splineSettings.stepRise || 0.01}
+                          onChange={(e) => setSplineSettings({ stepRise: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Step Spacing</span>
+                          <span className="text-[#8D7666]">{((splineSettings.stepSpacing || 0.025) * 100).toFixed(1)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.015"
+                          max="0.06"
+                          step="0.005"
+                          value={splineSettings.stepSpacing || 0.025}
+                          onChange={(e) => setSplineSettings({ stepSpacing: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Path Offset</span>
+                          <span className="text-[#8D7666]">{((splineSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-0.05"
+                          max="0.05"
+                          step="0.005"
+                          value={splineSettings.stepOffset || 0.0}
+                          onChange={(e) => setSplineSettings({ stepOffset: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Step Scale</span>
+                          <span className="text-[#8D7666]">{(splineSettings.scale || 1.0).toFixed(1)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="2.5"
+                          step="0.1"
+                          value={splineSettings.scale || 1.0}
+                          onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {splineConversionType !== 'steps' && (
+                    <div className="space-y-2.5">
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Item Spacing</span>
+                          <span className="text-[#8D7666]">{((splineSettings.spacing || 0.20) * 100).toFixed(0)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.10"
+                          max="0.80"
+                          step="0.05"
+                          value={splineSettings.spacing || 0.20}
+                          onChange={(e) => setSplineSettings({ spacing: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Path Offset</span>
+                          <span className="text-[#8D7666]">{((splineSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="-0.10"
+                          max="0.10"
+                          step="0.01"
+                          value={splineSettings.stepOffset || 0.0}
+                          onChange={(e) => setSplineSettings({ stepOffset: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Item Scale</span>
+                          <span className="text-[#8D7666]">{(splineSettings.scale || 1.0).toFixed(1)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.5"
+                          max="2.5"
+                          step="0.1"
+                          value={splineSettings.scale || 1.0}
+                          onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* B. TRANSFORM MODE */}
+              {splineMode === 'transform' && (
+                <div className="space-y-3">
+                  {selectedSplineId ? (
+                    <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                      <div className="text-xs font-bold text-[#4B382C]">Camera-Relative Nudge</div>
+
+                      {/* Directional Move Grid: Up/Forward/Down in Row 1; Left/Backward/Right in Row 2 */}
+                      <div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase mb-1">
+                          Move in 3D View
+                        </div>
+                        <div className="space-y-1.5">
+                          {/* Row 1: Up, Forward, Down */}
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <button
+                              onClick={() => moveSplineCameraRelative('up')}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
+                              title="Move Vertically Up (+Y)"
+                            >
+                              ↑ Up
+                            </button>
+                            <button
+                              onClick={() => moveSplineCameraRelative('forward')}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
+                              title="Move Forward in Camera View"
+                            >
+                              ▲ Forward
+                            </button>
+                            <button
+                              onClick={() => moveSplineCameraRelative('down')}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
+                              title="Move Vertically Down (-Y)"
+                            >
+                              ↓ Down
+                            </button>
+                          </div>
+
+                          {/* Row 2: Left, Backward, Right */}
+                          <div className="grid grid-cols-3 gap-1.5">
+                            <button
+                              onClick={() => moveSplineCameraRelative('left')}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
+                              title="Move Left in Camera View"
+                            >
+                              ◀ Left
+                            </button>
+                            <button
+                              onClick={() => moveSplineCameraRelative('backward')}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
+                              title="Move Backward in Camera View"
+                            >
+                              ▼ Backward
+                            </button>
+                            <button
+                              onClick={() => moveSplineCameraRelative('right')}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
+                              title="Move Right in Camera View"
+                            >
+                              ▶ Right
+                            </button>
                           </div>
                         </div>
+                      </div>
 
-                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                          {/* Type toggle buttons */}
-                          {(['steps', 'flags', 'diyas'] as const).map((t) => (
-                            <button
-                              key={t}
-                              onClick={() => updateSplineType(spline.id, t)}
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
-                                spline.type === t
-                                  ? 'bg-[#4B382C] text-white'
-                                  : 'bg-[#EADECF] text-[#634E40] hover:text-[#2B1E16]'
-                              }`}
-                              title={`Convert to ${t}`}
-                            >
-                              {t === 'steps' ? 'Steps' : t === 'flags' ? 'Flags' : 'Diyas'}
-                            </button>
-                          ))}
-
-                          {/* Delete button */}
+                      {/* Rotate */}
+                      <div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase mb-1">Rotate</div>
+                        <div className="grid grid-cols-2 gap-2">
                           <button
-                            onClick={() => deleteSpline(spline.id)}
-                            className="p-1 text-[#DC2626] hover:bg-[#FEE2E2] rounded transition-all cursor-pointer ml-1"
-                            title="Delete this spline structure"
+                            onClick={() => rotateSpline(selectedSplineId, -15)}
+                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
                           >
-                            <TbTrash className="w-3.5 h-3.5" />
+                            ⟲ -15°
+                          </button>
+                          <button
+                            onClick={() => rotateSpline(selectedSplineId, 15)}
+                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
+                          >
+                            ⟳ +15°
                           </button>
                         </div>
                       </div>
-                    );
-                  })}
+
+                      {/* Scale Individual Items along curve */}
+                      <div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase mb-1">
+                          Scale Item Size
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => scaleSplineItem(selectedSplineId, 0.9)}
+                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
+                            title="Make individual steps/flags 10% smaller"
+                          >
+                            ➖ Smaller
+                          </button>
+                          <button
+                            onClick={() => scaleSplineItem(selectedSplineId, 1.1)}
+                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
+                            title="Make individual steps/flags 10% larger"
+                          >
+                            ➕ Larger
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-xs text-[#634E40]">
+                      <div className="font-semibold text-[#4B382C]">
+                        {splines.length === 0
+                          ? 'No paths placed yet.'
+                          : 'Select a path to transform:'}
+                      </div>
+                      <div className="text-[11px] text-[#7A6454]">
+                        {splines.length === 0
+                          ? 'Switch to Draw mode to create stone steps, flags, or diyas.'
+                          : 'Click any path directly in the 3D diorama, or choose below to move, rotate, or scale it:'}
+                      </div>
+                      {splines.length > 0 && (
+                        <div className="flex flex-col gap-1.5 pt-1 max-h-40 overflow-y-auto">
+                          {splines.map((s, idx) => (
+                            <button
+                              key={s.id}
+                              onClick={() => setSelectedSplineId(s.id)}
+                              className="w-full text-left px-2.5 py-1.5 rounded-lg bg-[#EADECF] hover:bg-[#DFCDBD] font-bold text-xs text-[#4B382C] transition-colors truncate cursor-pointer"
+                            >
+                              {s.name || `${s.type === 'steps' ? 'Stone Steps' : s.type === 'flags' ? 'Bhagwa Flags' : 'Festive Diyas'} ${idx + 1}`}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* C. SELECT MODE: With Deselect, Delete, Edit buttons */}
+              {splineMode === 'select' && (
+                <div className="space-y-3">
+                  {selectedSpline ? (
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
+                      <div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">Selected Path</div>
+                        <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
+                          {selectedSpline.name || `${selectedSpline.type} feature`}
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <button
+                          onClick={() => setSelectedSplineId(null)}
+                          className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbX className="w-3.5 h-3.5" />
+                          Deselect
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            deleteSpline(selectedSpline.id);
+                            setSelectedSplineId(null);
+                          }}
+                          className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbTrash className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+
+                        <button
+                          onClick={() => setSplineMode('transform')}
+                          className="w-full py-1.5 text-xs font-semibold bg-[#4B382C] text-[#FAF8F5] rounded-lg hover:bg-[#38281E] cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbArrowsMove className="w-3.5 h-3.5" />
+                          Transform
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-xs text-[#634E40] space-y-2">
+                      <div className="font-bold text-[#4B382C] flex items-center gap-1.5">
+                        <TbPointer className="w-4 h-4 text-[#B85F45]" />
+                        Select & Inspect
+                      </div>
+                      <p className="leading-relaxed">
+                        Click any path, stone steps, or diya trail in the diorama or outliner to view its dimensions, rename it, or remove it.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ------------------------------------------------------------ */}
-        {/* B. STRUCTURE PAINT STUDIO PROPERTIES                         */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'paint' && (
-          <div className="space-y-3.5">
-            {/* Brush Sizes */}
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#4B382C]">Brush Size:</label>
-              <div className="grid grid-cols-3 gap-1 bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4]">
-                {(['fine', 'medium', 'large'] as BrushSizeType[]).map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setBrushSize(size)}
-                    className={`py-1.5 rounded-lg text-xs font-semibold capitalize transition-all cursor-pointer ${
-                      brushSize === size
-                        ? 'bg-[#4B382C] text-white shadow-sm'
-                        : 'text-[#634E40] hover:text-[#2B1E16]'
-                    }`}
-                  >
-                    {size === 'large'
-                      ? t.tools.paint.large
-                      : size === 'medium'
-                      ? t.tools.paint.medium
-                      : t.tools.paint.fine}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 6 Maratha Authentic Pigments */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#4B382C]">Earth Pigment Palette:</label>
-              <div className="grid grid-cols-3 gap-2">
-                {PAINT_COLORS.map((col) => {
-                  const isSelected = paintColor.toLowerCase() === col.hex.toLowerCase();
-                  return (
-                    <button
-                      key={col.id}
-                      onClick={() => setPaintColor(col.hex)}
-                      className={`flex flex-col items-center p-2 rounded-xl border-2 transition-all cursor-pointer relative ${
-                        isSelected
-                          ? 'border-[#4B382C] bg-white shadow-md scale-102'
-                          : 'border-transparent bg-[#FAF8F5] hover:bg-white'
-                      }`}
-                    >
-                      <div
-                        className="w-6 h-6 rounded-full border border-black/20 flex items-center justify-center mb-1"
-                        style={{ backgroundColor: col.hex }}
-                      >
-                        {isSelected && (
-                          <TbCheck
-                            className={`w-3.5 h-3.5 ${
-                              col.id === 'chuna' ? 'text-black' : 'text-white'
-                            }`}
-                          />
-                        )}
-                      </div>
-                      <span className="text-[10px] font-semibold text-[#4B382C] text-center leading-tight">
-                        {col.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Steady Hand Stabilizer */}
-            <button
-              onClick={() => setSteadyHand(!steadyHand)}
-              className={`w-full flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
-                steadyHand
-                  ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
-                  : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <TbSparkles className={`w-4 h-4 ${steadyHand ? 'text-[#F59E0B]' : 'text-[#8D7666]'}`} />
-                <span className="text-xs font-semibold">Steady Hand Stabilizer</span>
-              </div>
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${steadyHand ? 'bg-black/30 text-[#FAF8F5]' : 'bg-[#E4D8CB]'}`}>
-                {steadyHand ? 'ON' : 'OFF'}
-              </span>
-            </button>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------ */}
-        {/* C. FOLIAGE TOOL PROPERTIES                                   */}
-        {/* ------------------------------------------------------------ */}
-        {(activeTool === 'foliage' || activeTool === 'grass') && (
-          <div className="space-y-3.5">
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                onClick={() => setFoliageSubTool('grass')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  foliageSubTool === 'grass'
-                    ? 'bg-[#588157] text-white shadow-sm'
-                    : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4]'
-                }`}
-              >
-                <TbPlant2 className="w-4 h-4" />
-                <span>Grass / Moss</span>
-              </button>
-              <button
-                onClick={() => setFoliageSubTool('path')}
-                className={`flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  foliageSubTool === 'path'
-                    ? 'bg-[#8F4938] text-white shadow-sm'
-                    : 'bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4]'
-                }`}
-              >
-                <span>Foliage Path</span>
-              </button>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Foliage Radius:</span>
-                <span className="font-mono text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
-              </div>
-              <input
-                type="range"
-                min="0.3"
-                max="2.5"
-                step="0.1"
-                value={brushRadius}
-                onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                className="w-full accent-[#588157] cursor-pointer"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------ */}
-        {/* D. SOIL LUMP PIPELINE TOOL                                   */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'soil' && (
-          <div className="space-y-3.5">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Lump Radius:</span>
-                <span className="font-mono text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
-              </div>
-              <input
-                type="range"
-                min="0.3"
-                max="2.2"
-                step="0.1"
-                value={brushRadius}
-                onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                className="w-full accent-[#B85F45] cursor-pointer"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Pour Height:</span>
-                <span className="font-mono text-[#8D7666]">{brushStrength.toFixed(2)}</span>
-              </div>
-              <input
-                type="range"
-                min="0.1"
-                max="1.0"
-                step="0.05"
-                value={brushStrength}
-                onChange={(e) => setBrushStrength(parseFloat(e.target.value))}
-                className="w-full accent-[#B85F45] cursor-pointer"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------ */}
-        {/* E. WATER PIPELINE TOOL                                       */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'water' && (
-          <div className="space-y-3.5">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Water Spread:</span>
-                <span className="font-mono text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
-              </div>
-              <input
-                type="range"
-                min="0.2"
-                max="2.0"
-                step="0.1"
-                value={brushRadius}
-                onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                className="w-full accent-[#0284C7] cursor-pointer"
-              />
-            </div>
-
-            <button
-              onClick={() => setWaterMode(waterMode === 'tarpaulin' ? 'reflective' : 'tarpaulin')}
-              className="w-full flex items-center justify-between p-2.5 rounded-xl border border-[#D9C9B4] bg-[#FAF8F5] hover:bg-white text-xs font-semibold text-[#4B382C] transition-all cursor-pointer"
-            >
-              <div className="flex items-center gap-2">
-                <TbRipple className="w-4 h-4 text-[#0284C7]" />
-                <span>Surface Style</span>
-              </div>
-              <span className="text-[10px] font-bold text-[#0284C7] uppercase">
-                {waterMode === 'tarpaulin' ? 'Blue Tarpaulin' : 'Clean Water'}
-              </span>
-            </button>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------ */}
-        {/* F. SHAPE MUD PIPELINE TOOL                                   */}
-        {/* ------------------------------------------------------------ */}
-        {(activeTool === 'shape' || activeTool === 'shape_side' || activeTool === 'shape_top') && (
-          <div className="space-y-3.5">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[#4B382C]">Push & Mold Direction:</label>
-              <div className="grid grid-cols-3 gap-1 bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4]">
-                <button
-                  onClick={() => setShapeSubTool('push_left')}
-                  className={`py-1.5 px-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                    shapeSubTool === 'push_left'
-                      ? 'bg-[#4B382C] text-white shadow-sm'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                >
-                  <TbArrowsLeft className="w-4 h-4" />
-                  <span className="text-[10px]">Push Left</span>
-                </button>
-                <button
-                  onClick={() => setShapeSubTool('push_right')}
-                  className={`py-1.5 px-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                    shapeSubTool === 'push_right'
-                      ? 'bg-[#4B382C] text-white shadow-sm'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                >
-                  <TbArrowsRight className="w-4 h-4" />
-                  <span className="text-[10px]">Push Right</span>
-                </button>
-                <button
-                  onClick={() => setShapeSubTool('pat_top')}
-                  className={`py-1.5 px-1 rounded-lg text-xs font-semibold transition-all cursor-pointer flex flex-col items-center gap-1 ${
-                    shapeSubTool === 'pat_top'
-                      ? 'bg-[#4B382C] text-white shadow-sm'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                >
-                  <TbArrowDownBar className="w-4 h-4" />
-                  <span className="text-[10px]">Pat Top</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#4B382C]">Tool Size:</span>
-                <span className="font-mono text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
-              </div>
-              <input
-                type="range"
-                min="0.3"
-                max="2.0"
-                step="0.1"
-                value={brushRadius}
-                onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                className="w-full accent-[#4B382C] cursor-pointer"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ------------------------------------------------------------ */}
-        {/* G. DRYING TOOL                                               */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'dry' && (
-          <div className="space-y-3.5">
-            <button
-              onClick={() => setMudLocked(!mudLocked)}
-              className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
-                mudLocked
-                  ? 'bg-[#588157] text-white border-[#3F5E3E] shadow-sm'
-                  : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-white'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                {mudLocked ? <TbLock className="w-5 h-5" /> : <TbSun className="w-5 h-5 text-[#F59E0B]" />}
-                <span className="text-xs font-bold">
-                  {mudLocked ? 'Structure Dried & Locked' : 'Solidify & Dry Mud'}
+          {/* ======================================================== */}
+          {/* 3. TERRAIN SCULPTING TOOL (Sliders only; modes on right)  */}
+          {/* ======================================================== */}
+          {activeTool === 'terrain' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
+                  <TbMountain className="w-4 h-4 text-[#B85F45]" />
+                  <span>
+                    {terrainSubTool === 'elevate'
+                      ? 'Peak Sculpting'
+                      : terrainSubTool === 'plateau'
+                      ? 'Plateau Flattening'
+                      : terrainSubTool === 'slope'
+                      ? 'Ramp Grading'
+                      : terrainSubTool === 'lower'
+                      ? 'Gorge Excavation'
+                      : terrainSubTool === 'trench'
+                      ? 'Trench Carving'
+                      : terrainSubTool === 'smooth'
+                      ? 'Terrain Smoothing'
+                      : terrainSubTool === 'pond'
+                      ? 'Pond Basin'
+                      : 'Mud Retexturing'}
+                  </span>
+                </div>
+                <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                  {terrainSubTool}
                 </span>
               </div>
-              <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/20 text-[#FAF8F5]">L</kbd>
-            </button>
-          </div>
-        )}
 
-        {/* ------------------------------------------------------------ */}
-        {/* H. WALLS / SPLINE / FIGURINES MINIMAL ACTIONS                */}
-        {/* ------------------------------------------------------------ */}
-        {activeTool === 'prop' && (
-          <div className="space-y-2">
-            <button
-              onClick={() => setPropDrawerOpen(true)}
-              className="w-full py-2.5 px-3 rounded-xl bg-[#4B382C] text-white text-xs font-bold hover:bg-[#38281E] transition-colors cursor-pointer text-center flex items-center justify-center gap-2 shadow-sm"
-            >
-              <TbUsersGroup className="w-4 h-4 text-[#F59E0B]" />
-              <span>Open Figurine Catalog</span>
-            </button>
-          </div>
-        )}
-      </div>
+              {/* Sliders for active terrain brush */}
+              <div className="space-y-3 pt-1">
+                <div>
+                  <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <span>Brush Radius</span>
+                    <span className="text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.2"
+                    max="2.5"
+                    step="0.1"
+                    value={brushRadius}
+                    onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
+                    className="w-full accent-[#B85F45] cursor-pointer"
+                  />
+                </div>
 
-      {/* ============================================================ */}
-      {/* 4. DRAGGABLE VERTICAL BORDER RESIZE HANDLE                   */}
-      {/* ============================================================ */}
-      <div
-        onMouseDown={handleWidthMouseDown}
-        className="absolute top-0 right-0 bottom-0 w-2 cursor-col-resize hover:bg-[#B85F45]/40 active:bg-[#B85F45] transition-colors z-40 flex items-center justify-center group"
-        title="Drag left or right to resize sidebar width"
-      >
-        <div className="w-[1.5px] h-8 rounded-full bg-[#B39E8C] group-hover:bg-[#B85F45] transition-colors" />
-      </div>
-    </aside>
-  </>
+                <div>
+                  <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <span>Brush Strength</span>
+                    <span className="text-[#8D7666]">{(brushStrength * 100).toFixed(0)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="1.0"
+                    step="0.05"
+                    value={brushStrength}
+                    onChange={(e) => setBrushStrength(parseFloat(e.target.value))}
+                    className="w-full accent-[#B85F45] cursor-pointer"
+                  />
+                </div>
+
+                {terrainSubTool === 'plateau' && (
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span>Target Height</span>
+                      <span className="text-[#8D7666]">{plateauHeight.toFixed(2)}m</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="2.5"
+                      step="0.05"
+                      value={plateauHeight}
+                      onChange={(e) => setPlateauHeight(parseFloat(e.target.value))}
+                      className="w-full accent-[#B85F45] cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                {terrainSubTool === 'slope' && (
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span>Slope Incline Angle</span>
+                      <span className="text-[#8D7666]">{slopeAngle}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="5"
+                      max="75"
+                      step="5"
+                      value={slopeAngle}
+                      onChange={(e) => setSlopeAngle(parseInt(e.target.value, 10))}
+                      className="w-full accent-[#B85F45] cursor-pointer"
+                    />
+                  </div>
+                )}
+
+                <div className="pt-2 border-t border-[#D9C9B4]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-[#4B382C]">Lock Mud Sculpting</span>
+                    <input
+                      type="checkbox"
+                      checked={mudLocked}
+                      onChange={(e) => setMudLocked(e.target.checked)}
+                      className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* 4. PAINT TOOL                                             */}
+          {/* ======================================================== */}
+          {activeTool === 'paint' && (
+            <div className="space-y-4">
+              <label className="text-[10px] font-bold text-[#8D7666] uppercase">Courtyard Pigments</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { name: 'Basalt Charcoal', color: '#2B1E16' },
+                  { name: 'Red Laterite', color: '#B85F45' },
+                  { name: 'Courtyard Sand', color: '#D8C09D' },
+                  { name: 'Lime Mortar', color: '#FAF8F5' },
+                  { name: 'Wet Silt', color: '#4B382C' },
+                  { name: 'Bhagwa Saffron', color: '#E85D04' },
+                ].map((c) => (
+                  <button
+                    key={c.color}
+                    onClick={() => setPaintColor(c.color)}
+                    style={{ backgroundColor: c.color }}
+                    title={c.name}
+                    className={`h-10 rounded-xl border-2 transition-all cursor-pointer ${
+                      paintColor === c.color ? 'border-amber-400 scale-105 shadow-md' : 'border-black/20 hover:scale-102'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <div>
+                <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                  <span>Brush Radius</span>
+                  <span className="text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.2"
+                  max="2.5"
+                  step="0.1"
+                  value={brushRadius}
+                  onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
+                  className="w-full accent-[#B85F45] cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* 5. FIGURINES / PROPS TOOL                                 */}
+          {/* ======================================================== */}
+          {activeTool === 'prop' && (
+            <div className="space-y-3">
+              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
+                <TbUsersGroup className="w-8 h-8 mx-auto text-[#B85F45]" />
+                <div className="font-bold text-[#4B382C]">Historical Figurines</div>
+                <p className="text-[11px] text-[#634E40] leading-relaxed">
+                  Place Mavale soldiers, royal flags, tutari musicians, and cannons on your ramparts.
+                </p>
+                <button
+                  onClick={() => setPropDrawerOpen(true)}
+                  className="w-full py-2 bg-[#4B382C] text-[#FAF8F5] rounded-xl font-bold text-xs hover:bg-[#38281E] cursor-pointer"
+                >
+                  Open Figurines Vault
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
   );
 };

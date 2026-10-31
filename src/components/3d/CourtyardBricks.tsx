@@ -198,6 +198,7 @@ export const CourtyardBricks: React.FC<CourtyardBricksProps> = ({ nightMode = fa
         args={[roundedBrickGeometry, undefined, totalBricks]}
         castShadow
         receiveShadow
+        raycast={() => null}
       >
         <meshStandardMaterial
           roughness={0.85}

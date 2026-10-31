@@ -189,8 +189,7 @@ export const TopToolBar: React.FC = () => {
           <div className="flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
             <div className="flex items-center gap-1 shrink-0">
               {PRIMARY_KILLA_TOOLS.map(renderMobileSymbolButton)}
-              <div className="w-[1.5px] h-4 bg-[#C5B3A1] mx-0.5 shrink-0" />
-              {SECONDARY_SOIL_TOOLS.map(renderMobileSymbolButton)}
+              {/* Soil pipeline tools hidden from secondary bar for now */}
             </div>
             {/* Minimize Chevron */}
             <button
@@ -279,8 +278,7 @@ export const TopToolBar: React.FC = () => {
           {/* Left: Tools */}
           <div className="flex items-center gap-1 shrink-0">
             {PRIMARY_KILLA_TOOLS.map(renderDesktopToolButton)}
-            <div className="w-[1.5px] h-5 bg-[#C5B3A1] mx-1 shrink-0" />
-            {SECONDARY_SOIL_TOOLS.map(renderDesktopToolButton)}
+            {/* Soil pipeline tools hidden from secondary bar for now */}
           </div>
 
           {/* Right: Camera & Viewport Controls */}

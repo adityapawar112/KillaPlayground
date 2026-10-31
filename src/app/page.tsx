@@ -127,19 +127,8 @@ export default function HomePage() {
       } else if (e.key === '6') {
         store.setActiveTool('prop');
         e.preventDefault();
-      } else if (e.key === '7') {
-        store.setActiveTool('soil');
-        e.preventDefault();
-      } else if (e.key === '8') {
-        store.setActiveTool('water');
-        e.preventDefault();
-      } else if (e.key === '9') {
-        store.setActiveTool(store.activeTool === 'shape_side' ? 'shape_top' : 'shape_side');
-        e.preventDefault();
-      } else if (e.key === '0') {
-        store.setActiveTool('dry');
-        e.preventDefault();
       }
+      // Keys 7-0 (soil pipeline tools) hidden for now
 
       // Brush radius adjustment ([ and ])
       else if (e.key === '[') {

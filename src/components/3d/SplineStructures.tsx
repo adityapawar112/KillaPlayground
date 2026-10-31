@@ -17,6 +17,7 @@ import {
   createDiyaFlameGeometry,
 } from '@/lib/spline/splineGeometry';
 import { SplinePath } from '@/lib/spline/splineTypes';
+import { handleStructurePointerDown, handleStructurePointerMove } from '@/lib/interaction/surfaceToolInteraction';
 
 // ============================================================================
 // 1. DRAFT SPLINE CURVE & NODES PREVIEW COMPONENT
@@ -123,9 +124,13 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
     <group
       onClick={(e) => {
         if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        const editor = useEditorStore.getState();
+        if (editor.activeTool !== 'spline' || editor.splineMode !== 'select') return;
         e.stopPropagation();
         onSelect();
       }}
+      onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
+      onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
       onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
       onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
     >
@@ -224,9 +229,13 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
     <group
       onClick={(e) => {
         if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        const editor = useEditorStore.getState();
+        if (editor.activeTool !== 'spline' || editor.splineMode !== 'select') return;
         e.stopPropagation();
         onSelect();
       }}
+      onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
+      onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
       onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
       onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
       name={`FlagGroup_${spline.id}`}
@@ -330,9 +339,13 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
     <group
       onClick={(e) => {
         if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        const editor = useEditorStore.getState();
+        if (editor.activeTool !== 'spline' || editor.splineMode !== 'select') return;
         e.stopPropagation();
         onSelect();
       }}
+      onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
+      onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
       onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
       onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
       name={`DiyaGroup_${spline.id}`}

@@ -17,7 +17,10 @@ import {
 } from '../walls/wallTypes';
 import { SnapResult } from '../walls/wallGeometry';
 import { SplineConversionType, SplineSettings, SplinePath, SplineMode } from '../spline/splineTypes';
-export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode };
+import { FoliageInstance, FoliageSubTool } from '../foliage/foliageTypes';
+import { getFoliageById } from '../foliage/foliageManifest';
+import { foliageTextureManager } from '../foliage/foliageTextureManager';
+export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool };
 
 export interface HoveredElement {
   type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop';
@@ -36,6 +39,7 @@ export const SavedProjectSchema = z.object({
   citadelKeeps: z.array(z.any()).optional().default([]),
   placedProps: z.array(z.any()).default([]),
   pondWaterFeatures: z.array(z.any()).optional().default([]),
+  foliageInstances: z.array(z.any()).optional().default([]),
   timestamp: z.number().optional(),
 });
 
@@ -68,7 +72,6 @@ export type TerrainSubTool =
   | 'pond'
   | 'soil'
   | 'retexture';
-export type FoliageSubTool = 'grass' | 'path';
 
 export type BrushSizeType = 'large' | 'medium' | 'fine';
 
@@ -99,6 +102,7 @@ export interface SavedProject {
     citadelKeeps?: CitadelKeep[];
     placedProps: PlacedProp[];
     pondWaterFeatures?: PondWaterFeature[];
+    foliageInstances?: FoliageInstance[];
     fortTitle: string;
     builderName: string;
     templateId: string;
@@ -125,8 +129,6 @@ interface EditorState {
   setSlopeAlignment: (align: 'camera' | 'terrain') => void;
   slopeIncline: 'incline' | 'decline';
   setSlopeIncline: (incline: 'incline' | 'decline') => void;
-  foliageSubTool: FoliageSubTool;
-  setFoliageSubTool: (st: FoliageSubTool) => void;
   brushRadius: number; // 0.2 to 2.5
   brushStrength: number; // 0.1 to 1.0
   brushSize: BrushSizeType;
@@ -154,6 +156,35 @@ interface EditorState {
   setPaintCategoryFilter: (cat: string) => void;
   paintSearchQuery: string;
   setPaintSearchQuery: (query: string) => void;
+
+  // 3D Foliage & Nature Scatter State (Ticket 07)
+  foliageSubTool: FoliageSubTool;
+  setFoliageSubTool: (st: FoliageSubTool) => void;
+  foliageSelectMode: 'single' | 'multi';
+  setFoliageSelectMode: (mode: 'single' | 'multi') => void;
+  selectedFoliageId: string;
+  setSelectedFoliageId: (id: string) => void;
+  selectedFoliageIds: string[];
+  setSelectedFoliageIds: (ids: string[]) => void;
+  toggleFoliageSelectedId: (id: string) => void;
+  clearFoliageSelection: () => void;
+  foliageBrushRadius: number;
+  setFoliageBrushRadius: (r: number) => void;
+  foliageBrushDensity: number;
+  setFoliageBrushDensity: (d: number) => void;
+  foliageScaleJitter: number;
+  setFoliageScaleJitter: (j: number) => void;
+  foliageNormalAlign: number;
+  setFoliageNormalAlign: (a: number) => void;
+  foliageCategoryFilter: string;
+  setFoliageCategoryFilter: (cat: string) => void;
+  foliageSearchQuery: string;
+  setFoliageSearchQuery: (query: string) => void;
+  foliageInstances: FoliageInstance[];
+  addFoliageInstances: (instances: FoliageInstance[]) => void;
+  removeFoliageInstances: (ids: string[]) => void;
+  clearAllFoliage: () => void;
+  setFoliageInstances: (instances: FoliageInstance[]) => void;
 
   // Local Pond Water Planes
   pondWaterFeatures: PondWaterFeature[];
@@ -261,6 +292,8 @@ interface EditorState {
   toggleMobileTopBar: () => void;
   showBottomStatusBar: boolean;
   toggleBottomStatusBar: () => void;
+  collapseAllPanels: () => void;
+  expandAllPanels: () => void;
 
   isPropDrawerOpen: boolean;
   isPosterModalOpen: boolean;
@@ -422,8 +455,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setSlopeAlignment: (slopeAlignment) => set({ slopeAlignment }),
   slopeIncline: 'incline',
   setSlopeIncline: (slopeIncline) => set({ slopeIncline }),
-  foliageSubTool: 'grass',
-  setFoliageSubTool: (foliageSubTool) => set({ foliageSubTool }),
   brushRadius: 0.8,
   brushStrength: 0.5,
   brushSize: 'medium',
@@ -451,6 +482,82 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setPaintCategoryFilter: (paintCategoryFilter) => set({ paintCategoryFilter }),
   paintSearchQuery: '',
   setPaintSearchQuery: (paintSearchQuery) => set({ paintSearchQuery }),
+
+  // 3D Foliage & Nature Scatter Defaults (Ticket 07)
+  foliageSubTool: 'scatter',
+  setFoliageSubTool: (foliageSubTool) => set({ foliageSubTool }),
+  foliageSelectMode: 'single',
+  setFoliageSelectMode: (foliageSelectMode) => set({ foliageSelectMode }),
+  selectedFoliageId: 'banyan_broad_canopy',
+  setSelectedFoliageId: (selectedFoliageId) => {
+    const item = getFoliageById(selectedFoliageId);
+    if (item) {
+      foliageTextureManager.preload(item.spritePath);
+    }
+    set({
+      selectedFoliageId,
+      selectedFoliageIds: [selectedFoliageId],
+    });
+  },
+  selectedFoliageIds: ['banyan_broad_canopy'],
+  setSelectedFoliageIds: (selectedFoliageIds) => {
+    selectedFoliageIds.forEach((id) => {
+      const it = getFoliageById(id);
+      if (it) foliageTextureManager.preload(it.spritePath);
+    });
+    set({
+      selectedFoliageIds,
+      selectedFoliageId: selectedFoliageIds[0] || get().selectedFoliageId,
+    });
+  },
+  toggleFoliageSelectedId: (id) => {
+    const { selectedFoliageIds } = get();
+    const item = getFoliageById(id);
+    if (item) foliageTextureManager.preload(item.spritePath);
+
+    if (selectedFoliageIds.includes(id)) {
+      const next = selectedFoliageIds.filter((item) => item !== id);
+      set({
+        selectedFoliageIds: next,
+        selectedFoliageId: next[0] || '',
+      });
+    } else {
+      const next = [...selectedFoliageIds, id];
+      set({
+        selectedFoliageIds: next,
+        selectedFoliageId: id,
+      });
+    }
+  },
+  clearFoliageSelection: () => set({ selectedFoliageIds: [] }),
+  foliageBrushRadius: 0.6,
+  setFoliageBrushRadius: (foliageBrushRadius) => set({ foliageBrushRadius }),
+  foliageBrushDensity: 6,
+  setFoliageBrushDensity: (foliageBrushDensity) => set({ foliageBrushDensity }),
+  foliageScaleJitter: 0.25,
+  setFoliageScaleJitter: (foliageScaleJitter) => set({ foliageScaleJitter }),
+  foliageNormalAlign: 0.15,
+  setFoliageNormalAlign: (foliageNormalAlign) => set({ foliageNormalAlign }),
+  foliageCategoryFilter: 'all',
+  setFoliageCategoryFilter: (foliageCategoryFilter) => set({ foliageCategoryFilter }),
+  foliageSearchQuery: '',
+  setFoliageSearchQuery: (foliageSearchQuery) => set({ foliageSearchQuery }),
+  foliageInstances: [],
+  addFoliageInstances: (instances) => {
+    if (instances.length === 0) return;
+    set((state) => ({
+      foliageInstances: [...state.foliageInstances, ...instances],
+    }));
+  },
+  removeFoliageInstances: (ids) => {
+    if (ids.length === 0) return;
+    const idSet = new Set(ids);
+    set((state) => ({
+      foliageInstances: state.foliageInstances.filter((inst) => !idSet.has(inst.id)),
+    }));
+  },
+  clearAllFoliage: () => set({ foliageInstances: [] }),
+  setFoliageInstances: (foliageInstances) => set({ foliageInstances }),
 
   pondWaterFeatures: [],
   addPondWater: (pond) => {
@@ -969,6 +1076,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleMobileTopBar: () => set((state) => ({ isMobileTopBarMinimized: !state.isMobileTopBarMinimized })),
   showBottomStatusBar: true,
   toggleBottomStatusBar: () => set((state) => ({ showBottomStatusBar: !state.showBottomStatusBar })),
+  collapseAllPanels: () =>
+    set({
+      isMobileSidebarMinimized: true,
+      isToolModeMinimized: true,
+      isRightSidebarMinimized: true,
+      isMobileTopBarMinimized: true,
+      showContextualDock: false,
+      showBottomStatusBar: false,
+    }),
+  expandAllPanels: () =>
+    set({
+      showLeftToolbar: true,
+      isMobileSidebarMinimized: false,
+      isToolModeMinimized: false,
+      isRightSidebarMinimized: false,
+      isMobileTopBarMinimized: false,
+      showContextualDock: true,
+      showBottomStatusBar: true,
+    }),
 
   isPropDrawerOpen: false,
   isPosterModalOpen: false,
@@ -1030,7 +1156,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   saveProjectLocally: (name) => {
-    const { splines, walls, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
+    const { splines, walls, placedProps, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
     const projectName = name?.trim() || fortTitle || 'Untitled Killa';
     const projectId = `killa_${Date.now()}`;
     const newProject: SavedProject = {
@@ -1043,6 +1169,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         walls,
         placedProps,
         pondWaterFeatures,
+        foliageInstances: foliageInstances || [],
         fortTitle: projectName,
         builderName,
         templateId,
@@ -1082,6 +1209,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       walls: proj.data.walls || [],
       placedProps: proj.data.placedProps || [],
       pondWaterFeatures: proj.data.pondWaterFeatures || [],
+      foliageInstances: proj.data.foliageInstances || [],
       fortTitle: proj.data.fortTitle || proj.name,
       builderName: proj.data.builderName || 'Mavala Builder',
       templateId: proj.data.templateId || 'raigad',
@@ -1106,7 +1234,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   exportProjectData: () => {
-    const { splines, walls, placedProps, pondWaterFeatures, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const { splines, walls, placedProps, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode } = get();
     const payload = {
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
@@ -1119,6 +1247,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       walls,
       placedProps,
       pondWaterFeatures,
+      foliageInstances: foliageInstances || [],
     };
     return JSON.stringify(payload, null, 2);
   },
@@ -1143,6 +1272,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         walls: (data as any).walls || [],
         placedProps: data.placedProps,
         pondWaterFeatures: data.pondWaterFeatures || [],
+        foliageInstances: (data as any).foliageInstances || [],
         isStartupModalOpen: false,
       });
 
@@ -1437,6 +1567,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedComponent: null,
       placedProps: [],
       pondWaterFeatures: [],
+      foliageInstances: [],
       selectedPropId: null,
       selectedPropType: null,
       mudLocked: false,
@@ -1447,4 +1578,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
 if (typeof window !== 'undefined') {
   (window as any).__editorStore = useEditorStore;
+  const defaultFoliage = getFoliageById('banyan_broad_canopy');
+  if (defaultFoliage) foliageTextureManager.preload(defaultFoliage.spritePath);
 }

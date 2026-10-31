@@ -9,6 +9,7 @@ import {
   syncStateToGeometry,
   TerrainBrushOptions,
   getTerrainNormalAt,
+  getTerrainHeightAt,
 } from '@/lib/terrain/terrainBuffer';
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -16,6 +17,9 @@ import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { calculateMagneticSnap } from '@/lib/walls/wallGeometry';
 import { TEXTURE_MANIFEST, getTextureById } from '@/lib/textures/textureManifest';
 import { loadTexturesIntoArray } from '@/lib/terrain/terrainPaintBuffer';
+import { FOLIAGE_MANIFEST, getFoliageById } from '@/lib/foliage/foliageManifest';
+import { generateScatterCandidates, eraseFoliageInRadius } from '@/lib/foliage/foliageScatter';
+import { FoliageInstance } from '@/lib/foliage/foliageTypes';
 
 /**
  * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
@@ -40,9 +44,12 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
       case 'elevate':
       case 'paint':
         return '#E85D04'; // Bhagwa saffron
+      case 'scatter':
+      case 'single':
+        return '#16A34A'; // Emerald forest green
       case 'lower':
       case 'erase':
-        return '#8F4938'; // Burnt clay
+        return '#DC2626'; // Burnt clay / crimson
       case 'plateau':
         return '#B58B63'; // Camel stone
       case 'smooth':
@@ -77,30 +84,60 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
 
   if (!visible) return null;
 
+  const isSinglePoint = subTool === 'single';
+
   return (
     <group position={offsetPos} quaternion={quat}>
-      {/* Outer Ring */}
-      <mesh renderOrder={999}>
-        <ringGeometry args={[Math.max(0.05, radius - 0.04), radius, 48]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.88}
-          depthTest={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-      {/* Center Reticle Point */}
-      <mesh renderOrder={999}>
-        <circleGeometry args={[0.04, 16]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.92}
-          depthTest={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      {isSinglePoint ? (
+        <>
+          {/* Single Placement Pinpoint Target Reticle */}
+          <mesh renderOrder={999}>
+            <ringGeometry args={[0.04, 0.06, 32]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.9}
+              depthTest={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+          <mesh renderOrder={999}>
+            <circleGeometry args={[0.02, 16]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.95}
+              depthTest={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </>
+      ) : (
+        <>
+          {/* Outer Radius Ring */}
+          <mesh renderOrder={999}>
+            <ringGeometry args={[Math.max(0.02, radius - 0.035), radius, 48]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.88}
+              depthTest={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+          {/* Center Reticle Point */}
+          <mesh renderOrder={999}>
+            <circleGeometry args={[0.03, 16]} />
+            <meshBasicMaterial
+              color={color}
+              transparent
+              opacity={0.92}
+              depthTest={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </>
+      )}
     </group>
   );
 };
@@ -173,6 +210,8 @@ export const BaseTerrainContent: React.FC = () => {
   const paintBrushRadius = useEditorStore((s) => s.paintBrushRadius);
   const paintSubTool = useEditorStore((s) => s.paintSubTool);
   const paintTextureRepeat = useEditorStore((s) => s.paintTextureRepeat);
+  const foliageBrushRadius = useEditorStore((s) => s.foliageBrushRadius);
+  const foliageSubTool = useEditorStore((s) => s.foliageSubTool);
 
   // Load 52 retro textures into DataArrayTexture asynchronously on client
   useEffect(() => {
@@ -548,9 +587,6 @@ export const BaseTerrainContent: React.FC = () => {
       // Handle Texture Tool Direct Surface Painting (Ticket 06)
       if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
         if (e.button !== 0 || e.altKey) return;
-        if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
-          return;
-        }
         e.stopPropagation();
 
         if (controls) {
@@ -570,6 +606,101 @@ export const BaseTerrainContent: React.FC = () => {
           strength: editor.paintBrushStrength,
           falloff: editor.paintBrushFalloff,
         });
+
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        setCursorVisible(true);
+        invalidate();
+        return;
+      }
+
+      // Handle Foliage Tool Nature Scattering & Pruning (Ticket 07)
+      if (editor.activeTool === 'foliage') {
+        if (e.button !== 0 || e.altKey) return;
+        e.stopPropagation();
+
+        const foliageItem = getFoliageById(editor.selectedFoliageId) || FOLIAGE_MANIFEST[0];
+
+        if (editor.foliageSubTool === 'single') {
+          pushUndo();
+          const norm = computeCursorNormal(e.point, e.face?.normal);
+          const jitterFactor = 1.0 + (Math.random() * 2 - 1) * editor.foliageScaleJitter;
+          const randomYaw = Math.random() * Math.PI * 2;
+
+          const quat = new THREE.Quaternion();
+          const up = new THREE.Vector3(0, 1, 0);
+          const surfaceNorm = new THREE.Vector3(norm[0], norm[1], norm[2]).normalize();
+          const blendedUp = up.clone().lerp(surfaceNorm, editor.foliageNormalAlign).normalize();
+          const alignQuat = new THREE.Quaternion().setFromUnitVectors(up, blendedUp);
+          const yawQuat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), randomYaw);
+          quat.multiplyQuaternions(alignQuat, yawQuat);
+          const euler = new THREE.Euler().setFromQuaternion(quat, 'YXZ');
+
+          const singleInstance: FoliageInstance = {
+            id: `foliage_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            typeId: foliageItem.id,
+            position: [e.point.x, e.point.y, e.point.z],
+            rotation: [euler.x, euler.y, euler.z],
+            scale: [jitterFactor, jitterFactor, jitterFactor],
+          };
+          editor.addFoliageInstances([singleInstance]);
+
+          setCursorPos([e.point.x, e.point.y, e.point.z]);
+          setCursorNormal(norm);
+          setCursorVisible(true);
+          invalidate();
+          return;
+        }
+
+        if (controls) {
+          controls.enabled = false;
+        }
+        isPaintingRef.current = true;
+        pushUndo();
+
+        if (editor.foliageSubTool === 'scatter') {
+          const activeTypeIds =
+            editor.foliageSelectMode === 'multi' && editor.selectedFoliageIds.length > 0
+              ? editor.selectedFoliageIds
+              : [editor.selectedFoliageId || FOLIAGE_MANIFEST[0].id];
+          const activeItems = activeTypeIds.map((id) => getFoliageById(id) || FOLIAGE_MANIFEST[0]);
+          const avgSpacing = activeItems.reduce((acc, item) => acc + item.spacing, 0) / activeItems.length;
+
+          const candidates = generateScatterCandidates({
+            centerX: e.point.x,
+            centerZ: e.point.z,
+            typeId: activeItems[0].id,
+            typeIds: activeTypeIds,
+            spacing: avgSpacing,
+            options: {
+              operation: 'scatter',
+              radius: editor.foliageBrushRadius,
+              density: editor.foliageBrushDensity,
+              scaleJitter: editor.foliageScaleJitter,
+              normalAlign: editor.foliageNormalAlign,
+            },
+            existingInstances: editor.foliageInstances,
+            getHeightAt: (x, z) => getTerrainHeightAt(x, z, stateBuffer),
+            getNormalAt: (x, z) => {
+              const n = getTerrainNormalAt(x, z, stateBuffer);
+              return [n.x, n.y, n.z];
+            },
+          });
+          if (candidates.length > 0) {
+            editor.addFoliageInstances(candidates);
+          }
+        } else if (editor.foliageSubTool === 'erase') {
+          const { erased } = eraseFoliageInRadius(
+            e.point.x,
+            e.point.z,
+            editor.foliageBrushRadius,
+            editor.foliageInstances
+          );
+          if (erased.length > 0) {
+            editor.removeFoliageInstances(erased.map((item) => item.id));
+          }
+        }
 
         const norm = computeCursorNormal(e.point, e.face?.normal);
         setCursorPos([e.point.x, e.point.y, e.point.z]);
@@ -692,6 +823,63 @@ export const BaseTerrainContent: React.FC = () => {
             strength: editor.paintBrushStrength,
             falloff: editor.paintBrushFalloff,
           });
+          invalidate();
+        }
+        return;
+      }
+
+      if (editor.activeTool === 'foliage') {
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        if (!cursorVisible) setCursorVisible(true);
+
+        if (isPaintingRef.current) {
+          e.stopPropagation();
+          const foliageItem = getFoliageById(editor.selectedFoliageId) || FOLIAGE_MANIFEST[0];
+
+          if (editor.foliageSubTool === 'scatter') {
+            const activeTypeIds =
+              editor.foliageSelectMode === 'multi' && editor.selectedFoliageIds.length > 0
+                ? editor.selectedFoliageIds
+                : [editor.selectedFoliageId || FOLIAGE_MANIFEST[0].id];
+            const activeItems = activeTypeIds.map((id) => getFoliageById(id) || FOLIAGE_MANIFEST[0]);
+            const avgSpacing = activeItems.reduce((acc, item) => acc + item.spacing, 0) / activeItems.length;
+
+            const candidates = generateScatterCandidates({
+              centerX: e.point.x,
+              centerZ: e.point.z,
+              typeId: activeItems[0].id,
+              typeIds: activeTypeIds,
+              spacing: avgSpacing,
+              options: {
+                operation: 'scatter',
+                radius: editor.foliageBrushRadius,
+                density: editor.foliageBrushDensity,
+                scaleJitter: editor.foliageScaleJitter,
+                normalAlign: editor.foliageNormalAlign,
+              },
+              existingInstances: editor.foliageInstances,
+              getHeightAt: (x, z) => getTerrainHeightAt(x, z, stateBuffer),
+              getNormalAt: (x, z) => {
+                const n = getTerrainNormalAt(x, z, stateBuffer);
+                return [n.x, n.y, n.z];
+              },
+            });
+            if (candidates.length > 0) {
+              editor.addFoliageInstances(candidates);
+            }
+          } else if (editor.foliageSubTool === 'erase') {
+            const { erased } = eraseFoliageInRadius(
+              e.point.x,
+              e.point.z,
+              editor.foliageBrushRadius,
+              editor.foliageInstances
+            );
+            if (erased.length > 0) {
+              editor.removeFoliageInstances(erased.map((item) => item.id));
+            }
+          }
           invalidate();
         }
         return;
@@ -828,9 +1016,27 @@ export const BaseTerrainContent: React.FC = () => {
       <TerrainBrushCursor
         position={cursorPos}
         normal={cursorNormal}
-        radius={(activeTool === 'texture' || activeTool === 'paint') ? paintBrushRadius : brushRadius}
-        subTool={(activeTool === 'texture' || activeTool === 'paint') ? paintSubTool : terrainSubTool}
-        visible={cursorVisible && (activeTool === 'terrain' || activeTool === 'texture' || activeTool === 'paint')}
+        radius={
+          activeTool === 'foliage'
+            ? foliageBrushRadius
+            : activeTool === 'texture' || activeTool === 'paint'
+            ? paintBrushRadius
+            : brushRadius
+        }
+        subTool={
+          activeTool === 'foliage'
+            ? foliageSubTool
+            : activeTool === 'texture' || activeTool === 'paint'
+            ? paintSubTool
+            : terrainSubTool
+        }
+        visible={
+          cursorVisible &&
+          (activeTool === 'terrain' ||
+            activeTool === 'texture' ||
+            activeTool === 'paint' ||
+            activeTool === 'foliage')
+        }
       />
     </>
   );

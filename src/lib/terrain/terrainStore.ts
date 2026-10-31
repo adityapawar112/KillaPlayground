@@ -25,7 +25,7 @@ import {
   clearPaintBuffer,
   PaintBrushOptions,
 } from './terrainPaintBuffer';
-import { useEditorStore, PondWaterFeature } from '../state/useEditorStore';
+import { useEditorStore, PondWaterFeature, FoliageInstance } from '../state/useEditorStore';
 import { WallPath, CitadelKeep } from '../walls/wallTypes';
 
 interface TerrainState {
@@ -71,6 +71,8 @@ const wallUndoStack: WallPath[][] = [];
 const wallRedoStack: WallPath[][] = [];
 const citadelUndoStack: CitadelKeep[][] = [];
 const citadelRedoStack: CitadelKeep[][] = [];
+const foliageUndoStack: FoliageInstance[][] = [];
+const foliageRedoStack: FoliageInstance[][] = [];
 
 // shortcut: Module-level shared WebGL DataTextures and DataArrayTexture persist across component renders for singleton diorama lifetime to enable zero GPU reallocation resets, upgrade to scoped context if supporting multiple simultaneous viewports
 // Generate organic starter mud hill by default
@@ -223,25 +225,45 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       pondUndoStack.shift();
       wallUndoStack.shift();
       citadelUndoStack.shift();
+      foliageUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
     paintUndoStack.push(paintBuffer.slice());
     pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
     wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
     citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
+    foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
     redoStack.length = 0;
     paintRedoStack.length = 0;
     pondRedoStack.length = 0;
     wallRedoStack.length = 0;
     citadelRedoStack.length = 0;
+    foliageRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
-  canUndo: () => undoStack.length > 0 || paintUndoStack.length > 0 || wallUndoStack.length > 0 || citadelUndoStack.length > 0,
-  canRedo: () => redoStack.length > 0 || paintRedoStack.length > 0 || wallRedoStack.length > 0 || citadelRedoStack.length > 0,
+  canUndo: () =>
+    undoStack.length > 0 ||
+    paintUndoStack.length > 0 ||
+    wallUndoStack.length > 0 ||
+    citadelUndoStack.length > 0 ||
+    foliageUndoStack.length > 0,
+  canRedo: () =>
+    redoStack.length > 0 ||
+    paintRedoStack.length > 0 ||
+    wallRedoStack.length > 0 ||
+    citadelRedoStack.length > 0 ||
+    foliageRedoStack.length > 0,
 
   undo: () => {
-    if (undoStack.length === 0 && paintUndoStack.length === 0 && wallUndoStack.length === 0 && citadelUndoStack.length === 0) return false;
+    if (
+      undoStack.length === 0 &&
+      paintUndoStack.length === 0 &&
+      wallUndoStack.length === 0 &&
+      citadelUndoStack.length === 0 &&
+      foliageUndoStack.length === 0
+    )
+      return false;
     const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
     if (undoStack.length > 0) {
       const prevSnapshot = undoStack.pop()!;
@@ -274,6 +296,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       useEditorStore.getState().setCitadelKeeps(prevKeeps);
     }
 
+    if (foliageUndoStack.length > 0) {
+      const prevFoliage = foliageUndoStack.pop()!;
+      foliageRedoStack.push([...useEditorStore.getState().foliageInstances]);
+      useEditorStore.getState().setFoliageInstances(prevFoliage);
+    }
+
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
@@ -284,7 +312,14 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   },
 
   redo: () => {
-    if (redoStack.length === 0 && paintRedoStack.length === 0 && wallRedoStack.length === 0 && citadelRedoStack.length === 0) return false;
+    if (
+      redoStack.length === 0 &&
+      paintRedoStack.length === 0 &&
+      wallRedoStack.length === 0 &&
+      citadelRedoStack.length === 0 &&
+      foliageRedoStack.length === 0
+    )
+      return false;
     const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
     if (redoStack.length > 0) {
       const nextSnapshot = redoStack.pop()!;
@@ -315,6 +350,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       const nextKeeps = citadelRedoStack.pop()!;
       citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
       useEditorStore.getState().setCitadelKeeps(nextKeeps);
+    }
+
+    if (foliageRedoStack.length > 0) {
+      const nextFoliage = foliageRedoStack.pop()!;
+      foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
+      useEditorStore.getState().setFoliageInstances(nextFoliage);
     }
 
     stateTexture.needsUpdate = true;

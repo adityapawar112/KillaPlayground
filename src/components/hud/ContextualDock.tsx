@@ -10,6 +10,7 @@ import {
   TbSun,
   TbMountain,
   TbPlant2,
+  TbTrees,
   TbArrowsLeft,
   TbArrowsRight,
   TbArrowDownBar,
@@ -45,6 +46,8 @@ export const ContextualDock: React.FC = () => {
     setSlopeIncline,
     foliageSubTool,
     setFoliageSubTool,
+    foliageBrushRadius,
+    setFoliageBrushRadius,
     brushRadius,
     setBrushRadius,
     brushStrength,
@@ -482,48 +485,62 @@ export const ContextualDock: React.FC = () => {
         </div>
       )}
 
-      {/* 7. FOLIAGE CONTROLS (Grass/Moss vs Path) */}
+      {/* 7. FOLIAGE CONTROLS (Scatter | Single | Erase) */}
       {(activeTool === 'foliage' || activeTool === 'grass') && (
         <div className="flex items-center gap-3">
           <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
             <button
-              onClick={() => setFoliageSubTool('grass')}
+              onClick={() => setFoliageSubTool('scatter')}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                foliageSubTool === 'grass'
-                  ? 'bg-[#588157] text-white shadow-sm'
+                foliageSubTool === 'scatter'
+                  ? 'bg-[#15803D] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <TbPlant2 className="w-3.5 h-3.5" />
-              <span>Grass / Moss</span>
+              <TbTrees className="w-3.5 h-3.5" />
+              <span>Scatter</span>
             </button>
             <button
-              onClick={() => setFoliageSubTool('path')}
+              onClick={() => setFoliageSubTool('single')}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                foliageSubTool === 'path'
+                foliageSubTool === 'single'
+                  ? 'bg-[#15803D] text-white shadow-sm'
+                  : 'text-[#634E40] hover:text-[#2B1E16]'
+              }`}
+            >
+              <span>Single</span>
+            </button>
+            <button
+              onClick={() => setFoliageSubTool('erase')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                foliageSubTool === 'erase'
                   ? 'bg-[#8F4938] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <span>Foliage Path</span>
+              <span>Erase</span>
             </button>
           </div>
 
-          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+          {foliageSubTool !== 'single' && (
+            <>
+              <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">Radius:</span>
-            <input
-              type="range"
-              aria-label="Foliage Radius"
-              min="0.3"
-              max="2.0"
-              step="0.1"
-              value={brushRadius}
-              onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-              className="w-20 accent-[#65A30D] cursor-pointer"
-            />
-          </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-[#4B382C]">Radius:</span>
+                <input
+                  type="range"
+                  aria-label="Foliage Radius"
+                  min="0.1"
+                  max="2.0"
+                  step="0.05"
+                  value={foliageBrushRadius}
+                  onChange={(e) => setFoliageBrushRadius(parseFloat(e.target.value))}
+                  className="w-20 accent-[#15803D] cursor-pointer"
+                />
+              </div>
+            </>
+          )}
         </div>
       )}
 

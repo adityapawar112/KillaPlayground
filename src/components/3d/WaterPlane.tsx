@@ -29,6 +29,7 @@ const BaseWaterMesh: React.FC<BaseWaterMeshProps> = ({ waterLevel, nightMode, te
       rotation={[-Math.PI / 2, 0, 0]}
       name="DioramaBaseWaterPlane"
       receiveShadow
+      raycast={() => null}
     >
       {/* 9.96m x 9.96m plane nestled just inside the courtyard brick retaining border */}
       <planeGeometry args={[9.96, 9.96, 32, 32]} />

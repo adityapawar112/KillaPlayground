@@ -227,6 +227,37 @@ export function updateNormalsForRegion(
 }
 
 /**
+ * Reads the analytical terrain surface height at world coordinates (x, z)
+ * with bilinear interpolation from the state heightmap buffer.
+ */
+export function getTerrainHeightAt(x: number, z: number, buffer: Float32Array): number {
+  const half = TERRAIN_SIZE / 2;
+  const clampedX = Math.max(-half, Math.min(half, x));
+  const clampedZ = Math.max(-half, Math.min(half, z));
+
+  const fx = ((clampedX + half) / TERRAIN_SIZE) * (TERRAIN_RESOLUTION - 1);
+  const fz = ((clampedZ + half) / TERRAIN_SIZE) * (TERRAIN_RESOLUTION - 1);
+
+  const x0 = Math.floor(fx);
+  const x1 = Math.min(TERRAIN_RESOLUTION - 1, x0 + 1);
+  const z0 = Math.floor(fz);
+  const z1 = Math.min(TERRAIN_RESOLUTION - 1, z0 + 1);
+
+  const tx = fx - x0;
+  const tz = fz - z0;
+
+  const h00 = buffer[(z0 * TERRAIN_RESOLUTION + x0) * STATE_CHANNELS];
+  const h10 = buffer[(z0 * TERRAIN_RESOLUTION + x1) * STATE_CHANNELS];
+  const h01 = buffer[(z1 * TERRAIN_RESOLUTION + x0) * STATE_CHANNELS];
+  const h11 = buffer[(z1 * TERRAIN_RESOLUTION + x1) * STATE_CHANNELS];
+
+  const h0 = h00 * (1 - tx) + h10 * tx;
+  const h1 = h01 * (1 - tx) + h11 * tx;
+
+  return h0 * (1 - tz) + h1 * tz;
+}
+
+/**
  * Computes the analytical surface normal vector at world coordinates (x, z)
  * using central finite differences on the state heightmap buffer.
  */

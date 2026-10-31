@@ -25,6 +25,8 @@ import {
   TbAdjustmentsHorizontal,
   TbMenu2,
   TbX,
+  TbArrowsMinimize,
+  TbArrowsMaximize,
 } from 'react-icons/tb';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -69,6 +71,8 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     toggleContextualDock,
     showBottomStatusBar,
     toggleBottomStatusBar,
+    collapseAllPanels,
+    expandAllPanels,
     setPosterModalOpen,
     setResetConfirmOpen,
     setShortcutsModalOpen,
@@ -930,6 +934,26 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 {lang === 'en' ? 'EN' : lang === 'mr' ? 'म' : 'हि'}
               </button>
             ))}
+          </div>
+
+          {/* Minimize / Maximize All Panels */}
+          <div className="flex items-center bg-[#EADECF] rounded-lg p-0.5 border border-[#D9C9B4]">
+            <button
+              onClick={collapseAllPanels}
+              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+              title="Collapse All Panels"
+              aria-label="Collapse All Panels"
+            >
+              <TbArrowsMinimize className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={expandAllPanels}
+              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+              title="Expand All Panels"
+              aria-label="Expand All Panels"
+            >
+              <TbArrowsMaximize className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* Quick Undo / Redo / Reset */}

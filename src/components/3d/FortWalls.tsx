@@ -14,6 +14,7 @@ import {
   SnapResult,
 } from '@/lib/walls/wallGeometry';
 import { WallPath, WallPoint, FortStampType, DEFAULT_WALL_SETTINGS } from '@/lib/walls/wallTypes';
+import { handleStructurePointerDown, handleStructurePointerMove } from '@/lib/interaction/surfaceToolInteraction';
 
 /**
  * Draft wall preview line and node markers during construction.
@@ -92,7 +93,9 @@ const BoxPlatformSelectionMesh: React.FC<{
   boxTopY: number;
   isSelected: boolean;
   onClick: (e: ThreeEvent<MouseEvent>) => void;
-}> = ({ tc0, tc1, tc2, tc3, boxTopY, isSelected, onClick }) => {
+  onPointerDown?: (e: any) => void;
+  onPointerMove?: (e: any) => void;
+}> = ({ tc0, tc1, tc2, tc3, boxTopY, isSelected, onClick, onPointerDown, onPointerMove }) => {
   const geo = useMemo(() => {
     const g = new THREE.BufferGeometry();
     const y = boxTopY + 0.003; // slightly above top floor stone to prevent z-fighting
@@ -118,6 +121,8 @@ const BoxPlatformSelectionMesh: React.FC<{
     <mesh
       geometry={geo}
       onClick={onClick}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
       onPointerOver={(e) => {
         const editor = useEditorStore.getState();
         if (editor.activeTool === 'walls' && editor.wallMode === 'select') {
@@ -208,21 +213,15 @@ const SingleWallMesh: React.FC<{
   };
 
   const handleWallPointerDown = (e: any) => {
-    const editor = useEditorStore.getState();
-    if (editor.activeTool === 'spline' && editor.splineMode === 'draw') {
-      if (e.button !== 0 || e.altKey) return;
-      e.stopPropagation();
-      const rawControls = (window as any).__orbitControls;
-      if (rawControls) rawControls.enabled = false;
-      if (!editor.isDrawingSpline) {
-        editor.startSpline();
-      }
-      editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
-      invalidate();
+    if (handleStructurePointerDown(e, invalidate)) {
+      return;
     }
   };
 
   const handleWallPointerMove = (e: any) => {
+    if (handleStructurePointerMove(e, invalidate)) {
+      return;
+    }
     const editor = useEditorStore.getState();
     if (editor.activeTool === 'walls' && editor.wallMode === 'fortify' && editor.activeStamp) {
       const snap = calculateMagneticSnap(
@@ -236,22 +235,6 @@ const SingleWallMesh: React.FC<{
       return;
     } else if (editor.wallSnapPreview) {
       editor.setWallSnapPreview(null);
-    }
-
-    if (editor.activeTool === 'spline' && editor.splineMode === 'draw') {
-      // Unconditionally stop propagation so terrain underneath never receives this event
-      e.stopPropagation();
-      if (editor.isDrawingSpline && e.buttons === 1) {
-        const pts = editor.currentSplinePoints;
-        if (pts.length > 0) {
-          const last = pts[pts.length - 1];
-          const dist = Math.hypot(e.point.x - last[0], e.point.y - last[1], e.point.z - last[2]);
-          if (dist >= 0.15) {
-            editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
-            invalidate();
-          }
-        }
-      }
     }
   };
 
@@ -345,6 +328,8 @@ const SingleWallMesh: React.FC<{
                 {/* Generous Clickable Top Floor Disc */}
                 <mesh
                   position={[0, 0.005, 0]}
+                  onPointerDown={handleWallPointerDown}
+                  onPointerMove={handleWallPointerMove}
                   onClick={(e) => {
                     if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
                     const editor = useEditorStore.getState();
@@ -413,6 +398,8 @@ const SingleWallMesh: React.FC<{
                 {/* Generous Clickable Top Floor Disc */}
                 <mesh
                   position={[0, 0.005, 0]}
+                  onPointerDown={handleWallPointerDown}
+                  onPointerMove={handleWallPointerMove}
                   onClick={(e) => {
                     if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
                     const editor = useEditorStore.getState();
@@ -515,6 +502,8 @@ const SingleWallMesh: React.FC<{
                 tc3={tc3}
                 boxTopY={boxTopY}
                 isSelected={isBoxSelected}
+                onPointerDown={handleWallPointerDown}
+                onPointerMove={handleWallPointerMove}
                 onClick={(e) => {
                   if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
                   const editor = useEditorStore.getState();
@@ -556,6 +545,8 @@ const SingleWallMesh: React.FC<{
               <group key={`gate_handle_${g.id}`} position={[gx, groundY + gateH * 0.5, gz]} rotation={[0, rotY, 0]}>
                 {/* Generous Clickable Portal Arch Volume - local Z runs along wall segment, local X through thickness */}
                 <mesh
+                  onPointerDown={handleWallPointerDown}
+                  onPointerMove={handleWallPointerMove}
                   onClick={(e) => {
                     if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
                     const editor = useEditorStore.getState();

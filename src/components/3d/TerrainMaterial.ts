@@ -10,6 +10,7 @@ function createColorTexture(r: number, g: number, b: number, a = 255): THREE.Dat
   return tex;
 }
 
+// shortcut: Module-level 1x1 fallback textures shared across all material instances, upgrade to factory disposal lifecycle if multiple independent canvases are mounted
 export const fallbackWalkableDiff = createColorTexture(184, 85, 54);  // #B85536 red laterite soil
 export const fallbackCliffDiff = createColorTexture(85, 75, 68);     // #554B44 basalt rocks
 export const fallbackCrackedDiff = createColorTexture(140, 52, 28);   // #8C341C cracked mud

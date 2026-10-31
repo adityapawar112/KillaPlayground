@@ -48,10 +48,10 @@ export function sampleBilinearHeight(
   const idx01 = (z1 * TERRAIN_RESOLUTION + x0) * STATE_CHANNELS;
   const idx11 = (z1 * TERRAIN_RESOLUTION + x1) * STATE_CHANNELS;
 
-  const h00 = buffer[idx00 + 0] ?? 0;
-  const h10 = buffer[idx10 + 0] ?? 0;
-  const h01 = buffer[idx01 + 0] ?? 0;
-  const h11 = buffer[idx11 + 0] ?? 0;
+  const h00 = buffer[idx00 + 0];
+  const h10 = buffer[idx10 + 0];
+  const h01 = buffer[idx01 + 0];
+  const h11 = buffer[idx11 + 0];
 
   const hTop = h00 * (1 - fx) + h10 * fx;
   const hBottom = h01 * (1 - fx) + h11 * fx;

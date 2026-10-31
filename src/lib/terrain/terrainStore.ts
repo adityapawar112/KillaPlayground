@@ -51,6 +51,7 @@ interface TerrainState {
   applyPaintBrush: (centerX: number, centerZ: number, options: PaintBrushOptions) => boolean;
   fillPaintTerrain: (layerIndex: number) => void;
   clearPaintTerrain: () => void;
+  disposeTerrain: () => void;
   pushUndo: () => void;
   undo: () => boolean;
   redo: () => boolean;
@@ -71,6 +72,7 @@ const wallRedoStack: WallPath[][] = [];
 const citadelUndoStack: CitadelKeep[][] = [];
 const citadelRedoStack: CitadelKeep[][] = [];
 
+// shortcut: Module-level shared WebGL DataTextures and DataArrayTexture persist across component renders for singleton diorama lifetime to enable zero GPU reallocation resets, upgrade to scoped context if supporting multiple simultaneous viewports
 // Generate organic starter mud hill by default
 const initialBuffer = createStateBuffer(0.0, 0.0);
 generateTerrainBlueprint('scratch', initialBuffer);
@@ -93,7 +95,18 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   lastUpdated: Date.now(),
 
   setPaintArrayTexture: (tex) => {
+    const prev = get().paintArrayTexture;
+    if (prev && prev !== tex) {
+      prev.dispose();
+    }
     set({ paintArrayTexture: tex, lastUpdated: Date.now() });
+  },
+
+  disposeTerrain: () => {
+    const { stateTexture, paintTexture, paintArrayTexture } = get();
+    stateTexture.dispose();
+    paintTexture.dispose();
+    paintArrayTexture.dispose();
   },
 
   markPaintTextureNeedsUpdate: () => {

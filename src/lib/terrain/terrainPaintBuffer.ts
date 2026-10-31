@@ -115,6 +115,11 @@ export async function loadTexturesIntoArray(
     return arrayTex;
   }
 
+  // shortcut: Skip duplicate network image decoding if layer buffer is already fully populated
+  if (arrayTex.userData?.isLoaded) {
+    return arrayTex;
+  }
+
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
@@ -143,6 +148,13 @@ export async function loadTexturesIntoArray(
   });
 
   await Promise.all(loadPromises);
+
+  // Cleanly free offscreen canvas memory
+  canvas.width = 0;
+  canvas.height = 0;
+  canvas.remove();
+
+  arrayTex.userData = { ...arrayTex.userData, isLoaded: true };
   arrayTex.colorSpace = THREE.SRGBColorSpace;
   arrayTex.needsUpdate = true;
   return arrayTex;

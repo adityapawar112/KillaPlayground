@@ -59,7 +59,7 @@ const DraftSplinePreview: React.FC<DraftSplinePreviewProps> = ({ points }) => {
     <group name="DraftSplinePreview">
       {/* Intermediate Connecting Line */}
       {curveGeo && lineMat && (
-        <primitive object={new THREE.Line(curveGeo, lineMat)} />
+        <primitive object={new THREE.Line(curveGeo, lineMat)} raycast={() => null} />
       )}
 
       {/* Node Markers */}
@@ -70,11 +70,11 @@ const DraftSplinePreview: React.FC<DraftSplinePreviewProps> = ({ points }) => {
 
         return (
           <group key={`draft_pin_${idx}`} position={[pt[0], pt[1] + 0.04, pt[2]]}>
-            <mesh>
+            <mesh raycast={() => null}>
               <sphereGeometry args={[0.045, 16, 16]} />
               <meshBasicMaterial color={pinColor} depthTest={false} transparent opacity={0.9} />
             </mesh>
-            <mesh position={[0, -0.02, 0]}>
+            <mesh position={[0, -0.02, 0]} raycast={() => null}>
               <cylinderGeometry args={[0.01, 0.01, 0.04, 8]} />
               <meshBasicMaterial color="#2B1E16" depthTest={false} />
             </mesh>

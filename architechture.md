@@ -77,7 +77,7 @@ The diorama is structured into two complementary geometric layers:
    * **Multi-Texture Splat Blending (`three-custom-shader-material`):**
      * Multi-texture blending maps **Dirt** (*Tambdi Maati*), **Sand**, **Grass**, **Gravel**, **Rock** (Deccan Basalt), and **Rocky** textures across the mesh.
      * Steep slope escarpments ($N_y < 0.78$) automatically transition into rock cliff faces via triplanar projection to prevent vertical UV stretching.
-     * Brush strokes from the **Terrain Paint Tool** write into texture splat weight maps to paint gravel paths, grass greens, or sandy courtyards without affecting geometry.
+     * Brush strokes from the **Texture Tool (Studio)** write into discrete texture splat buffers (`terrainPaintBuffer.ts`) to paint authentic retro surface textures, pathways, grass greens, and ponds without affecting geometry.
 
 2. **The Structure & Prop Layer (Walls, Splines, Foliage & Figurines):**
    * Structures exist as discrete meshes positioned atop the terrain surface.
@@ -131,10 +131,18 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * *Bhagwa Flag Lines:* Arranges waving swallowtail saffron flags at uniform intervals (normalized base scale 1.0x).
      * *Festive Diyas:* Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
 
-4. **Terrain Paint Tool (Surface Texture Brush):**
-   * Directly paints textures onto the terrain mesh without affecting structures, walls, or figurines.
-   * **Selectable Textures:** Dirt (*Tambdi Maati*), Sand, Grass, Gravel (paths), Rock (Basalt cliff), Rocky Ground.
-   * **Controls:** Brush radius, opacity/strength, falloff edge.
+4. **Texture Tool (Terrain Texture Painting Studio):**
+   * Directly paints retro pixel-art textures onto the terrain mesh without deforming elevation or affecting placed structures/walls.
+   * **52 Retro Textures across 8 Categories:** Dirt & Soil (8), Grass & Foliage (8), Gravel & Paths (8), Rock & Basalt (8), Rocky Ground (8), Sand (8), Bricks & Masonry (3), and Water & Ice (1).
+   * **Technical Architecture (`terrainPaintBuffer.ts`):**
+     * Single 256x256x4 `Uint8Array` buffer (262,144 bytes). R: LayerA (0-51), G: LayerB (0-51), B: Blend (0-255), A: Weight (0-255).
+     * `THREE.DataTexture` configured with `THREE.NearestFilter` on minFilter/magFilter, combined with discrete `texelFetch` in the fragment shader. Completely eliminates intermediate integer rounding seams and cross-layer contour bands.
+     * Manual bilinear interpolation in GLSL exclusively on continuous float channels (`paintWeight` and same-layer `blendFactor`), ensuring smooth feathered stroke edges.
+     * Canonical layer sorting (`layerA <= layerB`) across painting and blending algorithms for stable two-layer transitions.
+     * All 52 textures loaded into a single `THREE.DataArrayTexture` (128x128x52) in `THREE.SRGBColorSpace`.
+   * **Interactive Controls:** Brush Radius (0.2m–3.0m), Strength (5%–100%), Edge Falloff (0%–100%), Tiling Repeat (4x–32x), Flood Terrain, Clear Paint.
+   * **2 Operational Sub-Modes:** `Paint` (apply texture) and `Erase` (restore base terrain).
+   * **Tool Role Separation:** Tool 4 is **`Texture`**; the name `paint` is reserved for Tool 7 in the deferred soil crafting pipeline for painting raw color pigments onto mud shapes.
 
 5. **Foliage Paint Tool (3D Nature Scatter Brush):**
    * Scatter brush that places low-poly 3D nature props directly onto terrain.

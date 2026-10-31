@@ -20,7 +20,8 @@ Maintain strict boundaries between the 60 FPS GPU/TypedArray execution layer, th
 │  • Raycasting: three-mesh-bvh (< 0.2ms raycast per frame)              │
 │  • State Buffer: 256x256x4 Float32Array (R: Height, G: Wetness,        │
 │    B: Lock, A: Halim Grass)                                            │
-│  • Paint Texture: 1024x1024 HTMLCanvas wrapped in THREE.CanvasTexture   │
+│  • Paint State Texture: 256x256x4 Uint8Array in THREE.DataTexture      │
+│    (NearestFilter) + THREE.DataArrayTexture (52 PBR slices, sRGB)      │
 │  • Shaders: three-custom-shader-material (CSM) + Triplanar mapping     │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │ On "Finish & Share"

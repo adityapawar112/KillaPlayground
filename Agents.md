@@ -73,6 +73,7 @@ Work proceeds through a disciplined tracer-bullet pipeline:
 - [architechture.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/architechture.md): Zero-cost tech stack, terrain heightmap state machine, multi-texture blending, walls/spline extrusion, 4-angle poster generator, and binary serialization.
 - [design.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/design.md): Sun-baked courtyard canvas (`#F9F6F0`), 6 earth-tone palette, Devanagari typography (`Yatra One`, `Modak`), and HUD component specifications.
 - [credits.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/credits.md): Binbun Retroground texture pack & asset attributions.
+- [.agents/rules/ui-ux-design-consistency.md](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/.agents/rules/ui-ux-design-consistency.md): Mandatory rules for UI/UX component creation, panel anatomy, slider mounting, and sibling consistency.
 
 ### Triage Labels:
 - `bug`: Defects breaking functionality, WebGL rendering, or state persistence.
@@ -131,3 +132,4 @@ All agent skills reside in [.agents/skills/](file:///c:/Users/adity/Desktop/Proj
 2. **Context Budget Discipline:** Do not install indiscriminate mega-dumps. Maintain targeted, single-purpose skills.
 3. **Zero GPU Leaks:** Every created texture, material, geometry, and offscreen canvas must be cleanly disposed on unmount.
 4. **Cultural Authenticity:** Uphold the warm courtyard palette, Devanagari display voice (`Yatra One`), and authentic Maratha fort architecture (bastions, ramparts, *Maha Darwaza*).
+5. **Mandatory UI/UX Consistency:** Whenever UI components, panels, sliders, or toolbars are created or modified, the agent MUST read `design.md` and `.agents/rules/ui-ux-design-consistency.md` and inspect sibling component implementations (such as the Spline panel in `LeftToolSidebar.tsx`). Sliders must sit directly on the panel background (`bg-[#F3EBE0]`) without enclosing cards; mode selectors must never be duplicated in the Left Sidebar; labels must use standard concise terms (e.g., `Strength`); English UI must never include transliterated Marathi in parentheses; and visual inspection evidence must be captured before completion.

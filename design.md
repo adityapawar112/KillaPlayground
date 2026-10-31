@@ -303,6 +303,84 @@ Permutation C: Left Sidebar Minimized + Modes Strip Open
 - Toast notifications deployed via `setToastMessage()` must automatically dismiss after **3.5 seconds**.
 - The toast pill must feature an explicit close button (`✕`) so users can dismiss transient alerts immediately.
 
+### Rule 9: Tool Properties Panel Anatomy & Card Container Discipline
+To prevent visual clutter and maintain ergonomic consistency across all tool panels:
+- **Reserved White Box Containers (`bg-[#FAF8F5]` / `border-[#D9C9B4]` rounded-xl):**
+  - White container cards are strictly reserved for:
+    1. **Top Section Header Badge** (e.g. `Texture Studio`, `Path Drafting`, `Wall Architecture`).
+    2. **Active Item / Target Preview Cards** (e.g. Active Texture preview with image, name, and category; Selected Wall summary).
+    3. **Primary Action Group Containers** (e.g. Finish / Cancel buttons, Flood / Clear buttons).
+- **Direct Background Mounting for Property Sliders & Inputs:**
+  - Sliders, number readouts, and toggles **MUST sit directly on the panel background (`bg-[#F3EBE0]`)**.
+  - **NEVER** wrap individual property sliders inside separate white card containers.
+  - Standard slider layout:
+    ```tsx
+    <div>
+      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+        <span>Brush Radius</span>
+        <span className="text-[#8D7666]">{radius.toFixed(1)}m</span>
+      </div>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={radius}
+        onChange={(e) => setRadius(parseFloat(e.target.value))}
+        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+      />
+    </div>
+    ```
+
+### Rule 10: Zero Duplication of Tool Mode Selectors
+- **Single Source of Truth for Operational Modes:**
+  - Operational mode switching (e.g. `Paint` / `Erase` for Texture; `Select` / `Draw` / `Transform` for Spline; `Select` / `Draw` / `Fortify` for Walls) belongs **strictly and exclusively** in the dedicated vertical floating strip: [`ToolModeSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/ToolModeSidebar.tsx).
+  - **NEVER duplicate mode selector buttons inside the Left Tool Properties Sidebar.**
+  - The Left Sidebar should only display a tiny uppercase status badge in its header card reflecting the current active mode (e.g. `<span className="text-[10px] uppercase font-semibold text-[#8D7666]">{paintSubTool} mode</span>`).
+
+### Rule 11: Mode-Specific Parameter Scoping
+- A property panel must dynamically adapt its contents to show **only** controls relevant to the currently active subtool mode:
+  - **Texture Tool:**
+    - `Paint`: Brush Radius, Strength, Edge Falloff, Tiling Repeat, Flood Terrain, Clear Paint.
+    - `Erase`: Brush Radius, Strength, Clear Paint (no Edge Falloff or Tiling sliders).
+  - **Spline Tool:**
+    - `Draw`: Active points count, Finish Path CTA, Feature Type, Step dimension sliders.
+    - `Select`: Selected path details, delete CTA.
+    - `Transform`: Translate, rotate, and scale controls.
+- Never show disabled or meaningless sliders for an operation (e.g., Tiling Repeat on an Eraser).
+
+### Rule 12: Standardized Naming Conventions (No Jargon or Compound Labels)
+- Use standard, simple, single-word property labels:
+  - Use **`Strength`** instead of compound terms like `"Opacity & Flow"` or `"Pressure & Opacity"`.
+  - Use **`Brush Radius`** instead of `"Brush Size (Meters)"`.
+  - Use **`Edge Falloff`** instead of `"Hardness / Softness"`.
+  - Use **`Tiling Repeat`** instead of `"UV Scale Multiplier"`.
+- **No Decorative Filler Cards:** Never inject arbitrary filler boxes such as "Tabletop Diorama Tip" or "Pro Tip" cards at the bottom of tool panels. Every pixel in the properties drawer must serve functional authoring.
+
+### Rule 13: Universal Mouse Wheel & Keyboard Shortcut Contracts
+All interactive 3D tools must implement standard ergonomic wheel gestures, intercepted in the capture phase to prevent accidental camera zoom:
+- `Shift + Scroll Wheel`: Adjust primary tool / brush radius (`paintBrushRadius`, `brushRadius`).
+- `Ctrl + Scroll Wheel`: Adjust strength / speed slider (`paintBrushStrength`, `brushStrength`).
+- `Alt + Scroll Wheel`: Adjust falloff / secondary parameter (`paintBrushFalloff`, `plateauHeight`, `slopeAngle`).
+- `[` and `]`: Decrement / increment brush radius by `0.1m`.
+
+### Rule 14: Clear Tool Taxonomy & Naming Contracts
+- **Tool 4:** **`Texture`** (`id: 'texture'`) — dedicated to direct surface texture painting on the terrain diorama using the 52-texture PBR retro catalog.
+- **Tool 7:** **`Paint`** (`id: 'paint'`) — strictly reserved for the upcoming organic soil crafting pipeline (for painting raw pigments / colors onto hand-sculpted mud structures).
+- Always ensure top toolbars, status hints, keybindings, and translation entries respect this clean distinction.
+
+### Rule 15: Contextual Right Sidebar: Scene Outliner vs. Asset Browser
+- The Right Sidebar ([`RightToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/RightToolSidebar.tsx)) is contextual:
+  - For structural tools (Walls, Splines): Renders the hierarchical **Diorama Elements Outliner** and **Element Properties Inspector**.
+  - For texture / asset-heavy tools (Texture, Foliage, Figurines): Renders the **Asset Browser** (e.g. Texture Browser with 52 textures, category filters, counts, search, and category dividers).
+- The Left Sidebar retains subtool parameter controls; the Right Sidebar handles asset browsing and selection.
+
+### Rule 16: Mandatory UI Consistency Verification Protocol
+Before authoring or modifying any HUD component or tool sidebar:
+1. **Inspect Existing Sibling Panels:** Open and read [`LeftToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/LeftToolSidebar.tsx), specifically comparing against the clean, canonical Spline and Terrain panels.
+2. **Consult `design.md` First:** Verify surface colors, text tokens, slider structures, and container rules.
+3. **Verify in Browser:** After editing, use browser automation (`chrome-devtools`) to take screenshots of the tool panel and confirm visual harmony before completing tasks.
+
 ---
 
 ## 3D Textures & Material Tokens
@@ -325,14 +403,22 @@ All diorama assets follow the **Modern Retro / PS1 (Flavor A)** visual standard:
 ### Do
 - **Anchor on the warm courtyard canvas (`{colors.canvas}` — `#F9F6F0`).**
 - **Follow the 5-zone decoupled HUD layout.** Universal settings in the Left Sidebar, modes in the vertical Mode Strip, scene tree and inspectors in the Right Sidebar.
+- **Mount property sliders directly on the panel background (`bg-[#F3EBE0]`).** Reserve white containers only for headers and active item preview cards.
 - **Maintain non-colliding minimized tabs.** Coordinate dynamic positions using store-backed sidebar widths.
 - **Check `e.button === 0` on every 3D interactive mesh.** Never let right-click pan trigger object selection.
 - **Use `Yatra One` for all display titles and fort names.** Pair with `Inter` for technical UI controls.
 - **Use `dark_stone_floor_128x128_pbr` for all structure walkways and floor decks.**
 - **Use `useTranslation()` for all UI strings.** Keep English UI clean without Marathi parenthetical labels.
+- **Use `Strength` instead of `Opacity & Flow`.**
+- **Support `Shift/Ctrl/Alt + Scroll Wheel` shortcuts on all 3D tools.**
+- **Check existing sibling panels (e.g. Spline tool) and `design.md` before authoring any new UI.**
 
 ### Don't
 - **Don't use cold corporate gray (`#F3F4F6`, `#E5E7EB`) or pure black (`#000000`).**
+- **Don't wrap individual property sliders in white card containers.**
+- **Don't duplicate mode selectors inside the Left Tool Sidebar.**
+- **Don't show mode-irrelevant sliders (e.g. Tiling Repeat on an Eraser).**
+- **Don't insert decorative filler or tip cards into tool property panels.**
 - **Don't let minimized tabs overlap each other or open sidebars.**
 - **Don't select 3D objects with right-click or middle-click.**
 - **Don't use coarse ground proximity radius checks that hijack clicks near splines or walls.**

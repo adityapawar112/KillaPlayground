@@ -15,7 +15,7 @@ graph TD
   
   T03 --> T04["Ticket 04: Parametric Walls Construction Tool"]
   T03 --> T05["Ticket 05: Spline Structure Placement Tool"]
-  T03 --> T06["Ticket 06: Terrain Texture Painting Studio"]
+  T03 --> T06["Ticket 06: Terrain Texture Painting Studio (Verified)"]
   T03 --> T07["Ticket 07: 3D Foliage Paint & Scatter System"]
   T03 --> T08["Ticket 08: Figurine & Architecture Asset Browser"]
   
@@ -191,28 +191,42 @@ graph TD
 
 ## Ticket 06: Terrain Texture Painting Studio
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed` (Verified in Browser & Unit Tests)
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
   - **Direct Terrain Texture Painting**:
-    - Paints surface textures directly onto the terrain mesh without deforming elevation or affecting placed structures/walls.
-  - **Authentic Texture Palette**:
-    - **Dirt**: Classic red laterite courtyard soil (*Tambdi Maati*).
-    - **Sand**: Courtyard silt and beach sand.
-    - **Grass**: Lush green ground cover.
-    - **Gravel**: Crushed rock and worn pathway trails.
-    - **Rock**: Rugged Deccan Basalt cliff escarpments.
-    - **Rocky Ground**: Mixed pebble and mountain dirt.
-  - **Brush Controls**:
-    - Adjustable brush radius, opacity/strength, and smooth falloff.
-  - **Splat / Blend Pipeline**:
-    - Multi-texture blending implemented via weight maps in custom terrain shader.
+    - Paints retro pixel-art textures directly onto the diorama terrain surface without deforming vertex heights or affecting placed walls, splines, or figurines.
+  - **Complete 52-Texture Library Across 8 Categories**:
+    - **Dirt & Soil (8)**: Compacted Mud, Hydrated Wet Mud, Red Laterite, Clay Silt, Loam Soil, Dry Dirt, Fine Earth, Crumbled Mud.
+    - **Grass & Foliage (8)**: Sprouted Mustard Grass, Lush Lawn, Dry Meadow, Olive Turf, Mossy Ground, High Grass, Sprouting Seeds, Dense Field.
+    - **Gravel & Paths (8)**: Trail Gravel, Fine Grit, Course Pebbles, Mountain Path, Crushed Stone, River Shingle, Worn Trail, Cobbled Dirt.
+    - **Rock & Basalt (8)**: Deccan Basalt, Rugged Slate, Quarry Stone, Weathered Basalt, Sharp Crag, Volcanic Slab, Dark Ledge, Rough Boulder.
+    - **Rocky Ground (8)**: Scree Field, Rocky Dirt, Mountain Slag, Pebble Soil, Shaly Terrain, Stony Mud, Chipped Rock, Grit Soil.
+    - **Sand (8)**: Sun-Baked Sand, Courtyard Silt, River Dune, Fine Sand, Coarse Dune, Muddy Sand, Beach Soil, Dry Silt.
+    - **Bricks & Masonry (3)**: Mossy Stone Brick, Dark Stone Floor, Dark Carved Stone.
+    - **Water & Ice (1)**: Blue Tarpaulin Water Sheet.
+  - **Technical Architecture & Data Pipeline (`terrainPaintBuffer.ts` & `TerrainMaterial.ts`)**:
+    - High-density 256×256×4 `Uint8Array` buffer (262,144 bytes) bound to `THREE.DataTexture`.
+    - Channels: R: Layer A (0–51), G: Layer B (0–51), B: Blend Factor (0–255), A: Paint Weight (0–255).
+    - `THREE.NearestFilter` on minFilter/magFilter + GLSL `texelFetch` on discrete integer grid coordinates: completely eliminates cross-layer interpolation and seam contour rings.
+    - Manual bilinear interpolation in GLSL on continuous float channels (`paintWeight` and same-layer `blendFactor`) for soft feathered edges.
+    - Canonical layer ordering (`layerA <= layerB`) across paint and blend brush algorithms for stable gradient transitions.
+    - All 52 textures loaded into a single `THREE.DataArrayTexture` (128x128x52) in `THREE.SRGBColorSpace`.
+  - **UI/UX & Ergonomics**:
+    - Tool renamed to **`Texture`** (key `4`), reserving `paint` for the future soil structure color pipeline.
+    - Sliders (Brush Radius, Strength, Edge Falloff, Tiling Repeat) sit directly on the panel background (`bg-[#F3EBE0]`) without enclosing card boxes.
+    - Mode selector lives exclusively in the floating `ToolModeSidebar.tsx` strip.
+    - Mode-scoped controls: `Paint` (radius, strength, falloff, tiling, flood, clear), `Erase` (radius, strength, clear).
+    - Shortcuts: `Shift + Wheel` (Radius), `Ctrl + Wheel` (Strength), `Alt + Wheel` (Falloff), `[` / `]` (Radius step).
+    - Dedicated right-side Texture Asset Browser with category pills, dividers, search, and layer index indicators.
 
 ### Acceptance Criteria
-- [ ] User can select any texture (Dirt, Sand, Grass, Gravel, Rock, Rocky) and paint onto terrain.
-- [ ] Painting gravel cleanly creates natural pathways without modifying terrain height.
-- [ ] Painting does not bleed onto or distort walls, splines, or placed figurines.
-- [ ] Texture blending transitions smoothly at brush borders.
+- [x] User can select any of the 52 textures across 8 categories and paint directly onto terrain.
+- [x] Painting produces zero height deformation and does not bleed onto walls, splines, or props.
+- [x] Seam border lines (brown, white, gray contour bands) completely eliminated via discrete layer sampling.
+- [x] Erase tool smoothly restores unpainted natural base terrain.
+- [x] UI respects design guidelines: plain text sliders, mode-specific controls, "Strength" naming, and no parenthetical transliterations.
+- [x] 100% client-side compute (₹0 cost) with zero WebGL texture allocation leaks.
 
 ---
 

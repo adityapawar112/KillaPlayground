@@ -130,16 +130,28 @@ Draws smooth 3D curves across terrain slopes and atop fort ramparts/structures u
 
 ---
 
-### Phase 4: Terrain Painting Studio
-Allows painting surface textures directly onto the terrain mesh without affecting walls, splines, or placed figurines:
-* **Authentic Texture Palette:**
-  * **Dirt (*Tambdi Maati*):** Rich red laterite soil characteristic of Deccan hill forts.
-  * **Sand:** Courtyard silt and beach sand for coastal forts like *Murud-Janjira*.
-  * **Grass:** Lush green ground cover on slopes.
-  * **Gravel:** Crushed stone and dirt trails for walking paths and roads.
-  * **Rock:** Dark Deccan Basalt escarpments and crags.
-  * **Rocky Ground:** Mixed gravelly hillside texture.
-* **Brush Controls:** Variable brush radius, opacity/strength, and soft falloff edge.
+### Phase 4: Terrain Texture Painting Studio (Tool 4)
+Enables direct surface texturing on the terrain diorama without modifying mountain elevation or affecting placed walls, splines, or figurines:
+* **52 Authentic Retro Textures across 8 Categories:**
+  * **Dirt & Soil (8):** Compacted Mud, Hydrated Wet Mud, Red Laterite, Clay Silt, Loam Soil, Dry Dirt, Fine Earth, Crumbled Mud.
+  * **Grass & Foliage (8):** Sprouted Mustard Grass, Lush Lawn, Dry Meadow, Olive Turf, Mossy Ground, High Grass, Sprouting Seeds, Dense Field.
+  * **Gravel & Paths (8):** Trail Gravel, Fine Grit, Coarse Pebbles, Mountain Path, Crushed Stone, River Shingle, Worn Trail, Cobbled Dirt.
+  * **Rock & Basalt (8):** Deccan Basalt, Rugged Slate, Quarry Stone, Weathered Basalt, Sharp Crag, Volcanic Slab, Dark Ledge, Rough Boulder.
+  * **Rocky Ground (8):** Scree Field, Rocky Dirt, Mountain Slag, Pebble Soil, Shaly Terrain, Stony Mud, Chipped Rock, Grit Soil.
+  * **Sand (8):** Sun-Baked Sand, Courtyard Silt, River Dune, Fine Sand, Coarse Dune, Muddy Sand, Beach Soil, Dry Silt.
+  * **Bricks & Masonry (3):** Mossy Stone Brick, Dark Stone Floor, Dark Carved Stone.
+  * **Water & Ice (1):** Blue Tarpaulin Water Sheet.
+* **Original Texture Color Fidelity:** Textures render in their true original pixel-art colors without artificial warm or cool color filters.
+* **Interactive Tool Controls:**
+  * **Brush Radius (0.2m–3.0m):** Controlled via slider, `Shift + Scroll Wheel`, or `[` / `]` keys.
+  * **Strength (5%–100%):** Calibrated opacity/flow rate controlled via slider or `Ctrl + Scroll Wheel`.
+  * **Edge Falloff (0%–100%):** Smooth Hermite falloff curve controlled via slider or `Alt + Scroll Wheel`.
+  * **Tiling Repeat (4x–32x):** Real-time UV repeat adjustment.
+  * **Flood Terrain & Clear Paint:** One-click whole-diorama flood or reset back to base Sahyadri soil.
+* **2 Dedicated Operational Modes:**
+  * **Paint:** Direct texture application with adjustable radius, strength, falloff, and tiling.
+  * **Erase:** Smooth restoration of natural underlying base terrain.
+* **Tool Separation:** Tool 4 is **`Texture`**; the name `paint` is reserved for Tool 7 (color painting on sculpted mud in the soil pipeline).
 
 ---
 

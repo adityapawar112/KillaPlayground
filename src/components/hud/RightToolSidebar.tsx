@@ -30,6 +30,7 @@ import {
   TbCheck,
   TbSearch,
   TbPalette,
+  TbTrees,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { WallMode } from '@/lib/walls/wallTypes';
@@ -41,6 +42,13 @@ import {
   searchTextures,
   getTexturesByCategory,
 } from '@/lib/textures/textureManifest';
+import {
+  FOLIAGE_MANIFEST,
+  FOLIAGE_CATEGORIES,
+  searchFoliage,
+  getFoliageByCategory,
+} from '@/lib/foliage/foliageManifest';
+import { foliageTextureManager } from '@/lib/foliage/foliageTextureManager';
 
 const STORAGE_RIGHT_WIDTH_KEY = 'killa_right_sidebar_width_v1';
 
@@ -112,6 +120,17 @@ export const RightToolSidebar: React.FC = () => {
     setPaintSearchQuery,
     paintSubTool,
     setPaintSubTool,
+    selectedFoliageId,
+    setSelectedFoliageId,
+    foliageSelectMode,
+    selectedFoliageIds,
+    toggleFoliageSelectedId,
+    foliageCategoryFilter,
+    setFoliageCategoryFilter,
+    foliageSearchQuery,
+    setFoliageSearchQuery,
+    foliageSubTool,
+    setFoliageSubTool,
     rightSidebarWidth: sidebarWidth,
     setRightSidebarWidth: setSidebarWidth,
   } = useEditorStore();
@@ -173,9 +192,14 @@ export const RightToolSidebar: React.FC = () => {
     setCameraViewPreset('reset');
   };
 
-  // Only show right sidebar for tools with outliner/browser (walls, spline, texture, prop)
+  // Only show right sidebar for tools with outliner/browser (walls, spline, texture, foliage, prop)
   const isRelevantTool =
-    activeTool === 'walls' || activeTool === 'spline' || activeTool === 'texture' || activeTool === 'paint' || activeTool === 'prop';
+    activeTool === 'walls' ||
+    activeTool === 'spline' ||
+    activeTool === 'texture' ||
+    activeTool === 'paint' ||
+    activeTool === 'foliage' ||
+    activeTool === 'prop';
   if (!isRelevantTool) return null;
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
@@ -185,6 +209,11 @@ export const RightToolSidebar: React.FC = () => {
     paintCategoryFilter === 'all'
       ? TEXTURE_CATEGORIES
       : TEXTURE_CATEGORIES.filter((c) => c.id === paintCategoryFilter);
+
+  const filteredFoliageCategories =
+    foliageCategoryFilter === 'all'
+      ? FOLIAGE_CATEGORIES
+      : FOLIAGE_CATEGORIES.filter((c) => c.id === foliageCategoryFilter);
 
   return (
     <>
@@ -198,15 +227,27 @@ export const RightToolSidebar: React.FC = () => {
           <button
             onClick={toggleRightSidebar}
             className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
-            title={(activeTool === 'texture' || activeTool === 'paint') ? 'Open Texture Browser' : 'Open Outliner'}
+            title={
+              activeTool === 'foliage'
+                ? 'Open Foliage Browser'
+                : activeTool === 'texture' || activeTool === 'paint'
+                ? 'Open Texture Browser'
+                : 'Open Outliner'
+            }
           >
-            {(activeTool === 'texture' || activeTool === 'paint') ? (
+            {activeTool === 'foliage' ? (
+              <TbTrees className="w-3.5 h-3.5 text-[#15803D]" />
+            ) : activeTool === 'texture' || activeTool === 'paint' ? (
               <TbPalette className="w-3.5 h-3.5 text-[#8F4938]" />
             ) : (
               <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
             )}
             <span className="text-[11px] font-bold">
-              {(activeTool === 'texture' || activeTool === 'paint') ? 'Textures' : 'Outliner'}
+              {activeTool === 'foliage'
+                ? 'Foliage'
+                : activeTool === 'texture' || activeTool === 'paint'
+                ? 'Textures'
+                : 'Outliner'}
             </span>
             <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
@@ -247,7 +288,9 @@ export const RightToolSidebar: React.FC = () => {
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-3 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
           <div className="flex items-center gap-1.5 text-[#4B382C]">
-            {(activeTool === 'texture' || activeTool === 'paint') ? (
+            {activeTool === 'foliage' ? (
+              <TbTrees className="w-4 h-4 text-[#15803D]" />
+            ) : activeTool === 'texture' || activeTool === 'paint' ? (
               <TbPalette className="w-4 h-4 text-[#8F4938]" />
             ) : (
               <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
@@ -257,13 +300,20 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Fort Outliner'
                 : activeTool === 'spline'
                 ? 'Path Outliner'
-                : (activeTool === 'texture' || activeTool === 'paint')
+                : activeTool === 'foliage'
+                ? 'Foliage Browser'
+                : activeTool === 'texture' || activeTool === 'paint'
                 ? 'Texture Browser'
                 : 'Props Outliner'}
             </span>
             {(activeTool === 'texture' || activeTool === 'paint') && (
               <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 52
+              </span>
+            )}
+            {activeTool === 'foliage' && (
+              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                {FOLIAGE_MANIFEST.length}
               </span>
             )}
           </div>
@@ -408,6 +458,161 @@ export const RightToolSidebar: React.FC = () => {
                                 {/* Layer Tag */}
                                 <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white leading-none">
                                   L{item.layerIndex}
+                                </div>
+                              </div>
+
+                              {/* Label & Culture Subtitle */}
+                              <div className="mt-1.5 min-w-0">
+                                <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                  {item.name}
+                                </div>
+                                <div className="text-[9px] text-[#8D7666] truncate leading-tight">
+                                  {item.culturalLore || item.category}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : activeTool === 'foliage' ? (
+            <div className="space-y-3.5">
+              {/* Search Bar */}
+              <div className="relative">
+                <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                <input
+                  type="text"
+                  value={foliageSearchQuery}
+                  onChange={(e) => setFoliageSearchQuery(e.target.value)}
+                  placeholder={`Search ${FOLIAGE_MANIFEST.length} foliage species...`}
+                  className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                />
+                {foliageSearchQuery && (
+                  <button
+                    onClick={() => setFoliageSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                  >
+                    <TbX className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                <button
+                  onClick={() => setFoliageCategoryFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                    foliageCategoryFilter === 'all'
+                      ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                      : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                  }`}
+                >
+                  All ({FOLIAGE_MANIFEST.length})
+                </button>
+                {FOLIAGE_CATEGORIES.map((cat) => {
+                  const count = getFoliageByCategory(cat.id).length;
+                  const isActive = foliageCategoryFilter === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setFoliageCategoryFilter(cat.id)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: cat.accentColor }}
+                      />
+                      <span>{cat.name.split(' ')[0]}</span>
+                      <span className="opacity-70 text-[9px]">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Categorized Foliage Groups with Dividers */}
+              {filteredFoliageCategories.length === 0 ? (
+                <div className="text-center py-8 text-[#8D7666] italic text-xs">
+                  No foliage found matching "{foliageSearchQuery}"
+                </div>
+              ) : (
+                filteredFoliageCategories.map((cat) => {
+                  const items = searchFoliage(foliageSearchQuery, cat.id);
+                  if (items.length === 0) return null;
+
+                  return (
+                    <div key={cat.id} className="space-y-2">
+                      {/* Section Divider & Header */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-[#D9C9B4]">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: cat.accentColor }}
+                        />
+                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                          {cat.name}
+                        </span>
+                        <span className="text-[9px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
+                          {items.length}
+                        </span>
+                      </div>
+
+                      {/* 2-Column Responsive Foliage Grid */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {items.map((item) => {
+                          const isSelected =
+                            foliageSelectMode === 'multi' && foliageSubTool === 'scatter'
+                              ? selectedFoliageIds.includes(item.id)
+                              : selectedFoliageId === item.id;
+
+                          return (
+                            <button
+                              key={item.id}
+                              onMouseEnter={() => {
+                                foliageTextureManager.preload(item.spritePath);
+                              }}
+                              onClick={() => {
+                                if (foliageSelectMode === 'multi' && foliageSubTool === 'scatter') {
+                                  toggleFoliageSelectedId(item.id);
+                                } else {
+                                  setSelectedFoliageId(item.id);
+                                }
+                                if (foliageSubTool === 'erase') {
+                                  setFoliageSubTool('scatter');
+                                }
+                              }}
+                              title={`${item.name} (${item.defaultWidth}m × ${item.defaultHeight}m) - ${item.culturalLore}`}
+                              className={`p-1.5 rounded-xl border text-left transition-all cursor-pointer relative group flex flex-col ${
+                                isSelected
+                                  ? 'border-[#15803D] ring-2 ring-[#15803D] bg-[#F4F9F5] shadow-sm scale-[1.01]'
+                                  : 'border-[#D9C9B4] bg-[#FAF8F5] hover:bg-[#EADECF] hover:border-[#BFA892]'
+                              }`}
+                            >
+                              {/* Thumbnail Image */}
+                              <div className="w-full aspect-square rounded-lg overflow-hidden relative bg-[#E4D8CB] border border-black/5 flex items-center justify-center p-1">
+                                <img
+                                  src={item.previewPath}
+                                  alt={item.name}
+                                  loading="lazy"
+                                  className="w-full h-full object-contain [image-rendering:pixelated]"
+                                />
+
+                                {/* Selected Checkmark Badge */}
+                                {isSelected && (
+                                  <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#15803D] text-white flex items-center justify-center shadow-xs">
+                                    <TbCheck className="w-3 h-3 stroke-[3]" />
+                                  </div>
+                                )}
+
+                                {/* Dimension Tag */}
+                                <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white leading-none">
+                                  {item.defaultWidth}m × {item.defaultHeight}m
                                 </div>
                               </div>
 

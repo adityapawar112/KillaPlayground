@@ -13,6 +13,7 @@ import {
   TbCheck,
   TbSparkles,
   TbPlant2,
+  TbFocus2,
   TbLock,
   TbBuildingFortress,
   TbRoute,
@@ -34,10 +35,12 @@ import {
   TbArrowsMove,
   TbEdit,
   TbPalette,
+  TbTrees,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { getTextureById, TEXTURE_MANIFEST } from '@/lib/textures/textureManifest';
+import { getFoliageById, FOLIAGE_MANIFEST } from '@/lib/foliage/foliageManifest';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { SplineConversionType } from '@/lib/spline/splineTypes';
 import { FortStampType } from '@/lib/walls/wallTypes';
@@ -116,6 +119,22 @@ export const LeftToolSidebar: React.FC = () => {
     setPaintBrushFalloff,
     paintTextureRepeat,
     setPaintTextureRepeat,
+    selectedFoliageId,
+    foliageSubTool,
+    foliageSelectMode,
+    setFoliageSelectMode,
+    selectedFoliageIds,
+    clearFoliageSelection,
+    foliageBrushRadius,
+    setFoliageBrushRadius,
+    foliageBrushDensity,
+    setFoliageBrushDensity,
+    foliageScaleJitter,
+    setFoliageScaleJitter,
+    foliageNormalAlign,
+    setFoliageNormalAlign,
+    foliageInstances,
+    clearAllFoliage,
     toggleRightSidebar,
     leftSidebarWidth: sidebarWidth,
     setLeftSidebarWidth: setSidebarWidth,
@@ -1323,6 +1342,291 @@ export const LeftToolSidebar: React.FC = () => {
                     </button>
                   </div>
                 )}
+              </div>
+            );
+          })()}
+
+          {/* ======================================================== */}
+          {/* 5. FOLIAGE STUDIO (Ticket 07)                            */}
+          {/* ======================================================== */}
+          {activeTool === 'foliage' && (() => {
+            const currentFoliage = getFoliageById(selectedFoliageId) || FOLIAGE_MANIFEST[0];
+
+            return (
+              <div className="space-y-4">
+                {/* Header Card */}
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                  <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
+                    <TbTrees className="w-4 h-4 text-[#15803D]" />
+                    <span>Foliage Studio</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                    {foliageSubTool} mode
+                  </span>
+                </div>
+
+                {/* Scatter Mode: Selection Mode Toggle & Deselect All Button */}
+                {foliageSubTool === 'scatter' && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      <span>Selection Mode</span>
+                      {foliageSelectMode === 'multi' && (
+                        <span className="text-[#15803D] font-bold lowercase">
+                          {selectedFoliageIds.length} selected
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-1 p-0.5 bg-[#EFE8DD] rounded-lg border border-[#D9C9B4]">
+                      <button
+                        onClick={() => setFoliageSelectMode('single')}
+                        className={`py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                          foliageSelectMode === 'single'
+                            ? 'bg-white text-[#4B382C] shadow-sm'
+                            : 'text-[#8D7666] hover:text-[#4B382C]'
+                        }`}
+                      >
+                        Single Select
+                      </button>
+                      <button
+                        onClick={() => setFoliageSelectMode('multi')}
+                        className={`py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                          foliageSelectMode === 'multi'
+                            ? 'bg-[#15803D] text-white shadow-sm'
+                            : 'text-[#8D7666] hover:text-[#4B382C]'
+                        }`}
+                      >
+                        Multi Select
+                      </button>
+                    </div>
+
+                    {/* Deselect All Button (Below the toggle) */}
+                    {foliageSelectMode === 'multi' && (
+                      <button
+                        onClick={clearFoliageSelection}
+                        disabled={selectedFoliageIds.length === 0}
+                        className="w-full py-1 px-2 text-[11px] font-semibold text-[#8D7666] hover:text-[#B91C1C] hover:bg-[#FBE8E8] disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#8D7666] border border-[#D9C9B4] rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <TbTrash className="w-3.5 h-3.5" />
+                        <span>Deselect All</span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* Active Species Display */}
+                {foliageSubTool !== 'erase' && (
+                  foliageSubTool === 'scatter' && foliageSelectMode === 'multi' ? (
+                    selectedFoliageIds.length === 0 ? (
+                      <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-dashed border-[#D9C9B4] text-center space-y-1">
+                        <div className="text-[11px] font-semibold text-[#8D7666]">No species selected</div>
+                        <div className="text-[10px] text-[#A89887]">Click items in Foliage Browser to select species for scattering</div>
+                        <button
+                          onClick={toggleRightSidebar}
+                          className="text-[10px] font-bold text-[#15803D] hover:underline cursor-pointer inline-flex items-center gap-1 mt-1"
+                        >
+                          <TbTrees className="w-3 h-3" />
+                          <span>Open Foliage Browser</span>
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                            Active Species ({selectedFoliageIds.length})
+                          </span>
+                          <button
+                            onClick={toggleRightSidebar}
+                            className="text-[10px] font-bold text-[#15803D] hover:text-[#166534] flex items-center gap-1 cursor-pointer transition-colors"
+                            title="Open Foliage Asset Browser"
+                          >
+                            <TbTrees className="w-3.5 h-3.5" />
+                            <span>Browse All {FOLIAGE_MANIFEST.length}</span>
+                          </button>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {selectedFoliageIds.slice(0, 10).map((id) => {
+                            const it = getFoliageById(id);
+                            if (!it) return null;
+                            return (
+                              <div
+                                key={id}
+                                title={it.name}
+                                className="w-8 h-8 rounded-md bg-[#E4D8CB] border border-[#D9C9B4] p-0.5 relative group shrink-0"
+                              >
+                                <img
+                                  src={it.previewPath}
+                                  alt={it.name}
+                                  className="w-full h-full object-contain [image-rendering:pixelated]"
+                                />
+                              </div>
+                            );
+                          })}
+                          {selectedFoliageIds.length > 10 && (
+                            <div className="w-8 h-8 rounded-md bg-[#EADECF] border border-[#D9C9B4] flex items-center justify-center text-[10px] font-bold text-[#5C4638] shrink-0">
+                              +{selectedFoliageIds.length - 10}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                          Active Species
+                        </span>
+                        <button
+                          onClick={toggleRightSidebar}
+                          className="text-[10px] font-bold text-[#15803D] hover:text-[#166534] flex items-center gap-1 cursor-pointer transition-colors"
+                          title="Open Foliage Asset Browser"
+                        >
+                          <TbTrees className="w-3.5 h-3.5" />
+                          <span>Browse All {FOLIAGE_MANIFEST.length}</span>
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 pt-1">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#E4D8CB] border border-[#D9C9B4] shrink-0 flex items-center justify-center p-1">
+                          <img
+                            src={currentFoliage.previewPath}
+                            alt={currentFoliage.name}
+                            className="w-full h-full object-contain [image-rendering:pixelated]"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-[#4B382C] truncate">
+                            {currentFoliage.name}
+                          </div>
+                          <div className="text-[10px] text-[#8D7666] truncate mt-0.5">
+                            {currentFoliage.description}
+                          </div>
+                          <div className="flex items-center gap-1 mt-1">
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#EADECF] text-[#5C4638]">
+                              {currentFoliage.category.replace('_', ' ')}
+                            </span>
+                            <span className="text-[9px] text-[#8D7666]">
+                              {currentFoliage.defaultWidth}m × {currentFoliage.defaultHeight}m
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {/* Sliders Mounted Directly on Panel Background (bg-[#F3EBE0], NO enclosing cards) */}
+                <div className="space-y-3 pt-1">
+                  {/* Single Mode Placement Notice */}
+                  {foliageSubTool === 'single' && (
+                    <div className="p-2 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[10px] text-[#5C4638] flex items-center gap-2">
+                      <TbFocus2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                      <span>Single placement mode: Click anywhere on terrain to plant a hero specimen.</span>
+                    </div>
+                  )}
+
+                  {/* Brush Radius - For Scatter & Erase modes */}
+                  {foliageSubTool !== 'single' && (
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Brush Radius</span>
+                        <span className="text-[#8D7666]">{foliageBrushRadius.toFixed(2)}m</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.1"
+                        max="2.0"
+                        step="0.05"
+                        value={foliageBrushRadius}
+                        onChange={(e) => setFoliageBrushRadius(parseFloat(e.target.value))}
+                        className="w-full accent-[#15803D] cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Density - Scatter Mode only */}
+                  {foliageSubTool === 'scatter' && (
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Density</span>
+                        <span className="text-[#8D7666]">{foliageBrushDensity} per stroke</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="20"
+                        step="1"
+                        value={foliageBrushDensity}
+                        onChange={(e) => setFoliageBrushDensity(parseInt(e.target.value, 10))}
+                        className="w-full accent-[#15803D] cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Scale Jitter - Scatter & Single modes */}
+                  {foliageSubTool !== 'erase' && (
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Scale Jitter</span>
+                        <span className="text-[#8D7666]">±{Math.round(foliageScaleJitter * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.0"
+                        max="0.5"
+                        step="0.05"
+                        value={foliageScaleJitter}
+                        onChange={(e) => setFoliageScaleJitter(parseFloat(e.target.value))}
+                        className="w-full accent-[#15803D] cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Normal Alignment - Scatter & Single modes */}
+                  {foliageSubTool !== 'erase' && (
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Normal Align</span>
+                        <span className="text-[#8D7666]">
+                          {Math.round(foliageNormalAlign * 100)}% {foliageNormalAlign === 0 ? '(Upright)' : ''}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.0"
+                        max="1.0"
+                        step="0.05"
+                        value={foliageNormalAlign}
+                        onChange={(e) => setFoliageNormalAlign(parseFloat(e.target.value))}
+                        className="w-full accent-[#15803D] cursor-pointer"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Primary Action Group Card: Placed count & Clear */}
+                <div className="pt-2 border-t border-[#D9C9B4] flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#8D7666]">
+                    {foliageInstances.length} planted
+                  </span>
+                  <button
+                    onClick={() => {
+                      if (foliageInstances.length > 0) {
+                        useTerrainStore.getState().pushUndo();
+                        clearAllFoliage();
+                      }
+                    }}
+                    disabled={foliageInstances.length === 0}
+                    className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
+                      foliageInstances.length > 0
+                        ? 'bg-[#8F4938] text-white hover:bg-[#723627] active:scale-95 shadow-sm'
+                        : 'bg-[#E4D8CB] text-[#A69485] cursor-not-allowed'
+                    }`}
+                    title="Clear all planted foliage across diorama"
+                  >
+                    <TbTrash className="w-3.5 h-3.5" />
+                    <span>Clear Foliage</span>
+                  </button>
+                </div>
               </div>
             );
           })()}

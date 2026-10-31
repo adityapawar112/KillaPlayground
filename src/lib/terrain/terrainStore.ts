@@ -16,12 +16,24 @@ import {
   STATE_BUFFER_SIZE,
 } from './terrainBuffer';
 import { generateTerrainBlueprint } from './terrainGenerators';
+import {
+  createPaintBuffer,
+  createPaintStateTexture,
+  createFallbackArrayTexture,
+  applyTexturePaintBrush,
+  fillEntireTerrain,
+  clearPaintBuffer,
+  PaintBrushOptions,
+} from './terrainPaintBuffer';
 import { useEditorStore, PondWaterFeature } from '../state/useEditorStore';
 import { WallPath, CitadelKeep } from '../walls/wallTypes';
 
 interface TerrainState {
   stateBuffer: Float32Array;
   stateTexture: THREE.DataTexture;
+  paintBuffer: Uint8Array;
+  paintTexture: THREE.DataTexture;
+  paintArrayTexture: THREE.DataArrayTexture;
   terrainMesh: THREE.Mesh | null;
   terrainGeometry: THREE.BufferGeometry | null;
   activeTemplateId: string;
@@ -31,9 +43,14 @@ interface TerrainState {
   setTerrainMesh: (mesh: THREE.Mesh | null, geometry: THREE.BufferGeometry | null) => void;
   loadTemplate: (templateId: string, freeformOpts?: import('./terrainGenerators').FreeformOptions) => void;
   markTextureNeedsUpdate: () => void;
+  markPaintTextureNeedsUpdate: () => void;
+  setPaintArrayTexture: (tex: THREE.DataArrayTexture) => void;
   resetTerrain: () => void;
   applyDirtyRegion: (minX: number, maxX: number, minZ: number, maxZ: number) => void;
   sculptTerrain: (centerX: number, centerZ: number, options: TerrainBrushOptions) => boolean;
+  applyPaintBrush: (centerX: number, centerZ: number, options: PaintBrushOptions) => boolean;
+  fillPaintTerrain: (layerIndex: number) => void;
+  clearPaintTerrain: () => void;
   pushUndo: () => void;
   undo: () => boolean;
   redo: () => boolean;
@@ -45,6 +62,8 @@ interface TerrainState {
 const MAX_UNDO_SLOTS = 15;
 const undoStack: Float32Array[] = [];
 const redoStack: Float32Array[] = [];
+const paintUndoStack: Uint8Array[] = [];
+const paintRedoStack: Uint8Array[] = [];
 const pondUndoStack: PondWaterFeature[][] = [];
 const pondRedoStack: PondWaterFeature[][] = [];
 const wallUndoStack: WallPath[][] = [];
@@ -57,13 +76,31 @@ const initialBuffer = createStateBuffer(0.0, 0.0);
 generateTerrainBlueprint('scratch', initialBuffer);
 const initialTexture = createStateTexture(initialBuffer);
 
+// Initialize paint buffer and array textures
+const initialPaintBuffer = createPaintBuffer();
+const initialPaintTexture = createPaintStateTexture(initialPaintBuffer);
+const initialPaintArrayTexture = createFallbackArrayTexture(52);
+
 export const useTerrainStore = create<TerrainState>((set, get) => ({
   stateBuffer: initialBuffer,
   stateTexture: initialTexture,
+  paintBuffer: initialPaintBuffer,
+  paintTexture: initialPaintTexture,
+  paintArrayTexture: initialPaintArrayTexture,
   terrainMesh: null,
   terrainGeometry: null,
   activeTemplateId: 'scratch',
   lastUpdated: Date.now(),
+
+  setPaintArrayTexture: (tex) => {
+    set({ paintArrayTexture: tex, lastUpdated: Date.now() });
+  },
+
+  markPaintTextureNeedsUpdate: () => {
+    const { paintTexture } = get();
+    paintTexture.needsUpdate = true;
+    set({ lastUpdated: Date.now() });
+  },
 
   setTerrainMesh: (mesh, geometry) => {
     const { stateBuffer } = get();
@@ -95,10 +132,14 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   },
 
   resetTerrain: () => {
-    const { stateBuffer, stateTexture, terrainGeometry, activeTemplateId } = get();
+    const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry, activeTemplateId } = get();
     // Regenerate the active template
     generateTerrainBlueprint(activeTemplateId || 'scratch', stateBuffer);
     stateTexture.needsUpdate = true;
+
+    // Reset paint layer to natural base soil
+    clearPaintBuffer(paintBuffer);
+    paintTexture.needsUpdate = true;
 
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
@@ -135,35 +176,71 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     return true;
   },
 
+  applyPaintBrush: (centerX, centerZ, options) => {
+    const { paintBuffer, paintTexture } = get();
+    const modified = applyTexturePaintBrush(paintBuffer, centerX, centerZ, options);
+    if (!modified) return false;
+
+    paintTexture.needsUpdate = true;
+    set({ lastUpdated: Date.now() });
+    return true;
+  },
+
+  fillPaintTerrain: (layerIndex) => {
+    const { paintBuffer, paintTexture, pushUndo } = get();
+    pushUndo();
+    fillEntireTerrain(paintBuffer, layerIndex);
+    paintTexture.needsUpdate = true;
+    set({ lastUpdated: Date.now() });
+  },
+
+  clearPaintTerrain: () => {
+    const { paintBuffer, paintTexture, pushUndo } = get();
+    pushUndo();
+    clearPaintBuffer(paintBuffer);
+    paintTexture.needsUpdate = true;
+    set({ lastUpdated: Date.now() });
+  },
+
   pushUndo: () => {
-    const { stateBuffer } = get();
+    const { stateBuffer, paintBuffer } = get();
     if (undoStack.length >= MAX_UNDO_SLOTS) {
       undoStack.shift();
+      paintUndoStack.shift();
       pondUndoStack.shift();
       wallUndoStack.shift();
       citadelUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
+    paintUndoStack.push(paintBuffer.slice());
     pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
     wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
     citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
     redoStack.length = 0;
+    paintRedoStack.length = 0;
     pondRedoStack.length = 0;
     wallRedoStack.length = 0;
     citadelRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
-  canUndo: () => undoStack.length > 0 || wallUndoStack.length > 0 || citadelUndoStack.length > 0,
-  canRedo: () => redoStack.length > 0 || wallRedoStack.length > 0 || citadelRedoStack.length > 0,
+  canUndo: () => undoStack.length > 0 || paintUndoStack.length > 0 || wallUndoStack.length > 0 || citadelUndoStack.length > 0,
+  canRedo: () => redoStack.length > 0 || paintRedoStack.length > 0 || wallRedoStack.length > 0 || citadelRedoStack.length > 0,
 
   undo: () => {
-    if (undoStack.length === 0 && wallUndoStack.length === 0 && citadelUndoStack.length === 0) return false;
-    const { stateBuffer, stateTexture, terrainGeometry } = get();
+    if (undoStack.length === 0 && paintUndoStack.length === 0 && wallUndoStack.length === 0 && citadelUndoStack.length === 0) return false;
+    const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
     if (undoStack.length > 0) {
       const prevSnapshot = undoStack.pop()!;
       redoStack.push(stateBuffer.slice());
       stateBuffer.set(prevSnapshot);
+    }
+
+    if (paintUndoStack.length > 0) {
+      const prevPaint = paintUndoStack.pop()!;
+      paintRedoStack.push(paintBuffer.slice());
+      paintBuffer.set(prevPaint);
+      paintTexture.needsUpdate = true;
     }
 
     if (pondUndoStack.length > 0) {
@@ -194,12 +271,19 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   },
 
   redo: () => {
-    if (redoStack.length === 0 && wallRedoStack.length === 0 && citadelRedoStack.length === 0) return false;
-    const { stateBuffer, stateTexture, terrainGeometry } = get();
+    if (redoStack.length === 0 && paintRedoStack.length === 0 && wallRedoStack.length === 0 && citadelRedoStack.length === 0) return false;
+    const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
     if (redoStack.length > 0) {
       const nextSnapshot = redoStack.pop()!;
       undoStack.push(stateBuffer.slice());
       stateBuffer.set(nextSnapshot);
+    }
+
+    if (paintRedoStack.length > 0) {
+      const nextPaint = paintRedoStack.pop()!;
+      paintUndoStack.push(paintBuffer.slice());
+      paintBuffer.set(nextPaint);
+      paintTexture.needsUpdate = true;
     }
 
     if (pondRedoStack.length > 0) {

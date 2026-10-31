@@ -204,6 +204,18 @@ const CameraKeyboardController: React.FC<{
       } else if (e.key === 'Home' || e.key.toLowerCase() === 'f') {
         resetCamera();
         e.preventDefault();
+      } else if (e.key === '[' || e.key === ']') {
+        const editor = useEditorStore.getState();
+        const step = e.key === ']' ? 0.1 : -0.1;
+        if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.paintBrushRadius + step).toFixed(2))));
+          editor.setPaintBrushRadius(newRadius);
+          e.preventDefault();
+        } else if (editor.activeTool === 'terrain') {
+          const newRadius = Math.max(0.2, Math.min(2.5, parseFloat((editor.brushRadius + step).toFixed(2))));
+          editor.setBrushRadius(newRadius);
+          e.preventDefault();
+        }
       }
     };
 
@@ -243,14 +255,29 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         if (e.shiftKey) {
           // PRIMARY SLIDER: Brush Size (0.2m to 3.0m in 0.1m increments)
           const step = 0.1;
-          const newRadius = Math.max(
-            0.2,
-            Math.min(3.0, parseFloat((editor.brushRadius + (isUp ? step : -step)).toFixed(2)))
-          );
-          editor.setBrushRadius(newRadius);
+          if (tool === 'texture' || tool === 'paint') {
+            const newRadius = Math.max(
+              0.2,
+              Math.min(3.0, parseFloat((editor.paintBrushRadius + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setPaintBrushRadius(newRadius);
+          } else {
+            const newRadius = Math.max(
+              0.2,
+              Math.min(3.0, parseFloat((editor.brushRadius + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setBrushRadius(newRadius);
+          }
         } else if (e.ctrlKey) {
-          // SECONDARY SLIDER:
-          if (tool === 'foliage' || tool === 'grass') {
+          // SECONDARY SLIDER: Strength / Opacity / Density
+          if (tool === 'texture' || tool === 'paint') {
+            const step = 0.05;
+            const newStrength = Math.max(
+              0.05,
+              Math.min(1.0, parseFloat((editor.paintBrushStrength + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setPaintBrushStrength(newStrength);
+          } else if (tool === 'foliage' || tool === 'grass') {
             const step = 0.05;
             const newDensity = Math.max(
               0.1,
@@ -274,8 +301,15 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
             editor.setBrushStrength(newStrength);
           }
         } else if (e.altKey) {
-          // TERTIARY SLIDER:
-          if (tool === 'terrain') {
+          // TERTIARY SLIDER: Falloff / Height / Angle
+          if (tool === 'texture' || tool === 'paint') {
+            const step = 0.05;
+            const newFalloff = Math.max(
+              0.0,
+              Math.min(1.0, parseFloat((editor.paintBrushFalloff + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setPaintBrushFalloff(newFalloff);
+          } else if (tool === 'terrain') {
             if (editor.terrainSubTool === 'plateau') {
               const step = 0.1;
               const newHeight = Math.max(

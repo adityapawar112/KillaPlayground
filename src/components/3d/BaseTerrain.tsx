@@ -14,6 +14,8 @@ import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { calculateMagneticSnap } from '@/lib/walls/wallGeometry';
+import { TEXTURE_MANIFEST, getTextureById } from '@/lib/textures/textureManifest';
+import { loadTexturesIntoArray } from '@/lib/terrain/terrainPaintBuffer';
 
 /**
  * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
@@ -22,7 +24,7 @@ interface TerrainBrushCursorProps {
   position: [number, number, number];
   normal: [number, number, number];
   radius: number;
-  subTool: TerrainSubTool;
+  subTool: string;
   visible: boolean;
 }
 
@@ -36,12 +38,15 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
   const color = useMemo(() => {
     switch (subTool) {
       case 'elevate':
+      case 'paint':
         return '#E85D04'; // Bhagwa saffron
       case 'lower':
+      case 'erase':
         return '#8F4938'; // Burnt clay
       case 'plateau':
         return '#B58B63'; // Camel stone
       case 'smooth':
+      case 'blend':
         return '#777A57'; // Olive sage
       case 'pond':
         return '#0284C7'; // Tarpaulin blue
@@ -134,6 +139,7 @@ export const BaseTerrainFallback: React.FC = () => {
 export const BaseTerrainContent: React.FC = () => {
   const meshRef = useRef<THREE.Mesh>(null);
   const isSculptingRef = useRef(false);
+  const isPaintingRef = useRef(false);
   const isDrawingWallRef = useRef(false);
   const lastWallPointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const isDrawingSplineRef = useRef(false);
@@ -148,10 +154,35 @@ export const BaseTerrainContent: React.FC = () => {
   const rawControls = useThree((state) => state.controls);
   const controls = rawControls as unknown as { enabled: boolean } | null;
 
-  const { stateBuffer, stateTexture, lastUpdated, setTerrainMesh, sculptTerrain, pushUndo } = useTerrainStore();
+  const {
+    stateBuffer,
+    stateTexture,
+    paintTexture,
+    paintArrayTexture,
+    setPaintArrayTexture,
+    lastUpdated,
+    setTerrainMesh,
+    sculptTerrain,
+    applyPaintBrush,
+    pushUndo,
+  } = useTerrainStore();
+
   const activeTool = useEditorStore((s) => s.activeTool);
   const terrainSubTool = useEditorStore((s) => s.terrainSubTool);
   const brushRadius = useEditorStore((s) => s.brushRadius);
+  const paintBrushRadius = useEditorStore((s) => s.paintBrushRadius);
+  const paintSubTool = useEditorStore((s) => s.paintSubTool);
+  const paintTextureRepeat = useEditorStore((s) => s.paintTextureRepeat);
+
+  // Load 52 retro textures into DataArrayTexture asynchronously on client
+  useEffect(() => {
+    loadTexturesIntoArray(TEXTURE_MANIFEST, paintArrayTexture).then((loaded) => {
+      loaded.colorSpace = THREE.SRGBColorSpace;
+      loaded.needsUpdate = true;
+      setPaintArrayTexture(loaded);
+      invalidate();
+    });
+  }, [paintArrayTexture, setPaintArrayTexture, invalidate]);
 
   // Load retro pixel-art PBR texture maps (Flavor A: Crisp PS1 / Valheim modern retro diorama):
   // Load authentic Binbun Retroground PBR textures (10 essential maps, strictly <= 16 WebGL texture units budget):
@@ -246,6 +277,9 @@ export const BaseTerrainContent: React.FC = () => {
   const material = useMemo(() => {
     return createTerrainMaterial({
       stateTexture,
+      paintStateTexture: paintTexture,
+      paintAtlasTexture: paintArrayTexture,
+      paintRepeat: paintTextureRepeat,
       walkableDiff: textures.walkableDiff,
       walkableArm: textures.walkableArm,
       walkableNor: textures.walkableNor,
@@ -259,7 +293,7 @@ export const BaseTerrainContent: React.FC = () => {
       textureRepeat: 16.0,
       cliffRepeat: 12.0,
     });
-  }, [stateTexture, textures]);
+  }, [stateTexture, paintTexture, paintArrayTexture, paintTextureRepeat, textures]);
 
   // Register mesh and geometry with terrain store
   useEffect(() => {
@@ -511,6 +545,40 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      // Handle Texture Tool Direct Surface Painting (Ticket 06)
+      if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+        if (e.button !== 0 || e.altKey) return;
+        if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
+          return;
+        }
+        e.stopPropagation();
+
+        if (controls) {
+          controls.enabled = false;
+        }
+
+        isPaintingRef.current = true;
+        pushUndo();
+
+        const texItem = getTextureById(editor.selectedTextureId) || TEXTURE_MANIFEST[0];
+        const layerIdx = texItem.layerIndex;
+
+        applyPaintBrush(e.point.x, e.point.z, {
+          operation: editor.paintSubTool,
+          targetLayer: layerIdx,
+          radius: editor.paintBrushRadius,
+          strength: editor.paintBrushStrength,
+          falloff: editor.paintBrushFalloff,
+        });
+
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        setCursorVisible(true);
+        invalidate();
+        return;
+      }
+
       if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
         return;
       }
@@ -606,6 +674,29 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        if (!cursorVisible) setCursorVisible(true);
+
+        if (isPaintingRef.current) {
+          e.stopPropagation();
+          const texItem = getTextureById(editor.selectedTextureId) || TEXTURE_MANIFEST[0];
+          const layerIdx = texItem.layerIndex;
+
+          applyPaintBrush(e.point.x, e.point.z, {
+            operation: editor.paintSubTool,
+            targetLayer: layerIdx,
+            radius: editor.paintBrushRadius,
+            strength: editor.paintBrushStrength,
+            falloff: editor.paintBrushFalloff,
+          });
+          invalidate();
+        }
+        return;
+      }
+
       if (editor.activeTool !== 'terrain') {
         if (cursorVisible) setCursorVisible(false);
         return;
@@ -621,10 +712,18 @@ export const BaseTerrainContent: React.FC = () => {
         executeSculpt(e.point);
       }
     },
-    [cursorVisible, executeSculpt, computeCursorNormal, invalidate]
+    [cursorVisible, executeSculpt, applyPaintBrush, computeCursorNormal, invalidate]
   );
 
   const handlePointerUp = useCallback(() => {
+    if (isPaintingRef.current) {
+      isPaintingRef.current = false;
+      if (controls) {
+        controls.enabled = true;
+      }
+      invalidate();
+    }
+
     if (isDrawingSplineRef.current) {
       isDrawingSplineRef.current = false;
       lastSplinePointRef.current = null;
@@ -655,7 +754,7 @@ export const BaseTerrainContent: React.FC = () => {
   }, [controls, invalidate]);
 
   const handlePointerLeave = useCallback(() => {
-    if (!isSculptingRef.current) {
+    if (!isSculptingRef.current && !isPaintingRef.current) {
       setCursorVisible(false);
     }
     const editor = useEditorStore.getState();
@@ -667,6 +766,14 @@ export const BaseTerrainContent: React.FC = () => {
   // Global window pointerup to catch pointer released outside mesh
   useEffect(() => {
     const handleGlobalPointerUp = () => {
+      if (isPaintingRef.current) {
+        isPaintingRef.current = false;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
+      }
+
       if (isDrawingSplineRef.current) {
         isDrawingSplineRef.current = false;
         lastSplinePointRef.current = null;
@@ -721,9 +828,9 @@ export const BaseTerrainContent: React.FC = () => {
       <TerrainBrushCursor
         position={cursorPos}
         normal={cursorNormal}
-        radius={brushRadius}
-        subTool={terrainSubTool}
-        visible={cursorVisible && activeTool === 'terrain'}
+        radius={(activeTool === 'texture' || activeTool === 'paint') ? paintBrushRadius : brushRadius}
+        subTool={(activeTool === 'texture' || activeTool === 'paint') ? paintSubTool : terrainSubTool}
+        visible={cursorVisible && (activeTool === 'terrain' || activeTool === 'texture' || activeTool === 'paint')}
       />
     </>
   );

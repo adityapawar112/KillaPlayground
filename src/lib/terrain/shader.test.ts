@@ -35,7 +35,7 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
 
     const terrainMat = createTerrainMaterial({ stateTexture: tex });
     expect(terrainMat).toBeDefined();
-    // Exactly 11 texture samplers to guarantee compliance with MAX_TEXTURE_IMAGE_UNITS (16)
+    // 13 texture samplers total to guarantee compliance with MAX_TEXTURE_IMAGE_UNITS (16)
     expect(terrainMat.uniforms.uStateTexture).toBeDefined();
     expect(terrainMat.uniforms.uCliffDiff).toBeDefined();
     expect(terrainMat.uniforms.uCliffArm).toBeDefined();
@@ -47,11 +47,13 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
     expect(terrainMat.uniforms.uGrassDiff).toBeDefined();
     expect(terrainMat.uniforms.uWaterDiff).toBeDefined();
     expect(terrainMat.uniforms.uWaterNor).toBeDefined();
+    expect(terrainMat.uniforms.uPaintState).toBeDefined();
+    expect(terrainMat.uniforms.uPaintAtlas).toBeDefined();
 
-    // Verify sampler count is strictly <= 12 to leave margin for Three.js internal lights/shadows
+    // Verify sampler count is strictly <= 13 to leave margin for Three.js internal lights/shadows
     const samplerUniformCount = Object.values(terrainMat.uniforms).filter(
-      (u: any) => u.value && (u.value.isTexture || u.value.isDataTexture)
+      (u: any) => u.value && (u.value.isTexture || u.value.isDataTexture || u.value.isDataArrayTexture)
     ).length;
-    expect(samplerUniformCount).toBeLessThanOrEqual(11);
+    expect(samplerUniformCount).toBeLessThanOrEqual(13);
   });
 });

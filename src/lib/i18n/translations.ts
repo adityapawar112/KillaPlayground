@@ -69,6 +69,11 @@ export const TRANSLATIONS = {
         desc: 'Dries the shaped wet soil, solidifying it for painting, figurines, and crenellations',
         speed: 'Drying Speed',
       },
+      texture: {
+        label: 'Texture',
+        fullLabel: 'Texture Studio',
+        desc: 'Paint authentic rock, soil, and pathway surface textures directly on terrain',
+      },
       paint: {
         label: 'Paint',
         fullLabel: 'Structure Paint',
@@ -396,6 +401,11 @@ export const TRANSLATIONS = {
         desc: 'ओली माती वाळवून पक्की करा, ज्यामुळे त्यावर रंगकाम, मावळे व कांगणे बसवता येतील',
         speed: 'वाळवण्याचा वेग',
       },
+      texture: {
+        label: 'टेक्सचर',
+        fullLabel: 'टेक्सचर स्टुडिओ',
+        desc: 'किल्ल्याच्या टेकडीवर माती, दगड व पायवाटांचे पोत रंगवा',
+      },
       paint: {
         label: 'रंगकाम',
         fullLabel: 'रंगकाम स्टुडिओ',
@@ -722,6 +732,11 @@ export const TRANSLATIONS = {
         fullLabel: 'मिट्टी सुखाएं',
         desc: 'गीली मिट्टी को सुखाकर पक्का करें, ताकि रंगाई, सैनिक और कांगूरे लगाए जा सकें',
         speed: 'सुखाने की गति',
+      },
+      texture: {
+        label: 'टेक्सचर',
+        fullLabel: 'टेक्सचर स्टूडियो',
+        desc: 'किले की पहाड़ी पर मिट्टी, पत्थर और रास्तों की बनावट रंगें',
       },
       paint: {
         label: 'रंगाई',

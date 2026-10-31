@@ -28,11 +28,19 @@ import {
   TbDice5,
   TbX,
   TbCheck,
+  TbSearch,
+  TbPalette,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { WallMode } from '@/lib/walls/wallTypes';
 import { SplineMode, SplineConversionType } from '@/lib/spline/splineTypes';
 import { calculateWallTotalLength, detectBastionLocations } from '@/lib/walls/wallGeometry';
+import {
+  TEXTURE_MANIFEST,
+  TEXTURE_CATEGORIES,
+  searchTextures,
+  getTexturesByCategory,
+} from '@/lib/textures/textureManifest';
 
 const STORAGE_RIGHT_WIDTH_KEY = 'killa_right_sidebar_width_v1';
 
@@ -96,6 +104,14 @@ export const RightToolSidebar: React.FC = () => {
     deleteSpline,
     setHoveredElement,
     setCameraViewPreset,
+    selectedTextureId,
+    setSelectedTextureId,
+    paintCategoryFilter,
+    setPaintCategoryFilter,
+    paintSearchQuery,
+    setPaintSearchQuery,
+    paintSubTool,
+    setPaintSubTool,
     rightSidebarWidth: sidebarWidth,
     setRightSidebarWidth: setSidebarWidth,
   } = useEditorStore();
@@ -157,17 +173,18 @@ export const RightToolSidebar: React.FC = () => {
     setCameraViewPreset('reset');
   };
 
-  // Only show right sidebar for tools with outliner/modes (walls, spline, terrain, prop)
+  // Only show right sidebar for tools with outliner/browser (walls, spline, texture, prop)
   const isRelevantTool =
-    activeTool === 'walls' || activeTool === 'spline' || activeTool === 'terrain' || activeTool === 'prop';
+    activeTool === 'walls' || activeTool === 'spline' || activeTool === 'texture' || activeTool === 'paint' || activeTool === 'prop';
   if (!isRelevantTool) return null;
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
-  if (activeTool === 'terrain') {
-    return null;
-  }
-
   const selectedSpline = splines.find((s) => s.id === selectedSplineId);
+
+  const filteredCategories =
+    paintCategoryFilter === 'all'
+      ? TEXTURE_CATEGORIES
+      : TEXTURE_CATEGORIES.filter((c) => c.id === paintCategoryFilter);
 
   return (
     <>
@@ -181,10 +198,16 @@ export const RightToolSidebar: React.FC = () => {
           <button
             onClick={toggleRightSidebar}
             className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
-            title="Open Outliner"
+            title={(activeTool === 'texture' || activeTool === 'paint') ? 'Open Texture Browser' : 'Open Outliner'}
           >
-            <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="text-[11px] font-bold">Outliner</span>
+            {(activeTool === 'texture' || activeTool === 'paint') ? (
+              <TbPalette className="w-3.5 h-3.5 text-[#8F4938]" />
+            ) : (
+              <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
+            )}
+            <span className="text-[11px] font-bold">
+              {(activeTool === 'texture' || activeTool === 'paint') ? 'Textures' : 'Outliner'}
+            </span>
             <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
@@ -224,14 +247,25 @@ export const RightToolSidebar: React.FC = () => {
         {/* Sidebar Header */}
         <div className="flex items-center justify-between p-3 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
           <div className="flex items-center gap-1.5 text-[#4B382C]">
-            <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
+            {(activeTool === 'texture' || activeTool === 'paint') ? (
+              <TbPalette className="w-4 h-4 text-[#8F4938]" />
+            ) : (
+              <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
+            )}
             <span className="text-xs font-bold uppercase tracking-wider">
               {activeTool === 'walls'
                 ? 'Fort Outliner'
                 : activeTool === 'spline'
                 ? 'Path Outliner'
+                : (activeTool === 'texture' || activeTool === 'paint')
+                ? 'Texture Browser'
                 : 'Props Outliner'}
             </span>
+            {(activeTool === 'texture' || activeTool === 'paint') && (
+              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                52
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -248,8 +282,158 @@ export const RightToolSidebar: React.FC = () => {
         {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3.5 text-xs text-[#4B382C]">
           {/* ======================================================== */}
-          {/* 1. HIERARCHICAL OUTLINER FILE TREE                        */}
+          {/* A. TEXTURE ASSET BROWSER (Ticket 06 - Texture Active)     */}
           {/* ======================================================== */}
+          {(activeTool === 'texture' || activeTool === 'paint') ? (
+            <div className="space-y-3.5">
+              {/* Search Bar */}
+              <div className="relative">
+                <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                <input
+                  type="text"
+                  value={paintSearchQuery}
+                  onChange={(e) => setPaintSearchQuery(e.target.value)}
+                  placeholder="Search 52 textures..."
+                  className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                />
+                {paintSearchQuery && (
+                  <button
+                    onClick={() => setPaintSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                  >
+                    <TbX className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Category Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                <button
+                  onClick={() => setPaintCategoryFilter('all')}
+                  className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                    paintCategoryFilter === 'all'
+                      ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                      : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                  }`}
+                >
+                  All (52)
+                </button>
+                {TEXTURE_CATEGORIES.map((cat) => {
+                  const count = getTexturesByCategory(cat.id).length;
+                  const isActive = paintCategoryFilter === cat.id;
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setPaintCategoryFilter(cat.id)}
+                      className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                        isActive
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full"
+                        style={{ backgroundColor: cat.accentColor }}
+                      />
+                      <span>{cat.name.split(' ')[0]}</span>
+                      <span className="opacity-70 text-[9px]">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Categorized Texture Groups with Dividers */}
+              {filteredCategories.length === 0 ? (
+                <div className="text-center py-8 text-[#8D7666] italic text-xs">
+                  No textures found matching "{paintSearchQuery}"
+                </div>
+              ) : (
+                filteredCategories.map((cat) => {
+                  const items = searchTextures(paintSearchQuery, cat.id);
+                  if (items.length === 0) return null;
+
+                  return (
+                    <div key={cat.id} className="space-y-2">
+                      {/* Section Divider & Header */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-[#D9C9B4]">
+                        <span
+                          className="w-2 h-2 rounded-full shrink-0"
+                          style={{ backgroundColor: cat.accentColor }}
+                        />
+                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                          {cat.name}
+                        </span>
+                        <span className="text-[9px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
+                          {items.length}
+                        </span>
+                      </div>
+
+                      {/* 2-Column Responsive Texture Grid */}
+                      <div className="grid grid-cols-2 gap-2">
+                        {items.map((item) => {
+                          const isSelected = selectedTextureId === item.id;
+
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                setSelectedTextureId(item.id);
+                                if (paintSubTool === 'erase') {
+                                  setPaintSubTool('paint');
+                                }
+                              }}
+                              title={`${item.name} - ${item.description}`}
+                              className={`p-1.5 rounded-xl border text-left transition-all cursor-pointer relative group flex flex-col ${
+                                isSelected
+                                  ? 'border-[#E85D04] ring-2 ring-[#E85D04] bg-[#FFFBF7] shadow-sm scale-[1.01]'
+                                  : 'border-[#D9C9B4] bg-[#FAF8F5] hover:bg-[#EADECF] hover:border-[#BFA892]'
+                              }`}
+                            >
+                              {/* Thumbnail Image */}
+                              <div className="w-full aspect-square rounded-lg overflow-hidden relative bg-[#E4D8CB] border border-black/5">
+                                <img
+                                  src={item.previewPath}
+                                  alt={item.name}
+                                  loading="lazy"
+                                  className="w-full h-full object-cover [image-rendering:pixelated]"
+                                />
+
+                                {/* Selected Checkmark Badge */}
+                                {isSelected && (
+                                  <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#E85D04] text-white flex items-center justify-center shadow-xs">
+                                    <TbCheck className="w-3 h-3 stroke-[3]" />
+                                  </div>
+                                )}
+
+                                {/* Layer Tag */}
+                                <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white leading-none">
+                                  L{item.layerIndex}
+                                </div>
+                              </div>
+
+                              {/* Label & Culture Subtitle */}
+                              <div className="mt-1.5 min-w-0">
+                                <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                  {item.name}
+                                </div>
+                                <div className="text-[9px] text-[#8D7666] truncate leading-tight">
+                                  {item.culturalLore || item.category}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          ) : (
+            <>
+              {/* ======================================================== */}
+              {/* 1. HIERARCHICAL OUTLINER FILE TREE                        */}
+              {/* ======================================================== */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
@@ -1447,8 +1631,10 @@ export const RightToolSidebar: React.FC = () => {
                 </div>
               )}
             </div>
-        </div>
-      </aside>
+          </>
+        )}
+      </div>
+    </aside>
     </>
   );
 };

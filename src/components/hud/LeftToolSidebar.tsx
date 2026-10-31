@@ -7,8 +7,8 @@ import {
   TbTrendingDown,
   TbMinus,
   TbWaveSine,
-  TbRipple,
   TbArrowUpRight,
+  TbTexture,
   TbBrush,
   TbCheck,
   TbSparkles,
@@ -33,8 +33,11 @@ import {
   TbX,
   TbArrowsMove,
   TbEdit,
+  TbPalette,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
+import { useTerrainStore } from '@/lib/terrain/terrainStore';
+import { getTextureById, TEXTURE_MANIFEST } from '@/lib/textures/textureManifest';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { SplineConversionType } from '@/lib/spline/splineTypes';
 import { FortStampType } from '@/lib/walls/wallTypes';
@@ -101,9 +104,24 @@ export const LeftToolSidebar: React.FC = () => {
     scaleSplineItem,
     setToastMessage,
     setCameraViewPreset,
+    selectedTextureId,
+    setSelectedTextureId,
+    paintSubTool,
+    setPaintSubTool,
+    paintBrushRadius,
+    setPaintBrushRadius,
+    paintBrushStrength,
+    setPaintBrushStrength,
+    paintBrushFalloff,
+    setPaintBrushFalloff,
+    paintTextureRepeat,
+    setPaintTextureRepeat,
+    toggleRightSidebar,
     leftSidebarWidth: sidebarWidth,
     setLeftSidebarWidth: setSidebarWidth,
   } = useEditorStore();
+
+  const { clearPaintTerrain, fillPaintTerrain } = useTerrainStore();
 
   const { t } = useTranslation();
 
@@ -1127,49 +1145,187 @@ export const LeftToolSidebar: React.FC = () => {
           )}
 
           {/* ======================================================== */}
-          {/* 4. PAINT TOOL                                             */}
+          {/* 4. TEXTURE STUDIO (Ticket 06)                            */}
           {/* ======================================================== */}
-          {activeTool === 'paint' && (
-            <div className="space-y-4">
-              <label className="text-[10px] font-bold text-[#8D7666] uppercase">Courtyard Pigments</label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { name: 'Basalt Charcoal', color: '#2B1E16' },
-                  { name: 'Red Laterite', color: '#B85F45' },
-                  { name: 'Courtyard Sand', color: '#D8C09D' },
-                  { name: 'Lime Mortar', color: '#FAF8F5' },
-                  { name: 'Wet Silt', color: '#4B382C' },
-                  { name: 'Bhagwa Saffron', color: '#E85D04' },
-                ].map((c) => (
-                  <button
-                    key={c.color}
-                    onClick={() => setPaintColor(c.color)}
-                    style={{ backgroundColor: c.color }}
-                    title={c.name}
-                    className={`h-10 rounded-xl border-2 transition-all cursor-pointer ${
-                      paintColor === c.color ? 'border-amber-400 scale-105 shadow-md' : 'border-black/20 hover:scale-102'
-                    }`}
-                  />
-                ))}
-              </div>
+          {(activeTool === 'texture' || activeTool === 'paint') && (() => {
+            const currentTexture = getTextureById(selectedTextureId) || TEXTURE_MANIFEST[0];
 
-              <div>
-                <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                  <span>Brush Radius</span>
-                  <span className="text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
+            return (
+              <div className="space-y-4">
+                {/* Header Card */}
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                  <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
+                    <TbTexture className="w-4 h-4 text-[#B85F45]" />
+                    <span>Texture Studio</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                    {paintSubTool} mode
+                  </span>
                 </div>
-                <input
-                  type="range"
-                  min="0.2"
-                  max="2.5"
-                  step="0.1"
-                  value={brushRadius}
-                  onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                  className="w-full accent-[#B85F45] cursor-pointer"
-                />
+
+                {/* Active Texture Card (for paint mode) */}
+                {paintSubTool === 'paint' && (
+                  <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                        Active Texture
+                      </span>
+                      <button
+                        onClick={toggleRightSidebar}
+                        className="text-[10px] font-bold text-[#B85F45] hover:text-[#8F4938] flex items-center gap-1 cursor-pointer transition-colors"
+                        title="Open Texture Asset Browser"
+                      >
+                        <TbPalette className="w-3.5 h-3.5" />
+                        <span>Browse All 52</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 pt-1">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#E4D8CB] border border-[#D9C9B4] shrink-0">
+                        <img
+                          src={currentTexture.previewPath}
+                          alt={currentTexture.name}
+                          className="w-full h-full object-cover [image-rendering:pixelated]"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-xs font-bold text-[#4B382C] truncate">
+                          {currentTexture.name}
+                        </div>
+                        <div className="text-[10px] text-[#8D7666] truncate mt-0.5">
+                          {currentTexture.description}
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#EADECF] text-[#5C4638]">
+                            {currentTexture.category}
+                          </span>
+                          <span className="text-[9px] text-[#8D7666]">
+                            Layer {currentTexture.layerIndex}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Sliders on Panel Background (Unwrapped) */}
+                <div className="space-y-3 pt-1">
+                  {/* Brush Radius */}
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span>Brush Radius</span>
+                      <span className="text-[#8D7666]">{paintBrushRadius.toFixed(1)}m</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.2"
+                      max="3.0"
+                      step="0.1"
+                      value={paintBrushRadius}
+                      onChange={(e) => setPaintBrushRadius(parseFloat(e.target.value))}
+                      className="w-full accent-[#B85F45] cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Strength */}
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span>Strength</span>
+                      <span className="text-[#8D7666]">{Math.round(paintBrushStrength * 100)}%</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.05"
+                      max="1.0"
+                      step="0.05"
+                      value={paintBrushStrength}
+                      onChange={(e) => setPaintBrushStrength(parseFloat(e.target.value))}
+                      className="w-full accent-[#B85F45] cursor-pointer"
+                    />
+                  </div>
+
+                  {/* Edge Falloff - Paint Mode only */}
+                  {paintSubTool === 'paint' && (
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Edge Falloff</span>
+                        <span className="text-[#8D7666]">{Math.round(paintBrushFalloff * 100)}%</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.0"
+                        max="1.0"
+                        step="0.05"
+                        value={paintBrushFalloff}
+                        onChange={(e) => setPaintBrushFalloff(parseFloat(e.target.value))}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+                  )}
+
+                  {/* Tiling Repeat - Paint Mode only */}
+                  {paintSubTool === 'paint' && (
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Tiling Repeat</span>
+                        <span className="text-[#8D7666]">{paintTextureRepeat.toFixed(0)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="4.0"
+                        max="32.0"
+                        step="2.0"
+                        value={paintTextureRepeat}
+                        onChange={(e) => setPaintTextureRepeat(parseFloat(e.target.value))}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Utility Actions */}
+                {paintSubTool === 'paint' && (
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => {
+                        fillPaintTerrain(currentTexture.layerIndex);
+                        setToastMessage(`Flooded terrain with ${currentTexture.name}`);
+                      }}
+                      className="flex-1 py-1.5 px-2 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] text-[#4B382C] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
+                      title="Flood entire terrain with active texture"
+                    >
+                      Flood Terrain
+                    </button>
+                    <button
+                      onClick={() => {
+                        clearPaintTerrain();
+                        setToastMessage('Restored natural base terrain');
+                      }}
+                      className="flex-1 py-1.5 px-2 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-[#5C4638] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
+                      title="Clear all painted textures back to base soil"
+                    >
+                      Clear Paint
+                    </button>
+                  </div>
+                )}
+
+                {paintSubTool === 'erase' && (
+                  <div className="pt-1">
+                    <button
+                      onClick={() => {
+                        clearPaintTerrain();
+                        setToastMessage('Restored natural base terrain');
+                      }}
+                      className="w-full py-1.5 px-2 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-[#5C4638] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
+                      title="Clear all painted textures back to base soil"
+                    >
+                      Clear Paint
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* ======================================================== */}
           {/* 5. FIGURINES / PROPS TOOL                                 */}

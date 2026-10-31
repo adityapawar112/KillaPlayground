@@ -44,7 +44,7 @@ export type ToolType =
   | 'terrain'
   | 'walls'
   | 'spline'
-  | 'paint'
+  | 'texture'
   | 'foliage'
   | 'prop'
   // Soil Pipeline Tools (Deferred Phase)
@@ -54,6 +54,7 @@ export type ToolType =
   | 'shape_top'
   | 'shape_side'
   | 'dry'
+  | 'paint'
   | 'grass';
 
 export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
@@ -135,6 +136,24 @@ interface EditorState {
   waterMode: 'reflective' | 'tarpaulin';
   nightMode: boolean;
   mudLocked: boolean;
+
+  // Texture Painting Studio State (Ticket 06)
+  selectedTextureId: string;
+  setSelectedTextureId: (id: string) => void;
+  paintSubTool: 'paint' | 'erase';
+  setPaintSubTool: (st: 'paint' | 'erase') => void;
+  paintBrushRadius: number;
+  setPaintBrushRadius: (r: number) => void;
+  paintBrushStrength: number;
+  setPaintBrushStrength: (s: number) => void;
+  paintBrushFalloff: number;
+  setPaintBrushFalloff: (f: number) => void;
+  paintTextureRepeat: number;
+  setPaintTextureRepeat: (rep: number) => void;
+  paintCategoryFilter: string;
+  setPaintCategoryFilter: (cat: string) => void;
+  paintSearchQuery: string;
+  setPaintSearchQuery: (query: string) => void;
 
   // Local Pond Water Planes
   pondWaterFeatures: PondWaterFeature[];
@@ -414,6 +433,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   waterMode: 'tarpaulin',
   nightMode: false,
   mudLocked: false,
+
+  // Texture Painting Studio Defaults (Ticket 06)
+  selectedTextureId: 'dirt_03', // Default: Tambdi Maati
+  setSelectedTextureId: (selectedTextureId) => set({ selectedTextureId }),
+  paintSubTool: 'paint',
+  setPaintSubTool: (paintSubTool) => set({ paintSubTool }),
+  paintBrushRadius: 1.0,
+  setPaintBrushRadius: (paintBrushRadius) => set({ paintBrushRadius }),
+  paintBrushStrength: 0.6,
+  setPaintBrushStrength: (paintBrushStrength) => set({ paintBrushStrength }),
+  paintBrushFalloff: 0.5,
+  setPaintBrushFalloff: (paintBrushFalloff) => set({ paintBrushFalloff }),
+  paintTextureRepeat: 16.0,
+  setPaintTextureRepeat: (paintTextureRepeat) => set({ paintTextureRepeat }),
+  paintCategoryFilter: 'all',
+  setPaintCategoryFilter: (paintCategoryFilter) => set({ paintCategoryFilter }),
+  paintSearchQuery: '',
+  setPaintSearchQuery: (paintSearchQuery) => set({ paintSearchQuery }),
 
   pondWaterFeatures: [],
   addPondWater: (pond) => {

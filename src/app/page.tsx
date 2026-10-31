@@ -119,7 +119,7 @@ export default function HomePage() {
         store.setActiveTool('spline');
         e.preventDefault();
       } else if (e.key === '4') {
-        store.setActiveTool('paint');
+        store.setActiveTool('texture');
         e.preventDefault();
       } else if (e.key === '5') {
         store.setActiveTool('foliage');
@@ -163,6 +163,9 @@ export default function HomePage() {
       }
     };
 
+    if (process.env.NODE_ENV !== 'production') {
+      (window as any).__killa = { useTerrainStore, useEditorStore };
+    }
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);

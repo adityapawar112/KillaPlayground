@@ -14,6 +14,7 @@ import {
   TbRipple,
   TbDropletHalf2,
   TbBrush,
+  TbEraser,
   TbChevronLeft,
   TbChevronDown,
 } from 'react-icons/tb';
@@ -33,6 +34,8 @@ export const ToolModeSidebar: React.FC = () => {
     setSplineMode,
     terrainSubTool,
     setTerrainSubTool,
+    paintSubTool,
+    setPaintSubTool,
     leftSidebarWidth,
     isMobileSidebarMinimized,
     isToolModeMinimized,
@@ -42,7 +45,7 @@ export const ToolModeSidebar: React.FC = () => {
   } = useEditorStore();
 
   // Only render when the active tool has distinct operational modes
-  if (!['walls', 'spline', 'terrain'].includes(activeTool)) {
+  if (!['walls', 'spline', 'terrain', 'texture', 'paint'].includes(activeTool)) {
     return null;
   }
 
@@ -196,6 +199,37 @@ export const ToolModeSidebar: React.FC = () => {
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
                       <span className="font-bold text-[9px] mt-1 leading-tight">
+                        {m.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </>
+            )}
+
+            {/* D. TEXTURE MODES: Paint | Erase */}
+            {(activeTool === 'texture' || activeTool === 'paint') && (
+              <>
+                {[
+                  { id: 'paint' as const, label: 'Paint', icon: TbBrush, title: 'Paint selected texture onto terrain' },
+                  { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Restore base laterite soil' },
+                ].map((m) => {
+                  const Icon = m.icon;
+                  const isActive = paintSubTool === m.id;
+
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setPaintSubTool(m.id)}
+                      title={m.title}
+                      className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
+                        isActive
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm ring-1 ring-[#38281E]'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+                      <span className="font-bold text-[10px] mt-1 leading-tight">
                         {m.label}
                       </span>
                     </button>

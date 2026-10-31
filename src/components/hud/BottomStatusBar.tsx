@@ -17,6 +17,7 @@ export const BottomStatusBar: React.FC = () => {
         return 'Draw Wall Path';
       case 'spline':
         return 'Place Structure Path';
+      case 'texture':
       case 'paint':
         return 'Paint Texture';
       case 'foliage':
@@ -32,6 +33,7 @@ export const BottomStatusBar: React.FC = () => {
     'terrain',
     'walls',
     'spline',
+    'texture',
     'paint',
     'foliage',
     'prop',

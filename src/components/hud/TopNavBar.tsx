@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import {
   TbArrowBackUp,
   TbArrowForwardUp,
@@ -58,8 +59,15 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
     <header className="fixed top-3 left-4 right-4 z-40 flex items-center justify-between pointer-events-none select-none">
       {/* Left cluster: Branding & Fort Nameplate */}
       <div className="flex items-center gap-2.5 pointer-events-auto bg-[#F2EBE1]/92 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-[#D9C9B4] shadow-md transition-all">
-        <div className="w-8 h-8 rounded-xl bg-[#B85F45] text-white flex items-center justify-center font-bold text-xs shadow-inner">
-          <TbShield className="w-4 h-4 text-[#FAF8F5]" />
+        <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+          <Image
+            src="/killaplayground-tranparent.png"
+            alt="The Killa Playground Logo"
+            width={32}
+            height={32}
+            className="w-full h-full object-contain drop-shadow-xs"
+            priority
+          />
         </div>
         <div className="flex flex-col">
           <div className="flex items-center gap-2">

@@ -80,10 +80,16 @@ export const metadata: Metadata = {
       'Build, sculpt, and paint traditional Diwali mud forts in 3D right in your browser. Place watchtowers, bastions, gates, stone steps, and festive diyas in honor of Chhatrapati Shivaji Maharaj.',
     images: [
       {
-        url: '/textures/Bricks/mossy_stone_brick_128x128_pbr/mossy_stone_brick_128x128_basecolor.png',
+        url: '/killaplayground-logo-light.png',
         width: 1200,
         height: 630,
         alt: 'Killa Playground 3D Fort Diorama',
+      },
+      {
+        url: '/killaplayground-tranparent.png',
+        width: 1254,
+        height: 1254,
+        alt: 'The Killa Playground Fort Emblem',
       },
     ],
   },
@@ -93,8 +99,35 @@ export const metadata: Metadata = {
     description:
       'Craft, sculpt, and paint your own traditional Diwali mud fort in 3D right in your browser.',
     creator: '@killaplayground',
-    images: ['/textures/Bricks/mossy_stone_brick_128x128_pbr/mossy_stone_brick_128x128_basecolor.png'],
+    images: ['/killaplayground-logo-light.png'],
   },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      {
+        url: '/killaplayground-favicon-dark.png',
+        sizes: '2000x2000',
+        type: 'image/png',
+        media: '(prefers-color-scheme: dark)',
+      },
+      {
+        url: '/killaplayground-favicon-light.png',
+        sizes: '2000x2000',
+        type: 'image/png',
+        media: '(prefers-color-scheme: light)',
+      },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    other: [
+      { rel: 'android-chrome-192x192', url: '/android-chrome-192x192.png' },
+      { rel: 'android-chrome-512x512', url: '/android-chrome-512x512.png' },
+    ],
+  },
+  manifest: '/manifest.webmanifest',
   robots: {
     index: true,
     follow: true,
@@ -117,6 +150,8 @@ const jsonLd = {
   name: 'Killa Playground',
   alternateName: 'किल्ला प्लेग्राउंड',
   url: siteUrl,
+  image: `${siteUrl}/killaplayground-tranparent.png`,
+  logo: `${siteUrl}/killaplayground-tranparent.png`,
   description:
     'Interactive 3D browser diorama celebrating the Maharashtrian Diwali folk tradition of building miniature mud forts (Diwali Killa). Sculpt mountain terrain, draw parametric ramparts, place watchtowers, stone steps, and glowing diyas.',
   applicationCategory: 'DesignApplication',

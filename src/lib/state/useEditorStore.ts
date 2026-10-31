@@ -249,6 +249,7 @@ interface EditorState {
   isShortcutsModalOpen: boolean;
   isResetConfirmOpen: boolean;
   isStartupModalOpen: boolean;
+  isAboutModalOpen: boolean;
   dontShowStartupModal: boolean;
   isTerrainDrawerOpen: boolean;
   terrainDrawerTab: 'historical' | 'freeform';
@@ -342,6 +343,7 @@ interface EditorState {
   setShortcutsModalOpen: (open: boolean) => void;
   setResetConfirmOpen: (open: boolean) => void;
   setStartupModalOpen: (open: boolean) => void;
+  setAboutModalOpen: (open: boolean) => void;
   setDontShowStartupModal: (dontShow: boolean) => void;
   setTerrainDrawerOpen: (open: boolean, tab?: 'historical' | 'freeform') => void;
   setTerrainDrawerTab: (tab: 'historical' | 'freeform') => void;
@@ -937,6 +939,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   isShortcutsModalOpen: false,
   isResetConfirmOpen: false,
   isStartupModalOpen: false, // Default to false so user immediately accesses the 3D diorama
+  isAboutModalOpen: false,
   dontShowStartupModal: false,
   isTerrainDrawerOpen: false,
   terrainDrawerTab: 'historical',
@@ -1360,6 +1363,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setShortcutsModalOpen: (open) => set({ isShortcutsModalOpen: open }),
   setResetConfirmOpen: (open) => set({ isResetConfirmOpen: open }),
   setStartupModalOpen: (open) => set({ isStartupModalOpen: open }),
+  setAboutModalOpen: (open) => set({ isAboutModalOpen: open }),
   setTerrainDrawerOpen: (open, tab) =>
     set((state) => ({
       isTerrainDrawerOpen: open,

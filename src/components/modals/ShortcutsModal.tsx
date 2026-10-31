@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
 import { TbX, TbKeyboard } from 'react-icons/tb';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -17,8 +18,14 @@ export const ShortcutsModal: React.FC = () => {
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-[#D9C9B4]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#4B382C] text-[#FAF8F5] flex items-center justify-center shadow-md">
-              <TbKeyboard className="w-6 h-6" />
+            <div className="relative w-10 h-10 rounded-xl bg-[#4B382C] text-[#FAF8F5] flex items-center justify-center shadow-md p-1 shrink-0">
+              <Image
+                src="/killaplayground-tranparent.png"
+                alt="The Killa Playground Logo"
+                width={36}
+                height={36}
+                className="w-full h-full object-contain"
+              />
             </div>
             <div>
               <h2 className="text-lg font-bold text-[#2B1E16] font-yatra tracking-wide">

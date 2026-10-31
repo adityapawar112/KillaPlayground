@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { AppMenuBar } from '@/components/hud/AppMenuBar';
 import { TopToolBar } from '@/components/hud/TopToolBar';
 import { LeftToolSidebar } from '@/components/hud/LeftToolSidebar';
@@ -11,6 +12,7 @@ import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
 import { StartupModal } from '@/components/modals/StartupModal';
+import { AboutModal } from '@/components/modals/AboutModal';
 import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -20,14 +22,28 @@ const KillaCanvas = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#F9F6F0]">
-        <div className="w-12 h-12 rounded-full border-4 border-[#B85F45] border-t-transparent animate-spin mb-4" />
-        <span className="font-yatra font-bold text-2xl text-[#4B382C] tracking-wide">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#F9F6F0] select-none">
+        <div className="relative mb-5 flex items-center justify-center">
+          <div className="relative w-20 h-20 sm:w-24 sm:h-24 animate-pulse">
+            <Image
+              src="/killaplayground-tranparent.png"
+              alt="The Killa Playground Logo"
+              width={96}
+              height={96}
+              className="w-full h-full object-contain drop-shadow-md"
+              priority
+            />
+          </div>
+        </div>
+        <span className="font-yatra font-bold text-2xl sm:text-3xl text-[#4B382C] tracking-wide">
           The Killa Playground
         </span>
-        <span className="text-xs text-[#8D7666] mt-1 font-sans">
-          किल्ला प्लेग्राउंड सुरू होत आहे • Loading 3D Viewport...
-        </span>
+        <div className="flex items-center gap-2 mt-2">
+          <div className="w-3.5 h-3.5 rounded-full border-2 border-[#B85F45] border-t-transparent animate-spin" />
+          <span className="text-xs text-[#8D7666] font-sans">
+            किल्ला प्लेग्राउंड सुरू होत आहे • Loading 3D Viewport...
+          </span>
+        </div>
       </div>
     ),
   }
@@ -66,6 +82,7 @@ export default function HomePage() {
       // Close modal on Escape
       if (e.key === 'Escape') {
         if (store.isStartupModalOpen) store.setStartupModalOpen(false);
+        if (store.isAboutModalOpen) store.setAboutModalOpen(false);
         if (store.isShortcutsModalOpen) store.setShortcutsModalOpen(false);
         if (store.isResetConfirmOpen) store.setResetConfirmOpen(false);
         if (store.isTerrainDrawerOpen) store.setTerrainDrawerOpen(false);
@@ -194,6 +211,7 @@ export default function HomePage() {
       {/* Helper Modals */}
       <ShortcutsModal />
       <ResetConfirmModal />
+      <AboutModal />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
+import Image from 'next/image';
 import {
   TbShield,
   TbX,
@@ -137,8 +138,15 @@ export const StartupModal: React.FC = () => {
         {/* Blender-Style Splash Header */}
         <div className="relative bg-gradient-to-r from-[#4B382C] via-[#8F4938] to-[#B85F45] px-6 py-5 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-inner">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg">
-              <TbShield className="w-7 h-7 text-[#FAF8F5]" />
+            <div className="relative w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg p-1 shrink-0 backdrop-blur-xs">
+              <Image
+                src="/killaplayground-tranparent.png"
+                alt="The Killa Playground Logo"
+                width={56}
+                height={56}
+                className="w-full h-full object-contain drop-shadow-md"
+                priority
+              />
             </div>
             <div>
               <div className="flex items-center gap-2">

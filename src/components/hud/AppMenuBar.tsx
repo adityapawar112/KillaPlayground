@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Image from 'next/image';
 import {
   TbShield,
   TbChevronDown,
@@ -72,6 +73,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     setResetConfirmOpen,
     setShortcutsModalOpen,
     setStartupModalOpen,
+    setAboutModalOpen,
     isTerrainDrawerOpen,
     setTerrainDrawerOpen,
     saveProjectLocally,
@@ -200,6 +202,27 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
 
           {/* Slide-over menu panel starting right below top bar */}
           <div className="relative w-80 max-w-[85vw] h-full bg-[#F5EDE3] border-r border-[#CDBCAB] shadow-2xl flex flex-col z-10 overflow-y-auto">
+            {/* Brand Header in Drawer */}
+            <div className="p-3.5 border-b border-[#D8C7B5] bg-[#EADECF]/90 flex items-center gap-3">
+              <div className="relative w-9 h-9 shrink-0 flex items-center justify-center">
+                <Image
+                  src="/killaplayground-tranparent.png"
+                  alt="The Killa Playground Logo"
+                  width={36}
+                  height={36}
+                  className="w-full h-full object-contain drop-shadow-xs"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-yatra text-base text-[#2B1E16] leading-tight">
+                  The Killa Playground
+                </span>
+                <span className="text-[10px] text-[#8D7666] font-sans font-medium">
+                  किल्ला प्लेग्राउंड • 3D Diorama
+                </span>
+              </div>
+            </div>
+
             {/* Active Fort Selector Header in Drawer */}
             <div className="p-3 border-b border-[#D8C7B5] bg-[#ECE2D5]/70">
               <button
@@ -440,12 +463,11 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    alert(
-                      'The Killa Playground v1.0\nA tactile 3D diorama workspace celebrating the Maharashtrian Diwali folk tradition of crafting miniature mud forts.\nBuilt with Three.js, React Three Fiber & Next.js.'
-                    );
+                    setAboutModalOpen(true);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#8D7666] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#634E40] hover:bg-[#EADECF] cursor-pointer"
                 >
+                  <TbShield className="w-4 h-4 text-[#B85F45]" />
                   <span>{t.appMenuBar.about}</span>
                 </button>
               </div>
@@ -477,11 +499,18 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
           {/* Logo Icon & Permanent In-Flow Title */}
           <button
             onClick={() => setStartupModalOpen(true)}
-            className="flex items-center gap-1.5 px-1 py-1 rounded-lg hover:bg-[#DFCDBD] transition-colors cursor-pointer group shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-1.5 py-1 rounded-lg hover:bg-[#DFCDBD] transition-colors cursor-pointer group shrink-0"
             title="The Killa Playground - Open Hub"
           >
-            <div className="w-6 h-6 rounded-lg bg-[#B85F45] text-white flex items-center justify-center font-bold text-xs shadow-inner group-hover:scale-105 transition-transform shrink-0">
-              <TbShield className="w-3.5 h-3.5 text-[#FAF8F5]" />
+            <div className="relative w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0">
+              <Image
+                src="/killaplayground-tranparent.png"
+                alt="The Killa Playground Logo"
+                width={28}
+                height={28}
+                className="w-full h-full object-contain group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-200 drop-shadow-xs"
+                priority
+              />
             </div>
             <span className="font-yatra text-base sm:text-lg text-[#2B1E16] tracking-wide whitespace-nowrap hidden sm:inline">
               The Killa Playground
@@ -870,14 +899,13 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   <div className="my-1 border-t border-[#D9C9B4]" />
                   <button
                     onClick={() => {
-                      alert(
-                        'The Killa Playground v1.0\nA tactile 3D diorama workspace celebrating the Maharashtrian Diwali folk tradition of crafting miniature mud forts.\nBuilt with Three.js, React Three Fiber & Next.js.'
-                      );
+                      setAboutModalOpen(true);
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#8D7666] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
                   >
-                    {t.appMenuBar.about}
+                    <TbShield className="w-4 h-4 text-[#B85F45]" />
+                    <span>{t.appMenuBar.about}</span>
                   </button>
                 </div>
               )}

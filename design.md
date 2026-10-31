@@ -282,14 +282,22 @@ Permutation C: Left Sidebar Minimized + Modes Strip Open
 - Always retrieve user-facing text from `translations.ts` via `const { t } = useTranslation()`.
 - Users who select Marathi (`म`) will receive authentic Marathi terminology (*"कांगरे"*, *"पायऱ्या"*, *"बुरूज"*), and Hindi users (`हि`) receive Hindi text. English must remain clean and universally accessible.
 
-### Rule 7: 3D Interaction & Pointer Guards
-- **Strict Left-Click Only for Selection and Stamping**:
-  In `@react-three/fiber`, pointer click handlers trigger on any button release. Right-click is strictly reserved for `OrbitControls` rotation/panning.
-  **Every** mesh click handler MUST start with:
+### Rule 7: 3D Interaction, Control Scheme & Pointer Guards
+- **Permanent Left-Click Tool Dedication (`OrbitControls.mouseButtons.LEFT = -1`)**:
+  - In all tool modes, left-click is strictly dedicated as the primary action (sculpting terrain, drafting wall paths, placing bastions, painting textures, scattering nature flora, selecting structures).
+  - OrbitControls never intercepts left-click drag events (`mouseButtons.LEFT = -1`).
+  - Right-click drag is permanently dedicated to camera orbiting/rotation (`mouseButtons.RIGHT = THREE.MOUSE.ROTATE`).
+  - Middle-click drag is dedicated to camera panning (`mouseButtons.MIDDLE = THREE.MOUSE.PAN`).
+  - Scroll wheel is dedicated to camera zooming.
+- **Strict Pointer Button Guards on 3D Meshes**:
+  Every 3D pointer handler on interactive geometry MUST start with:
   ```typescript
   if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
   ```
   before checking tool state, stopping propagation, or modifying selection.
+- **Direct 3D Structure Interaction (`surfaceToolInteraction.ts`)**:
+  - Drawing splines, painting textures, and scattering foliage directly on fort walls and spline structures must stop propagation (`e.stopPropagation()`) and temporarily disable OrbitControls during drag strokes, routing mutations to surface coordinates.
+  - Non-interactive decorative meshes (billboards, water plane, courtyard bricks) must declare `raycast={() => null}` to prevent stealing pointer raycasts.
 - **Hover Highlighting in Select Modes**:
   Interactive 3D geometry must highlight when hovered over in `select` mode:
   - Cursor changes to `pointer` (`document.body.style.cursor = 'pointer'`).
@@ -380,6 +388,14 @@ Before authoring or modifying any HUD component or tool sidebar:
 1. **Inspect Existing Sibling Panels:** Open and read [`LeftToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/LeftToolSidebar.tsx), specifically comparing against the clean, canonical Spline and Terrain panels.
 2. **Consult `design.md` First:** Verify surface colors, text tokens, slider structures, and container rules.
 3. **Verify in Browser:** After editing, use browser automation (`chrome-devtools`) to take screenshots of the tool panel and confirm visual harmony before completing tasks.
+
+### Rule 17: Top Bar Panel Toggles, Bottom Control Strip & Foliage Browser
+- **Collapse All & Expand All Controls:**
+  The top menu bar (`AppMenuBar.tsx`) includes a compact pill button right next to the language switcher hosting `TbArrowsMinimize` and `TbArrowsMaximize`. Clicking toggles `collapseAllPanels` / `expandAllPanels` in `useEditorStore.ts`, cleanly minimizing all sidebars and floating panels into non-colliding guide chips.
+- **Dynamic Contextual Status Bar:**
+  The bottom navigation strip (`BottomStatusBar.tsx`) contextually displays the exact active subtool action (e.g. `Sculpt Peak`, `Flatten Plateau`, `Draft Wall Node`, `Place Bastion / Tower`, `Paint Surface Texture`, `Scatter Nature Flora`, `Plant Hero Specimen`, etc.) alongside `Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`.
+- **Foliage Studio Selection Modes:**
+  The foliage Left Sidebar provides a clean toggle between `Single Select` and `Multi Select` alongside a `Deselect All` button. Multi-select enables picking multiple flora species simultaneously for organic, mixed-species random scattering.
 
 ---
 

@@ -144,10 +144,20 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
    * **2 Operational Sub-Modes:** `Paint` (apply texture) and `Erase` (restore base terrain).
    * **Tool Role Separation:** Tool 4 is **`Texture`**; the name `paint` is reserved for Tool 7 in the deferred soil crafting pipeline for painting raw color pigments onto mud shapes.
 
-5. **Foliage Paint Tool (3D Nature Scatter Brush):**
-   * Scatter brush that places low-poly 3D nature props directly onto terrain.
-   * **Selectable Assets:** Trees (banyan, neem, acacia), Rocks (basalt boulders, pebbles), Shrubs (mountain bushes), 3D Grass Sprout Models (*Halim* seedlings).
-   * **Performance:** Single draw call per asset type via `<Instances>`.
+5. **Foliage Paint Tool (3D Nature Scatter System):**
+   * High-performance retro Doom/PS1 billboard foliage system combining intersecting cross-quad (X-shape) and single-plane meshes anchored at base $y = 0$.
+   * **117 Authentic Deccan Flora Species across 7 Categories:** Canopy Broadleaf (50), Shrubs & Bushes (11), Flowering Trees (10), Dry Cliff & Escarpment (16), Acacia Savannah (15), Columnar Cypress (11), Coastal Palms (4).
+   * **Rendering Engine:**
+     * Soft spherical outward normals for uniform, 3D-volumetric lighting on 2D cutout quads.
+     * Double-sided materials with `alphaTest: 0.5` and `depthWrite: true` for zero Three.js sorting artifacts and crisp pixel-art silhouettes.
+     * Custom depth material with `alphaTest: 0.5` casting accurate cross-quad shadow maps onto terrain and walls.
+     * Real-time GPU vertex wind sway via material `onBeforeCompile` vertex shader injection.
+   * **Algorithmic Candidate Generation & Eraser:**
+     * Uniform disk polar candidate generation with Poisson-disk minimum distance thinning preventing visual clutter.
+     * Bilinear terrain height sampling and surface normal orientation (`getTerrainHeightAt`, `getTerrainNormalAt`).
+     * $O(1)$ spatial hash grid (`FoliageSpatialGrid`) for sub-millisecond radius queries during brush erasing and candidate thinning.
+   * **Tri-Mode Workflow:** `Scatter` (drag to paint clusters), `Single` (click-to-plant hero specimen), and `Erase` (radius pruning).
+   * **Selection Flexibility:** Single-species focus or Multi-Select mode with random scatter selection and one-click "Deselect All".
 
 6. **Figurines & Architecture Tool (3D Asset Browser):**
    * Sliding visual catalog for placing and rotating 3D diorama props:
@@ -162,11 +172,12 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
 ### 4.3 Decoupled 5-Zone HUD Layout & Resizing Engine
 The user interface is architected into 5 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
 
-1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switch, undo/redo, night diya mode, and auto-dismissing toast notifications.
-2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts 10 tool buttons and camera view controls. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
+1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`) that instantly toggle all open sidebars and floating panels into minimal chips.
+2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 6 primary fort construction tools (Terrain, Walls, Spline, Texture, Foliage, Figurines) and camera preset view controls. Soil pipeline tools (7-0) are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
 3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Minimizes into `[⚙️ Properties ▾]`.
-4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Walls (`Select`, `Draw`, `Fortify`), Spline (`Select`, `Draw`, `Transform`), and Terrain (8 sculpting modes). Minimizes into `[🎯 Modes ▾]`.
-5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions; lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Minimizes into `[🏰 Outliner ▾]`.
+4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Walls (`Select`, `Draw`, `Fortify`), Spline (`Select`, `Draw`, `Transform`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Minimizes into `[🎯 Modes ▾]`.
+5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage asset browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Minimizes into `[🏰 Outliner ▾]`.
+6. **`BottomStatusBar.tsx`**: Viewport navigation and tool guide pill centered at bottom screen. Contextually detects active tool and subtool to display exact primary action (`Left Click: [Action] • Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`).
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic
 To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:
@@ -184,17 +195,18 @@ To prevent hanging folder guide tabs from colliding under any permutation of ope
 
 ---
 
-### 4.4 Pointer Raycast Architecture & Interaction Security
-1. **Strict OrbitControls Isolation (`e.button === 0`)**:
-   - In `@react-three/fiber`, click events trigger on mouse button release. Right-click and middle-click drag are strictly reserved for camera rotation and panning.
-   - All 3D selection and stamp placing handlers start with:
-     ```typescript
-     if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
-     ```
-     ensuring camera navigation never inadvertently selects, deselects, or stamps diorama components.
-2. **Direct Physical Mesh Raycasting (Zero Ground Proximity Hijacking)**:
-   - Structure selection raycasts directly against physical geometries (`mesh` and `instancedMesh` with updated instance matrices and bounding boxes).
-   - Coarse radial ground distance checks on empty terrain are prohibited, ensuring adjacent splines and walls never cross-select.
+### 4.4 Pointer Raycast Architecture, Structure Interaction & Control Scheme
+1. **Permanent Left-Click Tool Action & Right-Click Orbit Scheme (`cameraControls.ts`)**:
+   - `OrbitControls.mouseButtons.LEFT = -1` is permanently enforced across all tools and modes.
+   - Left-click is strictly dedicated as the primary action of the active tool/subtool (sculpting terrain, drafting wall paths, inserting bastions, painting texture splats, scattering nature flora, selecting fort structures). OrbitControls never intercepts left-click drags.
+   - Camera rotation/orbit is permanently dedicated to **Right-Click Drag** (`mouseButtons.RIGHT = THREE.MOUSE.ROTATE`).
+   - Camera panning is dedicated to **Middle-Click Drag** (`mouseButtons.MIDDLE = THREE.MOUSE.PAN`).
+   - Camera zoom is dedicated to the **Scroll Wheel**.
+2. **Direct 3D Structure Tool Interaction Engine (`surfaceToolInteraction.ts`)**:
+   - Extruded wall meshes, bastion handles, gate portals, box platforms, stone steps, saffron flags, and festive diyas intercept pointer events via `handleStructurePointerDown` and `handleStructurePointerMove`.
+   - Halts R3F event bubbling via `e.stopPropagation()` and temporarily disables OrbitControls during active drag strokes, preventing camera viewport orbiting leaks when painting or drawing on top of fort structures.
+   - Accurately routes texture splats, hero specimen planting, foliage candidate generation, and spline node additions directly onto structural surface coordinates.
+   - Decorative non-interactive meshes (billboard foliage quads, water plane, courtyard bricks) are marked with `raycast={() => null}` to prevent invisible raycast hit hijacking.
 3. **Selection Retention on Mode Switches**:
    - Switching from `select` to `fortify` preserves `selectedWallId` and auto-activates the default `tower` stamp.
    - Switching from `select` to `transform` preserves `selectedSplineId` for immediate camera-relative translation, rotation, and scaling.

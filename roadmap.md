@@ -235,40 +235,41 @@ graph TD
 - **Status**: `completed`
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
-  - **Retro Doom/PS1 Cross-Quad (X-Billboard) Engine**:
-    - High-performance 2 intersecting vertical planes (8 vertices, 4 triangles, 12 indices) anchored at base $y = 0$.
+  - **Retro Doom/PS1 Cross-Quad & Single-Plane Billboard Engine**:
+    - High-performance hybrid geometry: 2 intersecting vertical planes (8 vertices, 4 triangles, 12 indices) for volumetric trees/bushes, and single-plane quads for sprawling ground cover, all anchored at ground base $y = 0$.
     - Soft spherical outward normals for uniform, 3D-volumetric lighting on 2D cutout quads.
     - Double-sided rendering with `alphaTest: 0.5` and `depthWrite: true` for zero Three.js sorting artifacts and crisp pixel-art silhouettes.
-    - Custom depth material with `alphaTest: 0.5` casting accurate cross-quad shadow maps onto terrain and walls.
+    - Custom depth material with `alphaTest: 0.5` casting accurate shadow maps onto terrain and walls.
     - Real-time GPU vertex wind sway via material `onBeforeCompile` vertex shader injection with high-frequency fluttering for saplings and low-frequency sway for large canopy trees.
-  - **129 Authentic Pixel-Art Foliage Species**:
-    - 129 extracted 128x128 pixel-art cutout PNG sprites indexed across 8 categories:
+  - **117 Authentic Pixel-Art Foliage Species (7 Categories)**:
+    - 117 curated and sanitized 128x128 pixel-art cutout PNG sprites indexed across 7 authentic categories (grass sprites removed from 3D billboard placement to prevent polygon waste; ground turf is authentically handled with zero polygon overhead via Tool 4 Texture Painting):
       - **Canopy Broadleaf (50)**: Banyan, peepal, mango, neem, tamarind, teak, and deodar trees.
       - **Shrubs & Bushes (11)**: Bougainvillea, berry scrub, courtyard hedges, flowering lantana.
-      - **Sprouted Grass & Seedlings (12)**: Authentic halim/mustard sprouted seedlings, lawn patches, wild pasture clumps.
-      - **Flowering Plants (18)**: Marigold (*gendaphool*), hibiscus, jasmine, periwinkle.
-      - **Dry Cliff & Succulents (15)**: Mountain agave, prickly pear, rock crevices, dry thorny brush.
-      - **Acacia Savannah (6)**: Spiny acacia, umbrella thorn trees.
-      - **Columnar Cypress & Pines (4)**: Slender Italian cypress, fort sentry conifers.
-      - **Coastal Palms (13)**: Coconut palms (curved, slender, tall), date palms, palmyra fan palms.
-  - **High-Performance Batched Instancing & Spatial Eraser**:
+      - **Flowering Plants (10)**: Marigold (*gendaphool*), hibiscus, jasmine, periwinkle.
+      - **Dry Cliff & Succulents (16)**: Mountain agave, prickly pear, rock crevices, dry thorny brush.
+      - **Acacia Savannah (15)**: Spiny acacia, umbrella thorn trees.
+      - **Columnar Cypress & Conifers (11)**: Slender Italian cypress, fort sentry conifers.
+      - **Coastal Palms (4)**: Coconut palms (curved, slender, tall), date palms, palmyra fan palms.
+  - **High-Performance Batched Instancing, Multi-Select Scatter & Spatial Eraser**:
     - Batched rendering via `THREE.InstancedMesh` (exactly 1 draw call per active species) scaling smoothly to 5,000+ instances at 60+ FPS.
     - Uniform disk polar candidate generation with Poisson-disk minimum distance thinning preventing clutter.
-    - Bilinear terrain height sampling and surface normal orientation (`getTerrainHeightAt`, `getTerrainNormalAt`).
+    - Bilinear terrain height sampling and surface normal orientation (`getTerrainHeightAt`, `getTerrainNormalAt`), plus direct raycast scattering on fort walls and spline ramparts.
+    - **Single Select & Multi-Select Scatter Modes**: Toggle between scattering a single chosen species or randomly picking from multiple selected species with a "Deselect All" convenience button.
     - $O(1)$ spatial hash grid (`FoliageSpatialGrid`) for sub-millisecond radius queries during brush erasing and candidate thinning.
   - **Tri-Mode Workflow & UI/UX Consistency**:
-    - **Scatter Mode**: Continuous brush drag painting nature flora across mountain terrain.
-    - **Single Mode**: Click-to-place hero specimens with precise rotation and scale.
+    - **Scatter Mode**: Continuous brush drag painting nature flora across mountain terrain and structures.
+    - **Single Mode**: Click-to-place hero specimens with single-point placement reticle.
     - **Erase Mode**: Prune/erase foliage in a radius without affecting underlying terrain or walls.
     - Sliders sit directly on panel background (`bg-[#F3EBE0]`) without enclosing cards: Brush Radius, Density, Scale Jitter, Normal Align.
     - Mode selector lives exclusively in `ToolModeSidebar.tsx`.
     - Dedicated right-side Foliage Asset Browser with search, category pills, counts, and 128x128 pixel-art preview cards.
+    - **Permanent Left-Click Action & Right-Click Orbit Control Scheme**: Left click dedicated permanently to active tool operations (`mouseButtons.LEFT = -1`), camera orbit on right-drag, pan on middle-drag, with dynamic bottom contextual info strip and updated keyboard shortcuts modal across EN/MR/HI.
     - Full undo/redo integration with `terrainStore` snapshot history and JSON serialization.
 
 ### Acceptance Criteria
-- [x] Foliage scatter brush places trees, rocks, shrubs, and 3D grass models across the terrain.
-- [x] Scatter radius and density sliders control brush distribution.
-- [x] Objects automatically orient to terrain normal or upright Y-axis.
+- [x] Foliage scatter brush places trees, rocks, and shrubs across terrain, walls, and ramparts.
+- [x] Scatter radius and density sliders control brush distribution with single and multi-select support.
+- [x] Objects automatically orient to terrain/surface normal or upright Y-axis.
 - [x] Rendering 1,000+ scattered instances maintains 60 FPS in single batched draw calls.
 
 ---

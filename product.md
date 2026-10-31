@@ -156,16 +156,41 @@ Enables direct surface texturing on the terrain diorama without modifying mounta
 ---
 
 ### Phase 5: 3D Foliage Paint & Nature Scatter
-Interactive scatter brush that populates the diorama landscape with stylized 3D nature props in batched draw calls:
-* **Asset Library:**
-  * **Trees:** Deccan banyan, neem, and mountain acacia trees.
-  * **Rocks:** Scattered basalt boulders and pebbles.
-  * **Shrubs:** Hardy mountain bushes and scrub.
-  * **Grass Models:** 3D sprouted mustard/*halim* seedling sprout clusters.
-* **Scatter Controls:**
-  * Scatter radius slider.
-  * Density slider (instances placed per second/drag).
-  * Scale and rotation jitter for natural, organic distribution.
+Interactive nature paint studio that populates the diorama landscape with authentic Deccan flora using high-performance retro Doom/PS1 cross-quad and single-plane billboard meshes:
+* **Asset Library (117 Authentic Species across 7 Categories):**
+  * **Canopy Broadleaf (50):** Ancient banyans, sacred peepals, shaded neems, giant mangoes, tamarinds, and hardwoods.
+  * **Shrubs & Bushes (11):** Karvand mountain scrub, jaswand, bougainvillea, and defensive fort hedges.
+  * **Flowering Trees (10):** Flame of the forest (*Palas*), scarlet gulmohar, golden amaltas, and sacred parijat.
+  * **Dry Cliff & Escarpment (16):** Sun-baked thorn trees, arid cliff succulents, and weathered ridge flora.
+  * **Acacia Savannah (15):** Flat-top babool, umbrella thorns, and Deccan scrub.
+  * **Columnar Cypress (11):** Slender sentry cypress and ashoka sentinels.
+  * **Coastal Palms (4):** Sea-fort coconut palms and wild cluster palms.
+  *(Note: Grass turf is handled natively via Tool 4 Texture Painting, keeping 3D billboard scatter lightweight and performance-optimal).*
+* **Billboard Rendering Engine:**
+  * Double-sided cross-quad (2 intersecting quads) and single-plane cutouts with `alphaTest: 0.5` and `depthWrite: true`.
+  * Soft spherical outward normals for volumetric 3D shading; custom depth material for crisp terrain shadow casting.
+  * Real-time GPU vertex wind flutter and sway.
+* **Tri-Mode Operational Workflow:**
+  * **Scatter Mode:** Drag across terrain to paint clusters of nature flora using Poisson-disk candidate thinning.
+  * **Single Mode:** Click anywhere to place hero specimen trees with precise randomized yaw and scale jitter.
+  * **Erase Mode:** Prune nature flora in a radius via sub-millisecond spatial hash queries.
+* **Selection Modes:**
+  * **Single Select:** Focus on one specific flora species.
+  * **Multi-Select:** Select multiple species in the Foliage Browser; scatter randomly picks from the selected set for rich, diverse woodland clusters. Includes one-click "Deselect All".
+
+---
+
+### Navigation & Interaction Scheme
+A unified, consistent control paradigm applies across all tools:
+* **Left Click:** Permanently dedicated to the active tool's primary action (sculpting terrain, drafting wall paths, placing bastions, painting textures, scattering foliage, selecting structures). Left-click orbit is permanently disabled in OrbitControls.
+* **Right-Click Drag:** Permanently dedicated to OrbitControls camera rotation / orbit around the killa.
+* **Middle-Click Drag:** Pan and shift camera target.
+* **Scroll Wheel:** Zoom / dolly in and out.
+* **Shift + Scroll:** Brush radius slider adjustment across all 3D tools.
+* **Ctrl + Scroll:** Secondary slider adjustment (brush strength, foliage density).
+* **Alt + Scroll:** Tertiary slider adjustment (plateau height, slope angle).
+* **Collapse / Expand All:** Header menu bar buttons allow instant one-click collapse/expansion of all sidebars and floating HUD panels into minimal chips.
+* **Focused 6-Tool Suite:** The 6 primary construction tools (Terrain, Walls, Spline, Texture, Foliage, Figurines) are active on the primary toolbar; the experimental soil simulation pipeline (tools 7-0) is temporarily hidden to keep the user journey streamlined.
 
 ---
 

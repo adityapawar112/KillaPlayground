@@ -6,38 +6,63 @@ import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const BottomStatusBar: React.FC = () => {
-  const { showBottomStatusBar, toggleBottomStatusBar, activeTool } = useEditorStore();
+  const {
+    showBottomStatusBar,
+    toggleBottomStatusBar,
+    activeTool,
+    terrainSubTool,
+    wallMode,
+    splineMode,
+    foliageSubTool,
+    paintSubTool,
+  } = useEditorStore();
   const { t } = useTranslation();
 
   const getLeftClickAction = () => {
     switch (activeTool) {
       case 'terrain':
-        return 'Sculpt Terrain';
+        switch (terrainSubTool) {
+          case 'elevate':
+            return 'Sculpt Peak';
+          case 'plateau':
+            return 'Flatten Plateau';
+          case 'slope':
+            return 'Carve Ramp';
+          case 'lower':
+            return 'Excavate Gorge';
+          case 'trench':
+            return 'Dig Moat Trench';
+          case 'smooth':
+            return 'Smooth Terrain';
+          case 'pond':
+            return 'Dig Cistern Pond';
+          case 'retexture':
+          case 'soil':
+            return 'Retexture Soil';
+          default:
+            return 'Sculpt Terrain';
+        }
       case 'walls':
-        return 'Draw Wall Path';
+        if (wallMode === 'select') return 'Select Fort Wall / Bastion';
+        if (wallMode === 'fortify') return 'Place Bastion / Tower';
+        return 'Draft Wall Node';
       case 'spline':
-        return 'Place Structure Path';
+        if (splineMode === 'select') return 'Select Structure Path';
+        if (splineMode === 'transform') return 'Transform Path';
+        return 'Draft Structure Node';
       case 'texture':
       case 'paint':
-        return 'Paint Texture';
+        return paintSubTool === 'erase' ? 'Erase to Raw Soil' : 'Paint Surface Texture';
       case 'foliage':
-        return 'Scatter Foliage';
+        if (foliageSubTool === 'single') return 'Plant Hero Specimen';
+        if (foliageSubTool === 'erase') return 'Prune / Erase Flora';
+        return 'Scatter Nature Flora';
       case 'prop':
         return 'Place Figurine';
       default:
-        return 'Orbit / Mold';
+        return 'Apply Tool';
     }
   };
-
-  const isToolActive = [
-    'terrain',
-    'walls',
-    'spline',
-    'texture',
-    'paint',
-    'foliage',
-    'prop',
-  ].includes(activeTool);
 
   return (
     <>
@@ -65,16 +90,17 @@ export const BottomStatusBar: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3 px-3.5 py-1 rounded-full bg-[#F2EBE1]/95 border border-[#D9C9B4] text-[10px] sm:text-[11px] font-mono text-[#634E40] shadow-sm pointer-events-auto">
             <span className="flex items-center gap-1">
               <span className="font-semibold text-[#2B1E16]">Left Click:</span>{' '}
-              <span className={isToolActive ? 'text-[#E85D04] font-bold' : ''}>
+              <span className="text-[#E85D04] font-bold">
                 {getLeftClickAction()}
               </span>
             </span>
             <span className="text-[#D9C9B4]">•</span>
             <span className="flex items-center gap-1">
-              <span className="font-semibold text-[#2B1E16]">
-                {isToolActive ? 'Right / Middle Drag:' : 'Right / Middle Click:'}
-              </span>{' '}
-              {isToolActive ? 'Orbit / Pan' : 'Pan'}
+              <span className="font-semibold text-[#2B1E16]">Right Drag:</span> Orbit
+            </span>
+            <span className="text-[#D9C9B4]">•</span>
+            <span className="flex items-center gap-1">
+              <span className="font-semibold text-[#2B1E16]">Middle Drag:</span> Pan
             </span>
             <span className="text-[#D9C9B4]">•</span>
             <span className="flex items-center gap-1">

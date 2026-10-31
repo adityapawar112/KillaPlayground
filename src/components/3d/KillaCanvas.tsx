@@ -6,11 +6,13 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useEditorStore } from '@/lib/state/useEditorStore';
+import { getOrbitMouseButtons, CameraControlButtons } from '@/lib/interaction/cameraControls';
 import { BaseTerrain } from './BaseTerrain';
 import { CourtyardBricks } from './CourtyardBricks';
 import { WaterPlane } from './WaterPlane';
 import { FortWalls } from './FortWalls';
 import { SplineStructures } from './SplineStructures';
+import { FoliageRenderer } from './FoliageRenderer';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -68,11 +70,11 @@ const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
   );
 };
 
-// Keyboard Camera Navigation Handler
+// Keyboard Camera Navigation & Mouse Buttons Controller
 const CameraKeyboardController: React.FC<{
   controlsRef: React.RefObject<OrbitControlsImpl | null>;
 }> = ({ controlsRef }) => {
-  const { cameraResetTrigger } = useEditorStore();
+  const { cameraResetTrigger, activeTool, wallMode, splineMode } = useEditorStore();
 
   const resetCamera = useCallback(() => {
     if (!controlsRef.current) return;
@@ -87,6 +89,13 @@ const CameraKeyboardController: React.FC<{
       (window as any).__orbitControls = controlsRef.current;
     }
   }, [controlsRef]);
+
+  // Synchronize dynamic mouse buttons immediately whenever activeTool, wallMode, or splineMode changes
+  useEffect(() => {
+    if (!controlsRef.current) return;
+    const buttons = getOrbitMouseButtons(activeTool, wallMode, splineMode);
+    controlsRef.current.mouseButtons = buttons as any;
+  }, [controlsRef, activeTool, wallMode, splineMode]);
 
   // Respond to store reset trigger
   useEffect(() => {
@@ -207,7 +216,11 @@ const CameraKeyboardController: React.FC<{
       } else if (e.key === '[' || e.key === ']') {
         const editor = useEditorStore.getState();
         const step = e.key === ']' ? 0.1 : -0.1;
-        if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+        if (editor.activeTool === 'foliage') {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.foliageBrushRadius + step).toFixed(2))));
+          editor.setFoliageBrushRadius(newRadius);
+          e.preventDefault();
+        } else if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
           const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.paintBrushRadius + step).toFixed(2))));
           editor.setPaintBrushRadius(newRadius);
           e.preventDefault();
@@ -231,9 +244,24 @@ interface KillaCanvasProps {
 }
 
 export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
-  const { nightMode, cameraViewPreset, setCameraViewPreset } = useEditorStore();
+  const {
+    nightMode,
+    cameraViewPreset,
+    setCameraViewPreset,
+    activeTool,
+    wallMode,
+    splineMode,
+  } = useEditorStore();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic mouse control scheme:
+  // - In 'select' mode: Left Click orbits background; Right Click orbits; Middle Click pans.
+  // - In ANY other tool mode: Left Click orbit completely removed (-1) to guarantee uninterrupted tool painting/drawing;
+  //   Orbiting defaults strictly to Right Click.
+  const orbitMouseButtons = useMemo(() => {
+    return getOrbitMouseButtons(activeTool, wallMode, splineMode);
+  }, [activeTool, wallMode, splineMode]);
 
   // Wheel shortcut handler: Shift+Scroll (Brush Size), Ctrl+Scroll (Speed/Secondary), Alt+Scroll (Height/Angle/Tertiary)
   // Crucial: { capture: true, passive: false } intercepts before OrbitControls and cancels default camera zoom!
@@ -255,7 +283,14 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         if (e.shiftKey) {
           // PRIMARY SLIDER: Brush Size (0.2m to 3.0m in 0.1m increments)
           const step = 0.1;
-          if (tool === 'texture' || tool === 'paint') {
+          if (tool === 'foliage') {
+            const step = 0.1;
+            const newRadius = Math.max(
+              0.2,
+              Math.min(3.0, parseFloat((editor.foliageBrushRadius + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setFoliageBrushRadius(newRadius);
+          } else if (tool === 'texture' || tool === 'paint') {
             const newRadius = Math.max(
               0.2,
               Math.min(3.0, parseFloat((editor.paintBrushRadius + (isUp ? step : -step)).toFixed(2)))
@@ -270,14 +305,21 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           }
         } else if (e.ctrlKey) {
           // SECONDARY SLIDER: Strength / Opacity / Density
-          if (tool === 'texture' || tool === 'paint') {
+          if (tool === 'foliage') {
+            const step = 1;
+            const newDensity = Math.max(
+              1,
+              Math.min(20, editor.foliageBrushDensity + (isUp ? step : -step))
+            );
+            editor.setFoliageBrushDensity(newDensity);
+          } else if (tool === 'texture' || tool === 'paint') {
             const step = 0.05;
             const newStrength = Math.max(
               0.05,
               Math.min(1.0, parseFloat((editor.paintBrushStrength + (isUp ? step : -step)).toFixed(2)))
             );
             editor.setPaintBrushStrength(newStrength);
-          } else if (tool === 'foliage' || tool === 'grass') {
+          } else if (tool === 'grass') {
             const step = 0.05;
             const newDensity = Math.max(
               0.1,
@@ -301,8 +343,15 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
             editor.setBrushStrength(newStrength);
           }
         } else if (e.altKey) {
-          // TERTIARY SLIDER: Falloff / Height / Angle
-          if (tool === 'texture' || tool === 'paint') {
+          // TERTIARY SLIDER: Falloff / Height / Jitter
+          if (tool === 'foliage') {
+            const step = 0.05;
+            const newJitter = Math.max(
+              0.0,
+              Math.min(0.5, parseFloat((editor.foliageScaleJitter + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setFoliageScaleJitter(newJitter);
+          } else if (tool === 'texture' || tool === 'paint') {
             const step = 0.05;
             const newFalloff = Math.max(
               0.0,
@@ -432,11 +481,11 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
       >
         <PerspectiveCamera makeDefault position={[7, 7, 7]} fov={45} />
 
-        {/* OrbitControls configured for normal intuitive 3D camera navigation:
-            - LEFT click drag: Rotate / orbit camera around the killa
-            - RIGHT click drag: Pan / shift camera
-            - MIDDLE click drag: Pan camera
-            - SCROLL wheel: Zoom / dolly in & out
+        {/* OrbitControls:
+            - In 'select' mode: Left Click orbits background; Right Click orbits; Middle Click pans.
+            - In any tool mode other than 'select' (Terrain, Wall Draw/Fortify, Spline Draw, Texture, Foliage, Prop):
+              Left Click orbit is completely removed (-1) to dedicate left click strictly to tool interactions.
+              Orbiting defaults to Right Click.
         */}
         <OrbitControls
           ref={controlsRef}
@@ -448,11 +497,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           minPolarAngle={0.05} // Constrain camera from flipping over top
           maxPolarAngle={Math.PI / 2 - 0.05} // Constrain polar angle above floor
           target={[0, 0.5, 0]}
-          mouseButtons={{
-            LEFT: THREE.MOUSE.ROTATE,
-            MIDDLE: THREE.MOUSE.PAN,
-            RIGHT: THREE.MOUSE.ROTATE,
-          }}
+          mouseButtons={orbitMouseButtons as any}
         />
 
         <CameraKeyboardController controlsRef={controlsRef} />
@@ -517,6 +562,11 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
 
         {/* Spline Structures: Steps, Saffron Flags, Festive Diyas */}
         <SplineStructures />
+
+        {/* 3D Foliage & Nature Scatter Layer (Enclosed in Suspense boundary to prevent viewport reloading) */}
+        <Suspense fallback={null}>
+          <FoliageRenderer />
+        </Suspense>
 
         {/* 3D Base Water Level Plane for Coastal Moats & Excavated Ponds */}
         <WaterPlane />

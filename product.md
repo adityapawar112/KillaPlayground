@@ -195,27 +195,53 @@ A unified, consistent control paradigm applies across all tools:
 ---
 
 ### Phase 6: Figurine & Architecture Asset Browser
-A categorized visual drawer lets users drag, drop, rotate, and scale miniature clay figurines, festive props, and pre-built fort buildings:
+A categorized visual drawer lets users place, select, transform, and erase 40 solid 3D models across 7 authentic categories, complete with calibrated relative scaling, real-time instancing, and dual-pane outliner inspection:
 
-1. **Royalty & Leadership:**
-   * **Chhatrapati Shivaji Maharaj on the Royal Throne (*Sinhasan*):** Complete with ornate golden/red canopy (*Meghdambari*), steps, and pedestal[cite: 1, 2].
-   * **Equestrian Statue:** Maharaj on horseback.
-2. **Garrison & Citizens (*Mavale* Figurines):**
-   * Standing spearman and swordsman guards in colorful bright tunics (yellow, green, blue, orange, red) and traditional *pagdis*[cite: 1, 2].
-   * Sentries aiming muskets/bows along the bastion walls[cite: 1, 2].
-   * Traditional village citizens and flag bearers.
-3. **Musicians:**
-   * Horn/Tutari blowers sounding the royal fanfare.
-   * Dhol/Tasha drummers standing near the main gate.
-4. **Buildings & Fort Architecture (Instant Architecture):**
-   * Pre-built **Watchtowers**, **Stone Bastions**, **Temple Shrines** (Bhavani Mata / Shiva Lingam), **Fort Houses**, and **Stone Archways**.
-   * *Purpose:* Enables users with limited time to immediately place iconic fort buildings without sculpting soil from scratch.
-5. **Artillery, Carts & Yard Props:**
-   * Black iron cannons (*Toph*) mounted on wheeled carriages[cite: 2].
-   * Bullock carts, wooden barrels, and supply crates.
-   * Tall swaying saffron flags (*Bhagwa Dhwaj*)[cite: 1, 2].
-   * Origami paper boats (*Hodi*) for water cisterns or sea areas[cite: 2].
-   * Terracotta diyas (oil lamps) with warm amber flames.
+1. **Royalty & Leadership (4 Models):**
+   * **Chhatrapati Shivaji Maharaj on the Royal Throne (*Sinhasan*):** Seated on the ornate golden throne under a royal canopy (*Meghdambari*).
+   * **Cavalry Commander:** Maratha cavalry commander on foot in formal armor.
+   * **Royal Attendant:** Court attendant bearing the ceremonial peacock feather fan (*Morchel*).
+   * **War Elephant:** Armored war elephant adorned with ceremonial headgear.
+2. **Garrison & Citizens (*Mavale* Figurines - 4 Models):**
+   * **Maratha Swordsman:** Foot soldier with raised talwar and dhal shield.
+   * **Fort Sentry Spearman:** Sentry standing guard with a long spear.
+   * **Bhagwa Flag Bearer:** Mavala carrying the sacred saffron swallowtail banner.
+   * **Cliff Defender:** Hillfort defender poised to roll boulder projectiles down escarpments.
+3. **Festive Musicians (2 Models):**
+   * **Tutari Horn Blower:** Ceremonial musician sounding the curved brass fanfare horn.
+   * **Dhol-Tasha Drummer:** Traditional percussionist with marching dhol drum.
+4. **Terracotta Clay Diyas (9 Unique Models):**
+   * Standalone terracotta oil lamps (`diya_clay_01` to `diya_clay_09`) with authentic earthen clay textures and glowing warm wick flames.
+5. **Hand-Painted Festive Diyas (9 Unique Models):**
+   * Standalone hand-painted festive lamps (`diya_color_01` to `diya_color_09`) in vibrant festive hues (saffron, crimson, turquoise, marigold) for festive battlements and ramparts.
+6. **Yard & Props (2 Models):**
+   * **Deccan Bullock Cart:** Traditional wooden transport cart with twin wheels and yoke.
+   * **Bhagwa Flag:** Ground-mounted swallowtail saffron fort banner.
+7. **Fort Architecture (7 Pre-Built Buildings):**
+   * **Arms Depot (*Shastragar*):** Fort armory building for weapons storage.
+   * **Elephant Stables (*Hattishala*):** Circular fortified stables with feeding troughs.
+   * **Fort Granary (*Amberkhana*):** Fortified provisions depot with red-tile hip roof.
+   * **Cavalry Stables (*Paga*):** Open pillared horse stables (calibrated to match garrison building scale).
+   * **Fort Dungeon (*Bandikhana*):** Iron-barred holding jail and cell.
+   * **Royal Kitchen (*Pakshala*):** Multi-hearth palace cooking house.
+   * **Soldier Quarters (*Sadare*):** Stone barrack quarters for the garrison guard.
+8. **Artillery & Ordnance (3 Models):**
+   * **Bastion Cannon (*Toph*):** Heavy black iron cannon mounted on an authentic wooden field carriage.
+   * **Cannonball Crate:** Wooden ammunition crate with pyramid-stacked iron cannonballs.
+   * **Gunpowder Magazine (*Darukhana*):** Reinforced vault crate for propellant charges.
+
+* **4 Operational Workflow Modes:**
+  * **Place Mode:** Right-side Figurine Vault asset browser with category pills and search; real-time surface-snapping ghost reticle with placement scale, rotation heading, random heading, normal align, and elevation offset sliders.
+  * **Select Mode:** Scene Outliner tree with element counts, instant search, and unified Element Properties inspector (scale, heading, duplicate, snap surface, focus camera, delete).
+  * **Transform Mode:** Camera-relative 3D nudge pad (Up/Forward/Down/Left/Backward/Right), heading rotation wheel with quick-angle snaps, uniform scale slider, and surface snapping.
+  * **Erase Mode:** Left Sidebar brush radius slider, crimson diorama brush circle GUI on terrain/structures, stroke drag erasing, and outliner deletion.
+* **Ergonomics & Hover Behavior:**
+  * Two-way hover highlighting in Select and Transform modes: diorama hover triggers amber glow ring (`HoverRing`) and highlights outliner row; outliner hover highlights diorama figurine.
+  * Hover rings and pointer cursor changes disabled in Place and Erase modes to eliminate visual clutter.
+* **Visual Polish:**
+  * All 40 assets feature transparent-background, optimized WebP/PNG thumbnails with text and white borders removed.
+  * Clean English UI voice with zero parenthetical transliterations.
+  * Full undo/redo integration (`Ctrl+Z`, `Ctrl+Y`) and local persistence.
 
 ---
 

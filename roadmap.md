@@ -276,37 +276,44 @@ graph TD
 
 ## Ticket 08: Figurine & Architecture Asset Browser
 
-- **Status**: `completed`
+- **Status**: `completed` (Verified in Browser & Unit Tests)
 - **Blocked by**: `Ticket 03`
 - **Delivers**:
-  - **Categorized Asset Drawer**:
-    - Sliding right-side drawer with visual preview cards:
-      1. *Royalty & Sinhasan*: Chhatrapati Shivaji Maharaj on the royal throne (*Sinhasan*), cavalry commander, and royal attendant.
-      2. *Mavale*: Standing spearmen, swordsmen, flag bearers, and cliffside defenders.
-      3. *Musicians*: Tutari horn blowers, Dhol-Tasha drummers.
-      4. *Festive Diyas*: 18 individual standalone models (9 traditional terracotta clay + 9 colorful hand-painted diyas).
-      5. *Yard & Props*: Deccan bullock carts and saffron swallowtail fort banners.
-      6. *Buildings & Fort Architecture*: Pre-built watchtowers, bastions, temple shrines, fort houses, stone arches (manifest-ready for user asset additions).
-      7. *Artillery & Yard Props*: Cannons and cannonballs (manifest-ready for user asset additions).
-  - **High-Performance Instanced Batching**:
+  - **40 Solid 3D Models Across 7 Authentic Categories**:
+    - Sliding right-side drawer with visual preview cards, category filters, counts, and search:
+      1. *Royalty & Sinhasan (4)*: Chhatrapati Shivaji Maharaj on the royal throne (*Sinhasan*), cavalry commander, royal attendant, and war elephant.
+      2. *Mavale Garrison (4)*: Maratha swordsman, fort sentry spearman, bhagwa flag bearer, and cliff defender.
+      3. *Festive Musicians (2)*: Tutari fanfare horn blower, Dhol-Tasha drummer.
+      4. *Terracotta Clay Diyas (9)*: 9 unique standalone clay lamp designs (`diya_clay_01` to `diya_clay_09`).
+      5. *Hand-Painted Diyas (9)*: 9 vibrant painted color schemes (`diya_color_01` to `diya_color_09`).
+      6. *Yard & Props (2)*: Deccan bullock cart and fluttering saffron fort banner.
+      7. *Fort Architecture (7)*: Arms depot, elephant stables, fort granary, cavalry stables (with calibrated scale matching fort buildings), fort dungeon/jail, royal kitchen, and soldier quarters.
+      8. *Artillery & Ordnance (3)*: Bastion cannon, cannonball crate, and gunpowder magazine.
+  - **High-Performance Instanced Batching & Scale Calibration**:
     - Batched rendering via `THREE.InstancedMesh` grouped by figurine type (1 draw call per distinct active type) effortlessly handling 250+ solid 3D figurines at 60+ FPS.
-    - Singleton geometry and material cache (`figurineAssetManager`) with automatic base grounding (`y = 0`).
+    - Singleton geometry and material cache (`figurineAssetManager`) with automatic base grounding (`y = 0`) and normalized baseline bounding-box scales for humans (0.9m), buildings (3.0m - 4.2m), and artillery (1.2m).
   - **4-Mode Workflow & Right Panel Dual Architecture**:
-    - **Place Mode**: Displays the Placed Figurines outliner (upper) and Figurine Vault asset browser (lower) with live ghost reticle snapping to terrain/wall surfaces, placement scale slider, rotation heading slider, randomize yaw toggle, and surface normal alignment.
-    - **Select Mode**: Displays Placed Figurines outliner alongside dedicated Element Properties inspector (scale slider, heading rotation slider, duplicate, snap surface, focus camera, delete).
+    - **Place Mode**: Displays Placed Figurines summary and lower Figurine Vault asset browser with live ghost reticle snapping to terrain/wall surfaces, placement scale slider, rotation heading slider, randomize yaw toggle, surface normal alignment, and elevation offset.
+    - **Select Mode**: Displays Placed Figurines outliner alongside dedicated Element Properties inspector (scale slider, heading rotation slider, duplicate, snap surface, focus camera, delete) styled consistently with Walls and Spline tools.
     - **Transform Mode**: Displays Placed Figurines outliner and Element Properties inspector with camera-relative 3D nudge pad (Up/Forward/Down/Left/Backward/Right), heading rotation wheel and quick angles, uniform scale slider, and surface snapping.
     - **Erase Mode**: Brush-based radius erasing with `Brush Radius` slider in Left Sidebar, crimson diorama brush ring GUI on terrain/structures, stroke drag erasing, and outliner single/batch deletion.
-    - **Two-Way Hover Highlighting**: Hovering any figurine in the 3D diorama triggers an amber glow ring (`HoverRing`) and instantly highlights its outliner row in `#EADECF` with `#B85F45` ring; hovering an outliner row highlights the corresponding 3D figurine in the viewport.
-    - **Thumbnails & Visual Assets**: Fully rendered visual preview thumbnails across all 29 models with 3D solid fallback icons.
-    - Sliders sit directly on panel background (`bg-[#F3EBE0]`) without enclosing cards.
-    - Mode selector lives exclusively in `ToolModeSidebar.tsx`.
-    - Full undo/redo integration with `terrainStore` snapshot history and JSON serialization.
+  - **Ergonomics & Hover Refinements**:
+    - Two-way hover highlighting active during Select and Transform modes: hovering a figurine in diorama renders an amber glow ring (`HoverRing`) and highlights the outliner row; hovering an outliner row highlights the 3D figurine in viewport.
+    - Hover highlights and pointer cursor changes disabled during Place and Erase modes to eliminate visual clutter and tool confusion.
+  - **Processed Transparent Thumbnails & Clean English UI**:
+    - Transparent-background WebP/PNG thumbnails for all 40 models (3x3 diya grid cleanly separated into individual icons; corner text and white backgrounds removed).
+    - Clean English UI labels with zero redundant parenthetical Marathi transliterations.
+  - **Undo / Redo & Secondary Toolbar Header Fixes**:
+    - Fixed undo/redo state restoration for both Figurines and Spline tools in `terrainStore.ts`.
+    - Fixed `collapseAllPanels` in `useEditorStore.ts` so the secondary toolbar hanging guide tab (`[⛰️ Tools & Views ▾]`) remains visible and clickable alongside `[⚙️ Properties ▾]`, `[🎯 Modes ▾]`, and `[🏰 Outliner ▾]`.
 
 ### Acceptance Criteria
-- [x] Asset drawer opens smoothly with tabs for Royalty, Mavale, Musicians, Buildings, and Props.
-- [x] Pre-built buildings can be placed directly onto terrain or fort decks.
-- [x] Figurines and props can be dragged, dropped, rotated, and positioned accurately.
-- [x] Placed items persist their transform coordinates in the editor store.
+- [x] Asset drawer opens smoothly with tabs for Royalty, Mavale, Musicians, Diyas, Props, Architecture, and Artillery.
+- [x] All 40 solid 3D models load cleanly with correct relative scale and ground alignment.
+- [x] Pre-built buildings, artillery, and figurines can be placed directly onto terrain or fort decks.
+- [x] Figurines and props can be dragged, dropped, rotated, transformed, and erased cleanly.
+- [x] Placed items persist their transform coordinates in the editor store with working undo/redo.
+- [x] "Minimize All" cleanly retains all four hanging guide tabs for quick restoration.
 
 ---
 

@@ -115,7 +115,7 @@ describe('surfaceToolInteraction', () => {
     expect(state.isToolModeMinimized).toBe(true);
     expect(state.isRightSidebarMinimized).toBe(true);
     expect(state.isMobileTopBarMinimized).toBe(true);
-    expect(state.showContextualDock).toBe(false);
+    expect(state.showBottomStatusBar).toBe(false);
 
     // Expand
     store.expandAllPanels();

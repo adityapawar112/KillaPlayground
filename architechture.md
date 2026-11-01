@@ -159,24 +159,41 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
    * **Tri-Mode Workflow:** `Scatter` (drag to paint clusters), `Single` (click-to-plant hero specimen), and `Erase` (radius pruning).
    * **Selection Flexibility:** Single-species focus or Multi-Select mode with random scatter selection and one-click "Deselect All".
 
-6. **Figurines & Architecture Tool (3D Asset Browser):**
-   * Sliding visual catalog for placing and rotating 3D diorama props:
-     * *Royalty & Sinhasan:* Shivaji Maharaj on the royal throne (*Sinhasan*), canopy (*Meghdambari*).
-     * *Mavale:* Spearmen, swordsmen, sentries.
-     * *Musicians:* Tutari horn blowers, Dhol-Tasha drummers.
-     * *Buildings & Fort Architecture:* Pre-built watchtowers, bastions, temple shrines, fort houses, stone arches.
-     * *Artillery & Yard Props:* Cannons, carts, barrels, paper boats, terracotta diyas.
+6. **Figurines & Architecture Tool (3D Asset Browser & Outliner Inspector):**
+   * High-performance 3D prop placement, inspection, and manipulation engine supporting **40 solid 3D assets** across 7 authentic categories:
+     * *Royalty & Sinhasan (4)*: Chhatrapati Shivaji Maharaj on throne, cavalry commander, royal attendant, war elephant.
+     * *Mavale Garrison (4)*: Maratha swordsman, fort sentry spearman, bhagwa flag bearer, cliff defender.
+     * *Festive Musicians (2)*: Tutari fanfare horn blower, Dhol-Tasha drummer.
+     * *Terracotta Clay Diyas (9)*: Standalone earthen lamps (`diya_clay_01` to `diya_clay_09`).
+     * *Hand-Painted Festive Diyas (9)*: Colorful painted lamps (`diya_color_01` to `diya_color_09`).
+     * *Yard & Props (2)*: Deccan bullock cart, fluttering saffron fort banner.
+     * *Fort Architecture (7)*: Arms depot, elephant stables, fort granary, cavalry stables (calibrated scaling matching garrison buildings), fort dungeon/jail, royal kitchen, soldier quarters.
+     * *Artillery & Ordnance (3)*: Bastion cannon, cannonball crate, gunpowder magazine.
+   * **Instanced Batching & Singleton Asset Cache (`figurineAssetManager.ts` & `FigurineInstances.tsx`)**:
+     * Instanced rendering via `THREE.InstancedMesh` grouped by figurine type (1 draw call per distinct active asset) supporting 250+ solid 3D models at 60+ FPS.
+     * Singleton GLTF geometry and material cache with automatic base grounding (`y = 0`) using model bounding boxes.
+     * Normalized baseline scaling: human figurines (0.9m), buildings (3.0m - 4.2m), artillery (1.2m), props (0.5m - 2.5m).
+   * **4 Operational Modes (`Place`, `Select`, `Transform`, `Erase`)**:
+     * *Place Mode:* Real-time ghost hologram raycast snapping to terrain/walls with placement scale, rotation heading, randomize yaw, surface normal alignment, and elevation offset sliders; lower pane renders Figurine Vault asset drawer with category pills and search.
+     * *Select Mode:* Upper pane lists Placed Figurines outliner; lower pane renders unified Element Properties inspector (scale slider, heading rotation slider, duplicate, snap surface, focus camera, delete) matching Walls and Spline tools.
+     * *Transform Mode:* Placed Figurines outliner + Element Properties inspector featuring a camera-relative 3D nudge pad (Up/Forward/Down/Left/Backward/Right), heading rotation wheel with quick-angle snaps, uniform scale slider, and surface snapping.
+     * *Erase Mode:* Left Sidebar brush radius slider, crimson diorama brush circle GUI on terrain/structures, stroke drag erasing, and outliner deletion.
+   * **Two-Way Hover Highlighting & Ergonomics**:
+     * Select and Transform modes feature bidirectional hover feedback: diorama hover renders amber glow ring (`HoverRing`) and highlights outliner row; outliner hover highlights the 3D figurine in viewport.
+     * Hover highlighting and pointer cursor changes are disabled during Place and Erase modes to eliminate visual clutter.
+   * **State & History Integration**:
+     * Full undo/redo integration in `terrainStore.ts` tracking figurine instance additions, deletions, and transform modifications.
 
 ---
 
 ### 4.3 Decoupled 5-Zone HUD Layout & Resizing Engine
 The user interface is architected into 5 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
 
-1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`) that instantly toggle all open sidebars and floating panels into minimal chips.
+1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`). `collapseAllPanels` cleanly sets minimized flags (`isMobileSidebarMinimized`, `isToolModeMinimized`, `isRightSidebarMinimized`, `isMobileTopBarMinimized`, and `showBottomStatusBar: false`) while keeping `showContextualDock: true`, ensuring all 4 hanging guide tabs remain accessible.
 2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 6 primary fort construction tools (Terrain, Walls, Spline, Texture, Foliage, Figurines) and camera preset view controls. Soil pipeline tools (7-0) are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
 3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Minimizes into `[⚙️ Properties ▾]`.
-4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Walls (`Select`, `Draw`, `Fortify`), Spline (`Select`, `Draw`, `Transform`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Minimizes into `[🎯 Modes ▾]`.
-5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage asset browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Minimizes into `[🏰 Outliner ▾]`.
+4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Walls (`Select`, `Draw`, `Fortify`), Spline (`Select`, `Draw`, `Transform`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Minimizes into `[🎯 Modes ▾]`.
+5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage / figurine vault browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Minimizes into `[🏰 Outliner ▾]`.
 6. **`BottomStatusBar.tsx`**: Viewport navigation and tool guide pill centered at bottom screen. Contextually detects active tool and subtool to display exact primary action (`Left Click: [Action] • Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`).
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic

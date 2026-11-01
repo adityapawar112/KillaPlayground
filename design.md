@@ -179,14 +179,22 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
 - **Role**: Switches the active tool's operational mode in vertical icon + label orientation:
   - *Walls*: `Select` (inspect & highlight), `Draw` (draft ramparts), `Fortify` (attach stamps).
   - *Spline*: `Select` (inspect paths), `Draw` (draft lines), `Transform` (camera-relative directional translate, rotate, scale).
+  - *Figurines*: `Place` (stamp assets), `Select` (inspect & tweak), `Transform` (3D nudge & rotate), `Erase` (radius & outliner deletion).
+  - *Texture*: `Paint` (apply texture), `Erase` (restore base soil).
+  - *Foliage*: `Scatter` (cluster painting), `Single` (hero planting), `Erase` (radius pruning).
   - *Terrain*: 8 sculpting subtools (`Peak`, `Plateau`, `Ramp`, `Gorge`, `Trench`, `Smooth`, `Pond`, `Retexture`).
 - **Minimizable**: Yes. Header minimize button (`[ ◂ ]`) collapses strip and deploys hanging tab (`[🎯 Modes ▾]`).
 
 ### 5. Zone 5: Right Scene Outliner & Contextual Inspector (`RightToolSidebar.tsx`)
 - **Position**: Docked right (`right-0`, `bottom-0`). Width: **260px to 460px** (default: `310px`), saved to `localStorage`.
-- **Role**: Dual-pane scene organization (active for walls, spline, and prop tools):
-  - **Upper Pane (`DIORAMA ELEMENTS`)**: Hierarchical tree listing all placed structures (e.g. Ramparts with expandable child bastions, watchtowers, and gates; or Placed Spline Paths). Features element count badge, hover highlighting, selection syncing, camera focus (`[ ⌖ ]`), and quick delete.
-  - **Lower Pane (`ELEMENT PROPERTIES`)**: Contextual inspector displayed *only* when an object is selected. Enables renaming, deleting, and tweaking specific parameters (e.g., individual bastion radius, platform width/depth/flip, gate arch height, spline item scale).
+- **Role**: Dual-pane scene organization and asset browsing:
+  - **Upper Pane (`DIORAMA ELEMENTS`)**: Hierarchical tree listing placed structures and items (Walls with child bastions/gates, Spline Paths, or Placed Figurines). Features element count badge, hover highlighting, selection syncing, camera focus (`[ ⌖ ]`), and quick delete.
+  - **Lower Pane (`ELEMENT PROPERTIES` or Asset Browser)**: Contextual inspector or catalog:
+    - *Select & Transform Modes*: Displays unified `ELEMENT PROPERTIES` inspector (scale, heading, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
+    - *Place Mode (Figurines)*: Displays the **Figurine Vault Asset Browser** (40 models, 7 categories, search, cards).
+    - *Texture & Foliage Tools*: Displays dedicated asset catalogs (52 textures, 117 flora species).
+- **Tactile Resizing**: Left edge contains an 8px hoverable handle with 6 embossed grip dots.
+- **Minimizable**: Yes. Header button (`[ ▸ ]`) collapses panel to `translate-x-full` and deploys hanging tab (`[🏰 Outliner ▾]`).
 - **Tactile Resizing**: Left edge contains an 8px hoverable handle with 6 embossed grip dots.
 - **Minimizable**: Yes. Header button (`[ ▸ ]`) collapses panel to `translate-x-full` and deploys hanging tab (`[🏰 Outliner ▾]`).
 
@@ -298,14 +306,16 @@ Permutation C: Left Sidebar Minimized + Modes Strip Open
 - **Direct 3D Structure Interaction (`surfaceToolInteraction.ts`)**:
   - Drawing splines, painting textures, and scattering foliage directly on fort walls and spline structures must stop propagation (`e.stopPropagation()`) and temporarily disable OrbitControls during drag strokes, routing mutations to surface coordinates.
   - Non-interactive decorative meshes (billboards, water plane, courtyard bricks) must declare `raycast={() => null}` to prevent stealing pointer raycasts.
-- **Hover Highlighting in Select Modes**:
-  Interactive 3D geometry must highlight when hovered over in `select` mode:
+- **Hover Highlighting in Select and Transform Modes**:
+  Interactive 3D geometry must highlight when hovered over in `select` and `transform` modes:
   - Cursor changes to `pointer` (`document.body.style.cursor = 'pointer'`).
-  - Contour / edges geometry renders with `#E85D04` (Saffron glow).
+  - Contour / edges geometry renders with `#E85D04` (Saffron glow) or amber hover ring (`HoverRing`).
+  - Corresponding outliner row highlights bidirectionally with `#EADECF` background and `#B85F45` ring.
+  - **CRITICAL**: Hover highlighting and cursor changes MUST BE DISABLED during `place` and `erase` modes to avoid distracting artifacts and tool confusion while stamping or sweeping the erase brush.
 - **Physical Raycasting Only (Zero Ground Proximity Hijacking)**:
   Never check arbitrary radial proximity against empty terrain vertices to select structures. Raycast directly against the structure's physical 3D mesh (`mesh` / `instancedMesh`) so adjacent objects never cross-contaminate.
 - **Selection Retention Across Modes**:
-  Switching between `select` and edit modes (`fortify` on walls, `transform` on splines) must PRESERVE the active object ID, and immediately pre-activate the appropriate tool/stamp (e.g., default `Watchtower` stamp).
+  Switching between `select` and edit modes (`fortify` on walls, `transform` on splines/figurines) must PRESERVE the active object ID, and immediately pre-activate the appropriate tool/stamp (e.g., default `Watchtower` stamp).
 
 ### Rule 8: Toast Notification Lifecycle
 - Toast notifications deployed via `setToastMessage()` must automatically dismiss after **3.5 seconds**.
@@ -380,8 +390,12 @@ All interactive 3D tools must implement standard ergonomic wheel gestures, inter
 ### Rule 15: Contextual Right Sidebar: Scene Outliner vs. Asset Browser
 - The Right Sidebar ([`RightToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/RightToolSidebar.tsx)) is contextual:
   - For structural tools (Walls, Splines): Renders the hierarchical **Diorama Elements Outliner** and **Element Properties Inspector**.
-  - For texture / asset-heavy tools (Texture, Foliage, Figurines): Renders the **Asset Browser** (e.g. Texture Browser with 52 textures, category filters, counts, search, and category dividers).
-- The Left Sidebar retains subtool parameter controls; the Right Sidebar handles asset browsing and selection.
+  - For pure asset tools (Texture, Foliage): Renders the **Asset Browser** (e.g. Texture Browser with 52 textures, Foliage Browser with 117 species).
+  - For hybrid tools (Figurines & Architecture):
+    - **Place Mode**: Upper pane displays placed figurine count and summary, lower pane renders the **Figurine Vault Asset Browser** (40 models, 7 categories, search, visual cards).
+    - **Select & Transform Modes**: Upper pane renders the **Placed Figurines Outliner** with instant search and 2-way hover highlighting; lower pane renders the unified **Element Properties Inspector** (scale, heading, duplicate, snap surface, focus camera, delete, and 3D nudge pad) matching Walls and Spline tools.
+    - **Erase Mode**: Left sidebar provides the Brush Radius slider with crimson diorama brush circle; Right sidebar displays the Placed Figurines Outliner for rapid single/batch deletion.
+- The Left Sidebar retains subtool parameter controls; the Right Sidebar handles asset browsing, outliner organization, and contextual inspection.
 
 ### Rule 16: Mandatory UI Consistency Verification Protocol
 Before authoring or modifying any HUD component or tool sidebar:
@@ -391,7 +405,7 @@ Before authoring or modifying any HUD component or tool sidebar:
 
 ### Rule 17: Top Bar Panel Toggles, Bottom Control Strip & Foliage Browser
 - **Collapse All & Expand All Controls:**
-  The top menu bar (`AppMenuBar.tsx`) includes a compact pill button right next to the language switcher hosting `TbArrowsMinimize` and `TbArrowsMaximize`. Clicking toggles `collapseAllPanels` / `expandAllPanels` in `useEditorStore.ts`, cleanly minimizing all sidebars and floating panels into non-colliding guide chips.
+  The top menu bar (`AppMenuBar.tsx`) includes a compact pill button right next to the language switcher hosting `TbArrowsMinimize` and `TbArrowsMaximize`. Clicking toggles `collapseAllPanels` / `expandAllPanels` in `useEditorStore.ts`. In `collapseAllPanels`, all sidebars and panels are minimized (`isMobileTopBarMinimized: true`, `isMobileSidebarMinimized: true`, `isToolModeMinimized: true`, `isRightSidebarMinimized: true`, `showBottomStatusBar: false`) while keeping `showContextualDock: true` intact, ensuring that all 4 hanging folder guide tabs (`[⚙️ Properties ▾]`, `[🎯 Modes ▾]`, `[⛰️ Tools & Views ▾]`, and `[🏰 Outliner ▾]`) remain visible, non-colliding, and instantly accessible to restore panels.
 - **Dynamic Contextual Status Bar:**
   The bottom navigation strip (`BottomStatusBar.tsx`) contextually displays the exact active subtool action (e.g. `Sculpt Peak`, `Flatten Plateau`, `Draft Wall Node`, `Place Bastion / Tower`, `Paint Surface Texture`, `Scatter Nature Flora`, `Plant Hero Specimen`, etc.) alongside `Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`.
 - **Foliage Studio Selection Modes:**

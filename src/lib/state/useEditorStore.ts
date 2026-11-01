@@ -1117,7 +1117,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       isToolModeMinimized: true,
       isRightSidebarMinimized: true,
       isMobileTopBarMinimized: true,
-      showContextualDock: false,
       showBottomStatusBar: false,
     }),
   expandAllPanels: () =>

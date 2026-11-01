@@ -13,6 +13,7 @@ import { WaterPlane } from './WaterPlane';
 import { FortWalls } from './FortWalls';
 import { SplineStructures } from './SplineStructures';
 import { FoliageRenderer } from './FoliageRenderer';
+import { FigurineRenderer } from './FigurineRenderer';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -216,7 +217,11 @@ const CameraKeyboardController: React.FC<{
       } else if (e.key === '[' || e.key === ']') {
         const editor = useEditorStore.getState();
         const step = e.key === ']' ? 0.1 : -0.1;
-        if (editor.activeTool === 'foliage') {
+        if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.propEraseRadius + step).toFixed(2))));
+          editor.setPropEraseRadius(newRadius);
+          e.preventDefault();
+        } else if (editor.activeTool === 'foliage') {
           const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.foliageBrushRadius + step).toFixed(2))));
           editor.setFoliageBrushRadius(newRadius);
           e.preventDefault();
@@ -281,10 +286,23 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         const tool = editor.activeTool;
 
         if (e.shiftKey) {
-          // PRIMARY SLIDER: Brush Size (0.2m to 3.0m in 0.1m increments)
+          // PRIMARY SLIDER: Brush Size (0.2m to 3.0m in 0.1m increments) / Figurine Placement Scale
           const step = 0.1;
-          if (tool === 'foliage') {
-            const step = 0.1;
+          if (tool === 'prop') {
+            if (editor.propSubTool === 'erase') {
+              const newRadius = Math.max(
+                0.2,
+                Math.min(3.0, parseFloat((editor.propEraseRadius + (isUp ? step : -step)).toFixed(2)))
+              );
+              editor.setPropEraseRadius(newRadius);
+            } else {
+              const newScale = Math.max(
+                0.3,
+                Math.min(2.5, parseFloat((editor.propPlacementScale + (isUp ? step : -step)).toFixed(1)))
+              );
+              editor.setPropPlacementScale(newScale);
+            }
+          } else if (tool === 'foliage') {
             const newRadius = Math.max(
               0.2,
               Math.min(3.0, parseFloat((editor.foliageBrushRadius + (isUp ? step : -step)).toFixed(2)))
@@ -304,8 +322,14 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
             editor.setBrushRadius(newRadius);
           }
         } else if (e.ctrlKey) {
-          // SECONDARY SLIDER: Strength / Opacity / Density
-          if (tool === 'foliage') {
+          // SECONDARY SLIDER: Strength / Opacity / Density / Rotation Heading
+          if (tool === 'prop') {
+            const step = 15;
+            let newRot = editor.propPlacementRotation + (isUp ? step : -step);
+            if (newRot < 0) newRot += 360;
+            if (newRot >= 360) newRot -= 360;
+            editor.setPropPlacementRotation(newRot);
+          } else if (tool === 'foliage') {
             const step = 1;
             const newDensity = Math.max(
               1,
@@ -343,8 +367,15 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
             editor.setBrushStrength(newStrength);
           }
         } else if (e.altKey) {
-          // TERTIARY SLIDER: Falloff / Height / Jitter
-          if (tool === 'foliage') {
+          // TERTIARY SLIDER: Falloff / Height / Jitter / Elevation Offset
+          if (tool === 'prop') {
+            const step = 0.01;
+            const newOffset = Math.max(
+              -0.10,
+              Math.min(0.30, parseFloat((editor.propElevationOffset + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setPropElevationOffset(newOffset);
+          } else if (tool === 'foliage') {
             const step = 0.05;
             const newJitter = Math.max(
               0.0,
@@ -566,6 +597,11 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         {/* 3D Foliage & Nature Scatter Layer (Enclosed in Suspense boundary to prevent viewport reloading) */}
         <Suspense fallback={null}>
           <FoliageRenderer />
+        </Suspense>
+
+        {/* 3D Historical Figurines & Architecture Layer */}
+        <Suspense fallback={null}>
+          <FigurineRenderer />
         </Suspense>
 
         {/* 3D Base Water Level Plane for Coastal Moats & Excavated Ponds */}

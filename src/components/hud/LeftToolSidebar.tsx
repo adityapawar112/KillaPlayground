@@ -41,6 +41,7 @@ import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { getTextureById, TEXTURE_MANIFEST } from '@/lib/textures/textureManifest';
 import { getFoliageById, FOLIAGE_MANIFEST } from '@/lib/foliage/foliageManifest';
+import { getFigurineById, FIGURINE_MANIFEST } from '@/lib/figurines/figurineManifest';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { SplineConversionType } from '@/lib/spline/splineTypes';
 import { FortStampType } from '@/lib/walls/wallTypes';
@@ -135,6 +136,30 @@ export const LeftToolSidebar: React.FC = () => {
     setFoliageNormalAlign,
     foliageInstances,
     clearAllFoliage,
+    placedProps,
+    selectedPropType,
+    setSelectedPropType,
+    selectedPropId,
+    setSelectedPropId,
+    propSubTool,
+    setPropSubTool,
+    propPlacementScale,
+    setPropPlacementScale,
+    propPlacementRotation,
+    setPropPlacementRotation,
+    propRandomRotation,
+    setPropRandomRotation,
+    propNormalAlign,
+    setPropNormalAlign,
+    propElevationOffset,
+    setPropElevationOffset,
+    propEraseRadius,
+    setPropEraseRadius,
+    updatePropTransform,
+    removeProp,
+    duplicateProp,
+    snapPropToSurface,
+    clearAllProps,
     toggleRightSidebar,
     leftSidebarWidth: sidebarWidth,
     setLeftSidebarWidth: setSidebarWidth,
@@ -238,13 +263,72 @@ export const LeftToolSidebar: React.FC = () => {
     }
   };
 
+  const movePropCameraRelative = (dir: 'forward' | 'backward' | 'left' | 'right' | 'up' | 'down') => {
+    if (!selectedPropId) return;
+    const prop = placedProps.find((p) => p.id === selectedPropId);
+    if (!prop) return;
+    const { forward, right } = getCameraAxes();
+    const STEP = 0.15;
+    const V_STEP = 0.05;
+
+    let dx = 0;
+    let dy = 0;
+    let dz = 0;
+
+    if (dir === 'forward') {
+      dx = forward.x * STEP;
+      dz = forward.z * STEP;
+    } else if (dir === 'backward') {
+      dx = -forward.x * STEP;
+      dz = -forward.z * STEP;
+    } else if (dir === 'left') {
+      dx = -right.x * STEP;
+      dz = -right.z * STEP;
+    } else if (dir === 'right') {
+      dx = right.x * STEP;
+      dz = right.z * STEP;
+    } else if (dir === 'up') {
+      dy = V_STEP;
+    } else if (dir === 'down') {
+      dy = -V_STEP;
+    }
+
+    useTerrainStore.getState().pushUndo();
+    updatePropTransform(selectedPropId, {
+      position: [prop.position[0] + dx, prop.position[1] + dy, prop.position[2] + dz],
+    });
+  };
+
+  const rotatePropRelative = (deg: number) => {
+    if (!selectedPropId) return;
+    const prop = placedProps.find((p) => p.id === selectedPropId);
+    if (!prop) return;
+    const rad = (deg * Math.PI) / 180;
+    useTerrainStore.getState().pushUndo();
+    updatePropTransform(selectedPropId, {
+      rotation: [prop.rotation[0], (prop.rotation[1] + rad) % (Math.PI * 2), prop.rotation[2]],
+    });
+  };
+
+  const scalePropRelative = (factor: number) => {
+    if (!selectedPropId) return;
+    const prop = placedProps.find((p) => p.id === selectedPropId);
+    if (!prop) return;
+    const currentScale = prop.scale[0] || 1.0;
+    const nextScale = Math.max(0.2, Math.min(3.0, +(currentScale * factor).toFixed(2)));
+    useTerrainStore.getState().pushUndo();
+    updatePropTransform(selectedPropId, {
+      scale: [nextScale, nextScale, nextScale],
+    });
+  };
+
   if (!showLeftToolbar) return null;
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
   const selectedSpline = splines.find((s) => s.id === selectedSplineId);
 
   const isModePanelOpen =
-    ['walls', 'spline', 'terrain'].includes(activeTool) && !isToolModeMinimized;
+    ['walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool) && !isToolModeMinimized;
   const propertiesTabLeft = isModePanelOpen ? '76px' : '8px';
 
   return (
@@ -1632,25 +1716,446 @@ export const LeftToolSidebar: React.FC = () => {
           })()}
 
           {/* ======================================================== */}
-          {/* 5. FIGURINES / PROPS TOOL                                 */}
+          {/* 6. FIGURINES & ASSETS TOOL (Ticket 08)                   */}
           {/* ======================================================== */}
-          {activeTool === 'prop' && (
-            <div className="space-y-3">
-              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
-                <TbUsersGroup className="w-8 h-8 mx-auto text-[#B85F45]" />
-                <div className="font-bold text-[#4B382C]">Historical Figurines</div>
-                <p className="text-[11px] text-[#634E40] leading-relaxed">
-                  Place Mavale soldiers, royal flags, tutari musicians, and cannons on your ramparts.
-                </p>
-                <button
-                  onClick={() => setPropDrawerOpen(true)}
-                  className="w-full py-2 bg-[#4B382C] text-[#FAF8F5] rounded-xl font-bold text-xs hover:bg-[#38281E] cursor-pointer"
-                >
-                  Open Figurines Vault
-                </button>
+          {activeTool === 'prop' && (() => {
+            const activeFigurine = getFigurineById(selectedPropType || 'warrior') || FIGURINE_MANIFEST[0];
+            const selectedProp = placedProps.find((p) => p.id === selectedPropId);
+            const selectedFigurineMeta = selectedProp ? getFigurineById(selectedProp.type) : null;
+
+            return (
+              <div className="space-y-4">
+                {/* 1. Header Card Badge */}
+                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EADECF] flex items-center justify-center text-[#8F4938]">
+                      <TbUsersGroup className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#4B382C]">Historical Figurines</div>
+                      <div className="text-[10px] text-[#8D7666]">
+                        {placedProps.length} / 250 placed
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
+                    {propSubTool} mode
+                  </span>
+                </div>
+
+                {/* 2. MODE A: PLACE MODE */}
+                {propSubTool === 'place' && (
+                  <div className="space-y-3.5">
+                    {/* Active Figurine Target Preview Card */}
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative w-9 h-9 rounded-lg bg-[#E8DDD0] flex items-center justify-center text-[#8F4938] shrink-0 border border-[#D9C9B4] overflow-hidden">
+                          <img
+                            src={activeFigurine.previewPath}
+                            alt={activeFigurine.name}
+                            className="w-full h-full object-contain p-0.5"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fb = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                              if (fb) (fb as HTMLElement).style.display = 'block';
+                            }}
+                          />
+                          <TbUsersGroup className="fallback-icon hidden w-5 h-5 text-[#8F4938]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-[#4B382C] truncate">
+                            {activeFigurine.name}
+                          </div>
+                          <div className="text-[10px] text-[#8D7666] truncate">
+                            {activeFigurine.culturalLore || activeFigurine.category}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={toggleRightSidebar}
+                        className="px-2 py-1 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[10px] font-bold text-[#4B382C] cursor-pointer shrink-0 transition-colors"
+                        title="Open Figurine Vault Drawer"
+                      >
+                        Change ➔
+                      </button>
+                    </div>
+
+                    {/* Sliders mounted directly on panel background bg-[#F3EBE0] */}
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Placement Scale</span>
+                        <span className="text-[#8D7666]">{propPlacementScale.toFixed(1)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.5}
+                        max={2.5}
+                        step={0.1}
+                        value={propPlacementScale}
+                        onChange={(e) => setPropPlacementScale(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Rotation Heading</span>
+                        <span className="text-[#8D7666]">{propPlacementRotation}°</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        step={5}
+                        value={propPlacementRotation}
+                        onChange={(e) => setPropPlacementRotation(parseInt(e.target.value, 10))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] font-semibold text-[#4B382C]">Randomize Heading</span>
+                      <button
+                        onClick={() => setPropRandomRotation(!propRandomRotation)}
+                        className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                          propRandomRotation ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
+                        }`}
+                      >
+                        <div
+                          className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
+                            propRandomRotation ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Align to Normal</span>
+                        <span className="text-[#8D7666]">
+                          {propNormalAlign === 0 ? 'Upright (0%)' : `${Math.round(propNormalAlign * 100)}%`}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.0}
+                        max={1.0}
+                        step={0.05}
+                        value={propNormalAlign}
+                        onChange={(e) => setPropNormalAlign(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Elevation Offset</span>
+                        <span className="text-[#8D7666]">{(propElevationOffset * 100).toFixed(0)}cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-0.10}
+                        max={0.30}
+                        step={0.01}
+                        value={propElevationOffset}
+                        onChange={(e) => setPropElevationOffset(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#634E40] space-y-2">
+                      <p className="leading-snug">
+                        Left-click on mountain terrain, ramparts, or bastions to place instances. Right-drag to orbit camera.
+                      </p>
+                      <button
+                        onClick={toggleRightSidebar}
+                        className="w-full py-1.5 bg-[#4B382C] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
+                      >
+                        Browse All 29 Figurines
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. MODE B: SELECT MODE */}
+                {propSubTool === 'select' && (
+                  <div className="space-y-3.5">
+                    {selectedProp ? (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#4B382C]">
+                              {selectedFigurineMeta?.name || selectedProp.type}
+                            </span>
+                            <span className="text-[10px] text-[#8D7666] font-mono">
+                              {selectedProp.id.slice(-6)}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[#634E40] bg-[#EADECF] p-2 rounded-lg">
+                            <div>
+                              <span className="text-[#8D7666] block">X:</span>
+                              <span className="font-bold">{selectedProp.position[0].toFixed(2)}m</span>
+                            </div>
+                            <div>
+                              <span className="text-[#8D7666] block">Y:</span>
+                              <span className="font-bold">{selectedProp.position[1].toFixed(2)}m</span>
+                            </div>
+                            <div>
+                              <span className="text-[#8D7666] block">Z:</span>
+                              <span className="font-bold">{selectedProp.position[2].toFixed(2)}m</span>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              onClick={() => duplicateProp(selectedProp.id)}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                            >
+                              + Duplicate
+                            </button>
+                            <button
+                              onClick={() => snapPropToSurface(selectedProp.id)}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                            >
+                              Snap to Surface
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => setPropSubTool('transform')}
+                            className="w-full py-1.5 bg-[#B85F45] text-white hover:bg-[#A04F38] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            <TbArrowsMove className="w-3.5 h-3.5" />
+                            <span>Transform & Nudge</span>
+                          </button>
+
+                          <button
+                            onClick={() => removeProp(selectedProp.id)}
+                            className="w-full py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1"
+                          >
+                            <TbTrash className="w-3.5 h-3.5" />
+                            <span>Delete Figurine</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
+                        <TbPointer className="w-6 h-6 mx-auto text-[#8D7666]" />
+                        <div className="text-xs font-bold text-[#4B382C]">Select Figurine</div>
+                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                          Click on any placed figurine in the 3D diorama to inspect, duplicate, move, or delete it.
+                        </p>
+                      </div>
+                    )}
+
+                    {placedProps.length > 0 && (
+                      <div className="pt-2 border-t border-[#D9C9B4]">
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to remove all placed figurines from the diorama?')) {
+                              clearAllProps();
+                            }
+                          }}
+                          className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        >
+                          Clear All {placedProps.length} Figurines
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. MODE C: TRANSFORM MODE */}
+                {propSubTool === 'transform' && (
+                  <div className="space-y-3.5">
+                    {selectedProp ? (
+                      <div className="space-y-3.5">
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                          <div className="text-xs font-bold text-[#4B382C]">Camera-Relative Nudge</div>
+                          <div className="space-y-1.5">
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <button
+                                onClick={() => movePropCameraRelative('up')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Vertically Up (+Y)"
+                              >
+                                ↑ Up
+                              </button>
+                              <button
+                                onClick={() => movePropCameraRelative('forward')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Forward in Camera View"
+                              >
+                                ▲ Forward
+                              </button>
+                              <button
+                                onClick={() => movePropCameraRelative('down')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Vertically Down (-Y)"
+                              >
+                                ↓ Down
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <button
+                                onClick={() => movePropCameraRelative('left')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Left in Camera View"
+                              >
+                                ◀ Left
+                              </button>
+                              <button
+                                onClick={() => movePropCameraRelative('backward')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Backward in Camera View"
+                              >
+                                ▼ Backward
+                              </button>
+                              <button
+                                onClick={() => movePropCameraRelative('right')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Right in Camera View"
+                              >
+                                ▶ Right
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <span>Heading Rotation</span>
+                            <span className="text-[#8D7666]">
+                              {Math.round(((selectedProp.rotation[1] * 180) / Math.PI + 360) % 360)}°
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                            <button
+                              onClick={() => rotatePropRelative(-15)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              ⟲ -15°
+                            </button>
+                            <button
+                              onClick={() => rotatePropRelative(15)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              ⟳ +15°
+                            </button>
+                            <button
+                              onClick={() => rotatePropRelative(180)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              ⟳ 180°
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <span>Scale Multiplier</span>
+                            <span className="text-[#8D7666]">{selectedProp.scale[0].toFixed(2)}x</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                            <button
+                              onClick={() => scalePropRelative(0.9)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              -10%
+                            </button>
+                            <button
+                              onClick={() => scalePropRelative(1.1)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              +10%
+                            </button>
+                            <button
+                              onClick={() => {
+                                updatePropTransform(selectedProp.id, { scale: [1, 1, 1] });
+                              }}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              1.0x
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-[#D9C9B4] space-y-2">
+                          <button
+                            onClick={() => snapPropToSurface(selectedProp.id)}
+                            className="w-full py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg text-xs font-bold cursor-pointer text-[#4B382C]"
+                          >
+                            Snap Flush to Surface
+                          </button>
+                          <button
+                            onClick={() => removeProp(selectedProp.id)}
+                            className="w-full py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                          >
+                            Delete Figurine
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
+                        <TbArrowsMove className="w-6 h-6 mx-auto text-[#8D7666]" />
+                        <div className="text-xs font-bold text-[#4B382C]">Transform Figurine</div>
+                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                          Please select a figurine first to adjust its position, rotation, or scale.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 5. MODE D: ERASE MODE */}
+                {propSubTool === 'erase' && (
+                  <div className="space-y-3.5">
+                    {/* Brush Radius Slider mounted directly on panel background */}
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Brush Radius</span>
+                        <span className="text-[#8D7666]">{propEraseRadius.toFixed(1)}m</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.2}
+                        max={2.5}
+                        step={0.1}
+                        value={propEraseRadius}
+                        onChange={(e) => setPropEraseRadius(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-1.5">
+                      <TbTrash className="w-5 h-5 mx-auto text-red-500" />
+                      <div className="text-xs font-bold text-[#4B382C]">Erase Brush</div>
+                      <p className="text-[11px] text-[#634E40] leading-relaxed">
+                        Click or drag on the diorama or outliner to remove figurines within the brush radius.
+                      </p>
+                    </div>
+
+                    {placedProps.length > 0 && (
+                      <div className="pt-2 border-t border-[#D9C9B4]">
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to remove all ${placedProps.length} placed figurines from the diorama?`)) {
+                              clearAllProps();
+                            }
+                          }}
+                          className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        >
+                          Clear All {placedProps.length} Figurines
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </aside>
     </>

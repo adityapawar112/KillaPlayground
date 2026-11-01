@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { z } from 'zod';
 import { COLORS } from '../constants/tokens';
 import { useTerrainStore } from '../terrain/terrainStore';
+import { getTerrainHeightAt } from '../terrain/terrainBuffer';
 import {
   WallPath,
   WallPoint,
@@ -20,7 +21,8 @@ import { SplineConversionType, SplineSettings, SplinePath, SplineMode } from '..
 import { FoliageInstance, FoliageSubTool } from '../foliage/foliageTypes';
 import { getFoliageById } from '../foliage/foliageManifest';
 import { foliageTextureManager } from '../foliage/foliageTextureManager';
-export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool };
+import { PropSubTool } from '../figurines/figurineTypes';
+export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool, PropSubTool };
 
 export interface HoveredElement {
   type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop';
@@ -259,7 +261,25 @@ interface EditorState {
   splineConversionType: SplineConversionType;
   splineSettings: SplineSettings;
 
-  // Props & Figurines State
+  // Props & Figurines State (Ticket 08)
+  propSubTool: PropSubTool;
+  setPropSubTool: (st: PropSubTool) => void;
+  propCategoryFilter: string;
+  setPropCategoryFilter: (cat: string) => void;
+  propSearchQuery: string;
+  setPropSearchQuery: (query: string) => void;
+  propPlacementScale: number;
+  setPropPlacementScale: (scale: number) => void;
+  propPlacementRotation: number;
+  setPropPlacementRotation: (rot: number) => void;
+  propRandomRotation: boolean;
+  setPropRandomRotation: (rand: boolean) => void;
+  propNormalAlign: number;
+  setPropNormalAlign: (align: number) => void;
+  propElevationOffset: number;
+  setPropElevationOffset: (offset: number) => void;
+  propEraseRadius: number;
+  setPropEraseRadius: (radius: number) => void;
   placedProps: PlacedProp[];
   selectedPropType: string | null;
   selectedPropId: string | null;
@@ -362,6 +382,7 @@ interface EditorState {
   cancelSpline: () => void;
   deleteSpline: (id: string) => void;
   clearAllSplines: () => void;
+  setSplines: (splines: SplinePath[]) => void;
   setSelectedSplineId: (id: string | null) => void;
   setSplineConversionType: (type: SplineConversionType) => void;
   setSplineSettings: (settings: Partial<SplineSettings>) => void;
@@ -380,8 +401,13 @@ interface EditorState {
     transform: Partial<Pick<PlacedProp, 'position' | 'rotation' | 'scale'>>
   ) => void;
   removeProp: (id: string) => void;
+  removeProps: (ids: string[]) => void;
   setSelectedPropType: (type: string | null) => void;
   setSelectedPropId: (id: string | null) => void;
+  duplicateProp: (id: string) => string | null;
+  snapPropToSurface: (id: string) => void;
+  clearAllProps: () => void;
+  setPlacedProps: (props: PlacedProp[]) => void;
 
   // Metadata Actions
   setFortTitle: (title: string) => void;
@@ -1049,8 +1075,17 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     scale: 1.0,
   },
 
+  propSubTool: 'place',
+  propCategoryFilter: 'all',
+  propSearchQuery: '',
+  propPlacementScale: 1.0,
+  propPlacementRotation: 0,
+  propRandomRotation: false,
+  propNormalAlign: 0.0,
+  propElevationOffset: 0.0,
+  propEraseRadius: 0.8,
   placedProps: [],
-  selectedPropType: null,
+  selectedPropType: 'warrior',
   selectedPropId: null,
 
   fortTitle: 'Our Killa',
@@ -1368,6 +1403,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       currentSplinePoints: [],
     });
   },
+  setSplines: (splines) => set({ splines, selectedSplineId: null }),
   setSelectedSplineId: (id) => set({ selectedSplineId: id }),
   setSplineConversionType: (splineConversionType) => set({ splineConversionType }),
   setSplineSettings: (settings) =>
@@ -1487,7 +1523,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
 
+  setPropSubTool: (st) => set({ propSubTool: st }),
+  setPropCategoryFilter: (cat) => set({ propCategoryFilter: cat }),
+  setPropSearchQuery: (query) => set({ propSearchQuery: query }),
+  setPropPlacementScale: (scale) => set({ propPlacementScale: Math.max(0.2, Math.min(3.0, scale)) }),
+  setPropPlacementRotation: (rot) => set({ propPlacementRotation: (rot + 360) % 360 }),
+  setPropRandomRotation: (rand) => set({ propRandomRotation: rand }),
+  setPropNormalAlign: (align) => set({ propNormalAlign: Math.max(0, Math.min(1, align)) }),
+  setPropElevationOffset: (offset) => set({ propElevationOffset: Math.max(-0.5, Math.min(1.0, offset)) }),
+  setPropEraseRadius: (radius) => set({ propEraseRadius: Math.max(0.2, Math.min(3.0, radius)) }),
+
   addProp: (prop) => {
+    pushUndoSnapshot();
     const id = `prop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newProp: PlacedProp = { ...prop, id };
     set((state) => ({
@@ -1502,13 +1549,65 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         p.id === id ? { ...p, ...transform } : p
       ),
     })),
-  removeProp: (id) =>
+  removeProp: (id) => {
+    pushUndoSnapshot();
     set((state) => ({
       placedProps: state.placedProps.filter((p) => p.id !== id),
       selectedPropId: state.selectedPropId === id ? null : state.selectedPropId,
-    })),
+    }));
+  },
+  removeProps: (ids) => {
+    if (ids.length === 0) return;
+    pushUndoSnapshot();
+    const idSet = new Set(ids);
+    set((state) => ({
+      placedProps: state.placedProps.filter((p) => !idSet.has(p.id)),
+      selectedPropId: state.selectedPropId && idSet.has(state.selectedPropId) ? null : state.selectedPropId,
+    }));
+  },
   setSelectedPropType: (type) => set({ selectedPropType: type }),
   setSelectedPropId: (id) => set({ selectedPropId: id }),
+  duplicateProp: (id) => {
+    const { placedProps } = get();
+    const source = placedProps.find((p) => p.id === id);
+    if (!source) return null;
+    pushUndoSnapshot();
+    const newId = `prop_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const dup: PlacedProp = {
+      ...source,
+      id: newId,
+      position: [source.position[0] + 0.25, source.position[1], source.position[2] + 0.25],
+    };
+    set((state) => ({
+      placedProps: [...state.placedProps, dup],
+      selectedPropId: newId,
+    }));
+    return newId;
+  },
+  snapPropToSurface: (id) => {
+    const { placedProps } = get();
+    const prop = placedProps.find((p) => p.id === id);
+    if (!prop) return;
+    try {
+      const terrainStore = useTerrainStore.getState();
+      const groundY = getTerrainHeightAt(prop.position[0], prop.position[2], terrainStore.stateBuffer);
+      pushUndoSnapshot();
+      set((state) => ({
+        placedProps: state.placedProps.map((p) =>
+          p.id === id ? { ...p, position: [p.position[0], groundY, p.position[2]] } : p
+        ),
+      }));
+    } catch {
+      // ignore
+    }
+  },
+  clearAllProps: () => {
+    if (get().placedProps.length > 0) {
+      pushUndoSnapshot();
+      set({ placedProps: [], selectedPropId: null });
+    }
+  },
+  setPlacedProps: (props) => set({ placedProps: props }),
 
   setFortTitle: (title) => set({ fortTitle: title }),
   setBuilderName: (name) => set({ builderName: name }),

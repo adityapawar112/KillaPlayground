@@ -15,6 +15,7 @@ export const BottomStatusBar: React.FC = () => {
     splineMode,
     foliageSubTool,
     paintSubTool,
+    propSubTool,
   } = useEditorStore();
   const { t } = useTranslation();
 
@@ -58,6 +59,9 @@ export const BottomStatusBar: React.FC = () => {
         if (foliageSubTool === 'erase') return 'Prune / Erase Flora';
         return 'Scatter Nature Flora';
       case 'prop':
+        if (propSubTool === 'erase') return 'Erase Figurine';
+        if (propSubTool === 'select') return 'Select Figurine';
+        if (propSubTool === 'transform') return 'Transform Figurine';
         return 'Place Figurine';
       default:
         return 'Apply Tool';

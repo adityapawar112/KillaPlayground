@@ -156,6 +156,21 @@ export function handleStructurePointerDown(
     }
   }
 
+  // 4. Figurine Erase on Solid Structures
+  if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
+    isPaintingSurface = true;
+    const toRemove = editor.placedProps.filter((p) => {
+      const dx = p.position[0] - e.point.x;
+      const dz = p.position[2] - e.point.z;
+      return Math.hypot(dx, dz) <= editor.propEraseRadius;
+    });
+    if (toRemove.length > 0) {
+      editor.removeProps(toRemove.map((it) => it.id));
+    }
+    invalidate();
+    return true;
+  }
+
   return false;
 }
 
@@ -262,6 +277,21 @@ export function handleStructurePointerMove(
       invalidate();
       return true;
     }
+  }
+
+  // 4. Figurine Erase on Solid Structures
+  if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
+    isPaintingSurface = true;
+    const toRemove = editor.placedProps.filter((p) => {
+      const dx = p.position[0] - e.point.x;
+      const dz = p.position[2] - e.point.z;
+      return Math.hypot(dx, dz) <= editor.propEraseRadius;
+    });
+    if (toRemove.length > 0) {
+      editor.removeProps(toRemove.map((it) => it.id));
+    }
+    invalidate();
+    return true;
   }
 
   return false;

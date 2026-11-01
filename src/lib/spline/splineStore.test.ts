@@ -166,5 +166,55 @@ describe('useEditorStore - Spline Integration', () => {
     store.updateSplineName(stepsId, 'Citadel Stairs');
     expect(useEditorStore.getState().splines[0].name).toBe('Citadel Stairs');
   });
+
+  it('restores spline state on undo and redo via useTerrainStore', () => {
+    const terrainStore = useTerrainStore.getState();
+    const editorStore = useEditorStore.getState();
+
+    expect(editorStore.splines.length).toBe(0);
+
+    editorStore.startSpline();
+    editorStore.addSplinePoint([0, 0, 0]);
+    editorStore.addSplinePoint([1, 0, 1]);
+    const id1 = editorStore.finishSpline('steps')!;
+    expect(useEditorStore.getState().splines.length).toBe(1);
+
+    editorStore.startSpline();
+    editorStore.addSplinePoint([2, 0, 2]);
+    editorStore.addSplinePoint([3, 0, 3]);
+    const id2 = editorStore.finishSpline('flags')!;
+    expect(useEditorStore.getState().splines.length).toBe(2);
+
+    // Undo second spline creation
+    const didUndo1 = terrainStore.undo();
+    expect(didUndo1).toBe(true);
+    expect(useEditorStore.getState().splines.length).toBe(1);
+    expect(useEditorStore.getState().splines[0].id).toBe(id1);
+
+    // Undo first spline creation
+    const didUndo2 = terrainStore.undo();
+    expect(didUndo2).toBe(true);
+    expect(useEditorStore.getState().splines.length).toBe(0);
+
+    // Redo first spline creation
+    const didRedo1 = terrainStore.redo();
+    expect(didRedo1).toBe(true);
+    expect(useEditorStore.getState().splines.length).toBe(1);
+    expect(useEditorStore.getState().splines[0].id).toBe(id1);
+
+    // Redo second spline creation
+    const didRedo2 = terrainStore.redo();
+    expect(didRedo2).toBe(true);
+    expect(useEditorStore.getState().splines.length).toBe(2);
+
+    // Delete spline
+    editorStore.deleteSpline(id1);
+    expect(useEditorStore.getState().splines.length).toBe(1);
+    expect(useEditorStore.getState().splines[0].id).toBe(id2);
+
+    // Undo deletion
+    terrainStore.undo();
+    expect(useEditorStore.getState().splines.length).toBe(2);
+  });
 });
 

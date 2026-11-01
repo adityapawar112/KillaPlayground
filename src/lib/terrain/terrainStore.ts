@@ -25,7 +25,7 @@ import {
   clearPaintBuffer,
   PaintBrushOptions,
 } from './terrainPaintBuffer';
-import { useEditorStore, PondWaterFeature, FoliageInstance } from '../state/useEditorStore';
+import { useEditorStore, PondWaterFeature, FoliageInstance, SplinePath, PlacedProp } from '../state/useEditorStore';
 import { WallPath, CitadelKeep } from '../walls/wallTypes';
 
 interface TerrainState {
@@ -73,6 +73,10 @@ const citadelUndoStack: CitadelKeep[][] = [];
 const citadelRedoStack: CitadelKeep[][] = [];
 const foliageUndoStack: FoliageInstance[][] = [];
 const foliageRedoStack: FoliageInstance[][] = [];
+const splineUndoStack: SplinePath[][] = [];
+const splineRedoStack: SplinePath[][] = [];
+const propUndoStack: PlacedProp[][] = [];
+const propRedoStack: PlacedProp[][] = [];
 
 // shortcut: Module-level shared WebGL DataTextures and DataArrayTexture persist across component renders for singleton diorama lifetime to enable zero GPU reallocation resets, upgrade to scoped context if supporting multiple simultaneous viewports
 // Generate organic starter mud hill by default
@@ -226,6 +230,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       wallUndoStack.shift();
       citadelUndoStack.shift();
       foliageUndoStack.shift();
+      splineUndoStack.shift();
+      propUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
     paintUndoStack.push(paintBuffer.slice());
@@ -233,12 +239,16 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
     citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
     foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
+    splineUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
+    propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
     redoStack.length = 0;
     paintRedoStack.length = 0;
     pondRedoStack.length = 0;
     wallRedoStack.length = 0;
     citadelRedoStack.length = 0;
     foliageRedoStack.length = 0;
+    splineRedoStack.length = 0;
+    propRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
@@ -247,13 +257,17 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     paintUndoStack.length > 0 ||
     wallUndoStack.length > 0 ||
     citadelUndoStack.length > 0 ||
-    foliageUndoStack.length > 0,
+    foliageUndoStack.length > 0 ||
+    splineUndoStack.length > 0 ||
+    propUndoStack.length > 0,
   canRedo: () =>
     redoStack.length > 0 ||
     paintRedoStack.length > 0 ||
     wallRedoStack.length > 0 ||
     citadelRedoStack.length > 0 ||
-    foliageRedoStack.length > 0,
+    foliageRedoStack.length > 0 ||
+    splineRedoStack.length > 0 ||
+    propRedoStack.length > 0,
 
   undo: () => {
     if (
@@ -261,7 +275,9 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       paintUndoStack.length === 0 &&
       wallUndoStack.length === 0 &&
       citadelUndoStack.length === 0 &&
-      foliageUndoStack.length === 0
+      foliageUndoStack.length === 0 &&
+      splineUndoStack.length === 0 &&
+      propUndoStack.length === 0
     )
       return false;
     const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
@@ -302,6 +318,18 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       useEditorStore.getState().setFoliageInstances(prevFoliage);
     }
 
+    if (splineUndoStack.length > 0) {
+      const prevSplines = splineUndoStack.pop()!;
+      splineRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
+      useEditorStore.getState().setSplines(prevSplines);
+    }
+
+    if (propUndoStack.length > 0) {
+      const prevProps = propUndoStack.pop()!;
+      propRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
+      useEditorStore.getState().setPlacedProps(prevProps);
+    }
+
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
@@ -317,7 +345,9 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       paintRedoStack.length === 0 &&
       wallRedoStack.length === 0 &&
       citadelRedoStack.length === 0 &&
-      foliageRedoStack.length === 0
+      foliageRedoStack.length === 0 &&
+      splineRedoStack.length === 0 &&
+      propRedoStack.length === 0
     )
       return false;
     const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
@@ -356,6 +386,18 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       const nextFoliage = foliageRedoStack.pop()!;
       foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
       useEditorStore.getState().setFoliageInstances(nextFoliage);
+    }
+
+    if (splineRedoStack.length > 0) {
+      const nextSplines = splineRedoStack.pop()!;
+      splineUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
+      useEditorStore.getState().setSplines(nextSplines);
+    }
+
+    if (propRedoStack.length > 0) {
+      const nextProps = propRedoStack.pop()!;
+      propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
+      useEditorStore.getState().setPlacedProps(nextProps);
     }
 
     stateTexture.needsUpdate = true;

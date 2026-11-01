@@ -31,6 +31,9 @@ import {
   TbSearch,
   TbPalette,
   TbTrees,
+  TbUsersGroup,
+  TbCopy,
+  TbAnchor,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { WallMode } from '@/lib/walls/wallTypes';
@@ -49,6 +52,13 @@ import {
   getFoliageByCategory,
 } from '@/lib/foliage/foliageManifest';
 import { foliageTextureManager } from '@/lib/foliage/foliageTextureManager';
+import {
+  FIGURINE_MANIFEST,
+  FIGURINE_CATEGORIES,
+  searchFigurines,
+  getFigurinesByCategory,
+  getFigurineById,
+} from '@/lib/figurines/figurineManifest';
 
 const STORAGE_RIGHT_WIDTH_KEY = 'killa_right_sidebar_width_v1';
 
@@ -131,6 +141,22 @@ export const RightToolSidebar: React.FC = () => {
     setFoliageSearchQuery,
     foliageSubTool,
     setFoliageSubTool,
+    propCategoryFilter,
+    setPropCategoryFilter,
+    propSearchQuery,
+    setPropSearchQuery,
+    selectedPropType,
+    setSelectedPropType,
+    propSubTool,
+    setPropSubTool,
+    placedProps,
+    selectedPropId,
+    setSelectedPropId,
+    removeProp,
+    updatePropTransform,
+    duplicateProp,
+    snapPropToSurface,
+    hoveredElement,
     rightSidebarWidth: sidebarWidth,
     setRightSidebarWidth: setSidebarWidth,
   } = useEditorStore();
@@ -204,6 +230,7 @@ export const RightToolSidebar: React.FC = () => {
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
   const selectedSpline = splines.find((s) => s.id === selectedSplineId);
+  const selectedProp = placedProps.find((p) => p.id === selectedPropId);
 
   const filteredCategories =
     paintCategoryFilter === 'all'
@@ -214,6 +241,11 @@ export const RightToolSidebar: React.FC = () => {
     foliageCategoryFilter === 'all'
       ? FOLIAGE_CATEGORIES
       : FOLIAGE_CATEGORIES.filter((c) => c.id === foliageCategoryFilter);
+
+  const filteredFigurineCategories =
+    propCategoryFilter === 'all'
+      ? FIGURINE_CATEGORIES
+      : FIGURINE_CATEGORIES.filter((c) => c.id === propCategoryFilter);
 
   return (
     <>
@@ -232,6 +264,8 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Open Foliage Browser'
                 : activeTool === 'texture' || activeTool === 'paint'
                 ? 'Open Texture Browser'
+                : activeTool === 'prop'
+                ? 'Open Figurine Vault'
                 : 'Open Outliner'
             }
           >
@@ -239,6 +273,8 @@ export const RightToolSidebar: React.FC = () => {
               <TbTrees className="w-3.5 h-3.5 text-[#15803D]" />
             ) : activeTool === 'texture' || activeTool === 'paint' ? (
               <TbPalette className="w-3.5 h-3.5 text-[#8F4938]" />
+            ) : activeTool === 'prop' ? (
+              <TbUsersGroup className="w-3.5 h-3.5 text-[#B85F45]" />
             ) : (
               <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
             )}
@@ -247,6 +283,8 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Foliage'
                 : activeTool === 'texture' || activeTool === 'paint'
                 ? 'Textures'
+                : activeTool === 'prop'
+                ? 'Figurines'
                 : 'Outliner'}
             </span>
             <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
@@ -292,6 +330,8 @@ export const RightToolSidebar: React.FC = () => {
               <TbTrees className="w-4 h-4 text-[#15803D]" />
             ) : activeTool === 'texture' || activeTool === 'paint' ? (
               <TbPalette className="w-4 h-4 text-[#8F4938]" />
+            ) : activeTool === 'prop' ? (
+              <TbUsersGroup className="w-4 h-4 text-[#B85F45]" />
             ) : (
               <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
             )}
@@ -304,6 +344,8 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Foliage Browser'
                 : activeTool === 'texture' || activeTool === 'paint'
                 ? 'Texture Browser'
+                : activeTool === 'prop'
+                ? (propSubTool === 'place' ? 'Figurine Vault' : 'Element Properties')
                 : 'Props Outliner'}
             </span>
             {(activeTool === 'texture' || activeTool === 'paint') && (
@@ -314,6 +356,11 @@ export const RightToolSidebar: React.FC = () => {
             {activeTool === 'foliage' && (
               <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 {FOLIAGE_MANIFEST.length}
+              </span>
+            )}
+            {activeTool === 'prop' && propSubTool === 'place' && (
+              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                {FIGURINE_MANIFEST.length}
               </span>
             )}
           </div>
@@ -632,6 +679,407 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   );
                 })
+              )}
+            </div>
+          ) : activeTool === 'prop' ? (
+            <div className="space-y-4">
+              {/* ======================================================== */}
+              {/* 1. PLACED FIGURINES OUTLINER                             */}
+              {/* ======================================================== */}
+              <div className="space-y-1.5 pb-3 border-b border-[#D9C9B4]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      Placed Figurines
+                    </span>
+                    <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                      {placedProps.length} / 250
+                    </span>
+                  </div>
+                  {selectedPropId && (
+                    <button
+                      onClick={() => setSelectedPropId(null)}
+                      className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                    >
+                      Deselect
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
+                  {placedProps.length === 0 ? (
+                    <div className="text-center py-4 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                      No figurines placed yet.
+                    </div>
+                  ) : (
+                    placedProps.map((prop, idx) => {
+                      const isSelected = selectedPropId === prop.id;
+                      const isHovered = hoveredElement?.type === 'prop' && hoveredElement.id === prop.id;
+                      const meta = getFigurineById(prop.type) || FIGURINE_MANIFEST[0];
+                      const label = meta ? meta.name : `Figurine ${idx + 1}`;
+
+                      return (
+                        <div
+                          key={prop.id}
+                          onClick={() => {
+                            setSelectedPropId(prop.id);
+                            if (propSubTool === 'place') {
+                              setPropSubTool('select');
+                            }
+                          }}
+                          onMouseEnter={() => setHoveredElement({ type: 'prop', id: prop.id })}
+                          onMouseLeave={() => setHoveredElement(null)}
+                          className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
+                              : isHovered
+                              ? 'bg-[#EADECF] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#4B382C]'
+                              : 'bg-[#FAF8F5] hover:bg-[#EADECF] border-[#D9C9B4] text-[#4B382C]'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
+                              <img
+                                src={meta?.previewPath}
+                                alt={label}
+                                className="w-full h-full object-contain p-0.5"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                            <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
+                            <span
+                              className={`text-[9px] font-mono shrink-0 ${
+                                isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                              }`}
+                            >
+                              ({prop.position[0].toFixed(1)}, {prop.position[2].toFixed(1)})
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPropId(prop.id);
+                                focusCamera(e);
+                              }}
+                              title="Focus Camera"
+                              className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                            >
+                              <TbFocus2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeProp(prop.id);
+                              }}
+                              title="Delete Figurine"
+                              className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                            >
+                              <TbTrash className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+
+              {/* ======================================================== */}
+              {/* 2. LOWER SECTION: VAULT (PLACE) OR PROPERTIES (OTHER)    */}
+              {/* ======================================================== */}
+              {propSubTool === 'place' ? (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      Figurine Vault
+                    </span>
+                    <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                      {FIGURINE_MANIFEST.length} models
+                    </span>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                    <input
+                      type="text"
+                      value={propSearchQuery}
+                      onChange={(e) => setPropSearchQuery(e.target.value)}
+                      placeholder={`Search ${FIGURINE_MANIFEST.length} historical figurines...`}
+                      className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                    />
+                    {propSearchQuery && (
+                      <button
+                        onClick={() => setPropSearchQuery('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                      >
+                        <TbX className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Category Filter Pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                    <button
+                      onClick={() => setPropCategoryFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                        propCategoryFilter === 'all'
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      All ({FIGURINE_MANIFEST.length})
+                    </button>
+                    {FIGURINE_CATEGORIES.map((cat) => {
+                      const count = getFigurinesByCategory(cat.id).length;
+                      const isActive = propCategoryFilter === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setPropCategoryFilter(cat.id)}
+                          className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                              : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                          }`}
+                        >
+                          <span
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{ backgroundColor: cat.accentColor }}
+                          />
+                          <span>{cat.name.split(' ')[0]}</span>
+                          <span className="opacity-70 text-[9px]">({count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Categorized Figurine Groups with Dividers */}
+                  {filteredFigurineCategories.length === 0 ? (
+                    <div className="text-center py-8 text-[#8D7666] italic text-xs">
+                      No figurines found matching "{propSearchQuery}"
+                    </div>
+                  ) : (
+                    filteredFigurineCategories.map((cat) => {
+                      const items = searchFigurines(propSearchQuery, cat.id);
+                      if (items.length === 0) return null;
+
+                      return (
+                        <div key={cat.id} className="space-y-2">
+                          {/* Section Divider & Header */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-[#D9C9B4]">
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: cat.accentColor }}
+                            />
+                            <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                              {cat.name}
+                            </span>
+                            <span className="text-[9px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
+                              {items.length}
+                            </span>
+                          </div>
+
+                          {/* 2-Column Responsive Card Grid */}
+                          <div className="grid grid-cols-2 gap-2">
+                            {items.map((item) => {
+                              const isSelected = selectedPropType === item.id;
+
+                              return (
+                                <button
+                                  key={item.id}
+                                  onClick={() => {
+                                    setSelectedPropType(item.id);
+                                  }}
+                                  className={`group relative flex flex-col text-left p-2 rounded-xl transition-all cursor-pointer ${
+                                    isSelected
+                                      ? 'bg-[#EADECF] ring-2 ring-[#B85F45] shadow-sm'
+                                      : 'bg-[#FAF8F5] border border-[#D9C9B4] hover:border-[#BFA892] hover:bg-[#F2EBE1]'
+                                  }`}
+                                >
+                                  {/* 128x128 Aspect Square Container */}
+                                  <div className="relative w-full aspect-square rounded-lg overflow-hidden bg-[#E8DDD0] flex items-center justify-center">
+                                    <img
+                                      src={item.previewPath}
+                                      alt={item.name}
+                                      loading="lazy"
+                                      className="w-full h-full object-contain p-1.5 drop-shadow-xs group-hover:scale-105 transition-transform duration-200"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                        const fb = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                                        if (fb) (fb as HTMLElement).style.display = 'flex';
+                                      }}
+                                    />
+                                    <div className="fallback-icon hidden flex-col items-center justify-center text-[#8D7666] group-hover:scale-105 transition-transform duration-200">
+                                      <TbUsersGroup className="w-10 h-10 text-[#8F4938]/70" />
+                                      <span className="text-[8px] font-bold text-[#8D7666] mt-1">3D SOLID</span>
+                                    </div>
+
+                                    {/* Selected Checkmark Badge */}
+                                    {isSelected && (
+                                      <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#15803D] text-white flex items-center justify-center shadow-xs">
+                                        <TbCheck className="w-3 h-3 stroke-[3]" />
+                                      </div>
+                                    )}
+
+                                    {/* Dimension Tag */}
+                                    <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white leading-none">
+                                      {item.faceCount} faces
+                                    </div>
+                                  </div>
+
+                                  {/* Label */}
+                                  <div className="mt-1.5 min-w-0">
+                                    <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                      {item.name}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : (
+                /* ELEMENT PROPERTIES INSPECTOR */
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      Element Properties
+                    </span>
+                    {selectedProp && (
+                      <button
+                        onClick={() => setSelectedPropId(null)}
+                        className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                      >
+                        Deselect
+                      </button>
+                    )}
+                  </div>
+
+                  {selectedProp ? (
+                    (() => {
+                      const meta = getFigurineById(selectedProp.type) || FIGURINE_MANIFEST[0];
+                      const currentScale = selectedProp.scale[0] || 1.0;
+                      const currentHeadingDeg = Math.round(
+                        ((selectedProp.rotation[1] * 180) / Math.PI + 360) % 360
+                      );
+
+                      return (
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
+                            <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
+                              <TbUsersGroup className="w-4 h-4 text-[#B85F45]" />
+                              <span>Figurine Specs</span>
+                            </div>
+                          </div>
+
+                          {/* Name Input */}
+                          <div>
+                            <label className="text-[10px] font-bold text-[#8D7666] uppercase">Name</label>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              <input
+                                type="text"
+                                readOnly
+                                value={meta?.name || 'Figurine'}
+                                className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Scale Slider */}
+                          <div>
+                            <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                              <span>Scale</span>
+                              <span className="text-[#8D7666]">{currentScale.toFixed(2)}x</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0.3"
+                              max="2.5"
+                              step="0.05"
+                              value={currentScale}
+                              onChange={(e) => {
+                                const s = parseFloat(e.target.value);
+                                updatePropTransform(selectedProp.id, { scale: [s, s, s] });
+                              }}
+                              className="w-full accent-[#B85F45] cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Heading Rotation Slider */}
+                          <div>
+                            <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                              <span>Heading Rotation</span>
+                              <span className="text-[#8D7666]">{currentHeadingDeg}°</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0"
+                              max="360"
+                              step="5"
+                              value={currentHeadingDeg}
+                              onChange={(e) => {
+                                const deg = parseFloat(e.target.value);
+                                const rad = (deg * Math.PI) / 180;
+                                updatePropTransform(selectedProp.id, {
+                                  rotation: [selectedProp.rotation[0], rad, selectedProp.rotation[2]],
+                                });
+                              }}
+                              className="w-full accent-[#B85F45] cursor-pointer"
+                            />
+                          </div>
+
+                          {/* Duplicate and Snap Surface Buttons */}
+                          <div className="grid grid-cols-2 gap-2 pt-0.5">
+                            <button
+                              onClick={() => duplicateProp(selectedProp.id)}
+                              className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                            >
+                              Duplicate
+                            </button>
+                            <button
+                              onClick={() => snapPropToSurface(selectedProp.id)}
+                              className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                            >
+                              Snap Surface
+                            </button>
+                          </div>
+
+                          {/* Focus and Delete Row (Matching Walls & Splines) */}
+                          <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                            <button
+                              onClick={focusCamera}
+                              className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                            >
+                              Focus
+                            </button>
+                            <button
+                              onClick={() => {
+                                removeProp(selectedProp.id);
+                                setSelectedPropId(null);
+                              }}
+                              className="flex-1 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer text-center"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div className="text-center py-6 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                      Select a figurine from the list above or diorama to edit properties.
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           ) : (

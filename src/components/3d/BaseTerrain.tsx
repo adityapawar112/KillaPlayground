@@ -212,6 +212,8 @@ export const BaseTerrainContent: React.FC = () => {
   const paintTextureRepeat = useEditorStore((s) => s.paintTextureRepeat);
   const foliageBrushRadius = useEditorStore((s) => s.foliageBrushRadius);
   const foliageSubTool = useEditorStore((s) => s.foliageSubTool);
+  const propEraseRadius = useEditorStore((s) => s.propEraseRadius);
+  const propSubTool = useEditorStore((s) => s.propSubTool);
 
   // Load 52 retro textures into DataArrayTexture asynchronously on client
   useEffect(() => {
@@ -710,6 +712,35 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      // Handle Figurine Erase Brush Direct Surface Erasing
+      if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
+        if (e.button !== 0 || e.altKey) return;
+        e.stopPropagation();
+
+        if (controls) {
+          controls.enabled = false;
+        }
+
+        isPaintingRef.current = true;
+        pushUndo();
+
+        const toRemove = editor.placedProps.filter((p) => {
+          const dx = p.position[0] - e.point.x;
+          const dz = p.position[2] - e.point.z;
+          return Math.hypot(dx, dz) <= editor.propEraseRadius;
+        });
+        if (toRemove.length > 0) {
+          editor.removeProps(toRemove.map((p) => p.id));
+        }
+
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        setCursorVisible(true);
+        invalidate();
+        return;
+      }
+
       if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
         return;
       }
@@ -885,6 +916,28 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      // Handle Figurine Erase Tool Pointer Move & Brush Dragging
+      if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        if (!cursorVisible) setCursorVisible(true);
+
+        if (isPaintingRef.current) {
+          e.stopPropagation();
+          const toRemove = editor.placedProps.filter((p) => {
+            const dx = p.position[0] - e.point.x;
+            const dz = p.position[2] - e.point.z;
+            return Math.hypot(dx, dz) <= editor.propEraseRadius;
+          });
+          if (toRemove.length > 0) {
+            editor.removeProps(toRemove.map((p) => p.id));
+          }
+          invalidate();
+        }
+        return;
+      }
+
       if (editor.activeTool !== 'terrain') {
         if (cursorVisible) setCursorVisible(false);
         return;
@@ -1019,6 +1072,8 @@ export const BaseTerrainContent: React.FC = () => {
         radius={
           activeTool === 'foliage'
             ? foliageBrushRadius
+            : activeTool === 'prop' && propSubTool === 'erase'
+            ? propEraseRadius
             : activeTool === 'texture' || activeTool === 'paint'
             ? paintBrushRadius
             : brushRadius
@@ -1026,6 +1081,8 @@ export const BaseTerrainContent: React.FC = () => {
         subTool={
           activeTool === 'foliage'
             ? foliageSubTool
+            : activeTool === 'prop' && propSubTool === 'erase'
+            ? 'erase'
             : activeTool === 'texture' || activeTool === 'paint'
             ? paintSubTool
             : terrainSubTool
@@ -1035,7 +1092,8 @@ export const BaseTerrainContent: React.FC = () => {
           (activeTool === 'terrain' ||
             activeTool === 'texture' ||
             activeTool === 'paint' ||
-            activeTool === 'foliage')
+            activeTool === 'foliage' ||
+            (activeTool === 'prop' && propSubTool === 'erase'))
         }
       />
     </>

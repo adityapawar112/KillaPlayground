@@ -1871,7 +1871,7 @@ export const LeftToolSidebar: React.FC = () => {
                         onClick={toggleRightSidebar}
                         className="w-full py-1.5 bg-[#4B382C] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
                       >
-                        Browse All 29 Figurines
+                        Browse All {FIGURINE_MANIFEST.length} Figurines
                       </button>
                     </div>
                   </div>

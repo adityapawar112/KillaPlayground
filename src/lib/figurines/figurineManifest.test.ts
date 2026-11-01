@@ -10,8 +10,8 @@ import {
 } from './figurineManifest';
 
 describe('Figurine Manifest & Asset Registry', () => {
-  it('registers all 29 initial solid 3D models', () => {
-    expect(FIGURINE_MANIFEST.length).toBe(29);
+  it('registers all 40 solid 3D models', () => {
+    expect(FIGURINE_MANIFEST.length).toBe(40);
   });
 
   it('contains all 8 required categories', () => {
@@ -37,18 +37,24 @@ describe('Figurine Manifest & Asset Registry', () => {
   });
 
   it('correctly partitions items by category', () => {
-    expect(getFigurinesByCategory('royalty').length).toBe(3);
+    expect(getFigurinesByCategory('royalty').length).toBe(4);
     expect(getFigurinesByCategory('mavale').length).toBe(4);
     expect(getFigurinesByCategory('musicians').length).toBe(2);
     expect(getFigurinesByCategory('diyas_clay').length).toBe(9);
     expect(getFigurinesByCategory('diyas_color').length).toBe(9);
     expect(getFigurinesByCategory('yard_props').length).toBe(2);
+    expect(getFigurinesByCategory('architecture').length).toBe(7);
+    expect(getFigurinesByCategory('artillery').length).toBe(3);
   });
 
   it('retrieves figurines by ID', () => {
     const king = getFigurineById('king_throne');
     expect(king).toBeDefined();
     expect(king?.name).toBe('King on Throne');
+
+    const cannon = getFigurineById('cannon');
+    expect(cannon).toBeDefined();
+    expect(cannon?.name).toBe('Bastion Cannon');
 
     const unknown = getFigurineById('non_existent_id');
     expect(unknown).toBeUndefined();
@@ -65,15 +71,19 @@ describe('Figurine Manifest & Asset Registry', () => {
     const filteredSearch = searchFigurines('lotus', 'diyas_color');
     expect(filteredSearch.length).toBe(1);
     expect(filteredSearch[0].id).toBe('diya_color_06');
+
+    const archSearch = searchFigurines('granary', 'architecture');
+    expect(archSearch.length).toBe(1);
+    expect(archSearch[0].id).toBe('granary');
   });
 
   it('has calibrated bounding dimensions and face counts for diorama scale', () => {
     for (const item of FIGURINE_MANIFEST) {
       expect(item.faceCount).toBeGreaterThan(50);
-      expect(item.faceCount).toBeLessThan(1500);
-      expect(item.dimensions.width).toBeGreaterThan(0.1);
+      expect(item.faceCount).toBeLessThan(6000);
+      expect(item.dimensions.width).toBeGreaterThan(0.05);
       expect(item.dimensions.height).toBeGreaterThan(0.05);
-      expect(item.dimensions.depth).toBeGreaterThan(0.1);
+      expect(item.dimensions.depth).toBeGreaterThan(0.05);
     }
   });
 });

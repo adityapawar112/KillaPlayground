@@ -108,6 +108,9 @@ class FigurineAssetManager {
           // 2. Horse rider & bullock cart: ~0.16m - 0.18m tall.
           // 3. Diyas: ~0.05m (5cm) wide clay cups.
           // 4. Saffron Flag: ~0.27m tall mast.
+          // 5. Artillery: Cannons ~0.15m length (chest height to human, fits on bastions), cannonball crate ~0.08m (knee height).
+          // 6. War Elephant: ~0.29m tall with royal howdah and commander (twice human height).
+          // 7. Fort Architecture: Buildings ~0.25m - 0.33m tall with 0.40m - 0.58m footprints proportional to 0.15m figurines & 0.25m walls.
           let scaleFactor = 0.16;
           if (modelPath.includes('diya_')) {
             scaleFactor = 0.18;
@@ -117,6 +120,28 @@ class FigurineAssetManager {
             scaleFactor = 0.18;
           } else if (modelPath.includes('horse_rider') || modelPath.includes('horse')) {
             scaleFactor = 0.18;
+          } else if (modelPath.includes('cannonball_crate')) {
+            scaleFactor = 0.09;
+          } else if (modelPath.includes('cannon')) {
+            scaleFactor = 0.16;
+          } else if (modelPath.includes('elephant_rider')) {
+            scaleFactor = 0.32;
+          } else if (modelPath.includes('elephant_stables')) {
+            scaleFactor = 0.60;
+          } else if (modelPath.includes('arms_depot')) {
+            scaleFactor = 0.50;
+          } else if (modelPath.includes('horse_stables')) {
+            scaleFactor = 0.50;
+          } else if (modelPath.includes('soldier_quarters')) {
+            scaleFactor = 0.48;
+          } else if (
+            modelPath.includes('granary') ||
+            modelPath.includes('grainery') ||
+            modelPath.includes('gunpowder_depot') ||
+            modelPath.includes('jail') ||
+            modelPath.includes('kitchen')
+          ) {
+            scaleFactor = 0.45;
           }
 
           cleanGeom.scale(scaleFactor, scaleFactor, scaleFactor);

@@ -118,19 +118,19 @@ class FigurineAssetManager {
             scaleFactor = 0.28;
           } else if (modelPath.includes('bullock_cart') || modelPath.includes('Bullock')) {
             scaleFactor = 0.18;
-          } else if (modelPath.includes('horse_rider') || modelPath.includes('horse')) {
-            scaleFactor = 0.18;
           } else if (modelPath.includes('cannonball_crate')) {
             scaleFactor = 0.09;
           } else if (modelPath.includes('cannon')) {
             scaleFactor = 0.16;
-          } else if (modelPath.includes('elephant_rider')) {
-            scaleFactor = 0.32;
           } else if (modelPath.includes('elephant_stables')) {
             scaleFactor = 0.60;
-          } else if (modelPath.includes('arms_depot')) {
-            scaleFactor = 0.50;
+          } else if (modelPath.includes('elephant_rider')) {
+            scaleFactor = 0.32;
           } else if (modelPath.includes('horse_stables')) {
+            scaleFactor = 0.52;
+          } else if (modelPath.includes('horse_rider')) {
+            scaleFactor = 0.18;
+          } else if (modelPath.includes('arms_depot')) {
             scaleFactor = 0.50;
           } else if (modelPath.includes('soldier_quarters')) {
             scaleFactor = 0.48;

@@ -471,7 +471,7 @@ export const FIGURINE_MANIFEST: FigurineItem[] = [
     previewPath: '/figurines/previews/horse_stables.png',
     faceCount: 5102,
     defaultScale: 1.0,
-    dimensions: { width: 0.48, height: 0.26, depth: 0.23 },
+    dimensions: { width: 0.52, height: 0.28, depth: 0.25 },
     culturalLore: 'Paga stables for the swift Deccan Bhimthadi horses and cavalry commanders.',
   },
   {

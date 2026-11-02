@@ -3,7 +3,7 @@
 ## 1. Product Vision & Overview
 **Diwali Killa Sandbox** is an interactive, tactile 3D browser experience that lets anyone participate in the traditional Maharashtrian Diwali custom of building miniature mud forts (*Diwali Killa*)[cite: 1, 2]. 
 
-Rather than requiring tedious, complex soil physics just to get started, the product offers a fast, creative **Killa-First** toolset: sculpt terrain, draw customizable fort walls with towers and gates, place stone steps and flag lines with splines, paint ground textures (dirt, sand, grass, gravel, rock), scatter 3D trees and shrubs, and place clay figurines and pre-built fort buildings. 
+Rather than requiring tedious, complex soil physics just to get started, the product offers a fast, creative **Killa-First** toolset: sculpt terrain, build modular stone fortresses (parametric walls, foundations, stairs, and fortifications), paint ground textures (dirt, sand, grass, gravel, rock), scatter 3D trees and shrubs, place historical figurines and architecture, illuminate the ramparts with glowing diyas and colorful Diwali fireworks (cone fountains and sky shots), and inspect the creation through a cinematic free-fly viewer. 
 
 For purists seeking the authentic backyard craft experience, an organic **Tactile Soil Pipeline** is available as an advanced simulation layer (dumping raw soil, pouring water to turn it into workable wet mud, hand-shaping walls, and drying/locking mud).
 
@@ -31,9 +31,11 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 └── Elevate Hills -> Carve Valleys -> Flatten Plateaus -> Smooth Slopes -> Dig Ponds
 │
 ▼
-[3. Walls & Spline Structures]
-├── Parametric Walls: Height, Thickness, Bastions/Towers, Gates, Crenellations
-└── Spline Structures: Stone Steps, Saffron Flag Lines, Glowing Diya Rows
+[3. Unified Building Construction Tool]
+├── Walls: Click-to-draft perimeter ramparts with pointed crenellations
+├── Foundation: Click-and-drag rectangular stone plinths & courtyards with live ghosting
+├── Stairs: Walkable stepped stone masonry paths ascending mountain slopes
+└── Fortifications: Sliding watchtowers, inward rampart bastions, Maha Darwaza gates
 │
 ▼
 [4. Terrain Painting Studio]
@@ -45,14 +47,27 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 │
 ▼
 [6. Figurine & Architecture Asset Browser]
-└── Place & Rotate: Warriors (Mavale), Shivaji Maharaj Throne, Musicians, Buildings, Carts, Barrels, Cannons
+└── Place & Rotate: Warriors (Mavale), Shivaji Maharaj Throne, Musicians, Buildings, Carts, Cannons
 │
 ▼
-[7. Showcase, Multi-Angle Poster & Share]
+[7. Festive Lighting & Fireworks Studio]
+├── 18 Diyas: Terracotta & painted lamps with active flames and warm night point lighting
+└── 10 Fireworks: Cone fountains (Anaar) & sky shots with 5 color variations & test pyrotechnics
+│
+▼
+[8. Time-of-Day, Play/Pause Engine & Diorama Bar]
+└── Quick-Action Pill: Day | Play | Pause | Screenshot | Night with automatic celebration salvo
+│
+▼
+[9. Free-Fly Spectator & Viewing Studio]
+└── Clean HUD-free diorama viewing with Orbit Spectator and WASD Free-Fly flight navigation
+│
+▼
+[10. Showcase, Multi-Angle Poster & Share]
 └── Interactive 3D Link OR Auto-Captured Multi-Angle Festive Poster with Marathi/English Title Header
 │
 ▼
-[8. Optional / Advanced: Tactile Soil Crafting Pipeline]
+[11. Optional / Advanced: Tactile Soil Crafting Pipeline]
 └── Dump Dry Soil -> Pour Water -> Push/Flatten from Top & Sides -> Dry/Lock Mud -> Freehand Mud Paint
 ```
 
@@ -88,45 +103,33 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 
 ---
 
-### Phase 3: Parametric Fort Walls & Spline Placement Tools
+### Phase 3: Unified Building Construction Tool (Walls, Foundations, Stairs, Fortifications)
 
-#### 3.1 Parametric Walls Tool
-Enables users to draw continuous wall curves or multi-segment fort ramparts conforming directly to the underlying terrain elevation. This provides an express path to building fortified killas without requiring manual soil sculpting:
-* **Decoupled 3-Mode Interaction**:
-  * **Select Mode**: Click any wall, bastion, or gate to inspect its properties in the Right Sidebar, rename it, delete it, or highlight hovered components in 3D.
-  * **Draw Mode**: Click on terrain to draft rampart curves. Start closing node rendered in green, intermediate points in yellow. Features direct "Finish Wall" or "Cancel Draft" actions.
-  * **Fortify Mode**: Allows continuous placement of the 3 authentic fortification types via magnetic snap holograms:
-    * **Watchtowers**: Sliding continuous round towers snapping to any point along wall segments.
-    * **Rampart Bastions**: Inward rectangular stone platforms attached flush to the wall, featuring 3D perimeter protective railings while keeping the outer wall crenellations uninterrupted.
-    * **Arched Gateways**: Arched entrances with flanking towers and continuous upper rampart walkways.
+The standalone Wall and Spline tools are consolidated into a single high-velocity **Building** tool (`building`), eliminating redundant flag and diya splines (which now exist as authentic solid 3D models) while integrating stone steps directly alongside fort masonry:
+
+* **5 Unified Operational Modes in `ToolModeSidebar.tsx`**:
+  * **Select Mode**: Physical raycasting isolates fort ramparts, round watchtowers, bastions, gates, foundations, and stairs without proximity hijacking.
+  * **Walls Mode**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira battlements and continuous elevation adherence.
+  * **Foundation Mode**: Click-and-drag rectangular stone foundation builder:
+    * Pointer down anchors first corner $(x_1, z_1)$ on terrain.
+    * Pointer move renders a real-time translucent ghost bounding box.
+    * Pointer up finalizes opposite corner $(x_2, z_2)$, creating a solid stone foundation slab.
+    * Adjustable parameters: Length, Width, Height (slab thickness: 10cm to 300cm), Vertical Offset (-50cm to +200cm), and Texture Tiling (1x to 10x UV multiplier).
+    * Textured with `mossy_stone_brick_128x128_pbr` (perimeter sides) and `dark_stone_floor_128x128_pbr` (top deck).
+  * **Stairs Mode**: Multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm) and stair spacing slider (1cm to 10cm).
+  * **Fortifications Mode**: Continuous magnetic snap hologram placement for sliding round watchtowers, inward rampart bastions, and *Maha Darwaza* arched gateways along walls.
 * **Miniature Tabletop Diorama Calibration**:
   * Scaled to realistic miniature diorama measurements (default 25cm height, 15cm thickness; range 10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding.
   * Sliders dynamically display physical units in centimeters (`cm`).
 * **Multi-Material PBR Texturing**:
-  * Wall & Tower Facings: Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`).
-  * Rampart Walkways & Tower Floor Decks: Dressed dark basalt stone floor paving slabs (`dark_stone_floor_128x128_pbr`).
+  * Wall, Tower & Foundation Facings: Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`).
+  * Rampart Walkways, Tower Decks & Foundation Top: Dressed dark basalt stone floor paving slabs (`dark_stone_floor_128x128_pbr`).
   * Battlements & Trims: Solid dark basalt stone (`dark_stone_texture_128x128_pbr`).
 * **Authentic Murud-Janjira Pointed Battlements**:
   * Pointed stone merlons modeled after coastal and Deccan hill forts.
   * Outer-facing battlements automatically oriented via 2D centroid polygon calculations and downhill terrain slope gradient sampling, with manual flip toggle.
-  * Preserved continuously along outer ramparts where Rampart Bastions connect.
 * **Watertight Maha Darwaza Arched Gateway**:
-  * Formed with solid stone jambs, carved archway opening, and flush upper walkway connecting the fort ramparts across the entrance.
-  * Flanked by twin defensive stone towers with solid floors.
-* **Magnetic Snap Holograms**:
-  * Real-time cursor holograms oriented with outward-facing wall normal for gates, and inward-facing normal for rampart bastions.
-
-#### 3.2 Spline Structure Placement Tool
-Draws smooth 3D curves across terrain slopes and atop fort ramparts/structures using `THREE.CatmullRomCurve3` (and `LineCurve3` for 2-point segments) and places specialized features along the drawn path:
-* **Decoupled 3-Mode Interaction**:
-  * **Select Mode**: Direct physical mesh raycast selection of steps, flags, or diyas without coarse terrain proximity interference.
-  * **Draw Mode**: Draft path lines with real-time length readouts and "Finish Path" action.
-  * **Transform Mode**: Move paths in camera-relative directions (Forward, Backward, Left, Right, Up, Down), rotate curves, or adjust individual feature scale.
-* **Feature Conversions**:
-  * **Stone Steps:** Generates stepped horizontal stone boxes ascending slopes or terraced plateaus with 7x larger authentic stone masonry texture scale, lateral offset slider, and stair spacing slider.
-  * **Bhagwa Saffron Flags:** Plants fluttering swallowtail saffron flags at uniform intervals along paths, ridges, or wall ramparts.
-  * **Festive Diyas:** Arranges warm glowing terracotta oil lamps along path curves for evening illumination.
-* **Surface Occlusion Guard:** Prevents pointer events from falling through elevated fort structures to the terrain below, ensuring splines drawn on walls stay strictly on the structures.
+  * Formed with solid stone jambs, carved archway opening, and flush upper walkway connecting the fort ramparts across the entrance. Flanked by twin defensive stone towers.
 
 ---
 
@@ -210,14 +213,10 @@ A categorized visual drawer lets users place, select, transform, and erase 40 so
 3. **Festive Musicians (2 Models):**
    * **Tutari Horn Blower:** Ceremonial musician sounding the curved brass fanfare horn.
    * **Dhol-Tasha Drummer:** Traditional percussionist with marching dhol drum.
-4. **Terracotta Clay Diyas (9 Unique Models):**
-   * Standalone terracotta oil lamps (`diya_clay_01` to `diya_clay_09`) with authentic earthen clay textures and glowing warm wick flames.
-5. **Hand-Painted Festive Diyas (9 Unique Models):**
-   * Standalone hand-painted festive lamps (`diya_color_01` to `diya_color_09`) in vibrant festive hues (saffron, crimson, turquoise, marigold) for festive battlements and ramparts.
-6. **Yard & Props (2 Models):**
+4. **Yard & Props (2 Models):**
    * **Deccan Bullock Cart:** Traditional wooden transport cart with twin wheels and yoke.
    * **Bhagwa Flag:** Ground-mounted swallowtail saffron fort banner.
-7. **Fort Architecture (7 Pre-Built Buildings):**
+5. **Fort Architecture (7 Pre-Built Buildings):**
    * **Arms Depot (*Shastragar*):** Fort armory building for weapons storage.
    * **Elephant Stables (*Hattishala*):** Circular fortified stables with feeding troughs.
    * **Fort Granary (*Amberkhana*):** Fortified provisions depot with red-tile hip roof.
@@ -225,10 +224,12 @@ A categorized visual drawer lets users place, select, transform, and erase 40 so
    * **Fort Dungeon (*Bandikhana*):** Iron-barred holding jail and cell.
    * **Royal Kitchen (*Pakshala*):** Multi-hearth palace cooking house.
    * **Soldier Quarters (*Sadare*):** Stone barrack quarters for the garrison guard.
-8. **Artillery & Ordnance (3 Models):**
+6. **Artillery & Ordnance (3 Models):**
    * **Bastion Cannon (*Toph*):** Heavy black iron cannon mounted on an authentic wooden field carriage.
    * **Cannonball Crate:** Wooden ammunition crate with pyramid-stacked iron cannonballs.
    * **Gunpowder Magazine (*Darukhana*):** Reinforced vault crate for propellant charges.
+
+*(Note: The 18 terracotta and hand-painted festive diyas are consolidated into the dedicated Festive Lighting & Fireworks Studio).*
 
 * **4 Operational Workflow Modes:**
   * **Place Mode:** Right-side Figurine Vault asset browser with category pills and search; real-time surface-snapping ghost reticle with placement scale, rotation heading, random heading, normal align, and elevation offset sliders.
@@ -238,14 +239,56 @@ A categorized visual drawer lets users place, select, transform, and erase 40 so
 * **Ergonomics & Hover Behavior:**
   * Two-way hover highlighting in Select and Transform modes: diorama hover triggers amber glow ring (`HoverRing`) and highlights outliner row; outliner hover highlights diorama figurine.
   * Hover rings and pointer cursor changes disabled in Place and Erase modes to eliminate visual clutter.
-* **Visual Polish:**
-  * All 40 assets feature transparent-background, optimized WebP/PNG thumbnails with text and white borders removed.
-  * Clean English UI voice with zero parenthetical transliterations.
-  * Full undo/redo integration (`Ctrl+Z`, `Ctrl+Y`) and local persistence.
 
 ---
 
-### Phase 7: Showcase, Multi-Angle Poster Studio & Sharing
+### Phase 7: Festive Lighting & Fireworks Studio
+Dedicated pyrotechnic illumination studio bringing traditional Diwali celebration to the fort ramparts:
+* **Catalog Assets (28 Total):**
+  * **Terracotta Clay Diyas (9 Unique Models):** Standalone clay oil lamps (`diya_clay_01` to `diya_clay_09`) with authentic earthen clay textures.
+  * **Hand-Painted Festive Diyas (9 Unique Models):** Standalone colorful painted lamps (`diya_color_01` to `diya_color_09`).
+  * **Diwali Cone Fountains / Anaar (5 Variations):** 3D inverted cone models with decorative retro paper casings in Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
+  * **Diwali Sky Shots / Aerial Shells (5 Variations):** 3D cylinder launcher models in Multicolored Peony, Golden Willow, Silver Palm, Crackling Comet, and Saffron Ring.
+* **Diya Flame & Night Illumination:**
+  * Active flickering 3D flame particles with emissive bloom.
+  * In Night Mode, each placed diya casts an authentic warm amber `PointLight` (`#F59E0B`, radius: 3.5m, decay: 2.0) casting soft shadows over nearby mud slopes and ramparts.
+* **Pyrotechnics Particle Engine:**
+  * Cone fountains emit continuous sparkling upward showers with parabolic spray and crackling embers.
+  * Sky shots launch ascending tracer rockets that detonate into radial burst patterns in the night sky.
+  * Configurable particle parameters: color hue, velocity, spray height/spread, burst radius, gravity, and flicker rate.
+* **Workflow & Testing:**
+  * 3 Modes: `Place`, `Select`, `Delete`.
+  * Contextual Inspector features a **"Test Firework"** button to trigger and preview individual pyrotechnics on demand.
+
+---
+
+### Phase 8: Time-of-Day, Play/Pause Animation Engine & Quick-Action Diorama Bar
+Tactile diorama controls centered directly above the bottom status bar:
+* **5-Button Quick-Action Pill:**
+  * `☀️ Day`: Transitions diorama to daylight courtyard lighting.
+  * `▶ Play`: Starts continuous 60 FPS animation loop for trees, particle effects, and continuous night fireworks.
+  * `⏸ Pause`: Freezes all wind sway and particle motion; returns canvas to on-demand rendering.
+  * `📷 Screenshot`: Hides all HUD chrome, captures the full-resolution WebGL canvas buffer to PNG, triggers direct browser download (`killa-diorama-<timestamp>.png`), and restores the HUD.
+  * `🌙 Night`: Transitions to night mode, igniting all placed diyas and firing a celebratory simultaneous fireworks salvo.
+* **Decoupled Ambient Animation:**
+  * Foliage wind sway is decoupled from mouse movement; animation progression is strictly governed by the `isPlaying` state.
+
+---
+
+### Phase 9: Free-Fly Spectator & Diorama Viewing Studio
+Unobstructed cinematic presentation mode:
+* **Zero Accidental Edits:**
+  * Object selection, raycast drafting, and brush rings are completely disabled.
+  * Viewport clicks and drags are dedicated 100% to camera navigation.
+* **Clean Canvas Display:**
+  * ToolModeSidebar and Right Scene Outliner are automatically hidden.
+* **Dual Camera Controls:**
+  * **Orbit Spectator:** Smooth 360° orbital rotation, panning, and zooming.
+  * **Free-Fly Mode:** First-person flight through gateways and over bastions using `WASD` (forward/strafe/backward), `Q`/`E` (fly down/up), mouse look, and adjustable flying speed slider (0.5 m/s to 15.0 m/s with `Shift` 2x turbo boost).
+
+---
+
+### Phase 10: Showcase, Multi-Angle Poster Studio & Sharing
 Once the user clicks **"Finish Killa"**, the tool transitions into the **Showcase & Poster Studio**:
 
 #### 1. Automated Multi-Angle Poster Generator
@@ -265,7 +308,7 @@ Captures high-resolution snapshots of the user's finished killa from **4 cinemat
 
 ---
 
-### Phase 8: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
+### Phase 11: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
 For builders desiring the authentic organic mud craft simulation:
 * **Soil Pour Tool:** Dumps loose dry soil mounds onto the terrain with simplex noise roughness.
 * **Water Sprinkler Tool:** Hydrates soil, turning it dark and malleable with specular wet sheen (`cracked_red_ground_1k`).

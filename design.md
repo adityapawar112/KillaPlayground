@@ -177,24 +177,28 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
 ### 4. Zone 4: Vertical Tool Mode Strip (`ToolModeSidebar.tsx`)
 - **Position**: Docked directly adjacent to the right edge of the Left Sidebar (`left: ${leftSidebarWidth}px` when open, `left: 0` when Left Sidebar is minimized). Width: **68px**.
 - **Role**: Switches the active tool's operational mode in vertical icon + label orientation:
-  - *Walls*: `Select` (inspect & highlight), `Draw` (draft ramparts), `Fortify` (attach stamps).
-  - *Spline*: `Select` (inspect paths), `Draw` (draft lines), `Transform` (camera-relative directional translate, rotate, scale).
+  - *Building*: `Select` (inspect & highlight), `Walls` (draft ramparts), `Foundation` (drag-to-build rectangular stone plinths), `Stairs` (draft walkable stepped stone masonry), `Fortifications` (snap bastions, towers, gates).
+  - *Lighting*: `Place` (stamp diyas & fireworks), `Select` (inspect & test fireworks), `Delete` (single/batch removal).
   - *Figurines*: `Place` (stamp assets), `Select` (inspect & tweak), `Transform` (3D nudge & rotate), `Erase` (radius & outliner deletion).
   - *Texture*: `Paint` (apply texture), `Erase` (restore base soil).
   - *Foliage*: `Scatter` (cluster painting), `Single` (hero planting), `Erase` (radius pruning).
   - *Terrain*: 8 sculpting subtools (`Peak`, `Plateau`, `Ramp`, `Gorge`, `Trench`, `Smooth`, `Pond`, `Retexture`).
+  - *View*: Mode strip automatically hides for clean, unobstructed diorama viewing.
 - **Minimizable**: Yes. Header minimize button (`[ ◂ ]`) collapses strip and deploys hanging tab (`[🎯 Modes ▾]`).
 
 ### 5. Zone 5: Right Scene Outliner & Contextual Inspector (`RightToolSidebar.tsx`)
 - **Position**: Docked right (`right-0`, `bottom-0`). Width: **260px to 460px** (default: `310px`), saved to `localStorage`.
 - **Role**: Dual-pane scene organization and asset browsing:
-  - **Upper Pane (`DIORAMA ELEMENTS`)**: Hierarchical tree listing placed structures and items (Walls with child bastions/gates, Spline Paths, or Placed Figurines). Features element count badge, hover highlighting, selection syncing, camera focus (`[ ⌖ ]`), and quick delete.
+  - **Upper Pane (`DIORAMA ELEMENTS`)**: Hierarchical tree listing placed structures and items:
+    - *Building Tool*: Walls (with child bastions/towers/gates), Foundations, and Stairs.
+    - *Lighting Tool*: Placed Diyas and Diwali Fireworks with counts and test actions.
+    - *Figurine Tool*: Historical figurines, garrisons, architecture, and ordnance.
   - **Lower Pane (`ELEMENT PROPERTIES` or Asset Browser)**: Contextual inspector or catalog:
-    - *Select & Transform Modes*: Displays unified `ELEMENT PROPERTIES` inspector (scale, heading, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
-    - *Place Mode (Figurines)*: Displays the **Figurine Vault Asset Browser** (40 models, 7 categories, search, cards).
+    - *Select & Transform Modes*: Displays unified `ELEMENT PROPERTIES` inspector (dimensions, height, offset, tiling, scale, heading, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
+    - *Place Mode (Lighting)*: Displays the **Lighting Vault Asset Browser** (18 diyas, 10 fireworks, 3 categories, search, cards).
+    - *Place Mode (Figurines)*: Displays the **Figurine Vault Asset Browser** (22 models across royalty, garrisons, architecture, and artillery).
     - *Texture & Foliage Tools*: Displays dedicated asset catalogs (52 textures, 117 flora species).
-- **Tactile Resizing**: Left edge contains an 8px hoverable handle with 6 embossed grip dots.
-- **Minimizable**: Yes. Header button (`[ ▸ ]`) collapses panel to `translate-x-full` and deploys hanging tab (`[🏰 Outliner ▾]`).
+    - *View Tool*: Right sidebar is completely hidden for unobstructed viewing.
 - **Tactile Resizing**: Left edge contains an 8px hoverable handle with 6 embossed grip dots.
 - **Minimizable**: Yes. Header button (`[ ▸ ]`) collapses panel to `translate-x-full` and deploys hanging tab (`[🏰 Outliner ▾]`).
 
@@ -403,13 +407,31 @@ Before authoring or modifying any HUD component or tool sidebar:
 2. **Consult `design.md` First:** Verify surface colors, text tokens, slider structures, and container rules.
 3. **Verify in Browser:** After editing, use browser automation (`chrome-devtools`) to take screenshots of the tool panel and confirm visual harmony before completing tasks.
 
-### Rule 17: Top Bar Panel Toggles, Bottom Control Strip & Foliage Browser
-- **Collapse All & Expand All Controls:**
-  The top menu bar (`AppMenuBar.tsx`) includes a compact pill button right next to the language switcher hosting `TbArrowsMinimize` and `TbArrowsMaximize`. Clicking toggles `collapseAllPanels` / `expandAllPanels` in `useEditorStore.ts`. In `collapseAllPanels`, all sidebars and panels are minimized (`isMobileTopBarMinimized: true`, `isMobileSidebarMinimized: true`, `isToolModeMinimized: true`, `isRightSidebarMinimized: true`, `showBottomStatusBar: false`) while keeping `showContextualDock: true` intact, ensuring that all 4 hanging folder guide tabs (`[⚙️ Properties ▾]`, `[🎯 Modes ▾]`, `[⛰️ Tools & Views ▾]`, and `[🏰 Outliner ▾]`) remain visible, non-colliding, and instantly accessible to restore panels.
-- **Dynamic Contextual Status Bar:**
-  The bottom navigation strip (`BottomStatusBar.tsx`) contextually displays the exact active subtool action (e.g. `Sculpt Peak`, `Flatten Plateau`, `Draft Wall Node`, `Place Bastion / Tower`, `Paint Surface Texture`, `Scatter Nature Flora`, `Plant Hero Specimen`, etc.) alongside `Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`.
-- **Foliage Studio Selection Modes:**
-  The foliage Left Sidebar provides a clean toggle between `Single Select` and `Multi Select` alongside a `Deselect All` button. Multi-select enables picking multiple flora species simultaneously for organic, mixed-species random scattering.
+### Rule 18: Centered Quick-Action Diorama Bar (`QuickActionBar.tsx`)
+- **Position & Mounting:**
+  - A tactile floating pill mounted centered directly above `BottomStatusBar.tsx` (`bottom-12 md:bottom-10 left-1/2 -translate-x-1/2 z-30`).
+  - Contains 5 distinct action buttons:
+    `[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`
+  - Uses the warm plaster background (`bg-[#F2EBE1]/95 border border-[#D9C9B4] rounded-full shadow-md`).
+- **Interactive States & Highlights:**
+  - `Day` active: Button highlighted in `#F59E0B` (Amber) or `#EADECF` pill background.
+  - `Play` active: Button highlighted in `#E85D04` (Bhagwa Saffron) with subtle pulse ring.
+  - `Night` active: Button highlighted in `#23211E` with `#F59E0B` flame icon.
+- **Decoupled Ambient Animation:**
+  - Tree wind sway and particle emitters MUST attach their clock updates strictly to the `isPlaying` state.
+  - Pausing freezes all movement immediately; playing drives continuous 60 FPS motion without requiring mouse moves.
+- **Direct Viewport Screenshot:**
+  - Clicking `Screenshot` momentarily toggles a capture state that sets `opacity-0 pointer-events-none` on all UI overlays, captures the WebGL drawing buffer via `preserveDrawingBuffer`, triggers an immediate browser file download (`killa-diorama-<timestamp>.png`), and restores the HUD.
+
+### Rule 19: Free-Fly Spectator & Diorama Viewing Studio
+- **Unobstructed Viewport:**
+  - Selecting the `View` tool automatically closes and collapses the Left Tool Sidebar, ToolModeSidebar, and Right Scene Outliner.
+  - Zero raycast hit detection on structures or terrain: clicking or dragging anywhere in the canvas navigates the camera without placing, selecting, or deleting components.
+- **Floating Spectator Pill:**
+  - Minimalist floating HUD pill displaying:
+    - Navigation Mode Toggle: `[ Orbit Spectator | Free-Fly ]`
+    - Fly Speed Slider: `0.5m/s` to `15.0m/s` (with `Shift` 2x turbo boost).
+  - Controls micro-guide: `WASD: Fly • Q/E: Elevate • Drag: Look`.
 
 ---
 
@@ -422,6 +444,9 @@ All diorama assets follow the **Modern Retro / PS1 (Flavor A)** visual standard:
 | **Wall & Tower Sides** | `/textures/Bricks/mossy_stone_brick_128x128_pbr` | Group 0 | diffuse, normal, roughness, ao | Aged Deccan basalt masonry with subtle moss growth |
 | **Walkways & Tower Floors** | `/textures/Bricks/dark_stone_floor_128x128_pbr` | Group 1 | diffuse, normal, roughness, ao | Dressed basalt paving slabs for ramparts and decks |
 | **Crenellations (*Kangare*)** | `/textures/Bricks/dark_stone_texture_128x128_pbr` | Group 2 | diffuse, normal, roughness, ao | Solid carved dark stone merlons and arch soffits |
+| **Foundation Sides** | `/textures/Bricks/mossy_stone_brick_128x128_pbr` | Group 0 | diffuse, normal, roughness, ao | Solid stone brick foundation perimeter skirting |
+| **Foundation Top Deck** | `/textures/Bricks/dark_stone_floor_128x128_pbr` | Group 1 | diffuse, normal, roughness, ao | Flat dressed basalt floor slab deck with UV repeat |
+| **Stone Stairs (*Payrya*)** | `/textures/Bricks/mossy_stone_brick_128x128_pbr` | Procedural | diffuse, normal, roughness, ao | Stepped horizontal stone blocks ascending slopes |
 | **Courtyard Soil** | `/textures/Dirt/Dirt_03` | Terrain Splat 0 | diffuse, normal, roughness, ao | Sun-baked red laterite (*Tambdi Maati*) |
 | **Rock Escarpments** | `/textures/Rock/Rock_02` | Terrain Splat 1 | diffuse, normal, roughness, ao | Sheer cliff rock face with triplanar vertical blend |
 | **Pond & Moat Water** | `/textures/Water/blue_tarp_texture_128x128_pbr` | Water Shader | diffuse, normal, roughness, ao, metallic | Crinkled blue plastic sheet with specular ripples |

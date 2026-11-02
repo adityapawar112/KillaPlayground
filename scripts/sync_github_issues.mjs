@@ -349,21 +349,174 @@ Comprehensive 3D asset browser with categorized drawer for Shivaji Maharaj, Mava
   },
   {
     ticketNumber: 9,
-    title: 'Ticket 09: State Serialization, Local Persistence Adapter & Project Hub',
+    title: 'Ticket 09: Unified Building Construction Tool & Foundation Builder',
     labels: ['tracer-bullet', 'enhancement'],
     state: 'open',
     body: `## Overview
-Complete project state serialization to compact \`.killa\` binary format (< 35 KB), 15-slot undo/redo buffer, local storage persistence vault, and desktop import/export.
+Consolidates the standalone Wall and Spline tools into a unified Building tool (retiring flag and diya splines, preserving stairs) and introduces an interactive drag-to-build rectangular stone foundation builder.
 
 - **Status**: \`ready-for-agent\`
-- **Blocked by**: #4, #5, #6, #7, #8
+- **Blocked by**: #4, #5, #8
+
+## Delivers
+- **Tool Consolidation & Spline Retirement**:
+  - Renames Walls tool to **\`Building\`** (Key 2) in the secondary toolbar.
+  - Retires standalone Spline tool from top toolbar and mode strip. Flag and diya splines are deprecated in favor of solid 3D models in Figurine and Lighting catalogs.
+  - Stone steps are integrated directly into the Building tool as **\`Stairs\` Mode**.
+- **5 Unified Operational Modes in \`ToolModeSidebar.tsx\`**:
+  - \`Select\`: Direct physical mesh raycasting on walls, towers, bastions, gates, foundations, and stairs with glowing hover outlines (#E85D04).
+  - \`Walls\`: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira battlements and elevation tracing.
+  - \`Foundation\`: Drag-to-build rectangular stone plinth builder on terrain:
+    - Pointer down anchors first corner (x1, z1) on terrain.
+    - Pointer move renders a real-time translucent ghost bounding box.
+    - Pointer up finalizes opposite corner (x2, z2), instantiating a solid stone foundation slab.
+    - Multi-material buffer geometry: Perimeter sides mapped to \`mossy_stone_brick_128x128_pbr\` (Group 0) and top deck mapped to \`dark_stone_floor_128x128_pbr\` (Group 1).
+    - Interactive sliders: Length, Width, Height (10cm–300cm), Vertical Offset (-50cm to +200cm), and Texture Tiling (1x–10x UV multiplier).
+  - \`Stairs\`: Multi-point slope click path utilizing centripetal \`THREE.CatmullRomCurve3\` extruding walkable stepped stone masonry boxes conforming to slope gradients, with lateral offset and step spacing sliders.
+  - \`Fortifications\`: Continuous magnetic snap hologram placement for sliding round watchtowers, inward rampart bastions, and Maha Darwaza gates along walls.
+- **Unified Outliner & Inspector**:
+  - Right Tool Sidebar displays consolidated structures tree under \`FORT ARCHITECTURE\`: Walls (with nested bastions/towers/gates), Foundations, and Stairs.
+  - Contextual Inspector allows real-time dimension, offset, elevation, and tiling adjustments for selected foundations and stairs.
+
+## Acceptance Criteria
+- [ ] Top toolbar features "Building" tool; standalone Spline tool is completely removed.
+- [ ] ToolModeSidebar renders the 5 operational modes: Select, Walls, Foundation, Stairs, Fortifications.
+- [ ] In Foundation mode, dragging across terrain displays a live translucent rectangular ghost box.
+- [ ] Releasing mouse builds a solid foundation slab textured with stone bricks on sides and dark stone floor on top.
+- [ ] Foundation height, vertical offset, length, width, and tiling repeat adjust interactively via sliders.
+- [ ] In Stairs mode, clicking along slopes creates walkable stone staircases with adjustable offset and spacing.
+- [ ] Wall drafting and magnetic snap fortifications function without regression.
+- [ ] All building components can be selected, inspected, renamed, and deleted in the Right Outliner.`,
+  },
+  {
+    ticketNumber: 10,
+    title: 'Ticket 10: Festive Lighting & Fireworks Studio',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Dedicated festive pyrotechnic illumination studio featuring 18 migrated Diyas with active flame particles and warm amber night PointLights, plus 10 Diwali fireworks (5 Cone Fountains + 5 Sky Shots) powered by an interactive pyrotechnics engine with test triggers.
+
+- **Status**: \`ready-for-agent\`
+- **Blocked by**: #8, #9
+
+## Delivers
+- **Dedicated Lighting Tool**:
+  - New dedicated **\`Lighting\`** tool in the secondary Top ToolBar.
+  - Migrates all 18 Diyas (9 terracotta clay + 9 hand-painted) out of the Figurine tool and into the Lighting Studio. Figurine tool is refined strictly to historical royalty, garrisons, architecture, and ordnance.
+- **Authentic Diwali Pyrotechnics (10 Fireworks Models)**:
+  - **5 Cone Fountains (*Anaar*)**: 3D inverted cone models (\`ConeGeometry\`) with decorative retro Diwali paper wrap textures in 5 vibrant color themes: Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
+  - **5 Sky Shots (*Aerial Shells*)**: 3D cylinder launcher models (\`CylinderGeometry\`) with retro casing textures in 5 festive themes: Multicolored Peony, Golden Willow, Silver Palm, Crackling Comet, and Saffron Ring.
+- **Interactive Pyrotechnics Engine**:
+  - Lightweight, ₹0 client-side particle engine driving realistic Diwali pyrotechnic effects.
+  - Cone Fountains emit a continuous sparkling upward spray with parabolic falloff and crackling embers.
+  - Sky Shots launch an ascending smoke/flare tracer that detonates into a dazzling spherical/willow burst in the night sky.
+  - Fully configurable parameters matching fireworks standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
+- **Tri-Mode Workflow**:
+  - \`Place\`: Real-time surface snap hologram reticle with rotation heading and elevation offset; lower pane renders Lighting Vault with category tabs (Clay Diyas, Painted Diyas, Fireworks).
+  - \`Select\`: Placed lights outliner in upper pane; lower pane renders Element Properties inspector (scale, heading, snap surface, color variation selector, test firework action, delete).
+  - \`Delete\`: Single/batch deletion of placed lights and fireworks.
+- **Night Diya Glow & PointLights**:
+  - Diyas feature active flickering 3D flame particles with emissive bloom.
+  - In night mode, diyas cast warm amber \`PointLight\` illumination (#F59E0B, radius: 3.5m, decay: 2.0) casting soft shadows on nearby mud slopes and fort masonry.
+- **"Test Firework" Action**:
+  - Inspector features a prominent "Test Firework" button allowing builders to detonate and preview the selected firework once on demand.
+
+## Acceptance Criteria
+- [ ] Lighting tool appears in Top ToolBar; Figurine tool no longer contains diya items.
+- [ ] Lighting Vault drawer displays 3 tabs: Clay Diyas (9), Painted Diyas (9), and Fireworks (10).
+- [ ] Placed diyas illuminate in warm amber point lighting and display animated flames during night mode.
+- [ ] Cone fountains sit upright on terrain/decks and spray sparkling fountain effects on test.
+- [ ] Sky shots launch upward rockets that explode in the night sky with colorful particle bursts.
+- [ ] "Test Firework" button triggers the pyrotechnic effect cleanly without frame drops.
+- [ ] Placed lights and fireworks can be selected, moved, duplicated, and deleted with full undo/redo.`,
+  },
+  {
+    ticketNumber: 11,
+    title: 'Ticket 11: Time-of-Day, Play/Pause Animation Engine & Quick-Action Diorama Bar',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Centered floating Quick-Action Bar mounted above the bottom status bar (Day, Play, Pause, Screenshot, Night), decoupled continuous ambient animation engine for trees and pyrotechnics, day-to-night fireworks celebration salvo, and instant direct viewport screenshot download.
+
+- **Status**: \`ready-for-agent\`
+- **Blocked by**: #7, #10
+
+## Delivers
+- **Centered Quick-Action Diorama Bar**:
+  - Tactile, floating 5-button control dock mounted centered directly above \`BottomStatusBar.tsx\`:
+    - \`☀️ Day\`: Transitions diorama to warm daylight courtyard lighting.
+    - \`▶ Play\`: Starts continuous 60 FPS animation loop for trees, particle effects, and continuous night fireworks.
+    - \`⏸ Pause\`: Freezes all wind sway and particle motion; returns canvas to on-demand rendering.
+    - \`📷 Screenshot\`: Hides all HUD chrome, captures the full-resolution WebGL canvas buffer to PNG, triggers direct browser download (\`killa-diorama-<timestamp>.png\`), and restores the HUD.
+    - \`🌙 Night\`: Transitions to night mode, igniting all placed diyas and firing a celebratory simultaneous fireworks salvo.
+- **Decoupled Animation Engine**:
+  - Tree vertex wind sway and foliage fluttering are decoupled from mouse movement; animation progression is strictly governed by the \`isPlaying\` state.
+  - When \`isPlaying\` is true: R3F Canvas runs in continuous frameloop (\`frameloop="always"\`), driving steady tree fluttering, flickering flame particles, and ambient diorama life.
+  - When \`isPlaying\` is false: R3F Canvas pauses animation time clock (\`frameloop="demand"\`), eliminating unnecessary background CPU/GPU cycles.
+- **Day-to-Night Celebration Salvo**:
+  - Switching from Day to Night automatically triggers all placed fireworks in the diorama once in a coordinated festive volley.
+- **Instant High-Res Viewport Screenshot**:
+  - Screenshot button temporarily suppresses all HUD overlays (toolbars, sidebars, dock, minimizers), captures the WebGL canvas using \`preserveDrawingBuffer\`, triggers an immediate browser file download, and cleanly restores UI visibility with a success toast.
+
+## Acceptance Criteria
+- [ ] Quick-action diorama bar sits centered above the bottom status bar with Day, Play, Pause, Screenshot, and Night buttons.
+- [ ] Ambient tree fluttering and wind sway progress smoothly when Play is active without requiring mouse moves.
+- [ ] Clicking Pause immediately halts animation clock and freezes movement.
+- [ ] Switching to Night mode ignites all diyas and fires all placed fireworks once in celebration.
+- [ ] Clicking Screenshot captures an unobstructed, high-resolution PNG image directly to browser Downloads.`,
+  },
+  {
+    ticketNumber: 12,
+    title: 'Ticket 12: Free-Fly Spectator & Diorama Viewing Studio',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Dedicated viewing and presentation tool with zero-modification viewport guards, automatic HUD sidebar collapse, and dual camera navigation (Orbit Spectator and WASD/QE Free-Fly flight mode with dynamic speed controls).
+
+- **Status**: \`ready-for-agent\`
+- **Blocked by**: #2, #9, #11
+
+## Delivers
+- **Dedicated Viewing Tool**:
+  - New **\`View\`** tool (\`view\`) in the secondary Top ToolBar.
+  - Pure spectator mode designed for unobstructed diorama admiration and presentation without risk of accidental edits.
+- **Zero-Modification Viewport Guard**:
+  - Disables all object selection, raycast drafting, brush rings, hover outlines, and hologram ghosts.
+  - Clicks and drags anywhere on the viewport are strictly dedicated to camera navigation.
+- **Streamlined HUD Presentation**:
+  - Automatically collapses and hides the Left Properties Sidebar, ToolModeSidebar, and Right Scene Outliner upon entering View tool, giving builders maximum screen real estate.
+- **Dual Navigation Camera Rig (Orbit & Free-Fly)**:
+  - **Orbit Spectator Mode**: Smooth, bounded 360° orbital rotation, panning, and zooming.
+  - **Free-Fly Mode**: First-person fly camera allowing users to glide through gateways, soar over bastions, and swoop down into courtyards:
+    - \`WASD\`: Fly forward, strafe left, fly backward, strafe right.
+    - \`Q\` / \`E\`: Elevate down / up.
+    - \`Mouse Drag\`: Smooth pitch and yaw camera look.
+    - \`Fly Speed\`: Slider in a minimal floating HUD pill adjusting velocity from 0.5 m/s to 15.0 m/s with \`Shift\` 2x turbo boost.
+
+## Acceptance Criteria
+- [ ] Selecting View tool hides tool mode and outliner sidebars for clean diorama display.
+- [ ] Clicking or dragging anywhere in the viewport does not select or stamp components.
+- [ ] User can switch between Orbit Spectator and Free-Fly camera modes.
+- [ ] Free-Fly mode smoothly translates camera via WASD/QE and mouse look.
+- [ ] Flying speed slider dynamically adjusts flight velocity.`,
+  },
+  {
+    ticketNumber: 13,
+    title: 'Ticket 13: State Serialization, Local Persistence Adapter & Project Hub',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Complete project state serialization to compact \`.killa\` binary format (< 35 KB), 15-slot circular undo/redo buffer, local storage persistence vault, and desktop import/export supporting foundations, stairs, and pyrotechnics.
+
+- **Status**: \`ready-for-agent\`
+- **Blocked by**: #6, #9, #10, #11
 
 ## Delivers
 - **Undo / Redo Buffer**:
-  - 15-slot in-memory circular buffer tracking terrain edits, walls, splines, paint textures, foliage, and placed figurines.
+  - 15-slot in-memory circular buffer tracking terrain edits, building structures (walls, bastions, foundations, stairs), texture paint, foliage instances, figurines, and placed lights/fireworks.
 - **Binary Serialization (\`.killa\` format)**:
   - Quantize terrain heightmap and paint weight buffers to \`Uint8Array\`.
-  - Package terrain, walls, splines, foliage instances, and figurine transforms with \`fflate.zipSync\` into a compact \`< 35 KB\` binary package.
+  - Package terrain, building foundations, stairs, walls, fortifications, foliage, figurines, and fireworks with \`fflate.zipSync\` into a compact \`< 35 KB\` binary package.
 - **Persistence Adapter & Local Vault**:
   - Local storage / IndexedDB implementation (\`killa_saved_projects_v1\`) persisting named projects with timestamp (\`updatedAt\`), template type, and diorama payload.
   - Startup modal hub displaying recent locally saved projects with relative time elapsed and one-click loading.
@@ -374,22 +527,22 @@ Complete project state serialization to compact \`.killa\` binary format (< 35 K
   - Validates inbound project payloads, sanitizing coordinates and rejecting malformed files.
 
 ## Acceptance Criteria
-- [ ] Undo and redo reliably revert and restore sculpting, wall changes, painting, and prop placements.
+- [ ] Undo and redo reliably revert and restore sculpting, foundations, stairs, walls, painting, and firework placements.
 - [ ] \`serializeKilla()\` packages complete killa state into <= 35 KB in < 15ms.
 - [ ] Projects save to local storage and appear in the startup hub with last-saved timestamps.
 - [ ] \`.killa\` files can be exported and re-imported cleanly with identical visual reproduction.
 - [ ] Inbound payload schema validates types and rejects corrupted payloads.`,
   },
   {
-    ticketNumber: 10,
-    title: 'Ticket 10: Showcase, Multi-Angle Festive Poster Studio & Share',
+    ticketNumber: 14,
+    title: 'Ticket 14: Showcase, Multi-Angle Festive Poster Studio & Share',
     labels: ['tracer-bullet', 'enhancement'],
     state: 'open',
     body: `## Overview
 Multi-angle festive poster generation (1080x1920) in < 400ms with Marathi typography, historical templates (Raigad, Murud-Janjira, Sinhagad), and read-only 3D diorama viewer.
 
 - **Status**: \`ready-for-agent\`
-- **Blocked by**: #9
+- **Blocked by**: #13
 
 ## Delivers
 - **Historical Blueprint Presets & Random Terrain**:
@@ -408,13 +561,14 @@ Multi-angle festive poster generation (1080x1920) in < 400ms with Marathi typogr
 
 ## Acceptance Criteria
 - [ ] "Finish Killa" opens the Poster Studio Modal and generates the 4-angle festive collage.
+- [ ] Poster includes placed foundations, stairs, buildings, and glowing diyas.
 - [ ] User can customize fort title and builder name in Devanagari or English.
 - [ ] "Download Poster" produces a crisp, high-resolution PNG file.
 - [ ] Shared link route \`/killa/[id]\` renders the 3D diorama in read-only orbit mode.`,
   },
   {
-    ticketNumber: 11,
-    title: 'Ticket 11: Tactile Soil & Mud Crafting Pipeline (Deferred / Advanced Phase)',
+    ticketNumber: 15,
+    title: 'Ticket 15: Tactile Soil & Mud Crafting Pipeline (Deferred / Advanced Phase)',
     labels: ['tracer-bullet', 'enhancement', 'deferred'],
     state: 'open',
     body: `## Overview
@@ -441,28 +595,29 @@ Deferred advanced organic soil simulation pipeline: loose soil dumping, water sa
 - [ ] Freehand paint applies mortar lines with steady-hand stabilization.`,
   },
   {
-    ticketNumber: 12,
-    title: 'Ticket 12: Verification Judges, Testing & Deployment Readiness',
+    ticketNumber: 16,
+    title: 'Ticket 16: Verification Judges, Testing & Deployment Readiness',
     labels: ['tracer-bullet', 'enhancement'],
     state: 'open',
     body: `## Overview
 Verification test harness, Vitest test suites, GPU resource leak audit, 60 FPS performance benchmarks, and deployment documentation.
 
 - **Status**: \`ready-for-agent\`
-- **Blocked by**: #10
+- **Blocked by**: #14
 
 ## Delivers
 - **Vitest Unit Tests**:
   - Serialization/deserialization byte-size check (<= 35 KB).
   - Zod schema defensive boundaries (NaN rejection, prop limit <= 250).
-  - Terrain height clamping and dirty bounding box arithmetic.
+  - Building foundation geometry bounds and stairs path extrusion tests.
+  - Lighting manifest integrity and pyrotechnic variation checks.
 - **GPU Resource Disposal Audit**:
   - Verify clean \`.dispose()\` on all textures, materials, and geometries on unmount.
 - **Performance Benchmarks**:
-  - 60 FPS maintained under 1,000 foliage instances, 50 props, and 100 wall segments.
+  - 60 FPS maintained under 1,000 foliage instances, 50 props/fireworks, 20 foundations, and 100 wall segments.
 - **Documentation**:
   - \`README.md\` with setup and build instructions.
-  - Complete asset manifest for textures, models, and audio.
+  - Complete asset manifest for textures, models, pyrotechnics, and audio.
 
 ## Acceptance Criteria
 - [ ] \`npm run test\` executes all Vitest suites with 100% pass rate.

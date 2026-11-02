@@ -90,7 +90,7 @@ The diorama is structured into two complementary geometric layers:
 
 To give users the fastest, most joyful path to crafting a complete fort, tools are divided into the **Primary Killa Suite** (implemented first) and the **Tactile Soil Pipeline** (deferred advanced simulation).
 
-#### A. Primary Fort Construction Suite (6 High-Velocity Tools)
+#### A. Primary Fort Construction Suite (7 High-Velocity Tools)
 
 1. **Terrain Tool (Base Mesh Manipulation):**
    * Directly sculpts the mountain terrain mesh:
@@ -103,35 +103,25 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * *Pond Excavation:* Shader-integrated crater basin carving depression height and rendering authentic blue tarpaulin water on flat floors (`wetness > 0.68`) with glistening dark wet mud on crater banks.
      * *Retexture:* Restores natural soil and basalt surface coats.
 
-2. **Walls Tool (Parametric Fort Ramparts & Bastions):**
-   * Spline/segment-driven parametric procedural geometry pipeline conforming directly to terrain elevation.
-   * **Procedural Geometry Engine (`wallGeometry.ts` & `GeometryBuilder`):**
-     * *Resampling & Bilinear Height Sampling:* Resamples centerline wall vertices uniformly at 0.04m intervals, computing bilinear heights (`sampleBilinearHeight`) from `stateBuffer` with continuous elevation adherence.
-     * *Multi-Material Group Partitioning (`BufferGeometry.addGroup`):*
-       * **Group 0 (Wall & Tower Sides):** Mossy stone brick masonry (`mossy_stone_brick_128x128_pbr`) with retro pixel `NearestFilter` and repeat wrapping.
-       * **Group 1 (Walkways & Tower Floors):** Dressed dark stone floor paving slabs (`dark_stone_floor_128x128_pbr`) for rampart walkway strips, circular tower floor disks, bastion decks, and gate lintels.
-       * **Group 2 (Battlements & Trims):** Solid dark basalt stone (`dark_stone_texture_128x128_pbr`) for pointed crenellations (*kangare*), gateway soffits, and plinths.
-     * *3 Authentic Fortifications:*
-       * **Sliding Round Towers:** Continuous segment positioning with masonry walls, dark stone floor discs, and pointed crenellations.
-       * **Inward Rampart Platforms:** Rectangular stone bastions attached flush to the wall, extending strictly into the courtyard with 3D protective railings along the 3 exposed rims, leaving outer wall battlements uninterrupted.
-       * **Maha Darwaza Arched Gates:** Procedurally carved arched openings with solid side jambs and flush upper walkways over the lintel.
-     * *Murud-Janjira Pointed Crenellations:* Custom procedural merlons with pointed tops, oriented outward using 2D polygon centroid testing (closed paths) and downhill terrain gradient sampling (open paths).
-     * *Miniature Tabletop Scaling:* Miniature calibration (default wall height: 25cm, thickness: 15cm; range: 10cm–100cm, foundation embedding: 12mm).
-   * **Magnetic Snap Hologram Engine (`calculateMagneticSnap`):**
-     * Linear raycast snapping algorithm with Euclidean threshold: 0.35m for all 3 fortifications along segments.
-     * Calculates inward normal $\vec{N}_{\text{in}}$ and outward normal $\vec{N}_{\text{out}}$:
-       * Gate ghost rotation is oriented with outward-facing normal $\vec{N}_{\text{out}}$ so entry portals face outward.
-       * Rampart Platform ghost rotation is oriented with inward-facing normal $\vec{N}_{\text{in}}$ so platform bodies extend into the courtyard with the attached face centered on the wall.
+2. **Building Tool (Consolidated Fort Architecture & Foundations):**
+   * Consolidates the former Wall and Spline tools into a unified fortress masonry suite. Retires obsolete flag and diya spline generation (which now exist as authentic solid 3D models), while migrating stepped stone stairs into the fortress tool.
+   * **5 Operational Modes in `ToolModeSidebar.tsx`:**
+     * `Select`: Direct physical mesh picking of walls, towers, bastions, gates, foundations, and stairs.
+     * `Walls`: Continuous click-to-draft perimeter ramparts with automatic pointed battlements and elevation tracing.
+     * `Foundation`: Drag-to-build rectangular stone plinth builder on terrain:
+       * Pointer down anchors first corner $(x_1, z_1)$ on terrain surface.
+       * Pointer move renders a real-time translucent ghost bounding box.
+       * Pointer up finalizes opposite corner $(x_2, z_2)$, instantiating a solid stone foundation slab.
+       * Multi-material buffer geometry partitioning: Perimeter sides mapped to `mossy_stone_brick_128x128_pbr` (Group 0) and top horizontal deck mapped to `dark_stone_floor_128x128_pbr` (Group 1).
+       * Interactive parameters: Length ($dx$), Width ($dz$), Height (slab thickness: 10cm–300cm, default 40cm), Vertical Offset (-50cm to +200cm, default 0cm), and Texture Tiling (1x–10x UV multiplier).
+     * `Stairs`: Multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm) and stair spacing slider (1cm to 10cm).
+     * `Fortifications`: Continuous magnetic snap hologram placement for sliding round watchtowers, inward rampart bastions, and *Maha Darwaza* arched gateways along walls.
+   * **Procedural Geometry Engine (`wallGeometry.ts`, `foundationGeometry.ts` & `GeometryBuilder`):**
+     * Centerline resampling at 0.04m intervals with bilinear height sampling (`sampleBilinearHeight`).
+     * Murud-Janjira pointed crenellations with 2D polygon centroid orientation.
+     * Watertight Maha Darwaza gates with solid stone jambs and continuous top rampart walkways.
 
-3. **Spline Tool (Linear Structure Placement):**
-   * Draws smooth 3D curves along terrain slopes and atop fort structures using `createCurve` (centripetal `THREE.CatmullRomCurve3` for 3+ points, `THREE.LineCurve3` for 2-point segments).
-   * **Raycast Occlusion Defense:** Terrain listener ignores pointer events when intersected by a closer fort structure, preventing dual-layer points on the ground underneath.
-   * **Conversion Options:**
-     * *Stone Steps:* Generates stepped stone terraces with 7x larger masonry texture (`uvMultiplier: 5.0`), lateral offset slider (`stepOffset`: -15cm to +15cm), and stair spacing slider (`stepSpacing`: 1cm to 10cm).
-     * *Bhagwa Flag Lines:* Arranges waving swallowtail saffron flags at uniform intervals (normalized base scale 1.0x).
-     * *Festive Diyas:* Places glowing terracotta oil lamps along path curves for evening illumination (normalized base scale 1.0x).
-
-4. **Texture Tool (Terrain Texture Painting Studio):**
+3. **Texture Tool (Terrain Texture Painting Studio):**
    * Directly paints retro pixel-art textures onto the terrain mesh without deforming elevation or affecting placed structures/walls.
    * **52 Retro Textures across 8 Categories:** Dirt & Soil (8), Grass & Foliage (8), Gravel & Paths (8), Rock & Basalt (8), Rocky Ground (8), Sand (8), Bricks & Masonry (3), and Water & Ice (1).
    * **Technical Architecture (`terrainPaintBuffer.ts`):**
@@ -159,15 +149,13 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
    * **Tri-Mode Workflow:** `Scatter` (drag to paint clusters), `Single` (click-to-plant hero specimen), and `Erase` (radius pruning).
    * **Selection Flexibility:** Single-species focus or Multi-Select mode with random scatter selection and one-click "Deselect All".
 
-6. **Figurines & Architecture Tool (3D Asset Browser & Outliner Inspector):**
-   * High-performance 3D prop placement, inspection, and manipulation engine supporting **40 solid 3D assets** across 7 authentic categories:
+5. **Figurines & Architecture Tool (3D Asset Browser & Outliner Inspector):**
+   * High-performance 3D prop placement, inspection, and manipulation engine supporting **22 solid 3D assets** across 6 authentic categories (with festive diyas migrated to the dedicated Lighting Studio):
      * *Royalty & Sinhasan (4)*: Chhatrapati Shivaji Maharaj on throne, cavalry commander, royal attendant, war elephant.
      * *Mavale Garrison (4)*: Maratha swordsman, fort sentry spearman, bhagwa flag bearer, cliff defender.
      * *Festive Musicians (2)*: Tutari fanfare horn blower, Dhol-Tasha drummer.
-     * *Terracotta Clay Diyas (9)*: Standalone earthen lamps (`diya_clay_01` to `diya_clay_09`).
-     * *Hand-Painted Festive Diyas (9)*: Colorful painted lamps (`diya_color_01` to `diya_color_09`).
      * *Yard & Props (2)*: Deccan bullock cart, fluttering saffron fort banner.
-     * *Fort Architecture (7)*: Arms depot, elephant stables, fort granary, cavalry stables (calibrated scaling matching garrison buildings), fort dungeon/jail, royal kitchen, soldier quarters.
+     * *Fort Architecture (7)*: Arms depot, elephant stables, fort granary, cavalry stables, fort dungeon/jail, royal kitchen, soldier quarters.
      * *Artillery & Ordnance (3)*: Bastion cannon, cannonball crate, gunpowder magazine.
    * **Instanced Batching & Singleton Asset Cache (`figurineAssetManager.ts` & `FigurineInstances.tsx`)**:
      * Instanced rendering via `THREE.InstancedMesh` grouped by figurine type (1 draw call per distinct active asset) supporting 250+ solid 3D models at 60+ FPS.
@@ -175,26 +163,60 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * Normalized baseline scaling: human figurines (0.9m), buildings (3.0m - 4.2m), artillery (1.2m), props (0.5m - 2.5m).
    * **4 Operational Modes (`Place`, `Select`, `Transform`, `Erase`)**:
      * *Place Mode:* Real-time ghost hologram raycast snapping to terrain/walls with placement scale, rotation heading, randomize yaw, surface normal alignment, and elevation offset sliders; lower pane renders Figurine Vault asset drawer with category pills and search.
-     * *Select Mode:* Upper pane lists Placed Figurines outliner; lower pane renders unified Element Properties inspector (scale slider, heading rotation slider, duplicate, snap surface, focus camera, delete) matching Walls and Spline tools.
+     * *Select Mode:* Upper pane lists Placed Figurines outliner; lower pane renders unified Element Properties inspector (scale slider, heading rotation slider, duplicate, snap surface, focus camera, delete).
      * *Transform Mode:* Placed Figurines outliner + Element Properties inspector featuring a camera-relative 3D nudge pad (Up/Forward/Down/Left/Backward/Right), heading rotation wheel with quick-angle snaps, uniform scale slider, and surface snapping.
      * *Erase Mode:* Left Sidebar brush radius slider, crimson diorama brush circle GUI on terrain/structures, stroke drag erasing, and outliner deletion.
    * **Two-Way Hover Highlighting & Ergonomics**:
      * Select and Transform modes feature bidirectional hover feedback: diorama hover renders amber glow ring (`HoverRing`) and highlights outliner row; outliner hover highlights the 3D figurine in viewport.
      * Hover highlighting and pointer cursor changes are disabled during Place and Erase modes to eliminate visual clutter.
-   * **State & History Integration**:
-     * Full undo/redo integration in `terrainStore.ts` tracking figurine instance additions, deletions, and transform modifications.
+
+6. **Lighting & Fireworks Studio (Festive Diyas & Pyrotechnics):**
+   * Dedicated illumination and celebration tool in the secondary Top ToolBar (`lighting`):
+   * **28 Total Lighting Assets Across 3 Categories:**
+     * *Terracotta Clay Diyas (9)*: Standalone earthen lamps (`diya_clay_01` to `diya_clay_09`).
+     * *Hand-Painted Festive Diyas (9)*: Colorful painted lamps (`diya_color_01` to `diya_color_09`).
+     * *Diwali Cone Fountains / Anaar (5)*: 3D inverted cone models with decorative retro paper casings in Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
+     * *Diwali Sky Shots / Aerial Shells (5)*: 3D cylinder launcher models in Multicolored Peony, Golden Willow, Silver Palm, Crackling Comet, and Saffron Ring.
+   * **Diya Flame Simulation & Warm Night PointLights:**
+     * Active flickering 3D flame particles with emissive bloom.
+     * In Night Mode, each placed diya casts an authentic warm amber `PointLight` (`#F59E0B`, radius: 3.5m, decay: 2.0) casting soft shadows over nearby mud slopes and ramparts.
+   * **Interactive Pyrotechnics Particle Engine:**
+     * Cone Fountains emit a continuous sparkling upward shower with parabolic spray and crackling embers.
+     * Sky Shots launch an ascending smoke/flare tracer that detonates into a dazzling spherical/willow burst in the night sky.
+     * Configurable parameters matching fireworks standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
+   * **Workflow & Testing Actions:**
+     * 3 Modes: `Place`, `Select`, `Delete`.
+     * Inspector features a prominent **"Test Firework"** button allowing builders to detonate and preview the selected firework once on demand.
+     * Switching from Day to Night automatically triggers all placed fireworks in the diorama once in a coordinated festive volley.
+
+7. **Viewing Tool (Free-Fly Spectator & Diorama Viewing Studio):**
+   * Dedicated spectator and presentation tool in the secondary Top ToolBar (`view`):
+   * **Zero-Modification Viewport Guard:**
+     * Disables all object selection, raycast drafting, brush rings, hover outlines, and hologram ghosts.
+     * Clicks and drags anywhere on the viewport are strictly dedicated to camera navigation.
+   * **Streamlined Clean Presentation:**
+     * Automatically collapses and hides the Left Properties Sidebar, ToolModeSidebar, and Right Scene Outliner upon entering View tool, giving builders maximum screen real estate.
+   * **Dual Navigation Camera Rig (Orbit & Free-Fly):**
+     * *Orbit Spectator Mode:* Smooth, bounded 360° orbital rotation, panning, and zooming.
+     * *Free-Fly Mode:* First-person fly camera allowing users to glide through gateways, soar over bastions, and swoop down into courtyards:
+       * `WASD`: Fly forward, strafe left, fly backward, strafe right.
+       * `Q` / `E`: Elevate down / up.
+       * `Mouse Drag`: Smooth pitch and yaw camera look.
+       * `Fly Speed`: Slider in a minimal floating HUD pill adjusting velocity from 0.5 m/s to 15.0 m/s with `Shift` 2x turbo boost.
 
 ---
 
 ### 4.3 Decoupled 5-Zone HUD Layout & Resizing Engine
-The user interface is architected into 5 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
+The user interface is architected into 6 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
 
-1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`). `collapseAllPanels` cleanly sets minimized flags (`isMobileSidebarMinimized`, `isToolModeMinimized`, `isRightSidebarMinimized`, `isMobileTopBarMinimized`, and `showBottomStatusBar: false`) while keeping `showContextualDock: true`, ensuring all 4 hanging guide tabs remain accessible.
-2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 6 primary fort construction tools (Terrain, Walls, Spline, Texture, Foliage, Figurines) and camera preset view controls. Soil pipeline tools (7-0) are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
+1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`).
+2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 7 primary fort construction tools (Terrain, Building, Texture, Foliage, Figurines, Lighting, View) and camera preset view controls. Soil pipeline tools are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
 3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Minimizes into `[⚙️ Properties ▾]`.
-4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Walls (`Select`, `Draw`, `Fortify`), Spline (`Select`, `Draw`, `Transform`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Minimizes into `[🎯 Modes ▾]`.
-5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage / figurine vault browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Minimizes into `[🏰 Outliner ▾]`.
-6. **`BottomStatusBar.tsx`**: Viewport navigation and tool guide pill centered at bottom screen. Contextually detects active tool and subtool to display exact primary action (`Left Click: [Action] • Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`).
+4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Building (`Select`, `Walls`, `Foundation`, `Stairs`, `Fortifications`), Lighting (`Place`, `Select`, `Delete`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Automatically hidden during `View` tool. Minimizes into `[🎯 Modes ▾]`.
+5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage / figurine / lighting vault browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Automatically hidden during `View` tool. Minimizes into `[🏰 Outliner ▾]`.
+6. **`QuickActionBar.tsx` & `BottomStatusBar.tsx`**:
+   - `QuickActionBar.tsx`: Centered floating 5-button control dock mounted directly above `BottomStatusBar.tsx` (`[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`). Governs ambient animation loops and instant high-res viewport screenshot capture.
+   - `BottomStatusBar.tsx`: Viewport navigation and tool guide pill centered at bottom screen. Contextually detects active tool and subtool to display exact primary action (`Left Click: [Action] • Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`).
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic
 To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:
@@ -226,8 +248,15 @@ To prevent hanging folder guide tabs from colliding under any permutation of ope
    - Decorative non-interactive meshes (billboard foliage quads, water plane, courtyard bricks) are marked with `raycast={() => null}` to prevent invisible raycast hit hijacking.
 3. **Selection Retention on Mode Switches**:
    - Switching from `select` to `fortify` preserves `selectedWallId` and auto-activates the default `tower` stamp.
-   - Switching from `select` to `transform` preserves `selectedSplineId` for immediate camera-relative translation, rotation, and scaling.
-   - Only switching into `draw` mode resets selection to isolate drafting pipelines.
+   - Switching from `select` to `stairs` or `walls` isolates the drafting pipeline.
+4. **Zero-Modification Viewport Guard (`View` Tool)**:
+   - When `activeTool === 'view'`, all raycasting, stamp ghosts, selection rings, and bounding gizmos are disengaged.
+   - All pointer clicks and drags are dedicated 100% to camera orbit and free-flight navigation.
+5. **Decoupled Ambient Animation Engine**:
+   - Foliage vertex sway, diya flame particles, and fireworks particle loops attach their clock updates strictly to the `isPlaying` state.
+   - Canvas dynamically switches between `frameloop="always"` (when `isPlaying: true`) and `frameloop="demand"` (when `isPlaying: false`), eliminating CPU/GPU idling overhead when paused.
+6. **Direct High-Resolution Viewport Screenshot Capture**:
+   - The screenshot action temporarily suppresses all HUD overlays, captures the WebGL canvas using `preserveDrawingBuffer`, triggers an immediate browser file download (`killa-diorama-<timestamp>.png`), and restores the HUD.
 
 ---
 
@@ -297,7 +326,7 @@ async function generateKillaPoster(
 ### Binary Packing Architecture
 Rather than storing hundreds of thousands of raw JSON numbers:
 1. Quantize terrain heightmap and texture splat weights into compact `Uint8Array` buffers.
-2. Compress terrain, walls, splines, foliage instances, and figurine JSON with **`fflate.zipSync`** into a single `.killa` binary package of **`~18–30 KB`**.
+2. Compress terrain, building walls, foundations, stairs, fortifications, foliage instances, figurines, and lights/fireworks with **`fflate.zipSync`** into a single `.killa` binary package of **`~18–35 KB`**.
 
 ### Supabase SQL Schema (1 Table + 1 Storage Bucket)
 
@@ -325,5 +354,5 @@ CREATE POLICY "Public read killas" ON public.killas FOR SELECT USING (true);
    * All placed *Mavale* guards, trees, rocks, shrubs, cannons, and diyas render via `@react-three/drei`'s `<Instances>` per asset type.
 2. **Fake Clustered Glow for Diyas (Night Mode):**
    * Use 1 global directional moonlight + warm ambient fill, rendering Diya flames with unlit emissive materials and distance-attenuated decal glows at **0.1ms GPU cost**.
-3. **On-Demand Frame Loop (`frameloop="demand"`):**
-   * Invalidate frames only on pointer interaction, camera orbit, or festive flame animation to reduce idle CPU/GPU load to 0%.
+3. **Dynamic Frame Loop (`frameloop={isPlaying ? "always" : "demand"}`):**
+   * Continuous 60 FPS animation when `isPlaying: true` drives foliage wind sway, diya flames, and fireworks particles; drops back to `frameloop="demand"` on pause to reduce idle CPU/GPU load to 0%.

@@ -24,18 +24,29 @@ export function handleStructurePointerDown(
   if (e.button !== 0 || e.altKey) return false;
   const editor = useEditorStore.getState();
 
-  // 1. Spline Tool (draw mode)
-  if (editor.activeTool === 'spline' && editor.splineMode === 'draw') {
+  // 1. Spline / Building Stairs Tool (draw/stairs mode)
+  const isStairsActive =
+    ((editor.activeTool === 'building' || editor.activeTool === 'walls') && editor.buildingMode === 'stairs') ||
+    (editor.activeTool === 'spline' && editor.splineMode === 'draw');
+
+  if (isStairsActive) {
     e.stopPropagation();
     if (typeof window !== 'undefined' && (window as any).__orbitControls) {
       (window as any).__orbitControls.enabled = false;
     }
 
     isDrawingSurfaceSpline = true;
-    if (!editor.isDrawingSpline) {
-      editor.startSpline();
+    if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
+      if (!editor.isDrawingStairs) {
+        editor.startStairs();
+      }
+      editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+    } else {
+      if (!editor.isDrawingSpline) {
+        editor.startSpline();
+      }
+      editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
     }
-    editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
     lastSplinePoint = [e.point.x, e.point.y, e.point.z];
     invalidate();
     return true;
@@ -183,8 +194,12 @@ export function handleStructurePointerMove(
 ): boolean {
   const editor = useEditorStore.getState();
 
-  // 1. Spline Dragging
-  if (editor.activeTool === 'spline' && editor.splineMode === 'draw') {
+  // 1. Spline / Building Stairs Dragging
+  const isStairsActive =
+    ((editor.activeTool === 'building' || editor.activeTool === 'walls') && editor.buildingMode === 'stairs') ||
+    (editor.activeTool === 'spline' && editor.splineMode === 'draw');
+
+  if (isStairsActive) {
     e.stopPropagation();
     if (isDrawingSurfaceSpline && e.buttons === 1) {
       if (lastSplinePoint) {
@@ -194,7 +209,11 @@ export function handleStructurePointerMove(
           e.point.z - lastSplinePoint[2]
         );
         if (dist >= 0.15) {
-          editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+          if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
+            editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+          } else {
+            editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+          }
           lastSplinePoint = [e.point.x, e.point.y, e.point.z];
           invalidate();
         }

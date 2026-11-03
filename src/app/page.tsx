@@ -113,10 +113,7 @@ export default function HomePage() {
         store.setActiveTool('terrain');
         e.preventDefault();
       } else if (e.key === '2') {
-        store.setActiveTool('walls');
-        e.preventDefault();
-      } else if (e.key === '3') {
-        store.setActiveTool('spline');
+        store.setActiveTool('building');
         e.preventDefault();
       } else if (e.key === '4') {
         store.setActiveTool('texture');

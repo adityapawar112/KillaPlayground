@@ -65,11 +65,13 @@ export const ContextualDock: React.FC = () => {
     mudLocked,
     setMudLocked,
     showContextualDock,
-    splineConversionType,
-    setSplineConversionType,
-    currentSplinePoints,
-    finishSpline,
-    cancelSpline,
+    buildingMode,
+    activeWallDraft,
+    finishCurrentWall,
+    cancelCurrentWall,
+    activeStairDraft,
+    finishStairs,
+    cancelStairs,
     locale,
   } = useEditorStore();
 
@@ -544,65 +546,78 @@ export const ContextualDock: React.FC = () => {
         </div>
       )}
 
-      {/* 8. SPLINE TOOL CONTROLS */}
-      {activeTool === 'spline' && (
+      {/* 8. BUILDING CONSTRUCTION TOOL CONTROLS */}
+      {(activeTool === 'building' || activeTool === 'walls') && (
         <div className="flex items-center gap-3">
-          {/* Quick Sub-tool Selector */}
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
-            <button
-              onClick={() => setSplineConversionType('steps')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                splineConversionType === 'steps'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
-              }`}
-            >
-              <span>{locale === 'mr' ? 'पायऱ्या' : 'Steps'}</span>
-            </button>
-            <button
-              onClick={() => setSplineConversionType('flags')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                splineConversionType === 'flags'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
-              }`}
-            >
-              <span>{locale === 'mr' ? 'ध्वज' : 'Flags'}</span>
-            </button>
-            <button
-              onClick={() => setSplineConversionType('diyas')}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                splineConversionType === 'diyas'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
-              }`}
-            >
-              <span>{locale === 'mr' ? 'पणत्या' : 'Diyas'}</span>
-            </button>
-          </div>
-
-          {currentSplinePoints.length > 0 && (
+          {buildingMode === 'stairs' && (
             <>
-              <div className="w-[1px] h-5 bg-[#D9C9B4]" />
-              <button
-                onClick={() => finishSpline()}
-                disabled={currentSplinePoints.length < 2}
-                className="px-3 py-1 bg-[#059669] hover:bg-[#047857] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
-              >
-                Finish ({currentSplinePoints.length} pts)
-              </button>
-              <button
-                onClick={cancelSpline}
-                className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
+              {activeStairDraft.length > 0 && (
+                <>
+                  <button
+                    onClick={() => finishStairs()}
+                    disabled={activeStairDraft.length < 2}
+                    className="px-3 py-1 bg-[#E85D04] hover:bg-[#D05303] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    Finish Stairs ({activeStairDraft.length} pts)
+                  </button>
+                  <button
+                    onClick={cancelStairs}
+                    className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              {activeStairDraft.length === 0 && (
+                <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
+                  Click points along mountain slopes to build stepped stone staircase
+                </span>
+              )}
             </>
           )}
 
-          {currentSplinePoints.length === 0 && (
+          {buildingMode === 'walls' && (
+            <>
+              {activeWallDraft.length > 0 && (
+                <>
+                  <button
+                    onClick={() => finishCurrentWall()}
+                    disabled={activeWallDraft.length < 2}
+                    className="px-3 py-1 bg-[#E85D04] hover:bg-[#D05303] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    Finish Wall ({activeWallDraft.length} pts)
+                  </button>
+                  <button
+                    onClick={cancelCurrentWall}
+                    className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                </>
+              )}
+              {activeWallDraft.length === 0 && (
+                <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
+                  Click on terrain to lay fort perimeter ramparts
+                </span>
+              )}
+            </>
+          )}
+
+          {buildingMode === 'foundation' && (
             <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-              Click or drag on mountain slopes to draw path
+              Click and drag diagonally on terrain to build stone foundation slab
+            </span>
+          )}
+
+          {buildingMode === 'fortifications' && (
+            <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
+              Hover near fort walls to magnetically place watchtowers, bastions, and gates
+            </span>
+          )}
+
+          {buildingMode === 'select' && (
+            <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
+              Click any wall, bastion, foundation, or stairs to inspect or remove
             </span>
           )}
         </div>

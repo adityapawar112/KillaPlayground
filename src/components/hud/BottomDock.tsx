@@ -25,8 +25,7 @@ interface ToolDef {
 
 const TOOLS_CONFIG: ToolDef[] = [
   { id: 'terrain', key: '1', icon: TbMountain },
-  { id: 'walls', key: '2', icon: TbBuildingFortress },
-  { id: 'spline', key: '3', icon: TbRoute },
+  { id: 'building', key: '2', icon: TbBuildingFortress },
   { id: 'texture', key: '4', icon: TbTexture },
   { id: 'foliage', key: '5', icon: TbTrees },
   { id: 'prop', key: '6', icon: TbUsersGroup },
@@ -42,8 +41,9 @@ export const BottomDock: React.FC = () => {
     { label: string; fullLabel: string; desc: string }
   > = {
     terrain: (t.tools as any).terrain || { label: 'Terrain', fullLabel: 'Terrain Sculpt', desc: 'Manipulate mountain terrain' },
-    walls: (t.tools as any).walls || { label: 'Walls', fullLabel: 'Fort Walls', desc: 'Draw perimeter walls and bastions' },
-    spline: t.tools.spline,
+    building: (t.tools as any).building || { label: 'Building', fullLabel: 'Building Construction', desc: 'Walls, foundations, stairs, and fortifications' },
+    walls: (t.tools as any).building || (t.tools as any).walls || { label: 'Building', fullLabel: 'Building Construction', desc: 'Walls, foundations, stairs, and fortifications' },
+    spline: (t.tools as any).building || t.tools.spline,
     texture: (t.tools as any).texture || { label: 'Texture', fullLabel: 'Texture Studio', desc: 'Paint surface textures on terrain' },
     paint: t.tools.paint,
     foliage: (t.tools as any).foliage || t.tools.grass,
@@ -67,6 +67,7 @@ export const BottomDock: React.FC = () => {
         const details = toolDetails[tool.id];
         const isActive =
           activeTool === tool.id ||
+          (tool.id === 'building' && activeTool === 'walls') ||
           (tool.id === 'shape_side' &&
             (activeTool === 'shape_side' || activeTool === 'shape_top'));
 

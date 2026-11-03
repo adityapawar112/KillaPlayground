@@ -28,6 +28,7 @@ import {
   TbTower,
   TbTrash,
   TbPlus,
+  TbBox,
   TbFlag,
   TbFlame,
   TbStairs,
@@ -74,6 +75,27 @@ export const LeftToolSidebar: React.FC = () => {
     walls,
     wallMode,
     setWallMode,
+    buildingMode,
+    foundations,
+    activeFoundationDraft,
+    selectedFoundationId,
+    setSelectedFoundationId,
+    defaultFoundationHeight,
+    setDefaultFoundationHeight,
+    defaultFoundationOffset,
+    setDefaultFoundationOffset,
+    defaultFoundationTiling,
+    setDefaultFoundationTiling,
+    deleteFoundation,
+    stairs,
+    activeStairDraft,
+    selectedStairId,
+    setSelectedStairId,
+    stairSettings,
+    setStairSettings,
+    finishStairs,
+    cancelStairs,
+    deleteStair,
     activeWallDraft,
     wallSettings,
     setWallSettings,
@@ -326,9 +348,11 @@ export const LeftToolSidebar: React.FC = () => {
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
   const selectedSpline = splines.find((s) => s.id === selectedSplineId);
+  const selectedFoundation = foundations.find((f) => f.id === selectedFoundationId);
+  const selectedStair = stairs.find((s) => s.id === selectedStairId);
 
   const isModePanelOpen =
-    ['walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool) && !isToolModeMinimized;
+    ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool) && !isToolModeMinimized;
   const propertiesTabLeft = isModePanelOpen ? '76px' : '8px';
 
   return (
@@ -407,28 +431,39 @@ export const LeftToolSidebar: React.FC = () => {
         {/* Scrollable Tool Content */}
         <div className="flex-1 overflow-y-auto p-3.5 space-y-4 text-xs text-[#4B382C]">
           {/* ======================================================== */}
-          {/* 1. WALLS TOOL PROPERTIES                                  */}
+          {/* 1. UNIFIED BUILDING CONSTRUCTION TOOL                     */}
           {/* ======================================================== */}
-          {activeTool === 'walls' && (
+          {(activeTool === 'building' || activeTool === 'walls') && (
             <div className="space-y-4">
+              {/* Header Badge */}
               <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
                 <div className="flex items-center gap-1.5">
-                  <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                  {buildingMode === 'foundation' ? (
+                    <TbBox className="w-4 h-4 text-[#B85F45]" />
+                  ) : buildingMode === 'stairs' ? (
+                    <TbStairs className="w-4 h-4 text-[#B85F45]" />
+                  ) : (
+                    <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                  )}
                   <span className="font-bold text-[#4B382C]">
-                    {wallMode === 'draw'
+                    {buildingMode === 'walls'
                       ? 'Rampart Drafting'
-                      : wallMode === 'fortify'
+                      : buildingMode === 'foundation'
+                      ? 'Foundation Slab Studio'
+                      : buildingMode === 'stairs'
+                      ? 'Stone Stairs Studio'
+                      : buildingMode === 'fortifications'
                       ? 'Fortification Studio'
                       : 'Selection Mode'}
                   </span>
                 </div>
                 <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
-                  {wallMode} mode
+                  {buildingMode} mode
                 </span>
               </div>
 
-              {/* A. DRAW MODE */}
-              {wallMode === 'draw' && (
+              {/* A. WALLS MODE */}
+              {buildingMode === 'walls' && (
                 <div className="space-y-3.5">
                   <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
                     <div className="flex justify-between items-center text-[11px]">
@@ -556,8 +591,208 @@ export const LeftToolSidebar: React.FC = () => {
                 </div>
               )}
 
-              {/* B. FORTIFY MODE */}
-              {wallMode === 'fortify' && (
+              {/* B. FOUNDATION MODE */}
+              {buildingMode === 'foundation' && (
+                <div className="space-y-3.5">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-1.5">
+                    <div className="text-[11px] font-semibold text-[#5C4638]">
+                      {activeFoundationDraft ? 'Drawing Foundation Slab...' : 'Drag-to-Build Rectangular Slab'}
+                    </div>
+                    {activeFoundationDraft ? (
+                      <div className="text-[11px] text-[#B85F45] font-bold">
+                        {(Math.abs(activeFoundationDraft.x2 - activeFoundationDraft.x1) * 100).toFixed(0)}cm ×{' '}
+                        {(Math.abs(activeFoundationDraft.z2 - activeFoundationDraft.z1) * 100).toFixed(0)}cm
+                        <span className="block text-[10px] text-[#8D7666] font-normal mt-0.5">Release mouse to instantiate</span>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-[#634E40] leading-snug">
+                        Click and drag diagonally across terrain to build a leveled stone plinth for buildings and bastions.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Foundation Sliders */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Height</span>
+                        <span className="text-[#8D7666]">{((defaultFoundationHeight || 0.40) * 100).toFixed(0)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.10"
+                        max="3.00"
+                        step="0.05"
+                        value={defaultFoundationHeight || 0.40}
+                        onChange={(e) => setDefaultFoundationHeight(parseFloat(e.target.value))}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Vertical Offset</span>
+                        <span className="text-[#8D7666]">{((defaultFoundationOffset || 0.0) * 100).toFixed(0)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-0.50"
+                        max="2.00"
+                        step="0.05"
+                        value={defaultFoundationOffset || 0.0}
+                        onChange={(e) => setDefaultFoundationOffset(parseFloat(e.target.value))}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Tiling Repeat</span>
+                        <span className="text-[#8D7666]">{(defaultFoundationTiling || 2.0).toFixed(1)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1.0"
+                        max="10.0"
+                        step="0.5"
+                        value={defaultFoundationTiling || 2.0}
+                        onChange={(e) => setDefaultFoundationTiling(parseFloat(e.target.value))}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* C. STAIRS MODE */}
+              {buildingMode === 'stairs' && (
+                <div className="space-y-3.5">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                    <div className="flex justify-between items-center text-[11px]">
+                      <span className="font-semibold text-[#5C4638]">Stair Points:</span>
+                      <span className="font-bold text-[#B85F45]">
+                        {activeStairDraft.length} {activeStairDraft.length < 2 ? '(Min 2 needed)' : '✓ Ready'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => {
+                          const id = finishStairs();
+                          if (id) {
+                            setToastMessage('Stone staircase constructed!');
+                          }
+                        }}
+                        disabled={activeStairDraft.length < 2}
+                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ${
+                          activeStairDraft.length >= 2
+                            ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
+                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        <TbCheck className="w-4 h-4" />
+                        Finish Stairs
+                      </button>
+
+                      {activeStairDraft.length > 0 && (
+                        <button
+                          onClick={cancelStairs}
+                          title="Cancel Stairway"
+                          className="p-2 rounded-xl bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer"
+                        >
+                          <TbX className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Stairway Sliders */}
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Stair Width</span>
+                        <span className="text-[#8D7666]">{((stairSettings.stepWidth || 0.10) * 100).toFixed(0)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.03"
+                        max="0.30"
+                        step="0.01"
+                        value={stairSettings.stepWidth || 0.10}
+                        onChange={(e) => setStairSettings({ stepWidth: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Tread Depth</span>
+                        <span className="text-[#8D7666]">{((stairSettings.stepRun || 0.03) * 100).toFixed(1)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.015"
+                        max="0.06"
+                        step="0.005"
+                        value={stairSettings.stepRun || 0.03}
+                        onChange={(e) => setStairSettings({ stepRun: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Rise</span>
+                        <span className="text-[#8D7666]">{((stairSettings.stepRise || 0.015) * 100).toFixed(1)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.005"
+                        max="0.03"
+                        step="0.002"
+                        value={stairSettings.stepRise || 0.015}
+                        onChange={(e) => setStairSettings({ stepRise: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Spacing</span>
+                        <span className="text-[#8D7666]">{((stairSettings.stepSpacing || 0.03) * 100).toFixed(1)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.01"
+                        max="0.10"
+                        step="0.005"
+                        value={stairSettings.stepSpacing || 0.03}
+                        onChange={(e) => setStairSettings({ stepSpacing: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Offset</span>
+                        <span className="text-[#8D7666]">{((stairSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-0.15"
+                        max="0.15"
+                        step="0.01"
+                        value={stairSettings.stepOffset || 0.0}
+                        onChange={(e) => setStairSettings({ stepOffset: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* D. FORTIFICATIONS MODE */}
+              {buildingMode === 'fortifications' && (
                 <div className="space-y-3.5">
                   <div className="text-[11px] text-[#634E40] leading-relaxed">
                     Choose a fortification to place continuously along ramparts.
@@ -610,8 +845,8 @@ export const LeftToolSidebar: React.FC = () => {
                 </div>
               )}
 
-              {/* C. SELECT MODE: With Deselect, Delete, Edit buttons */}
-              {wallMode === 'select' && (
+              {/* E. SELECT MODE */}
+              {buildingMode === 'select' && (
                 <div className="space-y-3">
                   {selectedWall ? (
                     <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
@@ -627,7 +862,6 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Deselect / Delete / Edit Buttons */}
                       <div className="space-y-1.5 pt-1">
                         <button
                           onClick={() => {
@@ -663,432 +897,24 @@ export const LeftToolSidebar: React.FC = () => {
                           <TbTrash className="w-3.5 h-3.5" />
                           Delete
                         </button>
-
-                        <button
-                          onClick={() => setWallMode('fortify')}
-                          className="w-full py-1.5 text-xs font-semibold bg-[#4B382C] text-[#FAF8F5] rounded-lg hover:bg-[#38281E] cursor-pointer flex items-center justify-center gap-1.5"
-                        >
-                          <TbEdit className="w-3.5 h-3.5" />
-                          Fortify Wall
-                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-xs text-[#634E40] space-y-2">
-                      <div className="font-bold text-[#4B382C] flex items-center gap-1.5">
-                        <TbPointer className="w-4 h-4 text-[#B85F45]" />
-                        Select & Inspect
-                      </div>
-                      <p className="leading-relaxed">
-                        Click any wall, bastion, or gate on the 3D diorama or from the <strong>Fort Outliner</strong> on the right to view its dimensions, rename it, or remove it.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ======================================================== */}
-          {/* 2. SPLINE / PATHS TOOL PROPERTIES                         */}
-          {/* ======================================================== */}
-          {activeTool === 'spline' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-                <div className="flex items-center gap-1.5">
-                  <TbRoute className="w-4 h-4 text-[#B85F45]" />
-                  <span className="font-bold text-[#4B382C]">
-                    {splineMode === 'draw'
-                      ? 'Path Drafting'
-                      : splineMode === 'transform'
-                      ? 'Nudge & Transform'
-                      : 'Selection Mode'}
-                  </span>
-                </div>
-                <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
-                  {splineMode} mode
-                </span>
-              </div>
-
-              {/* A. DRAW MODE */}
-              {splineMode === 'draw' && (
-                <div className="space-y-3.5">
-                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
-                    <div className="flex justify-between items-center text-[11px]">
-                      <span className="font-semibold text-[#5C4638]">Path Points:</span>
-                      <span className="font-bold text-[#B85F45]">
-                        {currentSplinePoints.length} {currentSplinePoints.length < 2 ? '(Min 2 needed)' : '✓ Ready'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 pt-1">
-                      <button
-                        onClick={() => {
-                          const id = finishSpline();
-                          if (id) {
-                            setToastMessage('Path created on fort terrain!');
-                          }
-                        }}
-                        disabled={currentSplinePoints.length < 2}
-                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ${
-                          currentSplinePoints.length >= 2
-                            ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
-                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
-                        }`}
-                      >
-                        <TbCheck className="w-4 h-4" />
-                        Finish Path
-                      </button>
-
-                      {currentSplinePoints.length > 0 && (
-                        <button
-                          onClick={cancelSpline}
-                          title="Cancel Path"
-                          className="p-2 rounded-xl bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer"
-                        >
-                          <TbX className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 3 Spline Types */}
-                  <div>
-                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">Feature Type to Place</label>
-                    <div className="grid grid-cols-3 gap-1.5 mt-1">
-                      {[
-                        { id: 'steps' as SplineConversionType, label: 'Steps', icon: TbStairs },
-                        { id: 'flags' as SplineConversionType, label: 'Flags', icon: TbFlag },
-                        { id: 'diyas' as SplineConversionType, label: 'Diyas', icon: TbFlame },
-                      ].map((t) => {
-                        const Icon = t.icon;
-                        const isSelected = splineConversionType === t.id;
-
-                        return (
-                          <button
-                            key={t.id}
-                            onClick={() => handleConversionTypeChange(t.id)}
-                            className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl border text-center transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-[#4B382C] text-[#FAF8F5] border-[#38281E] shadow-sm'
-                                : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-[#EADECF]'
-                            }`}
-                          >
-                            <Icon className="w-4 h-4 mb-0.5 text-[#B85F45]" />
-                            <span className="font-semibold text-[10px]">{t.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Specs */}
-                  {splineConversionType === 'steps' && (
-                    <div className="space-y-2.5">
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Stair Width</span>
-                          <span className="text-[#8D7666]">{((splineSettings.stepWidth || 0.06) * 100).toFixed(0)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.03"
-                          max="0.15"
-                          step="0.01"
-                          value={splineSettings.stepWidth || 0.06}
-                          onChange={(e) => setSplineSettings({ stepWidth: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Tread Depth</span>
-                          <span className="text-[#8D7666]">{((splineSettings.stepRun || 0.025) * 100).toFixed(1)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.015"
-                          max="0.06"
-                          step="0.005"
-                          value={splineSettings.stepRun || 0.025}
-                          onChange={(e) => setSplineSettings({ stepRun: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Step Rise Height</span>
-                          <span className="text-[#8D7666]">{((splineSettings.stepRise || 0.01) * 100).toFixed(1)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.005"
-                          max="0.03"
-                          step="0.002"
-                          value={splineSettings.stepRise || 0.01}
-                          onChange={(e) => setSplineSettings({ stepRise: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Step Spacing</span>
-                          <span className="text-[#8D7666]">{((splineSettings.stepSpacing || 0.025) * 100).toFixed(1)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.015"
-                          max="0.06"
-                          step="0.005"
-                          value={splineSettings.stepSpacing || 0.025}
-                          onChange={(e) => setSplineSettings({ stepSpacing: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Path Offset</span>
-                          <span className="text-[#8D7666]">{((splineSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="-0.05"
-                          max="0.05"
-                          step="0.005"
-                          value={splineSettings.stepOffset || 0.0}
-                          onChange={(e) => setSplineSettings({ stepOffset: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Step Scale</span>
-                          <span className="text-[#8D7666]">{(splineSettings.scale || 1.0).toFixed(1)}x</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.5"
-                          max="2.5"
-                          step="0.1"
-                          value={splineSettings.scale || 1.0}
-                          onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {splineConversionType !== 'steps' && (
-                    <div className="space-y-2.5">
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Item Spacing</span>
-                          <span className="text-[#8D7666]">{((splineSettings.spacing || 0.20) * 100).toFixed(0)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.10"
-                          max="0.80"
-                          step="0.05"
-                          value={splineSettings.spacing || 0.20}
-                          onChange={(e) => setSplineSettings({ spacing: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Path Offset</span>
-                          <span className="text-[#8D7666]">{((splineSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="-0.10"
-                          max="0.10"
-                          step="0.01"
-                          value={splineSettings.stepOffset || 0.0}
-                          onChange={(e) => setSplineSettings({ stepOffset: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Item Scale</span>
-                          <span className="text-[#8D7666]">{(splineSettings.scale || 1.0).toFixed(1)}x</span>
-                        </div>
-                        <input
-                          type="range"
-                          min="0.5"
-                          max="2.5"
-                          step="0.1"
-                          value={splineSettings.scale || 1.0}
-                          onChange={(e) => setSplineSettings({ scale: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* B. TRANSFORM MODE */}
-              {splineMode === 'transform' && (
-                <div className="space-y-3">
-                  {selectedSplineId ? (
-                    <div className="space-y-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-                      <div className="text-xs font-bold text-[#4B382C]">Camera-Relative Nudge</div>
-
-                      {/* Directional Move Grid: Up/Forward/Down in Row 1; Left/Backward/Right in Row 2 */}
-                      <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase mb-1">
-                          Move in 3D View
-                        </div>
-                        <div className="space-y-1.5">
-                          {/* Row 1: Up, Forward, Down */}
-                          <div className="grid grid-cols-3 gap-1.5">
-                            <button
-                              onClick={() => moveSplineCameraRelative('up')}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
-                              title="Move Vertically Up (+Y)"
-                            >
-                              ↑ Up
-                            </button>
-                            <button
-                              onClick={() => moveSplineCameraRelative('forward')}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
-                              title="Move Forward in Camera View"
-                            >
-                              ▲ Forward
-                            </button>
-                            <button
-                              onClick={() => moveSplineCameraRelative('down')}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
-                              title="Move Vertically Down (-Y)"
-                            >
-                              ↓ Down
-                            </button>
-                          </div>
-
-                          {/* Row 2: Left, Backward, Right */}
-                          <div className="grid grid-cols-3 gap-1.5">
-                            <button
-                              onClick={() => moveSplineCameraRelative('left')}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
-                              title="Move Left in Camera View"
-                            >
-                              ◀ Left
-                            </button>
-                            <button
-                              onClick={() => moveSplineCameraRelative('backward')}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
-                              title="Move Backward in Camera View"
-                            >
-                              ▼ Backward
-                            </button>
-                            <button
-                              onClick={() => moveSplineCameraRelative('right')}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center"
-                              title="Move Right in Camera View"
-                            >
-                              ▶ Right
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Rotate */}
-                      <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase mb-1">Rotate</div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => rotateSpline(selectedSplineId, -15)}
-                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
-                          >
-                            ⟲ -15°
-                          </button>
-                          <button
-                            onClick={() => rotateSpline(selectedSplineId, 15)}
-                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
-                          >
-                            ⟳ +15°
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Scale Individual Items along curve */}
-                      <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase mb-1">
-                          Scale Item Size
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => scaleSplineItem(selectedSplineId, 0.9)}
-                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
-                            title="Make individual steps/flags 10% smaller"
-                          >
-                            ➖ Smaller
-                          </button>
-                          <button
-                            onClick={() => scaleSplineItem(selectedSplineId, 1.1)}
-                            className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-semibold text-xs cursor-pointer text-center"
-                            title="Make individual steps/flags 10% larger"
-                          >
-                            ➕ Larger
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2 p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-xs text-[#634E40]">
-                      <div className="font-semibold text-[#4B382C]">
-                        {splines.length === 0
-                          ? 'No paths placed yet.'
-                          : 'Select a path to transform:'}
-                      </div>
-                      <div className="text-[11px] text-[#7A6454]">
-                        {splines.length === 0
-                          ? 'Switch to Draw mode to create stone steps, flags, or diyas.'
-                          : 'Click any path directly in the 3D diorama, or choose below to move, rotate, or scale it:'}
-                      </div>
-                      {splines.length > 0 && (
-                        <div className="flex flex-col gap-1.5 pt-1 max-h-40 overflow-y-auto">
-                          {splines.map((s, idx) => (
-                            <button
-                              key={s.id}
-                              onClick={() => setSelectedSplineId(s.id)}
-                              className="w-full text-left px-2.5 py-1.5 rounded-lg bg-[#EADECF] hover:bg-[#DFCDBD] font-bold text-xs text-[#4B382C] transition-colors truncate cursor-pointer"
-                            >
-                              {s.name || `${s.type === 'steps' ? 'Stone Steps' : s.type === 'flags' ? 'Bhagwa Flags' : 'Festive Diyas'} ${idx + 1}`}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* C. SELECT MODE: With Deselect, Delete, Edit buttons */}
-              {splineMode === 'select' && (
-                <div className="space-y-3">
-                  {selectedSpline ? (
+                  ) : selectedFoundation ? (
                     <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
                       <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">Selected Path</div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">Selected Foundation</div>
                         <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
-                          {selectedSpline.name || `${selectedSpline.type} feature`}
+                          {selectedFoundation.name || 'Stone Foundation'}
+                        </div>
+                        <div className="text-[11px] text-[#8D7666] mt-0.5">
+                          {(selectedFoundation.length * 100).toFixed(0)}cm ×{' '}
+                          {(selectedFoundation.width * 100).toFixed(0)}cm • Height: {(selectedFoundation.height * 100).toFixed(0)}cm
                         </div>
                       </div>
 
                       <div className="space-y-1.5 pt-1">
                         <button
-                          onClick={() => setSelectedSplineId(null)}
+                          onClick={() => setSelectedFoundationId(null)}
                           className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
                         >
                           <TbX className="w-3.5 h-3.5" />
@@ -1097,21 +923,46 @@ export const LeftToolSidebar: React.FC = () => {
 
                         <button
                           onClick={() => {
-                            deleteSpline(selectedSpline.id);
-                            setSelectedSplineId(null);
+                            deleteFoundation(selectedFoundation.id);
+                            setSelectedFoundationId(null);
                           }}
                           className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
                         >
                           <TbTrash className="w-3.5 h-3.5" />
                           Delete
                         </button>
+                      </div>
+                    </div>
+                  ) : selectedStair ? (
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
+                      <div>
+                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">Selected Staircase</div>
+                        <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
+                          {selectedStair.name || 'Stone Staircase'}
+                        </div>
+                        <div className="text-[11px] text-[#8D7666] mt-0.5">
+                          {selectedStair.points.length} waypoints • Width: {(((selectedStair.settings?.stepWidth ?? 0.10)) * 100).toFixed(0)}cm
+                        </div>
+                      </div>
+
+                      <div className="space-y-1.5 pt-1">
+                        <button
+                          onClick={() => setSelectedStairId(null)}
+                          className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <TbX className="w-3.5 h-3.5" />
+                          Deselect
+                        </button>
 
                         <button
-                          onClick={() => setSplineMode('transform')}
-                          className="w-full py-1.5 text-xs font-semibold bg-[#4B382C] text-[#FAF8F5] rounded-lg hover:bg-[#38281E] cursor-pointer flex items-center justify-center gap-1.5"
+                          onClick={() => {
+                            deleteStair(selectedStair.id);
+                            setSelectedStairId(null);
+                          }}
+                          className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbArrowsMove className="w-3.5 h-3.5" />
-                          Transform
+                          <TbTrash className="w-3.5 h-3.5" />
+                          Delete
                         </button>
                       </div>
                     </div>
@@ -1122,7 +973,7 @@ export const LeftToolSidebar: React.FC = () => {
                         Select & Inspect
                       </div>
                       <p className="leading-relaxed">
-                        Click any path, stone steps, or diya trail in the diorama or outliner to view its dimensions, rename it, or remove it.
+                        Click any fort wall, bastion, foundation slab, or stone staircase in the 3D diorama or from the <strong>Fort Architecture</strong> outliner to view its properties or remove it.
                       </p>
                     </div>
                   )}

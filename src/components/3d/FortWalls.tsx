@@ -14,6 +14,8 @@ import {
   SnapResult,
 } from '@/lib/walls/wallGeometry';
 import { WallPath, WallPoint, FortStampType, DEFAULT_WALL_SETTINGS } from '@/lib/walls/wallTypes';
+import { FoundationSlab } from '@/lib/state/useEditorStore';
+import { generateFoundationBufferGeometry } from '@/lib/foundations/foundationGeometry';
 import { handleStructurePointerDown, handleStructurePointerMove } from '@/lib/interaction/surfaceToolInteraction';
 
 /**
@@ -663,14 +665,132 @@ const SnapHologramPreview: React.FC<{
 };
 
 /**
+ * Interactive solid stone foundation slab component.
+ */
+const FoundationMesh: React.FC<{
+  slab: FoundationSlab;
+  materials: THREE.Material[];
+  isSelected: boolean;
+  isHovered: boolean;
+  onSelect: () => void;
+  onHover: (hovered: boolean) => void;
+}> = ({ slab, materials, isSelected, isHovered, onSelect, onHover }) => {
+  const geometry = useMemo(() => {
+    return generateFoundationBufferGeometry(slab);
+  }, [slab.length, slab.width, slab.height, slab.tilingRepeat]);
+
+  useEffect(() => {
+    return () => {
+      geometry.dispose();
+    };
+  }, [geometry]);
+
+  const posY = slab.y + (slab.verticalOffset || 0) + slab.height / 2;
+
+  return (
+    <group
+      position={[slab.x, posY, slab.z]}
+      rotation={[0, slab.rotationY || 0, 0]}
+      onClick={(e) => {
+        if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
+        const editor = useEditorStore.getState();
+        const isSelectMode =
+          editor.activeTool === 'building' || editor.activeTool === 'walls'
+            ? editor.buildingMode === 'select'
+            : editor.wallMode === 'select';
+        if (!isSelectMode) return;
+        e.stopPropagation();
+        onSelect();
+      }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        const editor = useEditorStore.getState();
+        const isSelectMode =
+          editor.activeTool === 'building' || editor.activeTool === 'walls'
+            ? editor.buildingMode === 'select'
+            : editor.wallMode === 'select';
+        if (isSelectMode) onHover(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        onHover(false);
+      }}
+    >
+      <mesh
+        geometry={geometry}
+        material={materials}
+        castShadow
+        receiveShadow
+        name={`Foundation_${slab.id}`}
+      />
+      {(isSelected || isHovered) && (
+        <lineSegments>
+          <edgesGeometry args={[geometry]} />
+          <lineBasicMaterial
+            color={isHovered && !isSelected ? '#E85D04' : '#F59E0B'}
+            linewidth={2}
+          />
+        </lineSegments>
+      )}
+    </group>
+  );
+};
+
+/**
+ * Real-time translucent ghost preview during foundation click-and-drag.
+ */
+const FoundationDraftGhost: React.FC<{
+  draft: { x1: number; z1: number; x2: number; z2: number; y: number };
+  height: number;
+  offset: number;
+}> = ({ draft, height, offset }) => {
+  const dx = Math.abs(draft.x2 - draft.x1);
+  const dz = Math.abs(draft.z2 - draft.z1);
+  const cx = (draft.x1 + draft.x2) / 2;
+  const cz = (draft.z1 + draft.z2) / 2;
+  const cy = draft.y + offset + height / 2;
+
+  const geo = useMemo(() => {
+    return new THREE.BoxGeometry(Math.max(0.05, dx), Math.max(0.05, height), Math.max(0.05, dz));
+  }, [dx, height, dz]);
+
+  useEffect(() => {
+    return () => {
+      geo.dispose();
+    };
+  }, [geo]);
+
+  return (
+    <group position={[cx, cy, cz]} name="FoundationDraftGhost">
+      <mesh geometry={geo}>
+        <meshBasicMaterial color="#F59E0B" transparent opacity={0.4} depthWrite={false} />
+      </mesh>
+      <lineSegments>
+        <edgesGeometry args={[geo]} />
+        <lineBasicMaterial color="#E85D04" linewidth={2} />
+      </lineSegments>
+    </group>
+  );
+};
+
+/**
  * FortWalls Container Component
- * Renders all completed fort walls, preview draft line, and manages textures/materials.
+ * Renders all completed fort walls, foundations, preview draft line, and manages textures/materials.
  */
 export const FortWalls: React.FC = () => {
   const {
     activeTool,
     walls,
     wallMode,
+    buildingMode,
+    foundations,
+    selectedFoundationId,
+    setSelectedFoundationId,
+    activeFoundationDraft,
+    defaultFoundationHeight,
+    defaultFoundationOffset,
+    hoveredElement,
+    setHoveredElement,
     activeWallDraft,
     selectedWallId,
     nightMode,
@@ -826,21 +946,57 @@ export const FortWalls: React.FC = () => {
         );
       })}
 
-      {/* Active Construction Draft Preview (Draw mode only) */}
-      {activeTool === 'walls' && wallMode === 'draw' && (
-        <WallDraftPreview
-          draftPoints={activeWallDraft}
-          nightMode={nightMode}
-        />
-      )}
+      {/* Placed Foundation Slabs (Ticket 09) */}
+      {foundations.map((slab) => {
+        const isSelected = selectedFoundationId === slab.id;
+        const isHovered = hoveredElement?.type === 'foundation' && hoveredElement.id === slab.id;
+        return (
+          <FoundationMesh
+            key={`foundation_${slab.id}_${slab.length}_${slab.width}_${slab.height}_${slab.verticalOffset}_${slab.tilingRepeat}`}
+            slab={slab}
+            materials={wallMaterials}
+            isSelected={isSelected}
+            isHovered={isHovered}
+            onSelect={() => {
+              setSelectedFoundationId(slab.id);
+              useEditorStore.getState().setToastMessage(`${slab.name || 'Stone Foundation'} selected.`);
+            }}
+            onHover={(hovered) => {
+              document.body.style.cursor = hovered ? 'pointer' : 'default';
+              setHoveredElement(hovered ? { type: 'foundation', id: slab.id } : null);
+            }}
+          />
+        );
+      })}
 
-      {/* Magnetic Snap Hologram Preview (Fortify mode only) */}
-      {activeTool === 'walls' && wallMode === 'fortify' && (
-        <SnapHologramPreview
-          activeStamp={activeStamp}
-          snap={wallSnapPreview}
-        />
-      )}
+      {/* Live Translucent Foundation Ghost Preview (Foundation Mode only) */}
+      {(activeTool === 'building' || activeTool === 'walls') &&
+        buildingMode === 'foundation' &&
+        activeFoundationDraft && (
+          <FoundationDraftGhost
+            draft={activeFoundationDraft}
+            height={defaultFoundationHeight || 0.40}
+            offset={defaultFoundationOffset || 0.0}
+          />
+        )}
+
+      {/* Active Construction Draft Preview (Walls mode only) */}
+      {(activeTool === 'building' || activeTool === 'walls') &&
+        (wallMode === 'draw' || buildingMode === 'walls') && (
+          <WallDraftPreview
+            draftPoints={activeWallDraft}
+            nightMode={nightMode}
+          />
+        )}
+
+      {/* Magnetic Snap Hologram Preview (Fortifications mode only) */}
+      {(activeTool === 'building' || activeTool === 'walls') &&
+        (wallMode === 'fortify' || buildingMode === 'fortifications') && (
+          <SnapHologramPreview
+            activeStamp={activeStamp}
+            snap={wallSnapPreview}
+          />
+        )}
     </group>
   );
 };

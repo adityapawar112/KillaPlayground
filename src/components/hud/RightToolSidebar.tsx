@@ -9,6 +9,7 @@ import {
   TbChevronDown,
   TbTrash,
   TbFocus2,
+  TbBox,
   TbStairs,
   TbFlag,
   TbFlame,
@@ -113,6 +114,17 @@ export const RightToolSidebar: React.FC = () => {
     toggleGrandBastionOnNode,
     removeBastionFromNode,
     removeWall,
+    foundations,
+    selectedFoundationId,
+    setSelectedFoundationId,
+    updateFoundation,
+    deleteFoundation,
+    stairs,
+    selectedStairId,
+    setSelectedStairId,
+    updateStairName,
+    updateStairSettings,
+    deleteStair,
     splines,
     selectedSplineId,
     setSelectedSplineId,
@@ -218,8 +230,9 @@ export const RightToolSidebar: React.FC = () => {
     setCameraViewPreset('reset');
   };
 
-  // Only show right sidebar for tools with outliner/browser (walls, spline, texture, foliage, prop)
+  // Only show right sidebar for tools with outliner/browser (building, walls, spline, texture, foliage, prop)
   const isRelevantTool =
+    activeTool === 'building' ||
     activeTool === 'walls' ||
     activeTool === 'spline' ||
     activeTool === 'texture' ||
@@ -230,6 +243,8 @@ export const RightToolSidebar: React.FC = () => {
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
   const selectedSpline = splines.find((s) => s.id === selectedSplineId);
+  const selectedFoundation = foundations.find((f) => f.id === selectedFoundationId);
+  const selectedStair = stairs.find((s) => s.id === selectedStairId);
   const selectedProp = placedProps.find((p) => p.id === selectedPropId);
 
   const filteredCategories =
@@ -336,8 +351,8 @@ export const RightToolSidebar: React.FC = () => {
               <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
             )}
             <span className="text-xs font-bold uppercase tracking-wider">
-              {activeTool === 'walls'
-                ? 'Fort Outliner'
+              {activeTool === 'building' || activeTool === 'walls'
+                ? 'Fort Architecture'
                 : activeTool === 'spline'
                 ? 'Path Outliner'
                 : activeTool === 'foliage'
@@ -1093,19 +1108,23 @@ export const RightToolSidebar: React.FC = () => {
                 Diorama Elements
               </span>
               <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
-                {activeTool === 'walls' ? walls.length : splines.length}
+                {(activeTool === 'building' || activeTool === 'walls')
+                  ? walls.length + foundations.length + stairs.length
+                  : splines.length}
               </span>
             </div>
 
-              {/* WALLS TREE VIEW */}
-              {activeTool === 'walls' && (
+              {/* FORT ARCHITECTURE TREE VIEW (Walls, Foundations, Stairs) */}
+              {(activeTool === 'building' || activeTool === 'walls') && (
                 <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
-                  {walls.length === 0 ? (
+                  {walls.length === 0 && foundations.length === 0 && stairs.length === 0 ? (
                     <div className="text-center py-4 text-[#8D7666] italic text-xs">
-                      No walls drawn yet.
+                      No fort structures built yet.
                     </div>
                   ) : (
-                    walls.map((wall, idx) => {
+                    <>
+                      {/* 1. Walls List */}
+                      {walls.map((wall, idx) => {
                       const isSelected = selectedWallId === wall.id && !selectedComponent;
                       const isExpanded = expandedWalls[wall.id] ?? true;
                       const totalLengthM = calculateWallTotalLength(wall.points, wall.isClosed);
@@ -1343,7 +1362,128 @@ export const RightToolSidebar: React.FC = () => {
                           )}
                         </div>
                       );
-                    })
+                    })}
+
+                      {/* 2. Foundations List */}
+                      {foundations.map((foundation, idx) => {
+                        const isSelected = selectedFoundationId === foundation.id;
+                        const widthCm = (foundation.length * 100).toFixed(0);
+                        const depthCm = (foundation.width * 100).toFixed(0);
+
+                        return (
+                          <div
+                            key={foundation.id}
+                            onClick={() => {
+                              setSelectedFoundationId(foundation.id);
+                              setSelectedWallId(null);
+                              setSelectedComponent(null);
+                              setSelectedStairId(null);
+                            }}
+                            onMouseEnter={() => setHoveredElement({ type: 'foundation', id: foundation.id })}
+                            onMouseLeave={() => setHoveredElement(null)}
+                            className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D9C9B4] transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#B85F45] text-[#FAF8F5]'
+                                : 'bg-[#FAF8F5] hover:bg-[#EADECF] text-[#4B382C]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <TbBox className="w-3.5 h-3.5 shrink-0" />
+                              <span className="font-semibold truncate">{foundation.name || `Foundation Slab ${idx + 1}`}</span>
+                              <span
+                                className={`text-[10px] truncate ${
+                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                }`}
+                              >
+                                ({widthCm}×{depthCm}cm)
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={focusCamera}
+                                title="Focus Camera"
+                                className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                              >
+                                <TbFocus2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteFoundation(foundation.id);
+                                  if (selectedFoundationId === foundation.id) {
+                                    setSelectedFoundationId(null);
+                                  }
+                                }}
+                                title="Delete Foundation"
+                                className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                              >
+                                <TbTrash className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* 3. Stairs List */}
+                      {stairs.map((stair, idx) => {
+                        const isSelected = selectedStairId === stair.id;
+
+                        return (
+                          <div
+                            key={stair.id}
+                            onClick={() => {
+                              setSelectedStairId(stair.id);
+                              setSelectedWallId(null);
+                              setSelectedComponent(null);
+                              setSelectedFoundationId(null);
+                            }}
+                            onMouseEnter={() => setHoveredElement({ type: 'stair', id: stair.id })}
+                            onMouseLeave={() => setHoveredElement(null)}
+                            className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D9C9B4] transition-colors cursor-pointer ${
+                              isSelected
+                                ? 'bg-[#B85F45] text-[#FAF8F5]'
+                                : 'bg-[#FAF8F5] hover:bg-[#EADECF] text-[#4B382C]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <TbStairs className="w-3.5 h-3.5 shrink-0 text-[#B85F45]" />
+                              <span className="font-semibold truncate">{stair.name || `Stone Staircase ${idx + 1}`}</span>
+                              <span
+                                className={`text-[10px] truncate ${
+                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                }`}
+                              >
+                                ({stair.points.length} pts)
+                              </span>
+                            </div>
+
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={focusCamera}
+                                title="Focus Camera"
+                                className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                              >
+                                <TbFocus2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteStair(stair.id);
+                                  if (selectedStairId === stair.id) {
+                                    setSelectedStairId(null);
+                                  }
+                                }}
+                                title="Delete Staircase"
+                                className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                              >
+                                <TbTrash className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </>
                   )}
                 </div>
               )}
@@ -1427,12 +1567,14 @@ export const RightToolSidebar: React.FC = () => {
               <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
                 Element Properties
               </span>
-                {(selectedWallId || selectedComponent || selectedSplineId) && (
+                {(selectedWallId || selectedComponent || selectedSplineId || selectedFoundationId || selectedStairId) && (
                   <button
                     onClick={() => {
                       setSelectedWallId(null);
                       setSelectedComponent(null);
                       setSelectedSplineId(null);
+                      setSelectedFoundationId(null);
+                      setSelectedStairId(null);
                     }}
                     className="text-[10px] text-[#B85F45] hover:underline cursor-pointer font-semibold"
                   >
@@ -1442,7 +1584,7 @@ export const RightToolSidebar: React.FC = () => {
               </div>
 
               {/* A. BASTION (CORNER AUTO-BASTION) INSPECTOR */}
-              {activeTool === 'walls' && selectedWall && selectedComponent?.type === 'bastion' && (
+              {(activeTool === 'building' || activeTool === 'walls') && selectedWall && selectedComponent?.type === 'bastion' && (
                 (() => {
                   const bIdx = Number(selectedComponent.idOrIndex);
                   const custom = selectedWall.customBastions?.[bIdx];
@@ -1550,7 +1692,7 @@ export const RightToolSidebar: React.FC = () => {
               )}
 
               {/* B. WATCHTOWER (ROUND TOWER) INSPECTOR */}
-              {activeTool === 'walls' && selectedWall && selectedComponent?.type === 'tower' && (
+              {(activeTool === 'building' || activeTool === 'walls') && selectedWall && selectedComponent?.type === 'tower' && (
                 (() => {
                   const tower = selectedWall.towers?.find((t) => t.id === selectedComponent.idOrIndex);
                   if (!tower) return null;
@@ -1645,7 +1787,7 @@ export const RightToolSidebar: React.FC = () => {
               )}
 
               {/* C. RAMPART BASTION (PLATFORM) INSPECTOR */}
-              {activeTool === 'walls' && selectedWall && selectedComponent?.type === 'box' && (
+              {(activeTool === 'building' || activeTool === 'walls') && selectedWall && selectedComponent?.type === 'box' && (
                 (() => {
                   const box = selectedWall.boxBastions?.find((b) => b.id === selectedComponent.idOrIndex);
                   if (!box) return null;
@@ -1772,7 +1914,7 @@ export const RightToolSidebar: React.FC = () => {
               )}
 
               {/* D. ARCHED GATEWAY INSPECTOR */}
-              {activeTool === 'walls' && selectedWall && selectedComponent?.type === 'gate' && (
+              {(activeTool === 'building' || activeTool === 'walls') && selectedWall && selectedComponent?.type === 'gate' && (
                 (() => {
                   const gate = selectedWall.gates?.find((g) => g.id === selectedComponent.idOrIndex);
                   if (!gate) return null;
@@ -1880,7 +2022,7 @@ export const RightToolSidebar: React.FC = () => {
               )}
 
               {/* E. PARENT WALL INSPECTOR */}
-              {activeTool === 'walls' && selectedWall && !selectedComponent && (
+              {(activeTool === 'building' || activeTool === 'walls') && selectedWall && !selectedComponent && (
                 <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
                   <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
                     <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
@@ -2277,10 +2419,281 @@ export const RightToolSidebar: React.FC = () => {
                 </div>
               )}
 
+              {/* FOUNDATION INSPECTOR */}
+              {(activeTool === 'building' || activeTool === 'walls') && selectedFoundation && (
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
+                      <TbBox className="w-4 h-4 text-[#B85F45]" />
+                      <span>Foundation Slab Specs</span>
+                    </div>
+                    <div className="text-[10px] text-[#8D7666]">
+                      {(selectedFoundation.length * 100).toFixed(0)}cm ×{' '}
+                      {(selectedFoundation.width * 100).toFixed(0)}cm
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">Name</label>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <input
+                        type="text"
+                        value={selectedFoundation.name || ''}
+                        onChange={(e) => updateFoundation(selectedFoundation.id, { name: e.target.value })}
+                        className="flex-1 px-2 py-1 bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-xs"
+                      />
+                      <button
+                        onClick={() => rollRandomName((name) => updateFoundation(selectedFoundation.id, { name }))}
+                        className="p-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[#4B382C] cursor-pointer"
+                        title="Random Name"
+                      >
+                        <TbDice5 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sliders */}
+                  <div className="space-y-2.5 pt-1 border-t border-[#D9C9B4]">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Height</span>
+                        <span className="text-[#8D7666]">
+                          {((selectedFoundation.height || 0.40) * 100).toFixed(0)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.10"
+                        max="3.00"
+                        step="0.05"
+                        value={selectedFoundation.height || 0.40}
+                        onChange={(e) =>
+                          updateFoundation(selectedFoundation.id, { height: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Vertical Offset</span>
+                        <span className="text-[#8D7666]">
+                          {((selectedFoundation.verticalOffset || 0.0) * 100).toFixed(0)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-0.50"
+                        max="2.00"
+                        step="0.05"
+                        value={selectedFoundation.verticalOffset || 0.0}
+                        onChange={(e) =>
+                          updateFoundation(selectedFoundation.id, { verticalOffset: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Tiling Repeat</span>
+                        <span className="text-[#8D7666]">
+                          {(selectedFoundation.tilingRepeat || 2.0).toFixed(1)}x
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1.0"
+                        max="10.0"
+                        step="0.5"
+                        value={selectedFoundation.tilingRepeat || 2.0}
+                        onChange={(e) =>
+                          updateFoundation(selectedFoundation.id, { tilingRepeat: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                    <button
+                      onClick={focusCamera}
+                      className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                    >
+                      Focus
+                    </button>
+                    <button
+                      onClick={() => {
+                        deleteFoundation(selectedFoundation.id);
+                        setSelectedFoundationId(null);
+                      }}
+                      className="flex-1 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer text-center"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STAIRS INSPECTOR */}
+              {(activeTool === 'building' || activeTool === 'walls') && selectedStair && (
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
+                      <TbStairs className="w-4 h-4 text-[#B85F45]" />
+                      <span>Stone Staircase Specs</span>
+                    </div>
+                    <div className="text-[10px] text-[#8D7666]">
+                      {selectedStair.points.length} waypoints
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">Name</label>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <input
+                        type="text"
+                        value={selectedStair.name || ''}
+                        onChange={(e) => updateStairName(selectedStair.id, e.target.value)}
+                        className="flex-1 px-2 py-1 bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-xs"
+                      />
+                      <button
+                        onClick={() => rollRandomName((name) => updateStairName(selectedStair.id, name))}
+                        className="p-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[#4B382C] cursor-pointer"
+                        title="Random Name"
+                      >
+                        <TbDice5 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Sliders */}
+                  <div className="space-y-2.5 pt-1 border-t border-[#D9C9B4]">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Stair Width</span>
+                        <span className="text-[#8D7666]">
+                          {(((selectedStair.settings?.stepWidth ?? 0.10)) * 100).toFixed(0)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.03"
+                        max="0.30"
+                        step="0.01"
+                        value={selectedStair.settings?.stepWidth ?? 0.10}
+                        onChange={(e) =>
+                          updateStairSettings(selectedStair.id, { stepWidth: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Tread Depth</span>
+                        <span className="text-[#8D7666]">
+                          {(((selectedStair.settings?.stepRun ?? 0.03)) * 100).toFixed(1)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.015"
+                        max="0.06"
+                        step="0.005"
+                        value={selectedStair.settings?.stepRun ?? 0.03}
+                        onChange={(e) =>
+                          updateStairSettings(selectedStair.id, { stepRun: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Rise</span>
+                        <span className="text-[#8D7666]">
+                          {(((selectedStair.settings?.stepRise ?? 0.015)) * 100).toFixed(1)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.005"
+                        max="0.03"
+                        step="0.002"
+                        value={selectedStair.settings?.stepRise ?? 0.015}
+                        onChange={(e) =>
+                          updateStairSettings(selectedStair.id, { stepRise: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Spacing</span>
+                        <span className="text-[#8D7666]">
+                          {(((selectedStair.settings?.stepSpacing ?? 0.03)) * 100).toFixed(1)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.01"
+                        max="0.10"
+                        step="0.005"
+                        value={selectedStair.settings?.stepSpacing ?? 0.03}
+                        onChange={(e) =>
+                          updateStairSettings(selectedStair.id, { stepSpacing: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Offset</span>
+                        <span className="text-[#8D7666]">
+                          {(((selectedStair.settings?.stepOffset ?? 0.0)) * 100).toFixed(1)} cm
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="-0.15"
+                        max="0.15"
+                        step="0.01"
+                        value={selectedStair.settings?.stepOffset ?? 0.0}
+                        onChange={(e) =>
+                          updateStairSettings(selectedStair.id, { stepOffset: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                    <button
+                      onClick={focusCamera}
+                      className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                    >
+                      Focus
+                    </button>
+                    <button
+                      onClick={() => {
+                        deleteStair(selectedStair.id);
+                        setSelectedStairId(null);
+                      }}
+                      className="flex-1 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer text-center"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* G. EMPTY SELECTION STATE */}
-              {!selectedWallId && !selectedComponent && !selectedSplineId && (
+              {!selectedWallId && !selectedComponent && !selectedSplineId && !selectedFoundationId && !selectedStairId && (
                 <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#8D7666] leading-relaxed">
-                  Click any wall, bastion, or path in the diorama or outliner above to adjust dimensions, rename, or delete it.
+                  Click any fort wall, bastion, foundation slab, or staircase in the diorama or outliner above to adjust dimensions, rename, or delete it.
                 </div>
               )}
             </div>

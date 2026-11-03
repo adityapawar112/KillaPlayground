@@ -125,14 +125,29 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
       onClick={(e) => {
         if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
         const editor = useEditorStore.getState();
-        if (editor.activeTool !== 'spline' || editor.splineMode !== 'select') return;
+        const isSelectMode =
+          (editor.activeTool === 'building' || editor.activeTool === 'walls')
+            ? editor.buildingMode === 'select'
+            : editor.activeTool === 'spline' && editor.splineMode === 'select';
+        if (!isSelectMode) return;
         e.stopPropagation();
         onSelect();
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
       onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
-      onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
-      onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        const editor = useEditorStore.getState();
+        const isSelectMode =
+          (editor.activeTool === 'building' || editor.activeTool === 'walls')
+            ? editor.buildingMode === 'select'
+            : editor.activeTool === 'spline' && (editor.splineMode === 'select' || editor.splineMode === 'transform');
+        if (isSelectMode) onHover(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        onHover(false);
+      }}
     >
       <mesh
         geometry={geometry}
@@ -230,14 +245,29 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
       onClick={(e) => {
         if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
         const editor = useEditorStore.getState();
-        if (editor.activeTool !== 'spline' || editor.splineMode !== 'select') return;
+        const isSelectMode =
+          (editor.activeTool === 'building' || editor.activeTool === 'walls')
+            ? editor.buildingMode === 'select'
+            : editor.activeTool === 'spline' && editor.splineMode === 'select';
+        if (!isSelectMode) return;
         e.stopPropagation();
         onSelect();
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
       onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
-      onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
-      onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        const editor = useEditorStore.getState();
+        const isSelectMode =
+          (editor.activeTool === 'building' || editor.activeTool === 'walls')
+            ? editor.buildingMode === 'select'
+            : editor.activeTool === 'spline' && (editor.splineMode === 'select' || editor.splineMode === 'transform');
+        if (isSelectMode) onHover(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        onHover(false);
+      }}
       name={`FlagGroup_${spline.id}`}
     >
       <instancedMesh
@@ -340,14 +370,29 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
       onClick={(e) => {
         if (e.button !== 0 && e.nativeEvent?.button !== 0) return;
         const editor = useEditorStore.getState();
-        if (editor.activeTool !== 'spline' || editor.splineMode !== 'select') return;
+        const isSelectMode =
+          (editor.activeTool === 'building' || editor.activeTool === 'walls')
+            ? editor.buildingMode === 'select'
+            : editor.activeTool === 'spline' && editor.splineMode === 'select';
+        if (!isSelectMode) return;
         e.stopPropagation();
         onSelect();
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
       onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
-      onPointerOver={(e) => { e.stopPropagation(); onHover(true); }}
-      onPointerOut={(e) => { e.stopPropagation(); onHover(false); }}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        const editor = useEditorStore.getState();
+        const isSelectMode =
+          (editor.activeTool === 'building' || editor.activeTool === 'walls')
+            ? editor.buildingMode === 'select'
+            : editor.activeTool === 'spline' && (editor.splineMode === 'select' || editor.splineMode === 'transform');
+        if (isSelectMode) onHover(true);
+      }}
+      onPointerOut={(e) => {
+        e.stopPropagation();
+        onHover(false);
+      }}
       name={`DiyaGroup_${spline.id}`}
     >
       <instancedMesh
@@ -375,11 +420,17 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
 export const SplineStructures: React.FC = () => {
   const {
     activeTool,
+    buildingMode,
     splines,
+    stairs,
     currentSplinePoints,
+    activeStairDraft,
     isDrawingSpline,
+    isDrawingStairs,
     selectedSplineId,
+    selectedStairId,
     setSelectedSplineId,
+    setSelectedStairId,
     hoveredElement,
     setHoveredElement,
     splineMode,
@@ -556,24 +607,40 @@ export const SplineStructures: React.FC = () => {
   return (
     <group name="SplineStructuresContainer">
       {/* 1. Interactive Draft Spline Curve & Nodes Preview */}
+      {((activeTool === 'building' || activeTool === 'walls') &&
+        buildingMode === 'stairs' &&
+        (isDrawingStairs || activeStairDraft.length > 0)) && (
+        <DraftSplinePreview points={activeStairDraft} />
+      )}
       {activeTool === 'spline' && splineMode === 'draw' && isDrawingSpline && currentSplinePoints.length > 0 && (
         <DraftSplinePreview points={currentSplinePoints} />
       )}
 
       {/* 2. Placed Spline Structures */}
       {splines.map((spline) => {
-        const isSelected = selectedSplineId === spline.id;
-        const isHovered = hoveredElement?.type === 'spline' && hoveredElement.id === spline.id;
+        const isSelected = selectedSplineId === spline.id || selectedStairId === spline.id;
+        const isHovered =
+          (hoveredElement?.type === 'spline' || hoveredElement?.type === 'stair') &&
+          hoveredElement.id === spline.id;
         const handleSelect = () => {
-          if (activeTool === 'spline' && (splineMode === 'select' || splineMode === 'transform')) {
+          const isSelectMode =
+            (activeTool === 'building' || activeTool === 'walls')
+              ? buildingMode === 'select'
+              : activeTool === 'spline' && (splineMode === 'select' || splineMode === 'transform');
+          if (isSelectMode) {
+            setSelectedStairId(spline.id);
             setSelectedSplineId(spline.id);
-            setToastMessage(`${spline.name || spline.type} selected.`);
+            setToastMessage(`${spline.name || 'Stone Staircase'} selected.`);
           }
         };
         const handleHover = (hovered: boolean) => {
-          if (activeTool === 'spline' && (splineMode === 'select' || splineMode === 'transform')) {
+          const isSelectMode =
+            (activeTool === 'building' || activeTool === 'walls')
+              ? buildingMode === 'select'
+              : activeTool === 'spline' && (splineMode === 'select' || splineMode === 'transform');
+          if (isSelectMode) {
             document.body.style.cursor = hovered ? 'pointer' : 'default';
-            setHoveredElement(hovered ? { type: 'spline', id: spline.id } : null);
+            setHoveredElement(hovered ? { type: 'stair', id: spline.id } : null);
           }
         };
         const dynamicKey = `${spline.id}_${spline.type}_${JSON.stringify(spline.settings || {})}`;

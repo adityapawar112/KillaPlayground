@@ -22,7 +22,7 @@ describe('surfaceToolInteraction', () => {
       selectedFoliageIds: ['banyan_broad_canopy'],
       foliageSubTool: 'scatter',
       selectedTextureId: 'dirt_01',
-      paintSubTool: 'brush',
+      paintSubTool: 'paint',
     });
 
     invalidateMock = vi.fn();
@@ -58,7 +58,7 @@ describe('surfaceToolInteraction', () => {
   });
 
   it('handles texture painting on structures without orbiting', () => {
-    useEditorStore.setState({ activeTool: 'texture', paintSubTool: 'brush' });
+    useEditorStore.setState({ activeTool: 'texture', paintSubTool: 'paint' });
 
     const handled = handleStructurePointerDown(mockEvent, invalidateMock);
     expect(handled).toBe(true);

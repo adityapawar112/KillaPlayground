@@ -108,6 +108,15 @@ export const TRANSLATIONS = {
         height: 'Plateau Height',
         angle: 'Slope Angle',
       },
+      building: {
+        label: 'Building',
+        fullLabel: 'Building Construction',
+        desc: 'Walls, foundations, stone stairs, and fortifications',
+        foundation: 'Foundation Slab',
+        stairs: 'Stone Stairs',
+        walls: 'Fort Walls',
+        fortifications: 'Fortifications',
+      },
       walls: {
         label: 'Walls',
         fullLabel: 'Fort Walls & Bastions',
@@ -222,8 +231,7 @@ export const TRANSLATIONS = {
       actions: 'Slider Adjustments & Quick Actions',
       toolKeys: [
         { key: '1', desc: 'Terrain Sculpting & Mud Shaping (1)' },
-        { key: '2', desc: 'Fort Walls, Bastions & Gates (2)' },
-        { key: '3', desc: 'Splines: Steps, Flags & Diyas (3)' },
+        { key: '2', desc: 'Building: Walls, Foundations, Stairs & Bastions (2)' },
         { key: '4', desc: 'Surface Texture Painting (4)' },
         { key: '5', desc: '3D Foliage & Nature Scatter (5)' },
         { key: '6', desc: 'Figurines & Historical Assets (6)' },
@@ -452,6 +460,15 @@ export const TRANSLATIONS = {
         height: 'पठाराची उंची',
         angle: 'उताराचा कोन',
       },
+      building: {
+        label: 'इमारत',
+        fullLabel: 'इमारत बांधकाम',
+        desc: 'तटबंदी, जोती (फाउंडेशन), दगडी पायऱ्या आणि बुरुज',
+        foundation: 'दगडी जोते',
+        stairs: 'दगडी पायऱ्या',
+        walls: 'तटबंदी',
+        fortifications: 'बुरुज व दरवाजे',
+      },
       walls: {
         label: 'तटबंदी',
         fullLabel: 'तटबंदी व बुरूज',
@@ -568,8 +585,7 @@ export const TRANSLATIONS = {
       actions: 'स्लायडर व संपादन क्रिया',
       toolKeys: [
         { key: '1', desc: 'माती शिल्पकला व टेकडी (1)' },
-        { key: '2', desc: 'तटबंदी, बुरुज व महादरवाजा (2)' },
-        { key: '3', desc: 'पायऱ्या, झेंडे व दिवे (3)' },
+        { key: '2', desc: 'इमारत बांधकाम: तटबंदी, जोती, पायऱ्या व बुरुज (2)' },
         { key: '4', desc: 'सतह पोत रंगकाम (4)' },
         { key: '5', desc: 'झाडे व नैसर्गिक झुडुपे (5)' },
         { key: '6', desc: 'मावळे व ऐतिहासिक साधने (6)' },
@@ -798,6 +814,15 @@ export const TRANSLATIONS = {
         height: 'पठार की ऊंचाई',
         angle: 'ढलान का कोण',
       },
+      building: {
+        label: 'निर्माण',
+        fullLabel: 'भवन निर्माण',
+        desc: 'दीवारें, चबूतरे (नींव), सीढ़ियां और बुर्ज',
+        foundation: 'पत्थर का चबूतरा',
+        stairs: 'पत्थर की सीढ़ियां',
+        walls: 'प्राचीर दीवारें',
+        fortifications: 'बुर्ज और दरवाज़े',
+      },
       walls: {
         label: 'दीवारें',
         fullLabel: 'तटबंदी व बुर्ज',
@@ -914,8 +939,7 @@ export const TRANSLATIONS = {
       actions: 'स्लाइडर व संपादन क्रियाएं',
       toolKeys: [
         { key: '1', desc: 'मिट्टी शिल्पकला व पहाड़ी (1)' },
-        { key: '2', desc: 'किले की दीवारें, बुर्ज व महादरवाजा (2)' },
-        { key: '3', desc: 'सीढ़ियां, ध्वज व दीये (3)' },
+        { key: '2', desc: 'भवन निर्माण: दीवारें, चबूतरे, सीढ़ियां व बुर्ज (2)' },
         { key: '4', desc: 'सतह पोत रंगाई (4)' },
         { key: '5', desc: 'वृक्ष व प्राकृतिक वनस्पति (5)' },
         { key: '6', desc: 'मावले व ऐतिहासिक वस्तुएं (6)' },

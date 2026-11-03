@@ -5,6 +5,8 @@ import {
   TbPointer,
   TbPencil,
   TbTower,
+  TbBox,
+  TbStairs,
   TbArrowsMove,
   TbMountain,
   TbMinus,
@@ -22,6 +24,7 @@ import {
 } from 'react-icons/tb';
 import {
   useEditorStore,
+  BuildingMode,
   WallMode,
   SplineMode,
   TerrainSubTool,
@@ -31,6 +34,8 @@ import {
 export const ToolModeSidebar: React.FC = () => {
   const {
     activeTool,
+    buildingMode,
+    setBuildingMode,
     wallMode,
     setWallMode,
     splineMode,
@@ -52,7 +57,7 @@ export const ToolModeSidebar: React.FC = () => {
   } = useEditorStore();
 
   // Only render when the active tool has distinct operational modes
-  if (!['walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool)) {
+  if (!['building', 'walls', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool)) {
     return null;
   }
 
@@ -111,53 +116,23 @@ export const ToolModeSidebar: React.FC = () => {
 
           {/* Vertical Buttons Column */}
           <div className="flex-1 overflow-y-auto no-scrollbar p-1.5 flex flex-col gap-2">
-            {/* A. WALL MODES: Select | Draw | Fortify */}
-            {activeTool === 'walls' && (
+            {/* A. UNIFIED BUILDING MODES: Select | Walls | Foundation | Stairs | Fortifications (Ticket 09) */}
+            {(activeTool === 'building' || activeTool === 'walls') && (
               <>
                 {[
-                  { id: 'select' as WallMode, label: 'Select', icon: TbPointer, title: 'Select fort walls, bastions, and gates' },
-                  { id: 'draw' as WallMode, label: 'Draw', icon: TbPencil, title: 'Click on terrain to draft perimeter wall path' },
-                  { id: 'fortify' as WallMode, label: 'Fortify', icon: TbTower, title: 'Place towers, bastions, and arched gateways' },
+                  { id: 'select' as BuildingMode, label: 'Select', icon: TbPointer, title: 'Select fort walls, bastions, foundations, and stairs' },
+                  { id: 'walls' as BuildingMode, label: 'Walls', icon: TbPencil, title: 'Click on terrain to draft perimeter wall circuit' },
+                  { id: 'foundation' as BuildingMode, label: 'Foundation', icon: TbBox, title: 'Click and drag across terrain to build stone foundation slabs' },
+                  { id: 'stairs' as BuildingMode, label: 'Stairs', icon: TbStairs, title: 'Click along slopes to build stone staircases' },
+                  { id: 'fortifications' as BuildingMode, label: 'Fortify', icon: TbTower, title: 'Place towers, bastions, and arched gateways along walls' },
                 ].map((m) => {
                   const Icon = m.icon;
-                  const isActive = wallMode === m.id;
+                  const isActive = (buildingMode || 'walls') === m.id;
 
                   return (
                     <button
                       key={m.id}
-                      onClick={() => setWallMode(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm ring-1 ring-[#38281E]'
-                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
-                      }`}
-                    >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[10px] mt-1 leading-tight">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </>
-            )}
-
-            {/* B. SPLINE MODES: Select | Draw | Transform */}
-            {activeTool === 'spline' && (
-              <>
-                {[
-                  { id: 'select' as SplineMode, label: 'Select', icon: TbPointer, title: 'Click to select and inspect placed spline paths' },
-                  { id: 'draw' as SplineMode, label: 'Draw', icon: TbPencil, title: 'Click on terrain to draft step, flag, or diya paths' },
-                  { id: 'transform' as SplineMode, label: 'Transform', icon: TbArrowsMove, title: 'Select and move, rotate, or scale paths' },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = splineMode === m.id;
-
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setSplineMode(m.id)}
+                      onClick={() => setBuildingMode(m.id)}
                       title={m.title}
                       className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
                         isActive

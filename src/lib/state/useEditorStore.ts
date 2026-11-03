@@ -24,8 +24,33 @@ import { foliageTextureManager } from '../foliage/foliageTextureManager';
 import { PropSubTool } from '../figurines/figurineTypes';
 export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool, PropSubTool };
 
+export type BuildingMode = 'select' | 'walls' | 'foundation' | 'stairs' | 'fortifications';
+
+export interface FoundationSlab {
+  id: string;
+  name?: string;
+  x: number; // center x in meters
+  z: number; // center z in meters
+  y: number; // base terrain elevation in meters
+  length: number; // dx in meters (default 2.0m)
+  width: number;  // dz in meters (default 2.0m)
+  height: number; // slab thickness: 0.10m to 3.00m (default 0.40m = 40cm)
+  verticalOffset: number; // -0.50m to +2.00m (default 0.0m)
+  tilingRepeat: number; // 1 to 10 (default 3)
+  rotationY?: number;
+  createdAt: number;
+}
+
+export interface StairPath {
+  id: string;
+  name?: string;
+  points: [number, number, number][];
+  settings?: SplineSettings;
+  createdAt: number;
+}
+
 export interface HoveredElement {
-  type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop';
+  type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop' | 'foundation' | 'stair';
   id: string;
 }
 
@@ -38,6 +63,8 @@ export const SavedProjectSchema = z.object({
   waterMode: z.string().optional().default('tarpaulin'),
   splines: z.array(z.any()).default([]),
   walls: z.array(z.any()).optional().default([]),
+  foundations: z.array(z.any()).optional().default([]),
+  stairs: z.array(z.any()).optional().default([]),
   citadelKeeps: z.array(z.any()).optional().default([]),
   placedProps: z.array(z.any()).default([]),
   pondWaterFeatures: z.array(z.any()).optional().default([]),
@@ -48,6 +75,7 @@ export const SavedProjectSchema = z.object({
 export type ToolType =
   // 6 Primary Killa-First Tools
   | 'terrain'
+  | 'building'
   | 'walls'
   | 'spline'
   | 'texture'
@@ -200,6 +228,8 @@ interface EditorState {
   walls: WallPath[];
   wallMode: WallMode;
   setWallMode: (mode: WallMode) => void;
+  buildingMode: BuildingMode;
+  setBuildingMode: (mode: BuildingMode) => void;
   activeWallDraft: WallPoint[];
   wallSettings: WallSettings;
   wallSubTool: WallSubTool;
@@ -250,6 +280,40 @@ interface EditorState {
   solidifyCurrentWall: () => void;
   setWalls: (walls: WallPath[]) => void;
   setCitadelKeeps: (keeps: CitadelKeep[]) => void;
+
+  // Foundation Slabs State (Ticket 09)
+  foundations: FoundationSlab[];
+  selectedFoundationId: string | null;
+  activeFoundationDraft: { x1: number; z1: number; x2: number; z2: number; y: number } | null;
+  defaultFoundationHeight: number;
+  defaultFoundationOffset: number;
+  defaultFoundationTiling: number;
+  addFoundation: (slab: Omit<FoundationSlab, 'id' | 'createdAt'>) => string;
+  updateFoundation: (id: string, updates: Partial<FoundationSlab>) => void;
+  deleteFoundation: (id: string) => void;
+  setSelectedFoundationId: (id: string | null) => void;
+  setActiveFoundationDraft: (draft: { x1: number; z1: number; x2: number; z2: number; y: number } | null) => void;
+  setDefaultFoundationHeight: (height: number) => void;
+  setDefaultFoundationOffset: (offset: number) => void;
+  setDefaultFoundationTiling: (tiling: number) => void;
+  setFoundations: (foundations: FoundationSlab[]) => void;
+
+  // Stone Stairs State (Ticket 09)
+  stairs: StairPath[];
+  selectedStairId: string | null;
+  activeStairDraft: [number, number, number][];
+  isDrawingStairs: boolean;
+  stairSettings: SplineSettings;
+  startStairs: () => void;
+  addStairPoint: (point: [number, number, number]) => void;
+  finishStairs: (settings?: SplineSettings) => string | null;
+  cancelStairs: () => void;
+  deleteStair: (id: string) => void;
+  setSelectedStairId: (id: string | null) => void;
+  updateStairSettings: (id: string, settings: Partial<SplineSettings>) => void;
+  updateStairName: (id: string, name: string) => void;
+  setStairSettings: (settings: Partial<SplineSettings>) => void;
+  setStairs: (stairs: StairPath[]) => void;
 
   // Spline Drawing State
   splineMode: SplineMode;
@@ -611,10 +675,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setWallMode: (wallMode) =>
     set((state) => ({
       wallMode,
+      buildingMode: wallMode === 'draw' ? 'walls' : wallMode === 'fortify' ? 'fortifications' : 'select',
       selectedWallId: wallMode === 'draw' ? null : state.selectedWallId,
       selectedComponent: wallMode === 'draw' ? null : state.selectedComponent,
       activeWallDraft: [],
       activeStamp: wallMode === 'fortify' ? (state.activeStamp || 'tower') : null,
+      wallSnapPreview: null,
+      hoveredElement: null,
+    })),
+  buildingMode: 'walls',
+  setBuildingMode: (buildingMode) =>
+    set((state) => ({
+      buildingMode,
+      wallMode: buildingMode === 'walls' ? 'draw' : buildingMode === 'fortifications' ? 'fortify' : 'select',
+      selectedWallId: buildingMode === 'walls' || buildingMode === 'foundation' || buildingMode === 'stairs' ? null : state.selectedWallId,
+      selectedComponent: buildingMode === 'walls' || buildingMode === 'foundation' || buildingMode === 'stairs' ? null : state.selectedComponent,
+      selectedFoundationId: buildingMode === 'walls' || buildingMode === 'fortifications' || buildingMode === 'stairs' ? null : state.selectedFoundationId,
+      selectedStairId: buildingMode === 'walls' || buildingMode === 'fortifications' || buildingMode === 'foundation' ? null : state.selectedStairId,
+      activeWallDraft: buildingMode !== 'walls' ? [] : state.activeWallDraft,
+      activeFoundationDraft: null,
+      activeStairDraft: buildingMode !== 'stairs' ? [] : state.activeStairDraft,
+      isDrawingStairs: false,
+      activeStamp: buildingMode === 'fortifications' ? (state.activeStamp || 'tower') : null,
       wallSnapPreview: null,
       hoveredElement: null,
     })),
@@ -1051,6 +1133,154 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setWalls: (walls) => set({ walls }),
   setCitadelKeeps: (citadelKeeps) => set({ citadelKeeps }),
 
+  // Foundation Slabs Implementation (Ticket 09)
+  foundations: [],
+  selectedFoundationId: null,
+  activeFoundationDraft: null,
+  defaultFoundationHeight: 0.40,
+  defaultFoundationOffset: 0.0,
+  defaultFoundationTiling: 3.0,
+
+  addFoundation: (slab) => {
+    pushUndoSnapshot();
+    const id = `foundation_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newSlab: FoundationSlab = {
+      ...slab,
+      id,
+      name: slab.name || 'Stone Foundation',
+      createdAt: Date.now(),
+    };
+    set((state) => ({
+      foundations: [...state.foundations, newSlab],
+      selectedFoundationId: id,
+    }));
+    return id;
+  },
+  updateFoundation: (id, updates) => {
+    set((state) => ({
+      foundations: state.foundations.map((f) => (f.id === id ? { ...f, ...updates } : f)),
+    }));
+  },
+  deleteFoundation: (id) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      foundations: state.foundations.filter((f) => f.id !== id),
+      selectedFoundationId: state.selectedFoundationId === id ? null : state.selectedFoundationId,
+      hoveredElement: state.hoveredElement?.id === id ? null : state.hoveredElement,
+    }));
+  },
+  setSelectedFoundationId: (id) => set({ selectedFoundationId: id }),
+  setActiveFoundationDraft: (draft) => set({ activeFoundationDraft: draft }),
+  setDefaultFoundationHeight: (defaultFoundationHeight) => set({ defaultFoundationHeight }),
+  setDefaultFoundationOffset: (defaultFoundationOffset) => set({ defaultFoundationOffset }),
+  setDefaultFoundationTiling: (defaultFoundationTiling) => set({ defaultFoundationTiling }),
+  setFoundations: (foundations) => set({ foundations, selectedFoundationId: null }),
+
+  // Stone Stairs Implementation (Ticket 09)
+  stairs: [],
+  selectedStairId: null,
+  activeStairDraft: [],
+  isDrawingStairs: false,
+  stairSettings: {
+    stepWidth: 0.12,
+    stepRun: 0.035,
+    stepRise: 0.015,
+    stepOffset: 0.0,
+    stepSpacing: 0.03,
+  },
+  startStairs: () =>
+    set({
+      isDrawingStairs: true,
+      activeStairDraft: [],
+      isDrawingSpline: true,
+      currentSplinePoints: [],
+    }),
+  addStairPoint: (pt) =>
+    set((state) => ({
+      activeStairDraft: [...state.activeStairDraft, pt],
+      currentSplinePoints: [...state.currentSplinePoints, pt],
+    })),
+  finishStairs: (settings) => {
+    const { activeStairDraft, stairs, stairSettings, splines } = get();
+    if (activeStairDraft.length >= 2) {
+      pushUndoSnapshot();
+      const id = `stairs_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const resolvedSettings = settings ? { ...stairSettings, ...settings } : { ...stairSettings };
+      const newStair: StairPath = {
+        id,
+        name: `Stone Steps ${stairs.length + 1}`,
+        points: activeStairDraft,
+        settings: resolvedSettings,
+        createdAt: Date.now(),
+      };
+      const mirroredSpline: SplinePath = {
+        id,
+        name: newStair.name,
+        points: activeStairDraft,
+        type: 'steps',
+        settings: resolvedSettings,
+      };
+      set({
+        stairs: [...stairs, newStair],
+        splines: [...splines, mirroredSpline],
+        isDrawingStairs: false,
+        activeStairDraft: [],
+        isDrawingSpline: false,
+        currentSplinePoints: [],
+        selectedStairId: null,
+      });
+      return id;
+    } else {
+      set({
+        isDrawingStairs: false,
+        activeStairDraft: [],
+        isDrawingSpline: false,
+        currentSplinePoints: [],
+      });
+      return null;
+    }
+  },
+  cancelStairs: () =>
+    set({
+      isDrawingStairs: false,
+      activeStairDraft: [],
+      isDrawingSpline: false,
+      currentSplinePoints: [],
+    }),
+  deleteStair: (id) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      stairs: state.stairs.filter((s) => s.id !== id),
+      splines: state.splines.filter((s) => s.id !== id),
+      selectedStairId: state.selectedStairId === id ? null : state.selectedStairId,
+      hoveredElement: state.hoveredElement?.id === id ? null : state.hoveredElement,
+    }));
+  },
+  setSelectedStairId: (id) => set({ selectedStairId: id }),
+  updateStairSettings: (id, settings) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      stairs: state.stairs.map((s) =>
+        s.id === id ? { ...s, settings: { ...s.settings, ...settings } } : s
+      ),
+      splines: state.splines.map((s) =>
+        s.id === id ? { ...s, settings: { ...s.settings, ...settings } } : s
+      ),
+    }));
+  },
+  updateStairName: (id, name) => {
+    set((state) => ({
+      stairs: state.stairs.map((s) => (s.id === id ? { ...s, name } : s)),
+      splines: state.splines.map((s) => (s.id === id ? { ...s, name } : s)),
+    }));
+  },
+  setStairSettings: (settings) =>
+    set((state) => ({
+      stairSettings: { ...state.stairSettings, ...settings },
+      splineSettings: { ...state.splineSettings, ...settings },
+    })),
+  setStairs: (stairs) => set({ stairs, selectedStairId: null }),
+
   splineMode: 'draw',
   setSplineMode: (splineMode) =>
     set((state) => ({
@@ -1268,7 +1498,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   exportProjectData: () => {
-    const { splines, walls, placedProps, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const { splines, walls, foundations, stairs, placedProps, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode } = get();
     const payload = {
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
@@ -1279,6 +1509,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       waterMode,
       splines,
       walls,
+      foundations: foundations || [],
+      stairs: stairs || [],
       placedProps,
       pondWaterFeatures,
       foliageInstances: foliageInstances || [],
@@ -1296,6 +1528,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
       const data = parsed.data;
 
+      const importedStairs: StairPath[] =
+        (data as any).stairs && (data as any).stairs.length > 0
+          ? (data as any).stairs
+          : (data.splines || [])
+              .filter((s: any) => s.type === 'steps')
+              .map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                points: s.points,
+                settings: s.settings,
+                createdAt: s.createdAt || Date.now(),
+              }));
+
       set({
         fortTitle: data.fortTitle,
         builderName: data.builderName,
@@ -1304,6 +1549,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         waterMode: data.waterMode as any,
         splines: data.splines,
         walls: (data as any).walls || [],
+        foundations: (data as any).foundations || [],
+        stairs: importedStairs,
         placedProps: data.placedProps,
         pondWaterFeatures: data.pondWaterFeatures || [],
         foliageInstances: (data as any).foliageInstances || [],
@@ -1331,6 +1578,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedSplineId: null,
       currentSplinePoints: [],
       isDrawingSpline: false,
+      selectedFoundationId: null,
+      activeFoundationDraft: null,
+      selectedStairId: null,
+      activeStairDraft: [],
+      isDrawingStairs: false,
       selectedPropId: null,
       hoveredElement: null,
     });
@@ -1373,8 +1625,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         type: resolvedType,
         settings: resolvedSettings,
       };
+      const extraStairs =
+        resolvedType === 'steps'
+          ? [
+              ...get().stairs,
+              {
+                id,
+                name: `Stone Steps ${get().stairs.length + 1}`,
+                points: currentSplinePoints,
+                settings: resolvedSettings,
+                createdAt: Date.now(),
+              },
+            ]
+          : get().stairs;
       set({
         splines: [...splines, newSpline],
+        stairs: extraStairs,
         isDrawingSpline: false,
         currentSplinePoints: [],
         selectedSplineId: null,

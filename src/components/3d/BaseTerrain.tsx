@@ -14,7 +14,7 @@ import {
 import { createTerrainMaterial } from './TerrainMaterial';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
-import { calculateMagneticSnap } from '@/lib/walls/wallGeometry';
+import { calculateMagneticSnap, sampleBilinearHeight } from '@/lib/walls/wallGeometry';
 import { TEXTURE_MANIFEST, getTextureById } from '@/lib/textures/textureManifest';
 import { loadTexturesIntoArray } from '@/lib/terrain/terrainPaintBuffer';
 import { FOLIAGE_MANIFEST, getFoliageById } from '@/lib/foliage/foliageManifest';
@@ -179,6 +179,9 @@ export const BaseTerrainContent: React.FC = () => {
   const isPaintingRef = useRef(false);
   const isDrawingWallRef = useRef(false);
   const lastWallPointRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const isDraggingFoundationRef = useRef(false);
+  const foundationAnchorRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const isDrawingStairsRef = useRef(false);
   const isDrawingSplineRef = useRef(false);
   const lastSplinePointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
@@ -476,13 +479,13 @@ export const BaseTerrainContent: React.FC = () => {
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
 
-      // Handle Walls Tool Drawing & Stamping
-      if (editor.activeTool === 'walls') {
+      // Handle Building / Walls Tool Actions (Ticket 09)
+      if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
         if (e.button !== 0 || e.altKey) return;
         e.stopPropagation();
 
-        // A. Magnetic Stamp placement (Fortify mode only)
-        if (editor.wallMode === 'fortify' && editor.activeStamp) {
+        // A. Magnetic Stamp placement (Fortifications mode)
+        if ((editor.buildingMode === 'fortifications' || editor.wallMode === 'fortify') && editor.activeStamp) {
           const snap = calculateMagneticSnap(
             editor.activeStamp,
             e.point,
@@ -517,8 +520,8 @@ export const BaseTerrainContent: React.FC = () => {
           return;
         }
 
-        // B. Draw mode: Draw points / close loop
-        if (editor.wallMode === 'draw') {
+        // B. Walls mode: Draw points / close loop
+        if (editor.buildingMode === 'walls' || (editor.activeTool === 'walls' && editor.wallMode === 'draw')) {
           const draft = editor.activeWallDraft;
           if (draft.length >= 3) {
             const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
@@ -540,8 +543,61 @@ export const BaseTerrainContent: React.FC = () => {
           return;
         }
 
-        // C. Select mode: Select wall if clicked nearby
-        if (editor.wallMode === 'select') {
+        // C. Foundation mode: Drag-to-build rectangular slab
+        if (editor.buildingMode === 'foundation') {
+          if (controls) {
+            controls.enabled = false;
+          }
+          isDraggingFoundationRef.current = true;
+          foundationAnchorRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          editor.setActiveFoundationDraft({
+            x1: e.point.x,
+            z1: e.point.z,
+            x2: e.point.x,
+            z2: e.point.z,
+            y: e.point.y,
+          });
+          invalidate();
+          return;
+        }
+
+        // D. Stairs mode: click along slope to place stone steps path
+        if (editor.buildingMode === 'stairs') {
+          if (controls) {
+            controls.enabled = false;
+          }
+          isDrawingStairsRef.current = true;
+          if (!editor.isDrawingStairs) {
+            editor.startStairs();
+          }
+          editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+          invalidate();
+          return;
+        }
+
+        // E. Select mode: Select foundation, stairs, or wall if clicked nearby
+        if (editor.buildingMode === 'select' || editor.wallMode === 'select') {
+          // Check foundation slabs first
+          let closestFoundationDist = Infinity;
+          let targetFoundationId: string | null = null;
+          for (const f of editor.foundations) {
+            const d = Math.hypot(e.point.x - f.x, e.point.z - f.z);
+            const radius = Math.max(f.length, f.width) / 2;
+            if (d < radius + 0.3 && d < closestFoundationDist) {
+              closestFoundationDist = d;
+              targetFoundationId = f.id;
+            }
+          }
+          if (targetFoundationId) {
+            editor.setSelectedFoundationId(targetFoundationId);
+            editor.setSelectedWallId(null);
+            editor.setSelectedStairId(null);
+            editor.setToastMessage('Stone foundation slab selected.');
+            invalidate();
+            return;
+          }
+
+          // Check walls
           let closestDist = Infinity;
           let targetWallId: string | null = null;
           for (const wall of editor.walls) {
@@ -556,10 +612,12 @@ export const BaseTerrainContent: React.FC = () => {
           if (targetWallId && closestDist < 0.6) {
             editor.setSelectedWallId(targetWallId);
             editor.setSelectedComponent(null);
+            editor.setSelectedFoundationId(null);
+            editor.setSelectedStairId(null);
             editor.setToastMessage('Fort wall selected.');
             invalidate();
+            return;
           }
-          return;
         }
       }
 
@@ -776,11 +834,29 @@ export const BaseTerrainContent: React.FC = () => {
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
 
-      if (editor.activeTool === 'walls') {
+      if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
         if (cursorVisible) setCursorVisible(false);
 
-        // Magnetic snap hologram tracking (Fortify mode only)
-        if (editor.wallMode === 'fortify' && editor.activeStamp) {
+        // Foundation drag tracking (Ticket 09)
+        if (
+          editor.buildingMode === 'foundation' &&
+          isDraggingFoundationRef.current &&
+          foundationAnchorRef.current
+        ) {
+          e.stopPropagation();
+          editor.setActiveFoundationDraft({
+            x1: foundationAnchorRef.current.x,
+            z1: foundationAnchorRef.current.z,
+            x2: e.point.x,
+            z2: e.point.z,
+            y: foundationAnchorRef.current.y,
+          });
+          invalidate();
+          return;
+        }
+
+        // Magnetic snap hologram tracking (Fortifications mode only)
+        if ((editor.buildingMode === 'fortifications' || editor.wallMode === 'fortify') && editor.activeStamp) {
           const snap = calculateMagneticSnap(
             editor.activeStamp,
             e.point,
@@ -797,7 +873,7 @@ export const BaseTerrainContent: React.FC = () => {
           editor.setWallSnapPreview(null);
         }
 
-        if (editor.wallMode === 'draw' && isDrawingWallRef.current && lastWallPointRef.current) {
+        if ((editor.buildingMode === 'walls' || editor.wallMode === 'draw') && isDrawingWallRef.current && lastWallPointRef.current) {
           e.stopPropagation();
           const dx = e.point.x - lastWallPointRef.current.x;
           const dz = e.point.z - lastWallPointRef.current.z;
@@ -957,6 +1033,47 @@ export const BaseTerrainContent: React.FC = () => {
   );
 
   const handlePointerUp = useCallback(() => {
+    if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
+      const editor = useEditorStore.getState();
+      const draft = editor.activeFoundationDraft;
+      if (draft) {
+        const dx = Math.abs(draft.x2 - draft.x1);
+        const dz = Math.abs(draft.z2 - draft.z1);
+        if (dx >= 0.15 && dz >= 0.15) {
+          const cx = (draft.x1 + draft.x2) / 2;
+          const cz = (draft.z1 + draft.z2) / 2;
+          const baseHeight = sampleBilinearHeight(stateBuffer, cx, cz);
+          editor.addFoundation({
+            name: `Stone Foundation ${editor.foundations.length + 1}`,
+            x: cx,
+            z: cz,
+            y: baseHeight,
+            length: dx,
+            width: dz,
+            height: editor.defaultFoundationHeight || 0.40,
+            verticalOffset: editor.defaultFoundationOffset || 0.0,
+            tilingRepeat: editor.defaultFoundationTiling || 3.0,
+          });
+          editor.setToastMessage('Stone foundation slab constructed!');
+        }
+      }
+      editor.setActiveFoundationDraft(null);
+      isDraggingFoundationRef.current = false;
+      foundationAnchorRef.current = null;
+      if (controls) {
+        controls.enabled = true;
+      }
+      invalidate();
+    }
+
+    if (isDrawingStairsRef.current) {
+      isDrawingStairsRef.current = false;
+      if (controls) {
+        controls.enabled = true;
+      }
+      invalidate();
+    }
+
     if (isPaintingRef.current) {
       isPaintingRef.current = false;
       if (controls) {
@@ -1007,6 +1124,47 @@ export const BaseTerrainContent: React.FC = () => {
   // Global window pointerup to catch pointer released outside mesh
   useEffect(() => {
     const handleGlobalPointerUp = () => {
+      if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
+        const editor = useEditorStore.getState();
+        const draft = editor.activeFoundationDraft;
+        if (draft) {
+          const dx = Math.abs(draft.x2 - draft.x1);
+          const dz = Math.abs(draft.z2 - draft.z1);
+          if (dx >= 0.15 && dz >= 0.15) {
+            const cx = (draft.x1 + draft.x2) / 2;
+            const cz = (draft.z1 + draft.z2) / 2;
+            const baseHeight = sampleBilinearHeight(stateBuffer, cx, cz);
+            editor.addFoundation({
+              name: `Stone Foundation ${editor.foundations.length + 1}`,
+              x: cx,
+              z: cz,
+              y: baseHeight,
+              length: dx,
+              width: dz,
+              height: editor.defaultFoundationHeight || 0.40,
+              verticalOffset: editor.defaultFoundationOffset || 0.0,
+              tilingRepeat: editor.defaultFoundationTiling || 3.0,
+            });
+            editor.setToastMessage('Stone foundation slab constructed!');
+          }
+        }
+        editor.setActiveFoundationDraft(null);
+        isDraggingFoundationRef.current = false;
+        foundationAnchorRef.current = null;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
+      }
+
+      if (isDrawingStairsRef.current) {
+        isDrawingStairsRef.current = false;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
+      }
+
       if (isPaintingRef.current) {
         isPaintingRef.current = false;
         if (controls) {

@@ -329,7 +329,7 @@ graph TD
 
 ## Ticket 09: Unified Building Construction Tool & Foundation Builder
 
-- **Status**: `ready-for-agent`
+- **Status**: completed
 - **Blocked by**: `Ticket 04`, `Ticket 05`, `Ticket 08`
 - **Delivers**:
   - **Tool Consolidation & Spline Retirement**:
@@ -352,14 +352,14 @@ graph TD
     - Element Properties Inspector allows real-time dimension, offset, elevation, and tiling adjustments for selected foundations and stairs.
 
 ### Acceptance Criteria
-- [ ] Top toolbar features "Building" tool; standalone Spline tool is completely removed.
-- [ ] ToolModeSidebar renders the 5 operational modes: Select, Walls, Foundation, Stairs, Fortifications.
-- [ ] In Foundation mode, dragging across terrain displays a live translucent rectangular ghost box.
-- [ ] Releasing mouse builds a solid foundation slab textured with stone bricks on sides and dark stone floor on top.
-- [ ] Foundation height, vertical offset, length, width, and tiling repeat adjust interactively via sliders.
-- [ ] In Stairs mode, clicking along slopes creates walkable stone staircases with adjustable offset and spacing.
-- [ ] Wall drafting and magnetic snap fortifications function without regression.
-- [ ] All building components can be selected, inspected, renamed, and deleted in the Right Outliner.
+- [x] Top toolbar features "Building" tool; standalone Spline tool is completely removed.
+- [x] ToolModeSidebar renders the 5 operational modes: Select, Walls, Foundation, Stairs, Fortifications.
+- [x] In Foundation mode, dragging across terrain displays a live translucent rectangular ghost box.
+- [x] Releasing mouse builds a solid foundation slab textured with stone bricks on sides and dark stone floor on top.
+- [x] Foundation height, vertical offset, length, width, and tiling repeat adjust interactively via sliders.
+- [x] In Stairs mode, clicking along slopes creates walkable stone staircases with adjustable offset and spacing.
+- [x] Wall drafting and magnetic snap fortifications function without regression.
+- [x] All building components can be selected, inspected, renamed, and deleted in the Right Outliner.
 
 ---
 

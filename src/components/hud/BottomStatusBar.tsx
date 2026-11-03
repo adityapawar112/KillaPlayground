@@ -10,6 +10,7 @@ export const BottomStatusBar: React.FC = () => {
     showBottomStatusBar,
     toggleBottomStatusBar,
     activeTool,
+    buildingMode,
     terrainSubTool,
     wallMode,
     splineMode,
@@ -43,9 +44,12 @@ export const BottomStatusBar: React.FC = () => {
           default:
             return 'Sculpt Terrain';
         }
+      case 'building':
       case 'walls':
-        if (wallMode === 'select') return 'Select Fort Wall / Bastion';
-        if (wallMode === 'fortify') return 'Place Bastion / Tower';
+        if (buildingMode === 'select') return 'Select Structure';
+        if (buildingMode === 'foundation') return 'Drag to Build Foundation';
+        if (buildingMode === 'stairs') return 'Draft Stone Stairs';
+        if (buildingMode === 'fortifications') return 'Place Bastion / Tower';
         return 'Draft Wall Node';
       case 'spline':
         if (splineMode === 'select') return 'Select Structure Path';

@@ -25,7 +25,7 @@ import {
   clearPaintBuffer,
   PaintBrushOptions,
 } from './terrainPaintBuffer';
-import { useEditorStore, PondWaterFeature, FoliageInstance, SplinePath, PlacedProp } from '../state/useEditorStore';
+import { useEditorStore, PondWaterFeature, FoliageInstance, SplinePath, PlacedProp, FoundationSlab, StairPath } from '../state/useEditorStore';
 import { WallPath, CitadelKeep } from '../walls/wallTypes';
 
 interface TerrainState {
@@ -75,6 +75,10 @@ const foliageUndoStack: FoliageInstance[][] = [];
 const foliageRedoStack: FoliageInstance[][] = [];
 const splineUndoStack: SplinePath[][] = [];
 const splineRedoStack: SplinePath[][] = [];
+const foundationUndoStack: FoundationSlab[][] = [];
+const foundationRedoStack: FoundationSlab[][] = [];
+const stairUndoStack: StairPath[][] = [];
+const stairRedoStack: StairPath[][] = [];
 const propUndoStack: PlacedProp[][] = [];
 const propRedoStack: PlacedProp[][] = [];
 
@@ -231,6 +235,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       citadelUndoStack.shift();
       foliageUndoStack.shift();
       splineUndoStack.shift();
+      foundationUndoStack.shift();
+      stairUndoStack.shift();
       propUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
@@ -240,6 +246,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
     foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
     splineUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
+    foundationUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
+    stairUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
     propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
     redoStack.length = 0;
     paintRedoStack.length = 0;
@@ -248,6 +256,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     citadelRedoStack.length = 0;
     foliageRedoStack.length = 0;
     splineRedoStack.length = 0;
+    foundationRedoStack.length = 0;
+    stairRedoStack.length = 0;
     propRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
@@ -259,6 +269,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     citadelUndoStack.length > 0 ||
     foliageUndoStack.length > 0 ||
     splineUndoStack.length > 0 ||
+    foundationUndoStack.length > 0 ||
+    stairUndoStack.length > 0 ||
     propUndoStack.length > 0,
   canRedo: () =>
     redoStack.length > 0 ||
@@ -267,6 +279,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     citadelRedoStack.length > 0 ||
     foliageRedoStack.length > 0 ||
     splineRedoStack.length > 0 ||
+    foundationRedoStack.length > 0 ||
+    stairRedoStack.length > 0 ||
     propRedoStack.length > 0,
 
   undo: () => {
@@ -277,6 +291,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       citadelUndoStack.length === 0 &&
       foliageUndoStack.length === 0 &&
       splineUndoStack.length === 0 &&
+      foundationUndoStack.length === 0 &&
+      stairUndoStack.length === 0 &&
       propUndoStack.length === 0
     )
       return false;
@@ -324,6 +340,18 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       useEditorStore.getState().setSplines(prevSplines);
     }
 
+    if (foundationUndoStack.length > 0) {
+      const prevFoundations = foundationUndoStack.pop()!;
+      foundationRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
+      useEditorStore.getState().setFoundations(prevFoundations);
+    }
+
+    if (stairUndoStack.length > 0) {
+      const prevStairs = stairUndoStack.pop()!;
+      stairRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
+      useEditorStore.getState().setStairs(prevStairs);
+    }
+
     if (propUndoStack.length > 0) {
       const prevProps = propUndoStack.pop()!;
       propRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
@@ -347,6 +375,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       citadelRedoStack.length === 0 &&
       foliageRedoStack.length === 0 &&
       splineRedoStack.length === 0 &&
+      foundationRedoStack.length === 0 &&
+      stairRedoStack.length === 0 &&
       propRedoStack.length === 0
     )
       return false;
@@ -392,6 +422,18 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       const nextSplines = splineRedoStack.pop()!;
       splineUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
       useEditorStore.getState().setSplines(nextSplines);
+    }
+
+    if (foundationRedoStack.length > 0) {
+      const nextFoundations = foundationRedoStack.pop()!;
+      foundationUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
+      useEditorStore.getState().setFoundations(nextFoundations);
+    }
+
+    if (stairRedoStack.length > 0) {
+      const nextStairs = stairRedoStack.pop()!;
+      stairUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
+      useEditorStore.getState().setStairs(nextStairs);
     }
 
     if (propRedoStack.length > 0) {

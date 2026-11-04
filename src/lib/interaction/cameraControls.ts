@@ -26,10 +26,17 @@ export interface CameraControlButtons {
  * Middle-click is permanently PAN (2).
  */
 export function getOrbitMouseButtons(
-  _tool?: ToolType,
+  tool?: ToolType,
   _wallMode?: WallMode,
   _splineMode?: SplineMode
 ): CameraControlButtons {
+  if (tool === 'view') {
+    return {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: THREE.MOUSE.ROTATE,
+    };
+  }
   return {
     LEFT: -1 as unknown as THREE.MOUSE,
     MIDDLE: THREE.MOUSE.PAN,

@@ -142,5 +142,48 @@ describe('Lighting State Management in Editor Store', () => {
     const updated = useEditorStore.getState().placedLights.find((l) => l.id === id);
     expect(updated?.burstHeight).toBe(1.8);
   });
+
+  it('manages time of day and celestial sun/moon direction properties', () => {
+    const store = useEditorStore.getState();
+
+    // Default daytime state
+    store.setTimeOfDay(14.0);
+    expect(useEditorStore.getState().timeOfDay).toBe(14.0);
+    expect(useEditorStore.getState().nightMode).toBe(false);
+
+    // Solar noon preset
+    store.setSunDirectionPreset('noon');
+    let state = useEditorStore.getState();
+    expect(state.timeOfDay).toBe(12.0);
+    expect(state.sunElevation).toBe(75);
+    expect(state.sunAzimuth).toBe(180);
+    expect(state.nightMode).toBe(false);
+
+    // Sunset / Golden Hour preset
+    store.setSunDirectionPreset('sunset');
+    state = useEditorStore.getState();
+    expect(state.timeOfDay).toBe(17.5);
+    expect(state.sunElevation).toBe(10);
+    expect(state.nightMode).toBe(false);
+
+    // Diwali Night preset
+    store.setSunDirectionPreset('night');
+    state = useEditorStore.getState();
+    expect(state.timeOfDay).toBe(21.0);
+    expect(state.nightMode).toBe(true);
+
+    // Direct elevation and azimuth adjustments
+    store.setSunElevation(35);
+    store.setSunAzimuth(120);
+    expect(useEditorStore.getState().sunElevation).toBe(35);
+    expect(useEditorStore.getState().sunAzimuth).toBe(120);
+
+    // Automatic day/night toggling via timeOfDay
+    store.setTimeOfDay(22.0);
+    expect(useEditorStore.getState().nightMode).toBe(true);
+
+    store.setTimeOfDay(10.0);
+    expect(useEditorStore.getState().nightMode).toBe(false);
+  });
 });
 

@@ -75,7 +75,7 @@ export const SavedProjectSchema = z.object({
 });
 
 export type ToolType =
-  // 6 Primary Killa-First Tools
+  // 7 Primary Killa-First Tools
   | 'terrain'
   | 'building'
   | 'walls'
@@ -84,6 +84,7 @@ export type ToolType =
   | 'foliage'
   | 'prop'
   | 'lighting'
+  | 'view'
   // Soil Pipeline Tools (Deferred Phase)
   | 'soil'
   | 'water'
@@ -540,6 +541,16 @@ interface EditorState {
   setPlacedLights: (lights: PlacedLight[]) => void;
   testFireworkTrigger: { id: string; timestamp: number } | null;
   triggerTestFirework: (id: string) => void;
+  clearTestFireworkTrigger: () => void;
+
+  // Time-of-Day & Celestial Lighting State (Ticket 10 Skeleton / Ticket 11 Full)
+  timeOfDay: number; // 0.0 to 24.0 (hours), default 14.0 (2:00 PM)
+  sunElevation: number; // -15 to 90 degrees (altitude above horizon / X-axis rotation), default 48
+  sunAzimuth: number; // 0 to 360 degrees (compass bearing), default 55
+  setTimeOfDay: (hours: number) => void;
+  setSunElevation: (deg: number) => void;
+  setSunAzimuth: (deg: number) => void;
+  setSunDirectionPreset: (preset: 'dawn' | 'noon' | 'sunset' | 'night') => void;
 
   // Metadata Actions
   setFortTitle: (title: string) => void;
@@ -1487,6 +1498,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedLightId: null,
   testFireworkTrigger: null,
 
+  // Time-of-Day & Celestial Lighting State
+  timeOfDay: 14.0,
+  sunElevation: 48,
+  sunAzimuth: 55,
+
   fortTitle: 'Our Killa',
   builderName: 'Mavala Builder',
   templateId: 'raigad',
@@ -1801,6 +1817,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       activeStairDraft: [],
       isDrawingStairs: false,
       selectedPropId: null,
+      selectedLightId: null,
       hoveredElement: null,
     });
   },
@@ -2174,6 +2191,53 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   setPlacedLights: (lights) => set({ placedLights: lights }),
   triggerTestFirework: (id) => set({ testFireworkTrigger: { id, timestamp: Date.now() } }),
+  clearTestFireworkTrigger: () => set({ testFireworkTrigger: null }),
+
+  setTimeOfDay: (hours) => {
+    const clamped = Math.max(0, Math.min(24, hours));
+    const isNight = clamped >= 18.5 || clamped < 5.5;
+
+    let elev = 48;
+    let azim = 55;
+    if (clamped >= 5.5 && clamped < 18.5) {
+      // Day arc (5.5h to 18.5h = 13 hour span)
+      const dayProgress = (clamped - 5.5) / 13.0; // 0 (dawn) to 1 (sunset)
+      elev = Math.sin(dayProgress * Math.PI) * 72; // peaks at 72° at solar noon
+      azim = 90 + dayProgress * 180; // 90° (East) to 270° (West)
+    } else {
+      // Night arc
+      const nightProgress = clamped >= 18.5 ? (clamped - 18.5) / 11.0 : (clamped + 5.5) / 11.0;
+      elev = Math.max(10, Math.sin(nightProgress * Math.PI) * 55);
+      azim = 230 + (nightProgress - 0.5) * 60;
+    }
+
+    set({
+      timeOfDay: clamped,
+      sunElevation: Math.round(elev),
+      sunAzimuth: Math.round(azim),
+      nightMode: isNight,
+    });
+  },
+
+  setSunElevation: (deg) => set({ sunElevation: Math.max(-15, Math.min(90, deg)) }),
+  setSunAzimuth: (deg) => set({ sunAzimuth: ((deg % 360) + 360) % 360 }),
+
+  setSunDirectionPreset: (preset) => {
+    switch (preset) {
+      case 'dawn':
+        set({ timeOfDay: 6.0, sunElevation: 12, sunAzimuth: 90, nightMode: false });
+        break;
+      case 'noon':
+        set({ timeOfDay: 12.0, sunElevation: 75, sunAzimuth: 180, nightMode: false });
+        break;
+      case 'sunset':
+        set({ timeOfDay: 17.5, sunElevation: 10, sunAzimuth: 270, nightMode: false });
+        break;
+      case 'night':
+        set({ timeOfDay: 21.0, sunElevation: 52, sunAzimuth: 230, nightMode: true });
+        break;
+    }
+  },
 
   setFortTitle: (title) => set({ fortTitle: title }),
   setBuilderName: (name) => set({ builderName: name }),

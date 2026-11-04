@@ -238,6 +238,18 @@ export const TRANSLATIONS = {
         deleteLight: 'Delete Light',
         clearAll: 'Clear All Lights',
       },
+      view: {
+        label: 'View',
+        fullLabel: 'Diorama & Sun View',
+        desc: 'Inspect diorama, time of day & celestial lighting angle',
+        timeOfDay: 'Time of Day',
+        sunElevation: 'Sun Elevation (X-Axis Rotation)',
+        sunAzimuth: 'Sun Azimuth (Compass Heading)',
+        presetDawn: 'Dawn (06:00)',
+        presetNoon: 'Noon (12:00)',
+        presetSunset: 'Golden Hour (17:30)',
+        presetNight: 'Diwali Night (21:00)',
+      },
     },
 
     // Shortcuts Modal
@@ -610,6 +622,18 @@ export const TRANSLATIONS = {
         deleteLight: 'दिवा काढा',
         clearAll: 'सर्व दिवे काढा',
       },
+      view: {
+        label: 'दृश्य',
+        fullLabel: 'किल्ला देखावा व सूर्य दर्शन',
+        desc: 'किल्ला निरीक्षण, दिवसाची वेळ व सूर्य/चंद्राचा कोन बदला',
+        timeOfDay: 'दिवसाची वेळ',
+        sunElevation: 'सूर्य उंची (X-अक्ष फिरवा)',
+        sunAzimuth: 'सूर्य दिशा (कंपास कोन)',
+        presetDawn: 'पहाट (०६:००)',
+        presetNoon: 'दुपार (१२:००)',
+        presetSunset: 'संध्याकाळ (१७:३०)',
+        presetNight: 'दिवाळी रात्र (२१:००)',
+      },
     },
 
     // Shortcuts Modal
@@ -981,6 +1005,18 @@ export const TRANSLATIONS = {
         snapToSurface: 'सतह पर स्थापित करें',
         deleteLight: 'दीपक हटाएं',
         clearAll: 'सभी दीये हटाएं',
+      },
+      view: {
+        label: 'दृश्य',
+        fullLabel: 'किला दर्शक व सूर्य दिशा',
+        desc: 'किला निरीक्षण, दिन का समय व सूर्य/चंद्रमा का कोण बदलें',
+        timeOfDay: 'दिन का समय',
+        sunElevation: 'सूर्य ऊंचाई (X-अक्ष घुमाव)',
+        sunAzimuth: 'सूर्य दिशा (कम्पास कोण)',
+        presetDawn: 'उषाकाल (06:00)',
+        presetNoon: 'दोपहर (12:00)',
+        presetSunset: 'संध्याकाल (17:30)',
+        presetNight: 'दीपावली रात्रि (21:00)',
       },
     },
 

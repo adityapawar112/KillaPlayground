@@ -66,15 +66,16 @@ export function createSkyShotCollarGeometry(): THREE.BufferGeometry {
  */
 export function createDiyaFlameGeometry(): THREE.BufferGeometry {
   const points: THREE.Vector2[] = [
-    new THREE.Vector2(0.001, 0.0),       // Base root at wick
-    new THREE.Vector2(0.005, 0.005),     // Lower expansion
-    new THREE.Vector2(0.010, 0.014),     // Widest teardrop belly
-    new THREE.Vector2(0.009, 0.022),     // Inward curving
-    new THREE.Vector2(0.006, 0.030),     // Slender flame neck
-    new THREE.Vector2(0.0025, 0.038),    // Approaching apex
-    new THREE.Vector2(0.0003, 0.044),    // Pointed teardrop tip
+    new THREE.Vector2(0.0005, 0.0),       // Wick contact base
+    new THREE.Vector2(0.004, 0.003),      // Lower rim
+    new THREE.Vector2(0.009, 0.009),      // Bulbous expansion
+    new THREE.Vector2(0.0105, 0.016),     // Widest teardrop belly
+    new THREE.Vector2(0.0085, 0.025),     // Inward taper
+    new THREE.Vector2(0.005, 0.034),      // Slender flame plume
+    new THREE.Vector2(0.0018, 0.042),     // Tapered neck
+    new THREE.Vector2(0.0002, 0.048),     // Pinched apex tip
   ];
-  return new THREE.LatheGeometry(points, 20);
+  return new THREE.LatheGeometry(points, 24);
 }
 
 /**
@@ -82,13 +83,14 @@ export function createDiyaFlameGeometry(): THREE.BufferGeometry {
  */
 export function createDiyaFlameCoreGeometry(): THREE.BufferGeometry {
   const points: THREE.Vector2[] = [
-    new THREE.Vector2(0.0008, 0.0),
-    new THREE.Vector2(0.0035, 0.004),
-    new THREE.Vector2(0.006, 0.011),
-    new THREE.Vector2(0.0035, 0.018),
-    new THREE.Vector2(0.0003, 0.025),
+    new THREE.Vector2(0.0004, 0.0),
+    new THREE.Vector2(0.003, 0.003),
+    new THREE.Vector2(0.006, 0.010),
+    new THREE.Vector2(0.004, 0.019),
+    new THREE.Vector2(0.001, 0.026),
+    new THREE.Vector2(0.0002, 0.030),
   ];
-  return new THREE.LatheGeometry(points, 16);
+  return new THREE.LatheGeometry(points, 20);
 }
 
 /**

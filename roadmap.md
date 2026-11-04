@@ -419,6 +419,14 @@ graph TD
 - **Status**: `ready-for-agent`
 - **Blocked by**: `Ticket 07`, `Ticket 10`
 - **Delivers**:
+  - **Dedicated Diorama & Sun View Tool (`view`)**:
+    - Primary toolbar **`View`** tool (`view`) designed for pure diorama presentation, inspection, and celestial lighting control.
+    - Interactive Left Properties Sidebar with:
+      - **Time of Day Slider** (`0:00` to `24:00` hours) with dynamic day/night transitions and quick presets (Dawn, Noon, Golden Hour, Diwali Night).
+      - **Sun / Moon Direction & Elevation (X-Axis Rotation)** slider (`-10°` to `90°` altitude above courtyard horizon) controlling sun/moon trajectory and dynamic shadow length.
+      - **Sun / Moon Azimuth** slider (`0°` to `360°` compass bearing) directing shadow orientation across ramparts and courtyards.
+      - Orbit & Free-Fly spectator camera controls with zero accidental edits.
+    - *(Note: A testing skeleton of the View tool is introduced in Ticket 10 for interactive celestial lighting evaluation).*
   - **Centered Quick-Action Diorama Bar**:
     - Tactile, floating 5-button control dock mounted centered directly above `BottomStatusBar.tsx`:
       - `☀️ Day`: Transitions diorama to warm daylight courtyard lighting.

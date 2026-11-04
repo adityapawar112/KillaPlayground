@@ -15,6 +15,7 @@ import { SplineStructures } from './SplineStructures';
 import { FoliageRenderer } from './FoliageRenderer';
 import { FigurineRenderer } from './FigurineRenderer';
 import { LightingRenderer } from './LightingRenderer';
+import { CelestialSkyRig } from './CelestialSkyRig';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -261,9 +262,26 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     activeTool,
     wallMode,
     splineMode,
+    sunElevation,
+    sunAzimuth,
   } = useEditorStore();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Dynamic Sun / Moon directional vector computed from elevation & azimuth
+  const sunPosition = useMemo((): [number, number, number] => {
+    const phi = (sunElevation * Math.PI) / 180;
+    const theta = (sunAzimuth * Math.PI) / 180;
+    const r = 21.0;
+    const x = r * Math.cos(phi) * Math.sin(theta);
+    const y = Math.max(1.0, r * Math.sin(phi));
+    const z = r * Math.cos(phi) * Math.cos(theta);
+    return [x, y, z];
+  }, [sunElevation, sunAzimuth]);
+
+  const bouncePosition = useMemo((): [number, number, number] => {
+    return [-sunPosition[0] * 0.7, 6, -sunPosition[2] * 0.7];
+  }, [sunPosition]);
 
   // Dynamic mouse control scheme:
   // - In 'select' mode: Left Click orbits background; Right Click orbits; Middle Click pans.
@@ -333,6 +351,12 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
               Math.min(3.0, parseFloat((editor.paintBrushRadius + (isUp ? step : -step)).toFixed(2)))
             );
             editor.setPaintBrushRadius(newRadius);
+          } else if (tool === 'view') {
+            const step = 0.25;
+            let newTime = editor.timeOfDay + (isUp ? step : -step);
+            if (newTime < 0) newTime += 24;
+            if (newTime >= 24) newTime -= 24;
+            editor.setTimeOfDay(parseFloat(newTime.toFixed(2)));
           } else {
             const newRadius = Math.max(
               0.2,
@@ -382,6 +406,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
               Math.min(0.45, parseFloat((editor.waterLevel + (isUp ? step : -step)).toFixed(2)))
             );
             editor.setWaterLevel(newLevel);
+          } else if (tool === 'view') {
+            const step = 5;
+            editor.setSunAzimuth(editor.sunAzimuth + (isUp ? step : -step));
           } else {
             // Speed / Strength slider (0.05 to 1.0 in 0.05 increments)
             const step = 0.05;
@@ -421,6 +448,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
               Math.min(1.0, parseFloat((editor.paintBrushFalloff + (isUp ? step : -step)).toFixed(2)))
             );
             editor.setPaintBrushFalloff(newFalloff);
+          } else if (tool === 'view') {
+            const step = 2;
+            editor.setSunElevation(editor.sunElevation + (isUp ? step : -step));
           } else if (tool === 'terrain') {
             if (editor.terrainSubTool === 'plateau') {
               const step = 0.1;
@@ -568,24 +598,24 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         {/* Courtyard Lighting Rig with Calibrated NormalBias to Eliminate Shadow Acne */}
         <ambientLight intensity={nightMode ? 0.2 : 0.65} color={nightMode ? '#38bdf8' : '#fffbeb'} />
         <directionalLight
-          position={nightMode ? [-8, 12, -6] : [10, 15, 8]}
+          position={sunPosition}
           intensity={nightMode ? 0.35 : 1.4}
           color={nightMode ? '#93c5fd' : '#fef3c7'}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-camera-near={1.0}
-          shadow-camera-far={28}
-          shadow-camera-left={-7.5}
-          shadow-camera-right={7.5}
-          shadow-camera-top={7.5}
-          shadow-camera-bottom={-7.5}
+          shadow-camera-far={32}
+          shadow-camera-left={-8.5}
+          shadow-camera-right={8.5}
+          shadow-camera-top={8.5}
+          shadow-camera-bottom={-8.5}
           shadow-bias={-0.0001}
           shadow-normalBias={0.035}
         />
         {/* Secondary Warm Courtyard Ground Bounce Light */}
         <directionalLight
-          position={nightMode ? [8, 6, 8] : [-8, 6, -8]}
+          position={bouncePosition}
           intensity={nightMode ? 0.15 : 0.4}
           color={nightMode ? '#1e3a8a' : '#fed7aa'}
         />
@@ -596,6 +626,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
             nightMode ? 0.25 : 0.45,
           ]}
         />
+
+        {/* 3D Celestial Sky Rig: Sun Disc / Corona & Moon Disc / Halo */}
+        <CelestialSkyRig />
 
         {/* Blender-Style Infinite Fading Grid */}
         <Grid

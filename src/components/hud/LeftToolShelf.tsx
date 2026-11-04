@@ -63,6 +63,7 @@ export const LeftToolShelf: React.FC = () => {
     foliage: (t.tools as any).foliage || t.tools.grass,
     prop: t.tools.prop,
     lighting: (t.tools as any).lighting || { label: 'Lighting', fullLabel: 'Festive Lighting & Fireworks', desc: 'Place traditional diyas, lamps, anaar fountains, and sky shot fireworks' },
+    view: (t.tools as any).view || { label: 'View', fullLabel: 'Diorama & Sun View', desc: 'Inspect diorama, time of day & celestial lighting angle' },
     soil: t.tools.soil,
     water: t.tools.water,
     shape: t.tools.shape,

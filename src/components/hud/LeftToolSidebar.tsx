@@ -39,6 +39,11 @@ import {
   TbTrees,
   TbRefresh,
   TbCircleHalf2,
+  TbEye,
+  TbSun,
+  TbMoon,
+  TbClock,
+  TbCompass,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -213,6 +218,14 @@ export const LeftToolSidebar: React.FC = () => {
     snapLightToSurface,
     clearAllLights,
     triggerTestFirework,
+    timeOfDay,
+    setTimeOfDay,
+    sunElevation,
+    setSunElevation,
+    sunAzimuth,
+    setSunAzimuth,
+    setSunDirectionPreset,
+    nightMode,
     toggleRightSidebar,
     leftSidebarWidth: sidebarWidth,
     setLeftSidebarWidth: setSidebarWidth,
@@ -2678,6 +2691,164 @@ export const LeftToolSidebar: React.FC = () => {
                     )}
                   </div>
                 )}
+              </div>
+            );
+          })()}
+
+          {/* ======================================================== */}
+          {/* 8. DIORAMA & SUN VIEW TOOL (Ticket 10 Skeleton / Ticket 11) */}
+          {/* ======================================================== */}
+          {activeTool === 'view' && (() => {
+            const hours = Math.floor(timeOfDay);
+            const minutes = Math.floor((timeOfDay - hours) * 60);
+            const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            const timePhase = nightMode ? 'Diwali Night' : timeOfDay >= 16.5 ? 'Golden Hour' : 'Day';
+
+            return (
+              <div className="space-y-4">
+                {/* 1. Header Card Badge */}
+                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EADECF] flex items-center justify-center text-[#B85F45]">
+                      {nightMode ? <TbMoon className="w-4 h-4 text-[#38BDF8]" /> : <TbSun className="w-4 h-4 text-[#F59E0B]" />}
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#4B382C]">Diorama & Sun View</div>
+                      <div className="text-[10px] text-[#8D7666]">
+                        {timeStr} • {timePhase}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
+                    VIEW MODE
+                  </span>
+                </div>
+
+                {/* 2. Quick Celestial Presets (direct on panel background) */}
+                <div className="space-y-1.5">
+                  <div className="text-[11px] font-semibold text-[#4B382C]">Time Presets</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => setSunDirectionPreset('dawn')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                        Math.abs(timeOfDay - 6.0) < 0.5
+                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                      }`}
+                    >
+                      <span className="text-sm">🌅</span>
+                      <span>Dawn (06:00)</span>
+                    </button>
+                    <button
+                      onClick={() => setSunDirectionPreset('noon')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                        Math.abs(timeOfDay - 12.0) < 0.5
+                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                      }`}
+                    >
+                      <span className="text-sm">☀️</span>
+                      <span>Noon (12:00)</span>
+                    </button>
+                    <button
+                      onClick={() => setSunDirectionPreset('sunset')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                        Math.abs(timeOfDay - 17.5) < 0.5
+                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                      }`}
+                    >
+                      <span className="text-sm">🌇</span>
+                      <span>Golden Hour</span>
+                    </button>
+                    <button
+                      onClick={() => setSunDirectionPreset('night')}
+                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                        nightMode && Math.abs(timeOfDay - 21.0) < 1.0
+                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                      }`}
+                    >
+                      <span className="text-sm">🪔</span>
+                      <span>Diwali Night</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Celestial Sliders mounted directly on panel background (No enclosing cards) */}
+                <div className="space-y-3.5 pt-1">
+                  {/* Time of Day Slider */}
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span className="flex items-center gap-1">
+                        <TbClock className="w-3.5 h-3.5 text-[#8F4938]" />
+                        <span>Time of Day</span>
+                      </span>
+                      <span className="text-[#8D7666] font-mono">{timeStr}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0.0}
+                      max={24.0}
+                      step={0.25}
+                      value={timeOfDay}
+                      onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
+                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Sun / Moon Elevation (X-Axis Rotation) */}
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span>Sun / Moon Elevation</span>
+                      <span className="text-[#8D7666] font-mono">{sunElevation}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={-10}
+                      max={90}
+                      step={1}
+                      value={sunElevation}
+                      onChange={(e) => setSunElevation(parseInt(e.target.value, 10))}
+                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+
+                  {/* Sun / Moon Azimuth (Compass Heading) */}
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span className="flex items-center gap-1">
+                        <TbCompass className="w-3.5 h-3.5 text-[#8F4938]" />
+                        <span>Sun / Moon Azimuth</span>
+                      </span>
+                      <span className="text-[#8D7666] font-mono">{sunAzimuth}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={0}
+                      max={360}
+                      step={1}
+                      value={sunAzimuth}
+                      onChange={(e) => setSunAzimuth(parseInt(e.target.value, 10))}
+                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Reset & Info Card */}
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
+                  <TbEye className="w-5 h-5 mx-auto text-[#8F4938]" />
+                  <div className="text-xs font-bold text-[#4B382C]">Spectator Camera Controls</div>
+                  <p className="text-[11px] text-[#634E40] leading-relaxed">
+                    Rotate the sun and moon to sweep dynamic shadows across fort ramparts and courtyards. Full free-fly camera mode arrives in Ticket 11.
+                  </p>
+                  <button
+                    onClick={() => setSunDirectionPreset('noon')}
+                    className="w-full py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Reset Lighting to Solar Noon
+                  </button>
+                </div>
               </div>
             );
           })()}

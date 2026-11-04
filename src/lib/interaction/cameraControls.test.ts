@@ -27,5 +27,15 @@ describe('Camera Controls Mouse Buttons Scheme', () => {
 
     const propButtons = getOrbitMouseButtons('prop');
     expect(propButtons.LEFT).toBe(-1);
+
+    const lightingButtons = getOrbitMouseButtons('lighting');
+    expect(lightingButtons.LEFT).toBe(-1);
+  });
+
+  it('allows left-click orbit navigation in spectator view mode', () => {
+    const viewButtons = getOrbitMouseButtons('view');
+    expect(viewButtons.LEFT).toBe(THREE.MOUSE.ROTATE);
+    expect(viewButtons.RIGHT).toBe(THREE.MOUSE.ROTATE);
+    expect(viewButtons.MIDDLE).toBe(THREE.MOUSE.PAN);
   });
 });

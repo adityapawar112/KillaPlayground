@@ -137,6 +137,9 @@ export default function HomePage() {
       } else if (e.key === '6') {
         store.setActiveTool('lighting');
         e.preventDefault();
+      } else if (e.key === '7') {
+        store.setActiveTool('view');
+        e.preventDefault();
       }
       // Keys 7-0 (soil pipeline tools) hidden for now
 

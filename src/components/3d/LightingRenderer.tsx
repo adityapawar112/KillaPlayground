@@ -19,6 +19,7 @@ import {
   disposeFireworkTextures,
 } from '@/lib/lighting/lightingGeometry';
 import { PyrotechnicsEngine, MAX_FIREWORK_PARTICLES } from '@/lib/lighting/pyrotechnicsEngine';
+import { DiyaLightPools } from './DiyaLightPools';
 
 // ============================================================================
 // 1. Procedural Diya Flame Component with Organic Flicker & White-Hot Core
@@ -27,6 +28,7 @@ const DiyaFlame: React.FC<{
   position: [number, number, number];
 }> = ({ position }) => {
   const flameMatRef = useRef<THREE.MeshStandardMaterial>(null);
+  const flameMeshRef = useRef<THREE.Mesh>(null);
   const flameGeo = useMemo(() => createDiyaFlameGeometry(), []);
   const coreGeo = useMemo(() => createDiyaFlameCoreGeometry(), []);
 
@@ -38,18 +40,24 @@ const DiyaFlame: React.FC<{
   }, [flameGeo, coreGeo]);
 
   useFrame(({ clock }) => {
+    const t = clock.getElapsedTime();
     if (flameMatRef.current) {
-      const t = clock.getElapsedTime();
       // Natural organic flame flicker formula
-      const flicker = 1.9 + 0.5 * Math.sin(t * 14.0) * Math.cos(t * 22.0);
+      const flicker = 1.9 + 0.45 * Math.sin(t * 14.0) * Math.cos(t * 22.0);
       flameMatRef.current.emissiveIntensity = flicker;
+    }
+    if (flameMeshRef.current) {
+      // Organic dancing flame sway in evening breeze
+      const swayX = Math.sin(t * 5.2) * 0.05 + Math.sin(t * 11.5) * 0.025;
+      const swayZ = Math.cos(t * 4.0) * 0.04;
+      flameMeshRef.current.rotation.set(0.08 + swayX, 0, swayZ);
     }
   });
 
   return (
     <group position={position} raycast={() => null}>
       {/* Outer warm amber/golden flame teardrop */}
-      <mesh geometry={flameGeo}>
+      <mesh ref={flameMeshRef} geometry={flameGeo}>
         <meshStandardMaterial
           ref={flameMatRef}
           color="#FFAA00"
@@ -58,10 +66,10 @@ const DiyaFlame: React.FC<{
           roughness={0.2}
           metalness={0.0}
         />
-      </mesh>
-      {/* Inner white-hot flame core */}
-      <mesh geometry={coreGeo} position={[0, 0.002, 0]}>
-        <meshBasicMaterial color="#FFFBEB" transparent opacity={0.95} />
+        {/* Inner white-hot flame core */}
+        <mesh geometry={coreGeo} position={[0, 0.002, 0]}>
+          <meshBasicMaterial color="#FFFBEB" transparent opacity={0.95} />
+        </mesh>
       </mesh>
     </group>
   );
@@ -217,8 +225,8 @@ const DiyaModel: React.FC<{
       name={`PlacedLight_${light.id}`}
     >
       <mesh geometry={asset.geometry} material={asset.material} castShadow receiveShadow />
-      {/* Animated 3D Flame seated authentically in diya wick/rim */}
-      <DiyaFlame position={[0, asset.dimensions.y * 0.75, asset.dimensions.z * 0.16]} />
+      {/* Animated 3D Flame seated authentically in diya wick spout */}
+      <DiyaFlame position={[0, asset.dimensions.y * 0.85, asset.dimensions.z * 0.28]} />
     </group>
   );
 };
@@ -306,7 +314,7 @@ const LightingGhostPreview: React.FC<{
           </mesh>
           <mesh
             geometry={flameGeo}
-            position={[0, diyaAsset.dimensions.y * 0.75, diyaAsset.dimensions.z * 0.16]}
+            position={[0, diyaAsset.dimensions.y * 0.85, diyaAsset.dimensions.z * 0.28]}
           >
             <meshBasicMaterial color="#FFAA00" wireframe transparent opacity={0.85} />
           </mesh>
@@ -346,11 +354,17 @@ export const LightingRenderer: React.FC = () => {
     setHoveredElement,
     nightMode,
     testFireworkTrigger,
+    clearTestFireworkTrigger,
   } = useEditorStore();
 
   const { scene, camera, raycaster, gl, invalidate } = useThree();
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
   const [ghostRot, setGhostRot] = useState<[number, number, number]>([0, 0, 0]);
+
+  // Fixed Pre-Allocated Dynamic Key Lights (Zero-recompile, strictly 3 point lights)
+  const keyLightRef1 = useRef<THREE.PointLight>(null);
+  const keyLightRef2 = useRef<THREE.PointLight>(null);
+  const keyLightRef3 = useRef<THREE.PointLight>(null);
 
   // Pyrotechnics particle engine instance
   const pyrotechnics = useMemo(() => new PyrotechnicsEngine(), []);
@@ -405,11 +419,22 @@ export const LightingRenderer: React.FC = () => {
       target.scale[0],
       target.burstHeight
     );
+    clearTestFireworkTrigger();
     invalidate();
-  }, [testFireworkTrigger, pyrotechnics, invalidate]);
+  }, [testFireworkTrigger, pyrotechnics, invalidate, clearTestFireworkTrigger]);
 
-  // Frame animation loop for pyrotechnics particles
-  useFrame((_, delta) => {
+  const selectedLight = useMemo(() => {
+    return placedLights.find((l) => l.id === selectedLightId) || null;
+  }, [placedLights, selectedLightId]);
+
+  const hoveredLightId = hoveredElement?.type === 'light' ? hoveredElement.id : null;
+  const hoveredLight = useMemo(() => {
+    return placedLights.find((l) => l.id === hoveredLightId) || null;
+  }, [placedLights, hoveredLightId]);
+
+  // Frame animation loop: Pyrotechnics particles & Zero-Recompile Key Lights Rig
+  useFrame(({ clock }, delta) => {
+    // 1. Pyrotechnics Particles Simulation
     const hasActive = pyrotechnics.update(delta);
     if (hasActive) {
       if (pointsRef.current) {
@@ -425,22 +450,63 @@ export const LightingRenderer: React.FC = () => {
         invalidate();
       }
     }
+
+    // 2. Dynamic Key Lights Spatial Allocation (Strictly 3 point lights, zero recompile)
+    const diyas = placedLights.filter((l) => l.category !== 'fireworks');
+    if (!nightMode || diyas.length === 0) {
+      if (keyLightRef1.current) keyLightRef1.current.intensity = 0;
+      if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
+      if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
+    } else {
+      const t = clock.getElapsedTime();
+      const flicker = 0.94 + 0.06 * Math.sin(t * 13.0);
+
+      // Key light 1: Priority to selected or hovered light, or first diya
+      const target1 = selectedLight || hoveredLight || diyas[0];
+      if (keyLightRef1.current && target1) {
+        keyLightRef1.current.position.set(
+          target1.position[0],
+          target1.position[1] + 0.16,
+          target1.position[2]
+        );
+        keyLightRef1.current.intensity = 1.8 * flicker;
+      }
+
+      // Key lights 2 & 3: Closest remaining diyas to camera position
+      const remainingDiyas = diyas.filter((d) => d.id !== target1?.id);
+      if (remainingDiyas.length > 0) {
+        const camPos = camera.position;
+        remainingDiyas.sort((a, b) => {
+          const distA = Math.hypot(a.position[0] - camPos.x, a.position[1] - camPos.y, a.position[2] - camPos.z);
+          const distB = Math.hypot(b.position[0] - camPos.x, b.position[1] - camPos.y, b.position[2] - camPos.z);
+          return distA - distB;
+        });
+
+        if (keyLightRef2.current && remainingDiyas[0]) {
+          keyLightRef2.current.position.set(
+            remainingDiyas[0].position[0],
+            remainingDiyas[0].position[1] + 0.16,
+            remainingDiyas[0].position[2]
+          );
+          keyLightRef2.current.intensity = 1.6 * flicker;
+        }
+
+        if (keyLightRef3.current && remainingDiyas[1]) {
+          keyLightRef3.current.position.set(
+            remainingDiyas[1].position[0],
+            remainingDiyas[1].position[1] + 0.16,
+            remainingDiyas[1].position[2]
+          );
+          keyLightRef3.current.intensity = 1.4 * flicker;
+        } else if (keyLightRef3.current) {
+          keyLightRef3.current.intensity = 0;
+        }
+      } else {
+        if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
+        if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
+      }
+    }
   });
-
-  const selectedLight = useMemo(() => {
-    return placedLights.find((l) => l.id === selectedLightId) || null;
-  }, [placedLights, selectedLightId]);
-
-  const hoveredLightId = hoveredElement?.type === 'light' ? hoveredElement.id : null;
-  const hoveredLight = useMemo(() => {
-    return placedLights.find((l) => l.id === hoveredLightId) || null;
-  }, [placedLights, hoveredLightId]);
-
-  // Diyas eligible for dynamic PointLights in night mode (up to 8 points)
-  const nightDiyaLights = useMemo(() => {
-    if (!nightMode) return [];
-    return placedLights.filter((l) => l.category !== 'fireworks').slice(0, 8);
-  }, [nightMode, placedLights]);
 
   // Raycast against mountain terrain and fort structures
   const getSurfaceIntersection = useCallback(
@@ -717,23 +783,36 @@ export const LightingRenderer: React.FC = () => {
         );
       })}
 
-      {/* 2. Night Diya PointLights Pool (Warm amber #F59E0B, 3.5m radius, decay 2.0) */}
-      {nightDiyaLights.map((light, idx) => (
-        <pointLight
-          key={`NightDiyaLight_${light.id}`}
-          position={[light.position[0], light.position[1] + 0.15, light.position[2]]}
-          color="#F59E0B"
-          intensity={1.8}
-          distance={3.5}
-          decay={2.0}
-          castShadow={idx === 0} // Cast soft shadow only on the primary light to preserve 60fps
-          shadow-mapSize-width={512}
-          shadow-mapSize-height={512}
-          shadow-bias={-0.001}
-        />
-      ))}
+      {/* 2. Instanced Diya Ground Light Pools (1 Draw Call for all 250 diyas) */}
+      <DiyaLightPools />
 
-      {/* 3. Pyrotechnics Particles Simulation */}
+      {/* 3. Fixed Pre-Allocated Dynamic Key Lights (Strictly 3 lights, 0ms shader recompile) */}
+      <pointLight
+        ref={keyLightRef1}
+        color="#F59E0B"
+        distance={4.0}
+        decay={2.0}
+        intensity={0}
+        castShadow={false}
+      />
+      <pointLight
+        ref={keyLightRef2}
+        color="#F59E0B"
+        distance={3.5}
+        decay={2.0}
+        intensity={0}
+        castShadow={false}
+      />
+      <pointLight
+        ref={keyLightRef3}
+        color="#F59E0B"
+        distance={3.5}
+        decay={2.0}
+        intensity={0}
+        castShadow={false}
+      />
+
+      {/* 4. Pyrotechnics Particles Simulation */}
       <points ref={pointsRef} geometry={particleGeo} material={particleMat} visible={false} frustumCulled={false} />
 
       {/* 4. Selection Ring Gizmo */}

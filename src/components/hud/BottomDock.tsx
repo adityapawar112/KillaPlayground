@@ -13,6 +13,7 @@ import {
   TbDropletHalf2,
   TbLayersSubtract,
   TbPlant2,
+  TbFlame,
 } from 'react-icons/tb';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -26,9 +27,10 @@ interface ToolDef {
 const TOOLS_CONFIG: ToolDef[] = [
   { id: 'terrain', key: '1', icon: TbMountain },
   { id: 'building', key: '2', icon: TbBuildingFortress },
-  { id: 'texture', key: '4', icon: TbTexture },
-  { id: 'foliage', key: '5', icon: TbTrees },
-  { id: 'prop', key: '6', icon: TbUsersGroup },
+  { id: 'texture', key: '3', icon: TbTexture },
+  { id: 'foliage', key: '4', icon: TbTrees },
+  { id: 'prop', key: '5', icon: TbUsersGroup },
+  { id: 'lighting', key: '6', icon: TbFlame },
   { id: 'soil', key: '7', icon: TbShovel },
 ];
 
@@ -48,6 +50,7 @@ export const BottomDock: React.FC = () => {
     paint: t.tools.paint,
     foliage: (t.tools as any).foliage || t.tools.grass,
     prop: t.tools.prop,
+    lighting: (t.tools as any).lighting || { label: 'Lighting', fullLabel: 'Festive Lighting & Fireworks', desc: 'Place traditional diyas, lamps, anaar fountains, and sky shot fireworks' },
     soil: t.tools.soil,
     water: t.tools.water,
     shape: t.tools.shape,

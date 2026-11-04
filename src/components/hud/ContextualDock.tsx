@@ -48,6 +48,9 @@ export const ContextualDock: React.FC = () => {
     setFoliageSubTool,
     foliageBrushRadius,
     setFoliageBrushRadius,
+    lightingSubTool,
+    lightEraseRadius,
+    setLightEraseRadius,
     brushRadius,
     setBrushRadius,
     brushStrength,
@@ -637,6 +640,36 @@ export const ContextualDock: React.FC = () => {
           <span className="text-xs font-semibold text-[#4B382C]">
             Select figurine from right drawer and place on terrain or solid structures
           </span>
+        </div>
+      )}
+
+      {/* 10. FESTIVE LIGHTING & FIREWORKS CONTROLS */}
+      {activeTool === 'lighting' && (
+        <div className="flex items-center gap-3">
+          {lightingSubTool === 'erase' ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-[#4B382C]">Erase Radius:</span>
+              <input
+                type="range"
+                aria-label="Lighting Erase Radius"
+                min="0.2"
+                max="2.5"
+                step="0.1"
+                value={lightEraseRadius}
+                onChange={(e) => setLightEraseRadius(parseFloat(e.target.value))}
+                className="w-20 accent-[#DC2626] cursor-pointer"
+              />
+              <span className="text-xs text-[#8D7666]">{lightEraseRadius.toFixed(1)}m</span>
+            </div>
+          ) : (
+            <span className="text-xs font-semibold text-[#4B382C]">
+              {lightingSubTool === 'place'
+                ? 'Click on terrain or ramparts to place diya or firework'
+                : lightingSubTool === 'select'
+                ? 'Select a placed diya or firework to inspect or test'
+                : 'Transform or nudge selected diya or firework'}
+            </span>
+          )}
         </div>
       )}
     </div>

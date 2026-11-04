@@ -36,6 +36,7 @@ import {
   TbCopy,
   TbAnchor,
   TbCircleHalf2,
+  TbSparkles,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { WallMode } from '@/lib/walls/wallTypes';
@@ -61,6 +62,13 @@ import {
   getFigurinesByCategory,
   getFigurineById,
 } from '@/lib/figurines/figurineManifest';
+import {
+  LIGHTING_MANIFEST,
+  LIGHTING_CATEGORIES,
+  searchLights,
+  getLightsByCategory,
+  getLightById,
+} from '@/lib/lighting/lightingManifest';
 
 const STORAGE_RIGHT_WIDTH_KEY = 'killa_right_sidebar_width_v1';
 
@@ -172,6 +180,22 @@ export const RightToolSidebar: React.FC = () => {
     updatePropTransform,
     duplicateProp,
     snapPropToSurface,
+    lightingCategoryFilter,
+    setLightingCategoryFilter,
+    lightingSearchQuery,
+    setLightingSearchQuery,
+    selectedLightType,
+    setSelectedLightType,
+    lightingSubTool,
+    setLightingSubTool,
+    placedLights,
+    selectedLightId,
+    setSelectedLightId,
+    removeLight,
+    updateLightTransform,
+    duplicateLight,
+    snapLightToSurface,
+    triggerTestFirework,
     hoveredElement,
     rightSidebarWidth: sidebarWidth,
     setRightSidebarWidth: setSidebarWidth,
@@ -234,7 +258,7 @@ export const RightToolSidebar: React.FC = () => {
     setCameraViewPreset('reset');
   };
 
-  // Only show right sidebar for tools with outliner/browser (building, walls, spline, texture, foliage, prop)
+  // Only show right sidebar for tools with outliner/browser (building, walls, spline, texture, foliage, prop, lighting)
   const isRelevantTool =
     activeTool === 'building' ||
     activeTool === 'walls' ||
@@ -242,7 +266,8 @@ export const RightToolSidebar: React.FC = () => {
     activeTool === 'texture' ||
     activeTool === 'paint' ||
     activeTool === 'foliage' ||
-    activeTool === 'prop';
+    activeTool === 'prop' ||
+    activeTool === 'lighting';
   if (!isRelevantTool) return null;
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
@@ -250,6 +275,7 @@ export const RightToolSidebar: React.FC = () => {
   const selectedFoundation = foundations.find((f) => f.id === selectedFoundationId);
   const selectedStair = stairs.find((s) => s.id === selectedStairId);
   const selectedProp = placedProps.find((p) => p.id === selectedPropId);
+  const selectedLight = placedLights.find((l) => l.id === selectedLightId);
 
   const filteredCategories =
     paintCategoryFilter === 'all'
@@ -265,6 +291,11 @@ export const RightToolSidebar: React.FC = () => {
     propCategoryFilter === 'all'
       ? FIGURINE_CATEGORIES
       : FIGURINE_CATEGORIES.filter((c) => c.id === propCategoryFilter);
+
+  const filteredLightingCategories =
+    lightingCategoryFilter === 'all'
+      ? LIGHTING_CATEGORIES
+      : LIGHTING_CATEGORIES.filter((c) => c.id === lightingCategoryFilter);
 
   return (
     <>
@@ -285,6 +316,8 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Open Texture Browser'
                 : activeTool === 'prop'
                 ? 'Open Figurine Vault'
+                : activeTool === 'lighting'
+                ? 'Open Lighting Vault'
                 : 'Open Outliner'
             }
           >
@@ -294,6 +327,8 @@ export const RightToolSidebar: React.FC = () => {
               <TbPalette className="w-3.5 h-3.5 text-[#8F4938]" />
             ) : activeTool === 'prop' ? (
               <TbUsersGroup className="w-3.5 h-3.5 text-[#B85F45]" />
+            ) : activeTool === 'lighting' ? (
+              <TbFlame className="w-3.5 h-3.5 text-[#F59E0B]" />
             ) : (
               <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
             )}
@@ -304,6 +339,8 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Textures'
                 : activeTool === 'prop'
                 ? 'Figurines'
+                : activeTool === 'lighting'
+                ? 'Lighting'
                 : 'Outliner'}
             </span>
             <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
@@ -351,6 +388,8 @@ export const RightToolSidebar: React.FC = () => {
               <TbPalette className="w-4 h-4 text-[#8F4938]" />
             ) : activeTool === 'prop' ? (
               <TbUsersGroup className="w-4 h-4 text-[#B85F45]" />
+            ) : activeTool === 'lighting' ? (
+              <TbFlame className="w-4 h-4 text-[#F59E0B]" />
             ) : (
               <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
             )}
@@ -365,6 +404,8 @@ export const RightToolSidebar: React.FC = () => {
                 ? 'Texture Browser'
                 : activeTool === 'prop'
                 ? (propSubTool === 'place' ? 'Figurine Vault' : 'Element Properties')
+                : activeTool === 'lighting'
+                ? (lightingSubTool === 'place' ? 'Lighting Vault' : 'Element Properties')
                 : 'Props Outliner'}
             </span>
             {(activeTool === 'texture' || activeTool === 'paint') && (
@@ -380,6 +421,11 @@ export const RightToolSidebar: React.FC = () => {
             {activeTool === 'prop' && propSubTool === 'place' && (
               <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 {FIGURINE_MANIFEST.length}
+              </span>
+            )}
+            {activeTool === 'lighting' && lightingSubTool === 'place' && (
+              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                {LIGHTING_MANIFEST.length}
               </span>
             )}
           </div>
@@ -1098,6 +1144,445 @@ export const RightToolSidebar: React.FC = () => {
                       Select a figurine from the list above or diorama to edit properties.
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          ) : activeTool === 'lighting' ? (
+            <div className="space-y-4">
+              {lightingSubTool === 'place' ? (
+                /* ======================================================== */
+                /* LIGHTING VAULT (ASSET BROWSER IN PLACE MODE)             */
+                /* ======================================================== */
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      Lighting Vault
+                    </span>
+                    <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                      {LIGHTING_MANIFEST.length} models
+                    </span>
+                  </div>
+
+                  {/* Search Bar */}
+                  <div className="relative">
+                    <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                    <input
+                      type="text"
+                      value={lightingSearchQuery}
+                      onChange={(e) => setLightingSearchQuery(e.target.value)}
+                      placeholder={`Search ${LIGHTING_MANIFEST.length} lights & fireworks...`}
+                      className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                    />
+                    {lightingSearchQuery && (
+                      <button
+                        onClick={() => setLightingSearchQuery('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                      >
+                        <TbX className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Category Filter Pills: All (28) | Clay Diyas (9) | Painted Diyas (9) | Fireworks (10) */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                    <button
+                      onClick={() => setLightingCategoryFilter('all')}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                        lightingCategoryFilter === 'all'
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      All ({LIGHTING_MANIFEST.length})
+                    </button>
+                    {LIGHTING_CATEGORIES.map((cat) => {
+                      const count = getLightsByCategory(cat.id).length;
+                      const isActive = lightingCategoryFilter === cat.id;
+                      return (
+                        <button
+                          key={cat.id}
+                          onClick={() => setLightingCategoryFilter(cat.id)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
+                              : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                          }`}
+                        >
+                          {cat.name} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Categories & 2-Column Cards Grid */}
+                  <div className="space-y-4 max-h-[calc(100vh-290px)] overflow-y-auto pr-0.5">
+                    {filteredLightingCategories.length === 0 ? (
+                      <div className="text-center py-8 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                        No lights or fireworks match &ldquo;{lightingSearchQuery}&rdquo;
+                      </div>
+                    ) : (
+                      filteredLightingCategories.map((cat) => {
+                        const allInCat = getLightsByCategory(cat.id);
+                        const items = lightingSearchQuery
+                          ? searchLights(lightingSearchQuery).filter((i) => i.category === cat.id)
+                          : allInCat;
+
+                        if (items.length === 0) return null;
+
+                        return (
+                          <div key={cat.id} className="space-y-1.5">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-[#8D7666] uppercase tracking-wider px-1">
+                              <span>{cat.name}</span>
+                              <span>{items.length}</span>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              {items.map((item) => {
+                                const isSelected = (selectedLightType || 'diya_clay_01') === item.id;
+
+                                return (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => setSelectedLightType(item.id)}
+                                    className={`group relative text-left p-2 rounded-xl border transition-all cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-[#FAF8F5] border-[#B85F45] ring-2 ring-[#B85F45] shadow-sm'
+                                        : 'bg-[#FAF8F5] border-[#D9C9B4] hover:border-[#B85F45]/60 hover:bg-[#FAF8F5]/90 hover:shadow-xs'
+                                    }`}
+                                  >
+                                    {/* Image preview / procedural fallback */}
+                                    <div className="relative aspect-4/3 rounded-lg bg-[#EADECF]/50 border border-[#D9C9B4]/60 overflow-hidden flex items-center justify-center">
+                                      <img
+                                        src={item.previewPath}
+                                        alt={item.name}
+                                        className="w-full h-full object-contain p-1 group-hover:scale-105 transition-transform duration-200"
+                                        onError={(e) => {
+                                          e.currentTarget.style.display = 'none';
+                                          const fb = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                                          if (fb) (fb as HTMLElement).style.display = 'flex';
+                                        }}
+                                      />
+                                      <div className="fallback-icon hidden flex-col items-center justify-center text-[#8D7666] group-hover:scale-105 transition-transform duration-200">
+                                        {item.category === 'fireworks' ? (
+                                          <TbSparkles className="w-8 h-8 text-[#F59E0B]" />
+                                        ) : (
+                                          <TbFlame className="w-8 h-8 text-[#F59E0B]" />
+                                        )}
+                                        <span className="text-[7.5px] font-bold text-[#8D7666] mt-0.5 uppercase">
+                                          {item.category === 'fireworks' ? (item.fireworkType === 'anaar' ? 'Fountain' : 'Sky Shot') : 'Diya'}
+                                        </span>
+                                      </div>
+
+                                      {/* Selected Checkmark Badge */}
+                                      {isSelected && (
+                                        <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#15803D] text-white flex items-center justify-center shadow-xs">
+                                          <TbCheck className="w-3 h-3 stroke-[3]" />
+                                        </div>
+                                      )}
+
+                                      {/* Light / Burst Tag */}
+                                      <div className="absolute bottom-1 left-1 px-1 py-0.5 rounded bg-black/60 backdrop-blur-xs text-[8px] font-bold text-white leading-none">
+                                        {item.category === 'fireworks'
+                                          ? item.fireworkType === 'anaar'
+                                            ? 'Fountain'
+                                            : 'Sky Shot'
+                                          : 'Warm Diya'}
+                                      </div>
+                                    </div>
+
+                                    {/* Label */}
+                                    <div className="mt-1.5 min-w-0">
+                                      <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                        {item.name}
+                                      </div>
+                                      <div className="text-[9px] text-[#8D7666] truncate">
+                                        {item.culturalLore || item.category}
+                                      </div>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* ======================================================== */
+                /* OUTLINER + PROPERTIES (SELECT / TRANSFORM / ERASE MODES) */
+                /* ======================================================== */
+                <div className="space-y-4">
+                  {/* 1. PLACED LIGHTS OUTLINER */}
+                  <div className="space-y-1.5 pb-3 border-b border-[#D9C9B4]">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                          Placed Lights & Fireworks
+                        </span>
+                        <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                          {placedLights.length} / 250
+                        </span>
+                      </div>
+                      {selectedLightId && (
+                        <button
+                          onClick={() => setSelectedLightId(null)}
+                          className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                        >
+                          Deselect
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
+                      {placedLights.length === 0 ? (
+                        <div className="text-center py-4 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                          No lights placed yet.
+                        </div>
+                      ) : (
+                        placedLights.map((light, idx) => {
+                          const isSelected = selectedLightId === light.id;
+                          const isHovered = hoveredElement?.type === 'light' && hoveredElement.id === light.id;
+                          const meta = getLightById(light.type) || LIGHTING_MANIFEST[0];
+                          const label = meta ? meta.name : `Light ${idx + 1}`;
+
+                          return (
+                            <div
+                              key={light.id}
+                              onClick={() => {
+                                setSelectedLightId(light.id);
+                                if (lightingSubTool !== 'select') {
+                                  setLightingSubTool('select');
+                                }
+                              }}
+                              onMouseEnter={() => setHoveredElement({ type: 'light', id: light.id })}
+                              onMouseLeave={() => setHoveredElement(null)}
+                              className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
+                                  : isHovered
+                                  ? 'bg-[#EADECF] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#4B382C]'
+                                  : 'bg-[#FAF8F5] hover:bg-[#EADECF] border-[#D9C9B4] text-[#4B382C]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
+                                  <img
+                                    src={meta?.previewPath}
+                                    alt={label}
+                                    className="w-full h-full object-contain p-0.5"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                                <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
+                                <span
+                                  className={`text-[9px] font-mono shrink-0 ${
+                                    isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                  }`}
+                                >
+                                  ({light.position[0].toFixed(1)}, {light.position[2].toFixed(1)})
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedLightId(light.id);
+                                    focusCamera(e);
+                                  }}
+                                  title="Focus Camera"
+                                  className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                                >
+                                  <TbFocus2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeLight(light.id);
+                                  }}
+                                  title="Delete Light"
+                                  className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                                >
+                                  <TbTrash className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. ELEMENT PROPERTIES INSPECTOR */}
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                        Element Properties
+                      </span>
+                      {selectedLight && (
+                        <button
+                          onClick={() => setSelectedLightId(null)}
+                          className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                        >
+                          Deselect
+                        </button>
+                      )}
+                    </div>
+
+                    {selectedLight ? (
+                      (() => {
+                        const meta = getLightById(selectedLight.type) || LIGHTING_MANIFEST[0];
+                        const currentScale = selectedLight.scale[0] || 1.0;
+                        const currentHeadingDeg = Math.round(
+                          ((selectedLight.rotation[1] * 180) / Math.PI + 360) % 360
+                        );
+
+                        return (
+                          <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
+                              <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
+                                <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                                <span>Light Specs</span>
+                              </div>
+                            </div>
+
+                            {/* Name Input */}
+                            <div>
+                              <label className="text-[10px] font-bold text-[#8D7666] uppercase">Name</label>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <input
+                                  type="text"
+                                  readOnly
+                                  value={meta?.name || 'Festive Light'}
+                                  className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Scale Slider */}
+                            <div>
+                              <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                                <span>Scale</span>
+                                <span className="text-[#8D7666]">{currentScale.toFixed(2)}x</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0.3"
+                                max="2.5"
+                                step="0.05"
+                                value={currentScale}
+                                onChange={(e) => {
+                                  const s = parseFloat(e.target.value);
+                                  updateLightTransform(selectedLight.id, { scale: [s, s, s] });
+                                }}
+                                className="w-full accent-[#B85F45] cursor-pointer"
+                              />
+                            </div>
+
+                            {/* Heading Rotation Slider */}
+                            <div>
+                              <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                                <span>Heading Rotation</span>
+                                <span className="text-[#8D7666]">{currentHeadingDeg}°</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="0"
+                                max="360"
+                                step="5"
+                                value={currentHeadingDeg}
+                                onChange={(e) => {
+                                  const deg = parseFloat(e.target.value);
+                                  const rad = (deg * Math.PI) / 180;
+                                  updateLightTransform(selectedLight.id, {
+                                    rotation: [selectedLight.rotation[0], rad, selectedLight.rotation[2]],
+                                  });
+                                }}
+                                className="w-full accent-[#B85F45] cursor-pointer"
+                              />
+                            </div>
+
+                            {/* Burst Height Slider (Fireworks only) */}
+                            {selectedLight.category === 'fireworks' && (
+                              <div>
+                                <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                                  <span>Burst Height</span>
+                                  <span className="text-[#8D7666]">
+                                    {(((selectedLight.burstHeight ?? (meta.burstAltitude ?? 1.0))) * 100).toFixed(0)}cm
+                                  </span>
+                                </div>
+                                <input
+                                  type="range"
+                                  min="0.4"
+                                  max="3.5"
+                                  step="0.1"
+                                  value={selectedLight.burstHeight ?? (meta.burstAltitude ?? 1.0)}
+                                  onChange={(e) => {
+                                    updateLightTransform(selectedLight.id, { burstHeight: parseFloat(e.target.value) });
+                                  }}
+                                  className="w-full accent-[#B85F45] cursor-pointer"
+                                />
+                              </div>
+                            )}
+
+                            {/* Test Firework Trigger Button (Fireworks only, Diyas do not need test button) */}
+                            {selectedLight.category === 'fireworks' && (
+                              <button
+                                onClick={() => triggerTestFirework(selectedLight.id)}
+                                className="w-full py-1.5 bg-[#F59E0B] text-[#2B1E16] hover:bg-[#D97706] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                              >
+                                <TbSparkles className="w-3.5 h-3.5 text-[#8F4938]" />
+                                <span>Test Firework Burst 🎆</span>
+                              </button>
+                            )}
+
+                            {/* Duplicate and Snap Surface Buttons */}
+                            <div className="grid grid-cols-2 gap-2 pt-0.5">
+                              <button
+                                onClick={() => duplicateLight(selectedLight.id)}
+                                className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                              >
+                                Duplicate
+                              </button>
+                              <button
+                                onClick={() => snapLightToSurface(selectedLight.id)}
+                                className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                              >
+                                Snap Surface
+                              </button>
+                            </div>
+
+                            {/* Focus and Delete Row */}
+                            <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                              <button
+                                onClick={focusCamera}
+                                className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                              >
+                                Focus
+                              </button>
+                              <button
+                                onClick={() => {
+                                  removeLight(selectedLight.id);
+                                  setSelectedLightId(null);
+                                }}
+                                className="flex-1 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer text-center"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <div className="text-center py-6 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                        Select a light or firework from the list above or diorama to edit properties.
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

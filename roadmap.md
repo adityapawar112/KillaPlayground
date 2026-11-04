@@ -376,38 +376,41 @@ graph TD
 
 ## Ticket 10: Festive Lighting & Fireworks Studio
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed` (Verified in Browser & Unit Tests)
 - **Blocked by**: `Ticket 08`, `Ticket 09`
 - **Delivers**:
   - **Dedicated Lighting Tool**:
-    - New dedicated **`Lighting`** tool in the secondary Top ToolBar (`topToolBar.tsx`).
-    - Migrates all 18 Diyas (9 terracotta clay + 9 hand-painted) out of the Figurine tool and into the Lighting Studio. Figurine tool is refined strictly to historical royalty, garrisons, architecture, and ordnance.
+    - New dedicated **`Lighting`** tool positioned as the **6th and final primary construction tool** (Keys 1-6: Terrain, Building, Texture, Foliage, Figurine, Lighting).
+    - Migrates all 18 Diyas (9 terracotta clay + 9 hand-painted) out of the Figurine tool and into the Lighting Studio. Figurine tool is refined strictly to 22 historical royalty, garrisons, architecture, and ordnance models.
   - **Authentic Diwali Pyrotechnics (10 Fireworks Models)**:
-    - **5 Cone Fountains (*Anaar*)**: 3D inverted cone models (`ConeGeometry`) with decorative retro Diwali paper wrap textures in 5 vibrant color themes: Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
+    - **5 Cone Fountains (*Anaar*)**: 3D inverted cone models (`ConeGeometry`) with decorative retro Diwali paper wrap canvas textures in 5 vibrant color themes: Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
     - **5 Sky Shots (*Aerial Shells*)**: 3D cylinder launcher models (`CylinderGeometry`) with retro casing textures in 5 festive themes: Multicolored Peony, Golden Willow, Silver Palm, Crackling Comet, and Saffron Ring.
-  - **Interactive Pyrotechnics Engine**:
-    - Lightweight, ₹0 client-side particle engine driving realistic Diwali pyrotechnic effects.
-    - Cone Fountains emit a continuous sparkling upward spray with parabolic falloff and crackling embers.
-    - Sky Shots launch an ascending smoke/flare tracer that detonates into a dazzling spherical/willow burst in the night sky.
-    - Fully configurable parameters matching fireworks standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
-  - **Tri-Mode Workflow**:
-    - `Place`: Real-time surface snap hologram reticle with rotation heading and elevation offset; lower pane renders Lighting Vault with category tabs (Clay Diyas, Painted Diyas, Fireworks).
-    - `Select`: Placed lights outliner in upper pane; lower pane renders Element Properties inspector (scale, heading, snap surface, color variation selector, test firework action, delete).
-    - `Delete`: Single/batch deletion of placed lights and fireworks.
+  - **Interactive 3D WebGL Pyrotechnics Engine**:
+    - High-performance native Three.js particle engine (`THREE.Points`) using pre-allocated `Float32Array` buffers with zero per-frame garbage collection.
+    - Cone Fountains emit a continuous sparkling upward spray with parabolic gravity falloff, crackling embers, and active flickering tip flares.
+    - Sky Shots launch an ascending rocket flare tracer with smoke trail that detonates at burst altitude into a dazzling spherical/willow particle burst in the diorama sky.
+    - Fully configurable parameters matching pyrotechnic standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
+  - **Consistent 4-Mode Workflow (Place, Select, Transform, Erase)**:
+    - `Place`: Left panel renders active preview card + plain text sliders directly on `bg-[#F3EBE0]`; Right panel renders Lighting Vault Asset Browser with search and 3 tabs: Clay Diyas (9), Painted Diyas (9), Fireworks (10).
+    - `Select`: Left panel renders selected item summary card + transform sliders + Surface Snap + "Test Firework" button + Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower).
+    - `Transform`: Left panel renders fine-grained camera-relative nudge and heading controls; Right panel renders Outliner + Inspector.
+    - `Erase`: Left panel renders Erase Radius slider on `bg-[#F3EBE0]` + Clear All Lights button; Right panel renders Outliner + Inspector.
   - **Night Diya Glow & PointLights**:
-    - Diyas feature active flickering 3D flame particles with emissive bloom.
-    - In night mode, diyas cast warm amber `PointLight` illumination (`#F59E0B`, radius: 3.5m, decay: 2.0) casting soft shadows on nearby mud slopes and fort masonry.
+    - Diyas feature active flickering 3D flame teardrop particles with emissive glow in `useFrame`.
+    - In night mode, a dynamic pool of up to 8 PointLights (`#F59E0B`, radius: 3.5m, decay: 2.0) illuminates nearby mud slopes and fort masonry with soft shadows without exceeding WebGL dynamic light budgets.
   - **"Test Firework" Action**:
-    - Inspector features a prominent "Test Firework" button allowing builders to detonate and preview the selected firework once on demand.
+    - Prominent festive "Test Firework" action button in both Left and Right sidebars allowing builders to launch, detonate, and preview any selected firework on demand.
+  - **Zero-Cost State Persistence & Undo/Redo**:
+    - Added `PlacedLight` to `SavedProjectSchema` and editor state with undo/redo snapshot buffering, legacy diya migration, and full reset handling.
 
 ### Acceptance Criteria
-- [ ] Lighting tool appears in Top ToolBar; Figurine tool no longer contains diya items.
-- [ ] Lighting Vault drawer displays 3 tabs: Clay Diyas (9), Painted Diyas (9), and Fireworks (10).
-- [ ] Placed diyas illuminate in warm amber point lighting and display animated flames during night mode.
-- [ ] Cone fountains sit upright on terrain/decks and spray sparkling fountain effects on test.
-- [ ] Sky shots launch upward rockets that explode in the night sky with colorful particle bursts.
-- [ ] "Test Firework" button triggers the pyrotechnic effect cleanly without frame drops.
-- [ ] Placed lights and fireworks can be selected, moved, duplicated, and deleted with full undo/redo.
+- [x] Lighting tool appears in Top ToolBar as Key 6; Figurine tool no longer contains diya items.
+- [x] Lighting Vault drawer displays 3 tabs: Clay Diyas (9), Painted Diyas (9), and Fireworks (10).
+- [x] Placed diyas illuminate in warm amber point lighting and display animated flames during night mode.
+- [x] Cone fountains sit upright on terrain/decks and spray sparkling fountain effects on test.
+- [x] Sky shots launch upward rockets that explode in the night sky with colorful particle bursts.
+- [x] "Test Firework" button triggers the pyrotechnic effect cleanly without frame drops.
+- [x] Placed lights and fireworks can be selected, moved, duplicated, and deleted with full undo/redo.
 
 ---
 

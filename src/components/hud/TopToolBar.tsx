@@ -19,6 +19,7 @@ import {
   TbChevronUp,
   TbChevronDown,
   TbCamera,
+  TbFlame,
 } from 'react-icons/tb';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -29,13 +30,14 @@ interface ToolDef {
   icon: React.ElementType;
 }
 
-// 5 Primary Killa-First Construction Tools (Ticket 09)
+// 6 Primary Killa-First Construction Tools (Ticket 10)
 const PRIMARY_KILLA_TOOLS: ToolDef[] = [
   { id: 'terrain', key: '1', icon: TbMountain },
   { id: 'building', key: '2', icon: TbBuildingFortress },
-  { id: 'texture', key: '4', icon: TbTexture },
-  { id: 'foliage', key: '5', icon: TbTrees },
-  { id: 'prop', key: '6', icon: TbUsersGroup },
+  { id: 'texture', key: '3', icon: TbTexture },
+  { id: 'foliage', key: '4', icon: TbTrees },
+  { id: 'prop', key: '5', icon: TbUsersGroup },
+  { id: 'lighting', key: '6', icon: TbFlame },
 ];
 
 // Soil Pipeline Tools
@@ -85,6 +87,7 @@ export const TopToolBar: React.FC = () => {
     paint: { label: 'Paint', fullLabel: 'Structure Paint', desc: 'Paint structures using a brush with authentic pigments' },
     foliage: (t.tools as any).foliage || t.tools.grass,
     prop: t.tools.prop,
+    lighting: (t.tools as any).lighting || { label: 'Lighting', fullLabel: 'Festive Lighting', desc: 'Diyas, oil lamps, cone fountains & fireworks' },
     soil: t.tools.soil,
     water: t.tools.water,
     shape: t.tools.shape,

@@ -29,6 +29,7 @@ import {
   SplineMode,
   TerrainSubTool,
   FoliageSubTool,
+  LightingSubTool,
 } from '@/lib/state/useEditorStore';
 
 export const ToolModeSidebar: React.FC = () => {
@@ -48,6 +49,8 @@ export const ToolModeSidebar: React.FC = () => {
     setFoliageSubTool,
     propSubTool,
     setPropSubTool,
+    lightingSubTool,
+    setLightingSubTool,
     leftSidebarWidth,
     isMobileSidebarMinimized,
     isToolModeMinimized,
@@ -57,7 +60,7 @@ export const ToolModeSidebar: React.FC = () => {
   } = useEditorStore();
 
   // Only render when the active tool has distinct operational modes
-  if (!['building', 'walls', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool)) {
+  if (!['building', 'walls', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting'].includes(activeTool)) {
     return null;
   }
 
@@ -268,6 +271,39 @@ export const ToolModeSidebar: React.FC = () => {
                     <button
                       key={m.id}
                       onClick={() => setPropSubTool(m.id)}
+                      title={m.title}
+                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
+                        isActive
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm ring-1 ring-[#38281E]'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                        {m.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </>
+            )}
+
+            {/* G. FESTIVE LIGHTING & FIREWORKS MODES: Place | Select | Transform | Erase */}
+            {activeTool === 'lighting' && (
+              <>
+                {[
+                  { id: 'place' as const, label: 'Place', icon: TbPencil, title: 'Click on terrain or parapets to place diyas & fireworks' },
+                  { id: 'select' as const, label: 'Select', icon: TbPointer, title: 'Select placed diyas & fireworks to inspect, test, or duplicate' },
+                  { id: 'transform' as const, label: 'Transform', icon: TbArrowsMove, title: 'Nudge, rotate, and elevate selected light' },
+                  { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Click or drag to remove diyas & fireworks' },
+                ].map((m) => {
+                  const Icon = m.icon;
+                  const isActive = lightingSubTool === m.id;
+
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setLightingSubTool(m.id)}
                       title={m.title}
                       className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
                         isActive

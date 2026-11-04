@@ -45,6 +45,7 @@ import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { getTextureById, TEXTURE_MANIFEST } from '@/lib/textures/textureManifest';
 import { getFoliageById, FOLIAGE_MANIFEST } from '@/lib/foliage/foliageManifest';
 import { getFigurineById, FIGURINE_MANIFEST } from '@/lib/figurines/figurineManifest';
+import { getLightById, LIGHTING_MANIFEST } from '@/lib/lighting/lightingManifest';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import { SplineConversionType } from '@/lib/spline/splineTypes';
 import { FortStampType } from '@/lib/walls/wallTypes';
@@ -185,6 +186,33 @@ export const LeftToolSidebar: React.FC = () => {
     duplicateProp,
     snapPropToSurface,
     clearAllProps,
+    placedLights,
+    selectedLightType,
+    setSelectedLightType,
+    selectedLightId,
+    setSelectedLightId,
+    lightingSubTool,
+    setLightingSubTool,
+    lightPlacementScale,
+    setLightPlacementScale,
+    lightPlacementRotation,
+    setLightPlacementRotation,
+    lightRandomRotation,
+    setLightRandomRotation,
+    lightNormalAlign,
+    setLightNormalAlign,
+    lightElevationOffset,
+    setLightElevationOffset,
+    lightBurstHeight,
+    setLightBurstHeight,
+    lightEraseRadius,
+    setLightEraseRadius,
+    updateLightTransform,
+    removeLight,
+    duplicateLight,
+    snapLightToSurface,
+    clearAllLights,
+    triggerTestFirework,
     toggleRightSidebar,
     leftSidebarWidth: sidebarWidth,
     setLeftSidebarWidth: setSidebarWidth,
@@ -347,6 +375,65 @@ export const LeftToolSidebar: React.FC = () => {
     });
   };
 
+  const moveLightCameraRelative = (dir: 'forward' | 'backward' | 'left' | 'right' | 'up' | 'down') => {
+    if (!selectedLightId) return;
+    const light = placedLights.find((l) => l.id === selectedLightId);
+    if (!light) return;
+    const { forward, right } = getCameraAxes();
+    const STEP = 0.15;
+    const V_STEP = 0.05;
+
+    let dx = 0;
+    let dy = 0;
+    let dz = 0;
+
+    if (dir === 'forward') {
+      dx = forward.x * STEP;
+      dz = forward.z * STEP;
+    } else if (dir === 'backward') {
+      dx = -forward.x * STEP;
+      dz = -forward.z * STEP;
+    } else if (dir === 'left') {
+      dx = -right.x * STEP;
+      dz = -right.z * STEP;
+    } else if (dir === 'right') {
+      dx = right.x * STEP;
+      dz = right.z * STEP;
+    } else if (dir === 'up') {
+      dy = V_STEP;
+    } else if (dir === 'down') {
+      dy = -V_STEP;
+    }
+
+    useTerrainStore.getState().pushUndo();
+    updateLightTransform(selectedLightId, {
+      position: [light.position[0] + dx, light.position[1] + dy, light.position[2] + dz],
+    });
+  };
+
+  const rotateLightRelative = (deg: number) => {
+    if (!selectedLightId) return;
+    const light = placedLights.find((l) => l.id === selectedLightId);
+    if (!light) return;
+    const rad = (deg * Math.PI) / 180;
+    useTerrainStore.getState().pushUndo();
+    updateLightTransform(selectedLightId, {
+      rotation: [light.rotation[0], (light.rotation[1] + rad) % (Math.PI * 2), light.rotation[2]],
+    });
+  };
+
+  const scaleLightRelative = (factor: number) => {
+    if (!selectedLightId) return;
+    const light = placedLights.find((l) => l.id === selectedLightId);
+    if (!light) return;
+    const currentScale = light.scale[0] || 1.0;
+    const nextScale = Math.max(0.2, Math.min(3.0, +(currentScale * factor).toFixed(2)));
+    useTerrainStore.getState().pushUndo();
+    updateLightTransform(selectedLightId, {
+      scale: [nextScale, nextScale, nextScale],
+    });
+  };
+
   if (!showLeftToolbar) return null;
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
@@ -355,7 +442,7 @@ export const LeftToolSidebar: React.FC = () => {
   const selectedStair = stairs.find((s) => s.id === selectedStairId);
 
   const isModePanelOpen =
-    ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop'].includes(activeTool) && !isToolModeMinimized;
+    ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting'].includes(activeTool) && !isToolModeMinimized;
   const propertiesTabLeft = isModePanelOpen ? '76px' : '8px';
 
   return (
@@ -2069,6 +2156,523 @@ export const LeftToolSidebar: React.FC = () => {
                           className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >
                           Clear All {placedProps.length} Figurines
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* ======================================================== */}
+          {/* 7. FESTIVE LIGHTING & FIREWORKS STUDIO (Ticket 10)       */}
+          {/* ======================================================== */}
+          {activeTool === 'lighting' && (() => {
+            const activeLight = getLightById(selectedLightType || 'diya_clay_01') || LIGHTING_MANIFEST[0];
+            const selectedLight = placedLights.find((l) => l.id === selectedLightId);
+            const selectedLightMeta = selectedLight ? getLightById(selectedLight.type) : null;
+
+            return (
+              <div className="space-y-4">
+                {/* 1. Header Card Badge */}
+                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-[#EADECF] flex items-center justify-center text-[#B85F45]">
+                      <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-[#4B382C]">Festive Lighting Studio</div>
+                      <div className="text-[10px] text-[#8D7666]">
+                        {placedLights.length} / 250 placed
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
+                    {lightingSubTool} mode
+                  </span>
+                </div>
+
+                {/* 2. MODE A: PLACE MODE */}
+                {lightingSubTool === 'place' && (
+                  <div className="space-y-3.5">
+                    {/* Active Light Target Preview Card */}
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="relative w-9 h-9 rounded-lg bg-[#E8DDD0] flex items-center justify-center text-[#8F4938] shrink-0 border border-[#D9C9B4] overflow-hidden">
+                          <img
+                            src={activeLight.previewPath}
+                            alt={activeLight.name}
+                            className="w-full h-full object-contain p-0.5"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                              const fb = e.currentTarget.parentElement?.querySelector('.fallback-icon');
+                              if (fb) (fb as HTMLElement).style.display = 'block';
+                            }}
+                          />
+                          <TbFlame className="fallback-icon hidden w-5 h-5 text-[#F59E0B]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-[#4B382C] truncate">
+                            {activeLight.name}
+                          </div>
+                          <div className="text-[10px] text-[#8D7666] truncate">
+                            {activeLight.culturalLore || activeLight.category}
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={toggleRightSidebar}
+                        className="px-2 py-1 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[10px] font-bold text-[#4B382C] cursor-pointer shrink-0 transition-colors"
+                        title="Open Lighting Vault Drawer"
+                      >
+                        Change ➔
+                      </button>
+                    </div>
+
+                    {/* Sliders mounted directly on panel background bg-[#F3EBE0] */}
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Placement Scale</span>
+                        <span className="text-[#8D7666]">{lightPlacementScale.toFixed(1)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.5}
+                        max={2.5}
+                        step={0.1}
+                        value={lightPlacementScale}
+                        onChange={(e) => setLightPlacementScale(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Rotation Heading</span>
+                        <span className="text-[#8D7666]">{lightPlacementRotation}°</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        step={5}
+                        value={lightPlacementRotation}
+                        onChange={(e) => setLightPlacementRotation(parseInt(e.target.value, 10))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[11px] font-semibold text-[#4B382C]">Randomize Heading</span>
+                      <button
+                        onClick={() => setLightRandomRotation(!lightRandomRotation)}
+                        className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                          lightRandomRotation ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
+                        }`}
+                      >
+                        <div
+                          className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
+                            lightRandomRotation ? 'translate-x-4' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Align to Normal</span>
+                        <span className="text-[#8D7666]">
+                          {lightNormalAlign === 0 ? 'Upright (0%)' : `${Math.round(lightNormalAlign * 100)}%`}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.0}
+                        max={1.0}
+                        step={0.05}
+                        value={lightNormalAlign}
+                        onChange={(e) => setLightNormalAlign(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Elevation Offset</span>
+                        <span className="text-[#8D7666]">{(lightElevationOffset * 100).toFixed(0)}cm</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-0.05}
+                        max={0.30}
+                        step={0.01}
+                        value={lightElevationOffset}
+                        onChange={(e) => setLightElevationOffset(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    {activeLight.category === 'fireworks' && (
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Burst Height</span>
+                          <span className="text-[#8D7666]">{(lightBurstHeight * 100).toFixed(0)}cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.4}
+                          max={3.5}
+                          step={0.1}
+                          value={lightBurstHeight}
+                          onChange={(e) => setLightBurstHeight(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+                    )}
+
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#634E40] space-y-2">
+                      <p className="leading-snug">
+                        Left-click on mountain terrain, ramparts, bastions, or ground to place instances. Right-drag to orbit camera.
+                      </p>
+                      <button
+                        onClick={toggleRightSidebar}
+                        className="w-full py-1.5 bg-[#4B382C] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
+                      >
+                        Browse All {LIGHTING_MANIFEST.length} Lights & Fireworks
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. MODE B: SELECT MODE */}
+                {lightingSubTool === 'select' && (
+                  <div className="space-y-3.5">
+                    {selectedLight ? (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#4B382C]">
+                              {selectedLightMeta?.name || selectedLight.type}
+                            </span>
+                            <span className="text-[10px] text-[#8D7666] font-mono">
+                              {selectedLight.id.slice(-6)}
+                            </span>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[#634E40] bg-[#EADECF] p-2 rounded-lg">
+                            <div>
+                              <span className="text-[#8D7666] block">X:</span>
+                              <span className="font-bold">{selectedLight.position[0].toFixed(2)}m</span>
+                            </div>
+                            <div>
+                              <span className="text-[#8D7666] block">Y:</span>
+                              <span className="font-bold">{selectedLight.position[1].toFixed(2)}m</span>
+                            </div>
+                            <div>
+                              <span className="text-[#8D7666] block">Z:</span>
+                              <span className="font-bold">{selectedLight.position[2].toFixed(2)}m</span>
+                            </div>
+                          </div>
+
+                          {/* Test Firework Action Button (Fireworks only, Diyas do not need test button) */}
+                          {selectedLight.category === 'fireworks' && (
+                            <button
+                              onClick={() => triggerTestFirework(selectedLight.id)}
+                              className="w-full py-2 bg-[#F59E0B] text-[#2B1E16] hover:bg-[#D97706] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                            >
+                              <TbSparkles className="w-4 h-4 text-[#8F4938]" />
+                              <span>Test Firework Burst 🎆</span>
+                            </button>
+                          )}
+
+                          {/* Burst Height Slider (Fireworks only) */}
+                          {selectedLight.category === 'fireworks' && (
+                            <div>
+                              <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                                <span>Burst Height</span>
+                                <span className="text-[#8D7666]">
+                                  {(((selectedLight.burstHeight ?? (selectedLightMeta?.burstAltitude ?? 1.0))) * 100).toFixed(0)}cm
+                                </span>
+                              </div>
+                              <input
+                                type="range"
+                                min={0.4}
+                                max={3.5}
+                                step={0.1}
+                                value={selectedLight.burstHeight ?? (selectedLightMeta?.burstAltitude ?? 1.0)}
+                                onChange={(e) =>
+                                  updateLightTransform(selectedLight.id, { burstHeight: parseFloat(e.target.value) })
+                                }
+                                className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                              />
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-2 gap-2 pt-1">
+                            <button
+                              onClick={() => duplicateLight(selectedLight.id)}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                            >
+                              + Duplicate
+                            </button>
+                            <button
+                              onClick={() => snapLightToSurface(selectedLight.id)}
+                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                            >
+                              Snap to Surface
+                            </button>
+                          </div>
+
+                          <button
+                            onClick={() => setLightingSubTool('transform')}
+                            className="w-full py-1.5 bg-[#B85F45] text-white hover:bg-[#A04F38] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
+                          >
+                            <TbArrowsMove className="w-3.5 h-3.5" />
+                            <span>Transform & Nudge</span>
+                          </button>
+
+                          <button
+                            onClick={() => removeLight(selectedLight.id)}
+                            className="w-full py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1"
+                          >
+                            <TbTrash className="w-3.5 h-3.5" />
+                            <span>Delete Light</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
+                        <TbPointer className="w-6 h-6 mx-auto text-[#8D7666]" />
+                        <div className="text-xs font-bold text-[#4B382C]">Select Light</div>
+                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                          Click on any placed diya or firework in the 3D diorama to inspect, test, move, or delete it.
+                        </p>
+                      </div>
+                    )}
+
+                    {placedLights.length > 0 && (
+                      <div className="pt-2 border-t border-[#D9C9B4]">
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Are you sure you want to remove all placed lights & fireworks from the diorama?')) {
+                              clearAllLights();
+                            }
+                          }}
+                          className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        >
+                          Clear All {placedLights.length} Lights
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 4. MODE C: TRANSFORM MODE */}
+                {lightingSubTool === 'transform' && (
+                  <div className="space-y-3.5">
+                    {selectedLight ? (
+                      <div className="space-y-3.5">
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                          <div className="text-xs font-bold text-[#4B382C]">Camera-Relative Nudge</div>
+                          <div className="space-y-1.5">
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <button
+                                onClick={() => moveLightCameraRelative('up')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Vertically Up (+Y)"
+                              >
+                                ↑ Up
+                              </button>
+                              <button
+                                onClick={() => moveLightCameraRelative('forward')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Forward in Camera View"
+                              >
+                                ▲ Forward
+                              </button>
+                              <button
+                                onClick={() => moveLightCameraRelative('down')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Vertically Down (-Y)"
+                              >
+                                ↓ Down
+                              </button>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <button
+                                onClick={() => moveLightCameraRelative('left')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Left in Camera View"
+                              >
+                                ◀ Left
+                              </button>
+                              <button
+                                onClick={() => moveLightCameraRelative('backward')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Backward in Camera View"
+                              >
+                                ▼ Backward
+                              </button>
+                              <button
+                                onClick={() => moveLightCameraRelative('right')}
+                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                title="Move Right in Camera View"
+                              >
+                                ▶ Right
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <span>Heading Rotation</span>
+                            <span className="text-[#8D7666]">
+                              {Math.round(((selectedLight.rotation[1] * 180) / Math.PI + 360) % 360)}°
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                            <button
+                              onClick={() => rotateLightRelative(-15)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              ⟲ -15°
+                            </button>
+                            <button
+                              onClick={() => rotateLightRelative(15)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              ⟳ +15°
+                            </button>
+                            <button
+                              onClick={() => rotateLightRelative(180)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              ⟳ 180°
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <span>Scale Multiplier</span>
+                            <span className="text-[#8D7666]">{selectedLight.scale[0].toFixed(2)}x</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1.5 mt-1.5">
+                            <button
+                              onClick={() => scaleLightRelative(0.9)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              -10%
+                            </button>
+                            <button
+                              onClick={() => scaleLightRelative(1.1)}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              +10%
+                            </button>
+                            <button
+                              onClick={() => {
+                                updateLightTransform(selectedLight.id, { scale: [1, 1, 1] });
+                              }}
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                            >
+                              1.0x
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Burst Height Slider (Fireworks only) */}
+                        {selectedLight.category === 'fireworks' && (
+                          <div>
+                            <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                              <span>Burst Height</span>
+                              <span className="text-[#8D7666]">
+                                {(((selectedLight.burstHeight ?? (selectedLightMeta?.burstAltitude ?? 1.0))) * 100).toFixed(0)}cm
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0.4}
+                              max={3.5}
+                              step={0.1}
+                              value={selectedLight.burstHeight ?? (selectedLightMeta?.burstAltitude ?? 1.0)}
+                              onChange={(e) =>
+                                updateLightTransform(selectedLight.id, { burstHeight: parseFloat(e.target.value) })
+                              }
+                              className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                            />
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-[#D9C9B4] space-y-2">
+                          <button
+                            onClick={() => snapLightToSurface(selectedLight.id)}
+                            className="w-full py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg text-xs font-bold cursor-pointer text-[#4B382C]"
+                          >
+                            Snap Flush to Surface
+                          </button>
+                          <button
+                            onClick={() => removeLight(selectedLight.id)}
+                            className="w-full py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                          >
+                            Delete Light
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
+                        <TbArrowsMove className="w-6 h-6 mx-auto text-[#8D7666]" />
+                        <div className="text-xs font-bold text-[#4B382C]">Transform Light</div>
+                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                          Please select a light first to adjust its position, rotation, or scale.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 5. MODE D: ERASE MODE */}
+                {lightingSubTool === 'erase' && (
+                  <div className="space-y-3.5">
+                    {/* Brush Radius Slider mounted directly on panel background */}
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Brush Radius</span>
+                        <span className="text-[#8D7666]">{lightEraseRadius.toFixed(1)}m</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0.2}
+                        max={2.5}
+                        step={0.1}
+                        value={lightEraseRadius}
+                        onChange={(e) => setLightEraseRadius(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-1.5">
+                      <TbTrash className="w-5 h-5 mx-auto text-red-500" />
+                      <div className="text-xs font-bold text-[#4B382C]">Erase Brush</div>
+                      <p className="text-[11px] text-[#634E40] leading-relaxed">
+                        Click or drag on the diorama or outliner to remove lights within the brush radius.
+                      </p>
+                    </div>
+
+                    {placedLights.length > 0 && (
+                      <div className="pt-2 border-t border-[#D9C9B4]">
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Are you sure you want to remove all ${placedLights.length} placed lights & fireworks from the diorama?`)) {
+                              clearAllLights();
+                            }
+                          }}
+                          className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
+                        >
+                          Clear All {placedLights.length} Lights
                         </button>
                       </div>
                     )}

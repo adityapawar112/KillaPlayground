@@ -17,6 +17,7 @@ export const BottomStatusBar: React.FC = () => {
     foliageSubTool,
     paintSubTool,
     propSubTool,
+    lightingSubTool,
   } = useEditorStore();
   const { t } = useTranslation();
 
@@ -67,6 +68,11 @@ export const BottomStatusBar: React.FC = () => {
         if (propSubTool === 'select') return 'Select Figurine';
         if (propSubTool === 'transform') return 'Transform Figurine';
         return 'Place Figurine';
+      case 'lighting':
+        if (lightingSubTool === 'erase') return 'Erase Diya / Firework';
+        if (lightingSubTool === 'select') return 'Select Light';
+        if (lightingSubTool === 'transform') return 'Transform Light';
+        return 'Place Diya / Firework';
       default:
         return 'Apply Tool';
     }

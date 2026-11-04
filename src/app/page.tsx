@@ -118,21 +118,24 @@ export default function HomePage() {
         return;
       }
 
-      // Tool Switching (1 to 9, 0)
+      // Tool Switching (1 to 6)
       if (e.key === '1') {
         store.setActiveTool('terrain');
         e.preventDefault();
       } else if (e.key === '2') {
         store.setActiveTool('building');
         e.preventDefault();
-      } else if (e.key === '4') {
+      } else if (e.key === '3') {
         store.setActiveTool('texture');
         e.preventDefault();
-      } else if (e.key === '5') {
+      } else if (e.key === '4') {
         store.setActiveTool('foliage');
         e.preventDefault();
-      } else if (e.key === '6') {
+      } else if (e.key === '5') {
         store.setActiveTool('prop');
+        e.preventDefault();
+      } else if (e.key === '6') {
+        store.setActiveTool('lighting');
         e.preventDefault();
       }
       // Keys 7-0 (soil pipeline tools) hidden for now

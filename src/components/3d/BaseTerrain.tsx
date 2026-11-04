@@ -218,6 +218,8 @@ export const BaseTerrainContent: React.FC = () => {
   const foliageSubTool = useEditorStore((s) => s.foliageSubTool);
   const propEraseRadius = useEditorStore((s) => s.propEraseRadius);
   const propSubTool = useEditorStore((s) => s.propSubTool);
+  const lightEraseRadius = useEditorStore((s) => s.lightEraseRadius);
+  const lightingSubTool = useEditorStore((s) => s.lightingSubTool);
 
   // Load 52 retro textures into DataArrayTexture asynchronously on client
   useEffect(() => {
@@ -839,6 +841,35 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      // Handle Lighting & Fireworks Erase Brush Direct Surface Erasing
+      if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
+        if (e.button !== 0 || e.altKey) return;
+        e.stopPropagation();
+
+        if (controls) {
+          controls.enabled = false;
+        }
+
+        isPaintingRef.current = true;
+        pushUndo();
+
+        const toRemove = editor.placedLights.filter((l) => {
+          const dx = l.position[0] - e.point.x;
+          const dz = l.position[2] - e.point.z;
+          return Math.hypot(dx, dz) <= editor.lightEraseRadius;
+        });
+        if (toRemove.length > 0) {
+          editor.removeLights(toRemove.map((l) => l.id));
+        }
+
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        setCursorVisible(true);
+        invalidate();
+        return;
+      }
+
       if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
         return;
       }
@@ -1085,6 +1116,28 @@ export const BaseTerrainContent: React.FC = () => {
         return;
       }
 
+      // Handle Lighting & Fireworks Erase Tool Pointer Move & Brush Dragging
+      if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
+        const norm = computeCursorNormal(e.point, e.face?.normal);
+        setCursorPos([e.point.x, e.point.y, e.point.z]);
+        setCursorNormal(norm);
+        if (!cursorVisible) setCursorVisible(true);
+
+        if (isPaintingRef.current) {
+          e.stopPropagation();
+          const toRemove = editor.placedLights.filter((l) => {
+            const dx = l.position[0] - e.point.x;
+            const dz = l.position[2] - e.point.z;
+            return Math.hypot(dx, dz) <= editor.lightEraseRadius;
+          });
+          if (toRemove.length > 0) {
+            editor.removeLights(toRemove.map((l) => l.id));
+          }
+          invalidate();
+        }
+        return;
+      }
+
       if (editor.activeTool !== 'terrain') {
         if (cursorVisible) setCursorVisible(false);
         return;
@@ -1304,6 +1357,8 @@ export const BaseTerrainContent: React.FC = () => {
             ? foliageBrushRadius
             : activeTool === 'prop' && propSubTool === 'erase'
             ? propEraseRadius
+            : activeTool === 'lighting' && lightingSubTool === 'erase'
+            ? lightEraseRadius
             : activeTool === 'texture' || activeTool === 'paint'
             ? paintBrushRadius
             : brushRadius
@@ -1311,7 +1366,8 @@ export const BaseTerrainContent: React.FC = () => {
         subTool={
           activeTool === 'foliage'
             ? foliageSubTool
-            : activeTool === 'prop' && propSubTool === 'erase'
+            : (activeTool === 'prop' && propSubTool === 'erase') ||
+              (activeTool === 'lighting' && lightingSubTool === 'erase')
             ? 'erase'
             : activeTool === 'texture' || activeTool === 'paint'
             ? paintSubTool
@@ -1323,7 +1379,8 @@ export const BaseTerrainContent: React.FC = () => {
             activeTool === 'texture' ||
             activeTool === 'paint' ||
             activeTool === 'foliage' ||
-            (activeTool === 'prop' && propSubTool === 'erase'))
+            (activeTool === 'prop' && propSubTool === 'erase') ||
+            (activeTool === 'lighting' && lightingSubTool === 'erase'))
         }
       />
     </>

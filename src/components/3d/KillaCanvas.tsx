@@ -14,6 +14,7 @@ import { FortWalls } from './FortWalls';
 import { SplineStructures } from './SplineStructures';
 import { FoliageRenderer } from './FoliageRenderer';
 import { FigurineRenderer } from './FigurineRenderer';
+import { LightingRenderer } from './LightingRenderer';
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -221,6 +222,10 @@ const CameraKeyboardController: React.FC<{
           const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.propEraseRadius + step).toFixed(2))));
           editor.setPropEraseRadius(newRadius);
           e.preventDefault();
+        } else if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.lightEraseRadius + step).toFixed(2))));
+          editor.setLightEraseRadius(newRadius);
+          e.preventDefault();
         } else if (editor.activeTool === 'foliage') {
           const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.foliageBrushRadius + step).toFixed(2))));
           editor.setFoliageBrushRadius(newRadius);
@@ -302,6 +307,20 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
               );
               editor.setPropPlacementScale(newScale);
             }
+          } else if (tool === 'lighting') {
+            if (editor.lightingSubTool === 'erase') {
+              const newRadius = Math.max(
+                0.2,
+                Math.min(3.0, parseFloat((editor.lightEraseRadius + (isUp ? step : -step)).toFixed(2)))
+              );
+              editor.setLightEraseRadius(newRadius);
+            } else {
+              const newScale = Math.max(
+                0.3,
+                Math.min(2.5, parseFloat((editor.lightPlacementScale + (isUp ? step : -step)).toFixed(1)))
+              );
+              editor.setLightPlacementScale(newScale);
+            }
           } else if (tool === 'foliage') {
             const newRadius = Math.max(
               0.2,
@@ -329,6 +348,12 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
             if (newRot < 0) newRot += 360;
             if (newRot >= 360) newRot -= 360;
             editor.setPropPlacementRotation(newRot);
+          } else if (tool === 'lighting') {
+            const step = 15;
+            let newRot = editor.lightPlacementRotation + (isUp ? step : -step);
+            if (newRot < 0) newRot += 360;
+            if (newRot >= 360) newRot -= 360;
+            editor.setLightPlacementRotation(newRot);
           } else if (tool === 'foliage') {
             const step = 1;
             const newDensity = Math.max(
@@ -375,6 +400,13 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
               Math.min(0.30, parseFloat((editor.propElevationOffset + (isUp ? step : -step)).toFixed(2)))
             );
             editor.setPropElevationOffset(newOffset);
+          } else if (tool === 'lighting') {
+            const step = 0.01;
+            const newOffset = Math.max(
+              -0.10,
+              Math.min(0.30, parseFloat((editor.lightElevationOffset + (isUp ? step : -step)).toFixed(2)))
+            );
+            editor.setLightElevationOffset(newOffset);
           } else if (tool === 'foliage') {
             const step = 0.05;
             const newJitter = Math.max(
@@ -602,6 +634,11 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         {/* 3D Historical Figurines & Architecture Layer */}
         <Suspense fallback={null}>
           <FigurineRenderer />
+        </Suspense>
+
+        {/* 3D Festive Lighting & Fireworks Layer (Ticket 10) */}
+        <Suspense fallback={null}>
+          <LightingRenderer />
         </Suspense>
 
         {/* 3D Base Water Level Plane for Coastal Moats & Excavated Ponds */}

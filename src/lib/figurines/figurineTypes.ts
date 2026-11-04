@@ -7,8 +7,6 @@ export type FigurineCategory =
   | 'royalty'
   | 'mavale'
   | 'musicians'
-  | 'diyas_clay'
-  | 'diyas_color'
   | 'yard_props'
   | 'architecture'
   | 'artillery';

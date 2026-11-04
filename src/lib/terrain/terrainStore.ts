@@ -25,7 +25,7 @@ import {
   clearPaintBuffer,
   PaintBrushOptions,
 } from './terrainPaintBuffer';
-import { useEditorStore, PondWaterFeature, FoliageInstance, SplinePath, PlacedProp, FoundationSlab, StairPath } from '../state/useEditorStore';
+import { useEditorStore, PondWaterFeature, FoliageInstance, SplinePath, PlacedProp, PlacedLight, FoundationSlab, StairPath } from '../state/useEditorStore';
 import { WallPath, CitadelKeep } from '../walls/wallTypes';
 
 interface TerrainState {
@@ -81,6 +81,8 @@ const stairUndoStack: StairPath[][] = [];
 const stairRedoStack: StairPath[][] = [];
 const propUndoStack: PlacedProp[][] = [];
 const propRedoStack: PlacedProp[][] = [];
+const lightUndoStack: PlacedLight[][] = [];
+const lightRedoStack: PlacedLight[][] = [];
 
 // shortcut: Module-level shared WebGL DataTextures and DataArrayTexture persist across component renders for singleton diorama lifetime to enable zero GPU reallocation resets, upgrade to scoped context if supporting multiple simultaneous viewports
 // Generate organic starter mud hill by default
@@ -185,6 +187,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     stairRedoStack.length = 0;
     propUndoStack.length = 0;
     propRedoStack.length = 0;
+    lightUndoStack.length = 0;
+    lightRedoStack.length = 0;
 
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
@@ -260,6 +264,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       foundationUndoStack.shift();
       stairUndoStack.shift();
       propUndoStack.shift();
+      lightUndoStack.shift();
     }
     undoStack.push(stateBuffer.slice());
     paintUndoStack.push(paintBuffer.slice());
@@ -271,6 +276,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     foundationUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
     stairUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
     propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
+    lightUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedLights || [])));
     redoStack.length = 0;
     paintRedoStack.length = 0;
     pondRedoStack.length = 0;
@@ -281,6 +287,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     foundationRedoStack.length = 0;
     stairRedoStack.length = 0;
     propRedoStack.length = 0;
+    lightRedoStack.length = 0;
     set({ lastUpdated: Date.now() });
   },
 
@@ -293,7 +300,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     splineUndoStack.length > 0 ||
     foundationUndoStack.length > 0 ||
     stairUndoStack.length > 0 ||
-    propUndoStack.length > 0,
+    propUndoStack.length > 0 ||
+    lightUndoStack.length > 0,
   canRedo: () =>
     redoStack.length > 0 ||
     paintRedoStack.length > 0 ||
@@ -303,7 +311,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     splineRedoStack.length > 0 ||
     foundationRedoStack.length > 0 ||
     stairRedoStack.length > 0 ||
-    propRedoStack.length > 0,
+    propRedoStack.length > 0 ||
+    lightRedoStack.length > 0,
 
   undo: () => {
     if (
@@ -315,7 +324,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       splineUndoStack.length === 0 &&
       foundationUndoStack.length === 0 &&
       stairUndoStack.length === 0 &&
-      propUndoStack.length === 0
+      propUndoStack.length === 0 &&
+      lightUndoStack.length === 0
     )
       return false;
     const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
@@ -380,6 +390,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       useEditorStore.getState().setPlacedProps(prevProps);
     }
 
+    if (lightUndoStack.length > 0) {
+      const prevLights = lightUndoStack.pop()!;
+      lightRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedLights || [])));
+      useEditorStore.getState().setPlacedLights(prevLights);
+    }
+
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
@@ -399,7 +415,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       splineRedoStack.length === 0 &&
       foundationRedoStack.length === 0 &&
       stairRedoStack.length === 0 &&
-      propRedoStack.length === 0
+      propRedoStack.length === 0 &&
+      lightRedoStack.length === 0
     )
       return false;
     const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
@@ -462,6 +479,12 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       const nextProps = propRedoStack.pop()!;
       propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
       useEditorStore.getState().setPlacedProps(nextProps);
+    }
+
+    if (lightRedoStack.length > 0) {
+      const nextLights = lightRedoStack.pop()!;
+      lightUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedLights || [])));
+      useEditorStore.getState().setPlacedLights(nextLights);
     }
 
     stateTexture.needsUpdate = true;

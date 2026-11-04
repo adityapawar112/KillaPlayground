@@ -113,7 +113,7 @@ class FigurineAssetManager {
           // 7. Fort Architecture: Buildings ~0.25m - 0.33m tall with 0.40m - 0.58m footprints proportional to 0.15m figurines & 0.25m walls.
           let scaleFactor = 0.16;
           if (modelPath.includes('diya_')) {
-            scaleFactor = 0.18;
+            scaleFactor = 0.60; // Scaled to ~0.17m footprint matching Mavale figurine size
           } else if (modelPath.includes('saffron_flag') || modelPath.includes('flag.glb')) {
             scaleFactor = 0.28;
           } else if (modelPath.includes('bullock_cart') || modelPath.includes('Bullock')) {

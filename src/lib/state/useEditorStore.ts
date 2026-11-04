@@ -22,7 +22,8 @@ import { FoliageInstance, FoliageSubTool } from '../foliage/foliageTypes';
 import { getFoliageById } from '../foliage/foliageManifest';
 import { foliageTextureManager } from '../foliage/foliageTextureManager';
 import { PropSubTool } from '../figurines/figurineTypes';
-export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool, PropSubTool };
+import { PlacedLight, LightingSubTool } from '../lighting/lightingTypes';
+export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool, PropSubTool, PlacedLight, LightingSubTool };
 
 export type BuildingMode = 'select' | 'walls' | 'foundation' | 'stairs' | 'fortifications';
 
@@ -50,7 +51,7 @@ export interface StairPath {
 }
 
 export interface HoveredElement {
-  type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop' | 'foundation' | 'stair';
+  type: 'wall' | 'bastion' | 'tower' | 'box' | 'gate' | 'spline' | 'prop' | 'foundation' | 'stair' | 'light';
   id: string;
 }
 
@@ -67,6 +68,7 @@ export const SavedProjectSchema = z.object({
   stairs: z.array(z.any()).optional().default([]),
   citadelKeeps: z.array(z.any()).optional().default([]),
   placedProps: z.array(z.any()).default([]),
+  placedLights: z.array(z.any()).optional().default([]),
   pondWaterFeatures: z.array(z.any()).optional().default([]),
   foliageInstances: z.array(z.any()).optional().default([]),
   timestamp: z.number().optional(),
@@ -81,6 +83,7 @@ export type ToolType =
   | 'texture'
   | 'foliage'
   | 'prop'
+  | 'lighting'
   // Soil Pipeline Tools (Deferred Phase)
   | 'soil'
   | 'water'
@@ -131,6 +134,7 @@ export interface SavedProject {
     walls?: WallPath[];
     citadelKeeps?: CitadelKeep[];
     placedProps: PlacedProp[];
+    placedLights?: PlacedLight[];
     pondWaterFeatures?: PondWaterFeature[];
     foliageInstances?: FoliageInstance[];
     fortTitle: string;
@@ -370,6 +374,31 @@ interface EditorState {
   selectedPropType: string | null;
   selectedPropId: string | null;
 
+  // Festive Lighting & Fireworks Studio State (Ticket 10)
+  lightingSubTool: LightingSubTool;
+  setLightingSubTool: (st: LightingSubTool) => void;
+  lightingCategoryFilter: string;
+  setLightingCategoryFilter: (cat: string) => void;
+  lightingSearchQuery: string;
+  setLightingSearchQuery: (query: string) => void;
+  lightPlacementScale: number;
+  setLightPlacementScale: (scale: number) => void;
+  lightPlacementRotation: number;
+  setLightPlacementRotation: (rot: number) => void;
+  lightRandomRotation: boolean;
+  setLightRandomRotation: (rand: boolean) => void;
+  lightNormalAlign: number;
+  setLightNormalAlign: (align: number) => void;
+  lightElevationOffset: number;
+  setLightElevationOffset: (offset: number) => void;
+  lightBurstHeight: number;
+  setLightBurstHeight: (height: number) => void;
+  lightEraseRadius: number;
+  setLightEraseRadius: (radius: number) => void;
+  placedLights: PlacedLight[];
+  selectedLightType: string | null;
+  selectedLightId: string | null;
+
   // Metadata & Project Identity
   fortTitle: string;
   builderName: string;
@@ -494,6 +523,23 @@ interface EditorState {
   snapPropToSurface: (id: string) => void;
   clearAllProps: () => void;
   setPlacedProps: (props: PlacedProp[]) => void;
+
+  // Festive Lighting Actions (Ticket 10)
+  addLight: (light: Omit<PlacedLight, 'id' | 'createdAt'>) => string;
+  updateLightTransform: (
+    id: string,
+    transform: Partial<Pick<PlacedLight, 'position' | 'rotation' | 'scale' | 'colorTheme' | 'burstHeight'>>
+  ) => void;
+  removeLight: (id: string) => void;
+  removeLights: (ids: string[]) => void;
+  setSelectedLightType: (type: string | null) => void;
+  setSelectedLightId: (id: string | null) => void;
+  duplicateLight: (id: string) => string | null;
+  snapLightToSurface: (id: string) => void;
+  clearAllLights: () => void;
+  setPlacedLights: (lights: PlacedLight[]) => void;
+  testFireworkTrigger: { id: string; timestamp: number } | null;
+  triggerTestFirework: (id: string) => void;
 
   // Metadata Actions
   setFortTitle: (title: string) => void;
@@ -1415,6 +1461,32 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectedPropType: 'warrior',
   selectedPropId: null,
 
+  // Festive Lighting & Fireworks Initial State (Ticket 10)
+  lightingSubTool: 'place',
+  setLightingSubTool: (st) => set({ lightingSubTool: st }),
+  lightingCategoryFilter: 'all',
+  setLightingCategoryFilter: (cat) => set({ lightingCategoryFilter: cat }),
+  lightingSearchQuery: '',
+  setLightingSearchQuery: (query) => set({ lightingSearchQuery: query }),
+  lightPlacementScale: 1.0,
+  setLightPlacementScale: (scale) => set({ lightPlacementScale: scale }),
+  lightPlacementRotation: 0,
+  setLightPlacementRotation: (rot) => set({ lightPlacementRotation: rot }),
+  lightRandomRotation: false,
+  setLightRandomRotation: (rand) => set({ lightRandomRotation: rand }),
+  lightNormalAlign: 0.0,
+  setLightNormalAlign: (align) => set({ lightNormalAlign: align }),
+  lightElevationOffset: 0.0,
+  setLightElevationOffset: (offset) => set({ lightElevationOffset: offset }),
+  lightBurstHeight: 1.0,
+  setLightBurstHeight: (height) => set({ lightBurstHeight: height }),
+  lightEraseRadius: 0.8,
+  setLightEraseRadius: (radius) => set({ lightEraseRadius: radius }),
+  placedLights: [],
+  selectedLightType: 'diya_clay_01',
+  selectedLightId: null,
+  testFireworkTrigger: null,
+
   fortTitle: 'Our Killa',
   builderName: 'Mavala Builder',
   templateId: 'raigad',
@@ -1517,7 +1589,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   saveProjectLocally: (name) => {
-    const { splines, walls, placedProps, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
+    const { splines, walls, placedProps, placedLights, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
     const projectName = name?.trim() || fortTitle || 'Untitled Killa';
     const projectId = `killa_${Date.now()}`;
     const newProject: SavedProject = {
@@ -1529,6 +1601,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         splines,
         walls,
         placedProps,
+        placedLights: placedLights || [],
         pondWaterFeatures,
         foliageInstances: foliageInstances || [],
         fortTitle: projectName,
@@ -1565,10 +1638,33 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const proj = savedProjects.find((p) => p.id === id);
     if (!proj || !proj.data) return false;
 
+    // Migrate any legacy diya props from placedProps to placedLights if needed
+    const rawProps = proj.data.placedProps || [];
+    const rawLights: PlacedLight[] = proj.data.placedLights || [];
+    const migratedLights: PlacedLight[] = [...rawLights];
+    const remainingProps: PlacedProp[] = [];
+
+    for (const p of rawProps) {
+      if (p.type && p.type.startsWith('diya_')) {
+        migratedLights.push({
+          id: p.id,
+          type: p.type,
+          category: p.type.startsWith('diya_color') ? 'diyas_color' : 'diyas_clay',
+          position: p.position,
+          rotation: p.rotation,
+          scale: p.scale,
+          createdAt: Date.now(),
+        });
+      } else {
+        remainingProps.push(p);
+      }
+    }
+
     set({
       splines: proj.data.splines || [],
       walls: proj.data.walls || [],
-      placedProps: proj.data.placedProps || [],
+      placedProps: remainingProps,
+      placedLights: migratedLights,
       pondWaterFeatures: proj.data.pondWaterFeatures || [],
       foliageInstances: proj.data.foliageInstances || [],
       fortTitle: proj.data.fortTitle || proj.name,
@@ -1595,7 +1691,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   exportProjectData: () => {
-    const { splines, walls, foundations, stairs, placedProps, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const { splines, walls, foundations, stairs, placedProps, placedLights, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode } = get();
     const payload = {
       version: '1.0.0',
       exportedAt: new Date().toISOString(),
@@ -1609,6 +1705,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       foundations: foundations || [],
       stairs: stairs || [],
       placedProps,
+      placedLights: placedLights || [],
       pondWaterFeatures,
       foliageInstances: foliageInstances || [],
     };
@@ -1638,6 +1735,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 createdAt: s.createdAt || Date.now(),
               }));
 
+      // Migrate legacy diya props from data.placedProps if present
+      const rawProps = data.placedProps || [];
+      const rawLights: PlacedLight[] = (data as any).placedLights || [];
+      const migratedLights: PlacedLight[] = [...rawLights];
+      const remainingProps: PlacedProp[] = [];
+
+      for (const p of rawProps) {
+        if (p.type && p.type.startsWith('diya_')) {
+          migratedLights.push({
+            id: p.id,
+            type: p.type,
+            category: p.type.startsWith('diya_color') ? 'diyas_color' : 'diyas_clay',
+            position: p.position,
+            rotation: p.rotation,
+            scale: p.scale,
+            createdAt: Date.now(),
+          });
+        } else {
+          remainingProps.push(p);
+        }
+      }
+
       set({
         fortTitle: data.fortTitle,
         builderName: data.builderName,
@@ -1648,7 +1767,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         walls: (data as any).walls || [],
         foundations: (data as any).foundations || [],
         stairs: importedStairs,
-        placedProps: data.placedProps,
+        placedProps: remainingProps,
+        placedLights: migratedLights,
         pondWaterFeatures: data.pondWaterFeatures || [],
         foliageInstances: (data as any).foliageInstances || [],
         isStartupModalOpen: false,
@@ -1971,6 +2091,90 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   setPlacedProps: (props) => set({ placedProps: props }),
 
+  // Festive Lighting Actions (Ticket 10)
+  addLight: (light) => {
+    pushUndoSnapshot();
+    const id = `light_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newLight: PlacedLight = {
+      ...light,
+      burstHeight: light.burstHeight ?? get().lightBurstHeight,
+      id,
+      createdAt: Date.now(),
+    };
+    set((state) => ({
+      placedLights: [...state.placedLights, newLight],
+      selectedLightId: id,
+    }));
+    return id;
+  },
+  updateLightTransform: (id, transform) =>
+    set((state) => ({
+      placedLights: state.placedLights.map((l) =>
+        l.id === id ? { ...l, ...transform } : l
+      ),
+    })),
+  removeLight: (id) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      placedLights: state.placedLights.filter((l) => l.id !== id),
+      selectedLightId: state.selectedLightId === id ? null : state.selectedLightId,
+    }));
+  },
+  removeLights: (ids) => {
+    if (ids.length === 0) return;
+    pushUndoSnapshot();
+    const idSet = new Set(ids);
+    set((state) => ({
+      placedLights: state.placedLights.filter((l) => !idSet.has(l.id)),
+      selectedLightId: state.selectedLightId && idSet.has(state.selectedLightId) ? null : state.selectedLightId,
+    }));
+  },
+  setSelectedLightType: (type) => set({ selectedLightType: type }),
+  setSelectedLightId: (id) => set({ selectedLightId: id }),
+  duplicateLight: (id) => {
+    const { placedLights } = get();
+    const source = placedLights.find((l) => l.id === id);
+    if (!source) return null;
+    pushUndoSnapshot();
+    const newId = `light_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const dup: PlacedLight = {
+      ...source,
+      id: newId,
+      position: [source.position[0] + 0.2, source.position[1], source.position[2] + 0.2],
+      createdAt: Date.now(),
+    };
+    set((state) => ({
+      placedLights: [...state.placedLights, dup],
+      selectedLightId: newId,
+    }));
+    return newId;
+  },
+  snapLightToSurface: (id) => {
+    const { placedLights } = get();
+    const light = placedLights.find((l) => l.id === id);
+    if (!light) return;
+    try {
+      const terrainStore = useTerrainStore.getState();
+      const groundY = getTerrainHeightAt(light.position[0], light.position[2], terrainStore.stateBuffer);
+      pushUndoSnapshot();
+      set((state) => ({
+        placedLights: state.placedLights.map((l) =>
+          l.id === id ? { ...l, position: [l.position[0], groundY, l.position[2]] } : l
+        ),
+      }));
+    } catch {
+      // ignore
+    }
+  },
+  clearAllLights: () => {
+    if (get().placedLights.length > 0) {
+      pushUndoSnapshot();
+      set({ placedLights: [], selectedLightId: null });
+    }
+  },
+  setPlacedLights: (lights) => set({ placedLights: lights }),
+  triggerTestFirework: (id) => set({ testFireworkTrigger: { id, timestamp: Date.now() } }),
+
   setFortTitle: (title) => set({ fortTitle: title }),
   setBuilderName: (name) => set({ builderName: name }),
   setTemplateId: (templateId) => {
@@ -2034,10 +2238,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       citadelKeeps: [],
       selectedComponent: null,
       placedProps: [],
+      placedLights: [],
       pondWaterFeatures: [],
       foliageInstances: [],
       selectedPropId: null,
       selectedPropType: null,
+      selectedLightId: null,
+      selectedLightType: 'diya_clay_01',
       mudLocked: false,
       isResetConfirmOpen: false,
     });

@@ -1,0 +1,491 @@
+/**
+ * Lighting & Fireworks Manifest
+ * Indexes all 28 solid 3D models and pyrotechnics for Diwali Killa Sandbox.
+ * - 9 Terracotta Clay Diyas (migrated from figurines)
+ * - 9 Hand-Painted Colorful Diyas (migrated from figurines)
+ * - 5 Cone Fountains (Anaar) in vibrant festive themes
+ * - 5 Sky Shots (Aerial Shells) in authentic Diwali themes
+ */
+
+import { LightingCategory, LightingCategoryInfo, LightingItem } from './lightingTypes';
+
+export const LIGHTING_CATEGORIES: LightingCategoryInfo[] = [
+  {
+    id: 'diyas_clay',
+    name: 'Clay Diyas',
+    devanagari: 'मातीचे दिवे',
+    description: 'Traditional earthen terracotta clay panatis and oil lamps illuminating the bastions.',
+    accentColor: '#8F4938',
+  },
+  {
+    id: 'diyas_color',
+    name: 'Painted Diyas',
+    devanagari: 'रंगबेरंगी दिवे',
+    description: 'Hand-painted festive Diwali diyas decorated with vivid traditional folk colors.',
+    accentColor: '#F59E0B',
+  },
+  {
+    id: 'fireworks',
+    name: 'Diwali Fireworks',
+    devanagari: 'दिवाळी फटाके व दारूकाम',
+    description: 'Traditional Diwali pyrotechnics: sparkling cone fountains (Anaar) and sky shot aerial launchers.',
+    accentColor: '#E85D04',
+  },
+];
+
+export const LIGHTING_MANIFEST: LightingItem[] = [
+  // ==========================================================================
+  // 1. Terracotta Clay Diyas (9 Models)
+  // ==========================================================================
+  {
+    id: 'diya_clay_01',
+    name: 'Clay Panati',
+    devanagariName: 'मातीची पणती १',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_01.glb',
+    previewPath: '/figurines/previews/diya_clay_01.png',
+    faceCount: 126,
+    defaultScale: 1.0,
+    dimensions: { width: 0.29, height: 0.10, depth: 0.27 },
+    culturalLore: 'A classic raw earthen panati lit with mustard or sesame oil, symbol of Diwali vigilance.',
+  },
+  {
+    id: 'diya_clay_02',
+    name: 'Earthen Oval Diya',
+    devanagariName: 'मातीची लंबगोलाकार पणती',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_02.glb',
+    previewPath: '/figurines/previews/diya_clay_02.png',
+    faceCount: 98,
+    defaultScale: 1.0,
+    dimensions: { width: 0.27, height: 0.09, depth: 0.31 },
+    culturalLore: 'Hand-pressed clay lamp with an elongated spout, resting securely on stone rampart parapets.',
+  },
+  {
+    id: 'diya_clay_03',
+    name: 'Fluted Clay Lamp',
+    devanagariName: 'नक्षीदार मातीचा दिवा',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_03.glb',
+    previewPath: '/figurines/previews/diya_clay_03.png',
+    faceCount: 96,
+    defaultScale: 1.0,
+    dimensions: { width: 0.31, height: 0.09, depth: 0.29 },
+    culturalLore: 'Wheel-thrown Deccan clay lamp with ribbed scalloped edges reflecting warm amber light.',
+  },
+  {
+    id: 'diya_clay_04',
+    name: 'Terracotta Deepa',
+    devanagariName: 'मातीचा दीप',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_04.glb',
+    previewPath: '/figurines/previews/diya_clay_04.png',
+    faceCount: 132,
+    defaultScale: 1.0,
+    dimensions: { width: 0.26, height: 0.10, depth: 0.28 },
+    culturalLore: 'Sun-baked terracotta lamp holding cotton wicks, illuminating fort gates and steep staircases.',
+  },
+  {
+    id: 'diya_clay_05',
+    name: 'Heavy Base Panati',
+    devanagariName: 'जड बुडाची पणती',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_05.glb',
+    previewPath: '/figurines/previews/diya_clay_05.png',
+    faceCount: 140,
+    defaultScale: 1.0,
+    dimensions: { width: 0.27, height: 0.11, depth: 0.26 },
+    culturalLore: 'Sturdy wind-resistant panati built with a weighted clay pedestal for high cliff bastions.',
+  },
+  {
+    id: 'diya_clay_06',
+    name: 'Rustic Bastion Diya',
+    devanagariName: 'बुरुजावरील पणती',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_06.glb',
+    previewPath: '/figurines/previews/diya_clay_06.png',
+    faceCount: 98,
+    defaultScale: 1.0,
+    dimensions: { width: 0.30, height: 0.09, depth: 0.28 },
+    culturalLore: 'Traditional village potter clay diya placed along crenellations to guide arriving warriors.',
+  },
+  {
+    id: 'diya_clay_07',
+    name: 'Wide Lip Panati',
+    devanagariName: 'रुंद काठाची पणती',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_07.glb',
+    previewPath: '/figurines/previews/diya_clay_07.png',
+    faceCount: 122,
+    defaultScale: 1.0,
+    dimensions: { width: 0.28, height: 0.09, depth: 0.25 },
+    culturalLore: 'Graceful wide-brimmed earthen lamp keeping the flame steady against Sahyadri night breezes.',
+  },
+  {
+    id: 'diya_clay_08',
+    name: 'Notched Clay Lamp',
+    devanagariName: 'खाच असलेली पणती',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_08.glb',
+    previewPath: '/figurines/previews/diya_clay_08.png',
+    faceCount: 94,
+    defaultScale: 1.0,
+    dimensions: { width: 0.29, height: 0.09, depth: 0.26 },
+    culturalLore: 'A pinched-beak clay lamp securing hand-spun cotton wicks for long nighttime fort vigils.',
+  },
+  {
+    id: 'diya_clay_09',
+    name: 'Petal Rim Panati',
+    devanagariName: 'कमळ पाकळी पणती',
+    category: 'diyas_clay',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_clay_09.glb',
+    previewPath: '/figurines/previews/diya_clay_09.png',
+    faceCount: 106,
+    defaultScale: 1.0,
+    dimensions: { width: 0.26, height: 0.09, depth: 0.24 },
+    culturalLore: 'Folk floral-shaped clay panati celebrating Lakshmi Pujan and fort victory nights.',
+  },
+
+  // ==========================================================================
+  // 2. Hand-Painted Decorative Diyas (9 Models)
+  // ==========================================================================
+  {
+    id: 'diya_color_01',
+    name: 'Painted Crimson Diya',
+    devanagariName: 'रंगवलेला लाल दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_01.glb',
+    previewPath: '/figurines/previews/diya_color_01.png',
+    faceCount: 102,
+    defaultScale: 1.0,
+    dimensions: { width: 0.27, height: 0.09, depth: 0.25 },
+    culturalLore: 'Vibrant vermilion painted diya with gold leaf trim, greeting festive Diwali guests at the fort portal.',
+  },
+  {
+    id: 'diya_color_02',
+    name: 'Marigold Yellow Diya',
+    devanagariName: 'झेंडू पिवळा दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_02.glb',
+    previewPath: '/figurines/previews/diya_color_02.png',
+    faceCount: 102,
+    defaultScale: 1.0,
+    dimensions: { width: 0.27, height: 0.11, depth: 0.28 },
+    culturalLore: 'Bright yellow painted diya inspired by auspicious orange marigold torans hung upon fort arches.',
+  },
+  {
+    id: 'diya_color_03',
+    name: 'Turquoise Blue Diya',
+    devanagariName: 'फिरोजी निळा दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_03.glb',
+    previewPath: '/figurines/previews/diya_color_03.png',
+    faceCount: 118,
+    defaultScale: 1.0,
+    dimensions: { width: 0.26, height: 0.08, depth: 0.25 },
+    culturalLore: 'Deep blue hand-painted panati honoring sea forts like Sindhudurg and Murud-Janjira.',
+  },
+  {
+    id: 'diya_color_04',
+    name: 'Emerald Green Diya',
+    devanagariName: 'पाचू हिरवा दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_04.glb',
+    previewPath: '/figurines/previews/diya_color_04.png',
+    faceCount: 116,
+    defaultScale: 1.0,
+    dimensions: { width: 0.25, height: 0.07, depth: 0.25 },
+    culturalLore: 'Festive green folk lamp celebrating the post-monsoon lushness of Western Ghats fort valleys.',
+  },
+  {
+    id: 'diya_color_05',
+    name: 'Royal Saffron Diya',
+    devanagariName: 'भगवा शाही दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_05.glb',
+    previewPath: '/figurines/previews/diya_color_05.png',
+    faceCount: 124,
+    defaultScale: 1.0,
+    dimensions: { width: 0.26, height: 0.11, depth: 0.26 },
+    culturalLore: 'Sacred saffron bhagwa colored lamp gracing the royal Sinhasan and Bhavani Mata shrine.',
+  },
+  {
+    id: 'diya_color_06',
+    name: 'Pink Lotus Diya',
+    devanagariName: 'गुलाबी कमळ दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_06.glb',
+    previewPath: '/figurines/previews/diya_color_06.png',
+    faceCount: 126,
+    defaultScale: 1.0,
+    dimensions: { width: 0.25, height: 0.06, depth: 0.24 },
+    culturalLore: 'Delicate hand-painted lotus panati representing prosperity and purity in the royal courtyard.',
+  },
+  {
+    id: 'diya_color_07',
+    name: 'White Chuna Glazed Diya',
+    devanagariName: 'पांढरा चुना लेप दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_07.glb',
+    previewPath: '/figurines/previews/diya_color_07.png',
+    faceCount: 116,
+    defaultScale: 1.0,
+    dimensions: { width: 0.26, height: 0.08, depth: 0.26 },
+    culturalLore: 'White lime-washed terracotta panati mirroring the white mortar lines drawn along fort walls.',
+  },
+  {
+    id: 'diya_color_08',
+    name: 'Purple Velvet Diya',
+    devanagariName: 'जांभळा रेशमी दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_08.glb',
+    previewPath: '/figurines/previews/diya_color_08.png',
+    faceCount: 114,
+    defaultScale: 1.0,
+    dimensions: { width: 0.26, height: 0.08, depth: 0.27 },
+    culturalLore: 'Rich royal purple diya decorated with golden dots, evoking the celebratory durbar at Raigad.',
+  },
+  {
+    id: 'diya_color_09',
+    name: 'Golden Ochre Diya',
+    devanagariName: 'सोनेरी गेरू दिवा',
+    category: 'diyas_color',
+    modelType: 'diya_glb',
+    modelPath: '/figurines/diya_color_09.glb',
+    previewPath: '/figurines/previews/diya_color_09.png',
+    faceCount: 94,
+    defaultScale: 1.0,
+    dimensions: { width: 0.28, height: 0.09, depth: 0.27 },
+    culturalLore: 'Earthen yellow ochre lamp blending seamlessly with sun-baked laterite stone courtyards.',
+  },
+
+  // ==========================================================================
+  // 3. Diwali Pyrotechnics - 5 Cone Fountains (Anaar)
+  // ==========================================================================
+  {
+    id: 'anaar_saffron',
+    name: 'Saffron Amber Fountain',
+    devanagariName: 'भगवा अनार',
+    category: 'fireworks',
+    modelType: 'anaar_procedural',
+    previewPath: '/lighting/previews/anaar_saffron.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.08, height: 0.10, depth: 0.08 },
+    culturalLore: 'Traditional conical fountain wrapped in retro saffron paper. Emits a continuous sparkling upward spray of amber embers.',
+    fireworkType: 'anaar',
+    colorTheme: 'saffron',
+    primaryColor: '#F59E0B',
+    accentColor: '#D97706',
+    sprayHeight: 0.9,
+    faceCount: 180,
+  },
+  {
+    id: 'anaar_emerald',
+    name: 'Emerald Green Fountain',
+    devanagariName: 'हिरवा अनार',
+    category: 'fireworks',
+    modelType: 'anaar_procedural',
+    previewPath: '/lighting/previews/anaar_emerald.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.08, height: 0.10, depth: 0.08 },
+    culturalLore: 'Festive green cone fountain with retro silver lattice wrapping. Shoots vibrant emerald sparks with crackling embers.',
+    fireworkType: 'anaar',
+    colorTheme: 'emerald',
+    primaryColor: '#10B981',
+    accentColor: '#059669',
+    sprayHeight: 0.9,
+    faceCount: 180,
+  },
+  {
+    id: 'anaar_violet',
+    name: 'Royal Violet Fountain',
+    devanagariName: 'जांभळा अनार',
+    category: 'fireworks',
+    modelType: 'anaar_procedural',
+    previewPath: '/lighting/previews/anaar_violet.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.08, height: 0.10, depth: 0.08 },
+    culturalLore: 'Royal purple cone fountain with golden starburst foil. Sprays brilliant violet and silver fountain plumes.',
+    fireworkType: 'anaar',
+    colorTheme: 'violet',
+    primaryColor: '#8B5CF6',
+    accentColor: '#6D28D9',
+    sprayHeight: 0.9,
+    faceCount: 180,
+  },
+  {
+    id: 'anaar_crimson',
+    name: 'Ruby Crimson Fountain',
+    devanagariName: 'लाल अनार',
+    category: 'fireworks',
+    modelType: 'anaar_procedural',
+    previewPath: '/lighting/previews/anaar_crimson.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.08, height: 0.10, depth: 0.08 },
+    culturalLore: 'Fiery vermilion red cone fountain with traditional diya motif wrap. Bursts with roaring crimson sparks.',
+    fireworkType: 'anaar',
+    colorTheme: 'crimson',
+    primaryColor: '#EF4444',
+    accentColor: '#DC2626',
+    sprayHeight: 0.9,
+    faceCount: 180,
+  },
+  {
+    id: 'anaar_gold',
+    name: 'Golden Sparkle Fountain',
+    devanagariName: 'सोनेरी अनार',
+    category: 'fireworks',
+    modelType: 'anaar_procedural',
+    previewPath: '/lighting/previews/anaar_gold.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.08, height: 0.10, depth: 0.08 },
+    culturalLore: 'Classic Diwali golden anaar wrapped in metallic foil. Sprays an intense, crackling shower of sparkling golden fire.',
+    fireworkType: 'anaar',
+    colorTheme: 'gold',
+    primaryColor: '#EAB308',
+    accentColor: '#CA8A04',
+    sprayHeight: 0.9,
+    faceCount: 180,
+  },
+
+  // ==========================================================================
+  // 4. Diwali Pyrotechnics - 5 Sky Shots (Aerial Shells)
+  // ==========================================================================
+  {
+    id: 'skyshot_peony',
+    name: 'Multicolored Peony Shot',
+    devanagariName: 'रंगबेरंगी आकाशी बाण',
+    category: 'fireworks',
+    modelType: 'skyshot_procedural',
+    previewPath: '/lighting/previews/skyshot_peony.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.07, height: 0.13, depth: 0.07 },
+    culturalLore: 'Cylindrical aerial launcher with festive rainbow wrapping. Launches a rising rocket that explodes into a spherical multi-color peony burst.',
+    fireworkType: 'skyshot',
+    colorTheme: 'peony',
+    primaryColor: '#EC4899',
+    accentColor: '#3B82F6',
+    burstAltitude: 1.0,
+    faceCount: 160,
+  },
+  {
+    id: 'skyshot_willow',
+    name: 'Golden Willow Shot',
+    devanagariName: 'सुवर्ण झुलणारा बाण',
+    category: 'fireworks',
+    modelType: 'skyshot_procedural',
+    previewPath: '/lighting/previews/skyshot_willow.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.07, height: 0.13, depth: 0.07 },
+    culturalLore: 'Golden metallic casing launcher. Detonates high above the ramparts into a graceful, cascading golden willow shower.',
+    fireworkType: 'skyshot',
+    colorTheme: 'willow',
+    primaryColor: '#F59E0B',
+    accentColor: '#EAB308',
+    burstAltitude: 1.0,
+    faceCount: 160,
+  },
+  {
+    id: 'skyshot_palm',
+    name: 'Silver Palm Shot',
+    devanagariName: 'चंदेरी ताड बाण',
+    category: 'fireworks',
+    modelType: 'skyshot_procedural',
+    previewPath: '/lighting/previews/skyshot_palm.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.07, height: 0.13, depth: 0.07 },
+    culturalLore: 'Crisp silver foil launcher tube. Launches an ascending tracer that bursts into radiant silver palm frond streamers.',
+    fireworkType: 'skyshot',
+    colorTheme: 'palm',
+    primaryColor: '#E2E8F0',
+    accentColor: '#94A3B8',
+    burstAltitude: 1.0,
+    faceCount: 160,
+  },
+  {
+    id: 'skyshot_comet',
+    name: 'Crackling Comet Shot',
+    devanagariName: 'कडकडणारा धूमकेतू बाण',
+    category: 'fireworks',
+    modelType: 'skyshot_procedural',
+    previewPath: '/lighting/previews/skyshot_comet.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.07, height: 0.13, depth: 0.07 },
+    culturalLore: 'Fiery crimson casing with comet streaks. Launches a fast tracer that crackles with thunderous micro-explosions in the night sky.',
+    fireworkType: 'skyshot',
+    colorTheme: 'comet',
+    primaryColor: '#EF4444',
+    accentColor: '#F97316',
+    burstAltitude: 1.0,
+    faceCount: 160,
+  },
+  {
+    id: 'skyshot_ring',
+    name: 'Saffron Ring Shot',
+    devanagariName: 'भगवे कडे बाण',
+    category: 'fireworks',
+    modelType: 'skyshot_procedural',
+    previewPath: '/lighting/previews/skyshot_ring.png',
+    defaultScale: 1.0,
+    dimensions: { width: 0.07, height: 0.13, depth: 0.07 },
+    culturalLore: 'Royal saffron casing with concentric mandala art. Detonates into an expanding royal saffron ring of light above the fort citadel.',
+    fireworkType: 'skyshot',
+    colorTheme: 'ring',
+    primaryColor: '#F97316',
+    accentColor: '#F59E0B',
+    burstAltitude: 1.0,
+    faceCount: 160,
+  },
+];
+
+/**
+ * Retrieve a lighting or firework item by unique ID.
+ */
+export function getLightById(id: string): LightingItem | undefined {
+  return LIGHTING_MANIFEST.find((item) => item.id === id);
+}
+
+/**
+ * Get all items in a given category.
+ */
+export function getLightsByCategory(category: LightingCategory): LightingItem[] {
+  return LIGHTING_MANIFEST.filter((item) => item.category === category);
+}
+
+/**
+ * Search lighting and firework items by text query and optional category filter.
+ */
+export function searchLights(query: string, categoryFilter?: string): LightingItem[] {
+  const q = query.trim().toLowerCase();
+  return LIGHTING_MANIFEST.filter((item) => {
+    if (categoryFilter && categoryFilter !== 'all' && item.category !== categoryFilter) {
+      return false;
+    }
+    if (!q) return true;
+    return (
+      item.name.toLowerCase().includes(q) ||
+      item.devanagariName.toLowerCase().includes(q) ||
+      item.culturalLore.toLowerCase().includes(q) ||
+      item.id.toLowerCase().includes(q) ||
+      (item.colorTheme && item.colorTheme.toLowerCase().includes(q))
+    );
+  });
+}
+

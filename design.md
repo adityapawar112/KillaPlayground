@@ -19,7 +19,8 @@ Component voltage is driven by **saturated earth-tone tool and feature cards** i
 - **Generous Border Radii:** `{rounded.md}` (12px) for input fields and buttons, `{rounded.lg}` (16px) for property sheets and tool groups, `{rounded.xl}` (24px) for prominent mode selection and showcase cards. Soft curves mirror hand-molded clay.
 - **Tactile Courtyard Brick Base:** Base perimeter retaining border rendered with red terracotta brick geometry, anchoring the 3D mud hill just like real neighborhood society builds.
 - **Modern Retro / PS1 3D Art Direction (Flavor A):** 
-  - Uses authentic 128×128 pixel-art retro textures (Binbun Retroground) sampled with `THREE.NearestFilter` (no mipmap blur) for crisp, crunchy tactile miniature terrain.
+  - Uses authentic 128×128 pixel-art retro textures (Binbun Retroground) configured with `THREE.SRGBColorSpace` and `THREE.LinearMipmapLinearFilter` on diffuse basecolor maps to faithfully preserve the original dark earthen, basalt, and mossy stone tones without double-gamma washouts or bright specular aliasing.
+  - Linear maps (normal, roughness, AO) maintain `THREE.NoColorSpace` with zero metalness for authentic matte stone.
   - Combines classic 90s console nostalgia (PS1 / *Valheim* style) with modern dynamic Three.js directional sunlight, real-time shadow casting, texture-baked ARM cavity occlusion, and warm festive Diya radiance.
   - Texture roles: *Tambdi Maati* (Dirt_03 warm red laterite), *Deccan Basalt* (Rock_02 dark rugged cliff escarpments), *Hydrated Mud* (Dirt_02 dark glistening mud), *Sprouted Mohari* (Grass_01 vibrant green mustard sprigs), *Mossy Stone Brick* (mossy_stone_brick_128x128_pbr wall facings), and *Dark Stone Floor* (dark_stone_floor_128x128_pbr rampart walkways and tower decks).
 - **Decoupled 5-Zone HUD Ergonomics:** Pinned menu bar, minimizable secondary toolbar, dedicated left property drawer, vertical tool mode strip, and right scene outliner/inspector.
@@ -433,11 +434,21 @@ Before authoring or modifying any HUD component or tool sidebar:
     - Fly Speed Slider: `0.5m/s` to `15.0m/s` (with `Shift` 2x turbo boost).
   - Controls micro-guide: `WASD: Fly • Q/E: Elevate • Drag: Look`.
 
+### Rule 20: 2-Phase Foundation Plinth Builder & Fortification Ergonomics
+- **2-Phase Drafting Workflow:**
+  - *Phase 1 (Footprint):* Drag diagonally across terrain to define length and width; a translucent amber ghost (`#F59E0B`, opacity: 0.4) renders the real-time bounds.
+  - *Phase 2 (Normalized Height):* Upon releasing the base, the mouse vertically extrudes the slab height at normalized sensitivity (`0.008`). Primary click confirms and creates the slab.
+  - *Negative Depth:* Supports negative height down to `-10.0m` (extending below the terrain surface for cistern basins and sunken foundation trenches).
+  - *Draft Cancellation:* Tool properties header provides an inline `[✕]` button (`title="Cancel Draft"`) to abort active drafting cleanly.
+- **Fortification Alignment:**
+  - *Round Bastions (`round_bastion`):* Semicircular bastions must align their flat base diameter flush on the outer wall edge (`edgeX = attachX + outNorm.x * halfThick`), preserving rampart walkway transit while protruding defensively outward.
+  - *Authentic Crenellations:* Round bastions must render 3D pointed Kangare battlements with shoulders matching watchtowers.
+
 ---
 
 ## 3D Textures & Material Tokens
 
-All diorama assets follow the **Modern Retro / PS1 (Flavor A)** visual standard: crisp 128×128 pixel-art textures sampled with `THREE.NearestFilter` (no mipmap blur) under dynamic PBR sunlight:
+All diorama assets follow the **Modern Retro / PS1 (Flavor A)** visual standard: crisp 128×128 pixel-art textures with diffuse maps encoded in `THREE.SRGBColorSpace` and filtered with `THREE.LinearMipmapLinearFilter` under dynamic PBR sunlight (0.0 metalness, 0.90 roughness):
 
 | Structure Part | Texture Asset Directory | Material Group | PBR Maps | Visual Character |
 |---|---|---|---|---|

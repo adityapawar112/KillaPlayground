@@ -35,6 +35,7 @@ import {
   TbUsersGroup,
   TbCopy,
   TbAnchor,
+  TbCircleHalf2,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { WallMode } from '@/lib/walls/wallTypes';
@@ -107,6 +108,9 @@ export const RightToolSidebar: React.FC = () => {
     updateBoxBastionProperties,
     updateBoxBastionName,
     removeBoxBastionFromWall,
+    updateRoundBastionProperties,
+    updateRoundBastionName,
+    removeRoundBastionFromWall,
     updateGateProperties,
     updateGateName,
     removeGateFromWall,
@@ -1139,6 +1143,7 @@ export const RightToolSidebar: React.FC = () => {
                         bastionIndices.length +
                         (wall.towers?.length || 0) +
                         (wall.boxBastions?.length || 0) +
+                        (wall.roundBastions?.length || 0) +
                         (wall.gates?.length || 0);
 
                       return (
@@ -1313,6 +1318,44 @@ export const RightToolSidebar: React.FC = () => {
                                         removeBoxBastionFromWall(wall.id, bx.id);
                                       }}
                                       title="Remove Bastion"
+                                      className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                                    >
+                                      <TbTrash className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+
+                              {/* Round Bastions (Semi-circular) */}
+                              {wall.roundBastions?.map((rb, rIdx) => {
+                                const isChildSelected =
+                                  selectedComponent?.type === 'round_bastion' &&
+                                  selectedComponent.idOrIndex === rb.id &&
+                                  selectedComponent.wallId === wall.id;
+
+                                return (
+                                  <div
+                                    key={rb.id}
+                                    onClick={() => {
+                                      setSelectedWallId(wall.id);
+                                      setSelectedComponent({ type: 'round_bastion', idOrIndex: rb.id, wallId: wall.id });
+                                    }}
+                                    className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
+                                      isChildSelected
+                                        ? 'bg-[#4B382C] text-[#FAF8F5]'
+                                        : 'hover:bg-[#EADECF] text-[#5C4638]'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <TbCircleHalf2 className="w-3 h-3 text-[#B85F45]" />
+                                      <span className="truncate">{rb.name || `Round Bastion ${rIdx + 1}`}</span>
+                                    </div>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        removeRoundBastionFromWall(wall.id, rb.id);
+                                      }}
+                                      title="Remove Round Bastion"
                                       className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                     >
                                       <TbTrash className="w-3 h-3" />
@@ -2021,6 +2064,114 @@ export const RightToolSidebar: React.FC = () => {
                 })()
               )}
 
+              {/* D.2 ROUND BASTION INSPECTOR */}
+              {(activeTool === 'building' || activeTool === 'walls') && selectedWall && selectedComponent?.type === 'round_bastion' && (
+                (() => {
+                  const rb = selectedWall.roundBastions?.find((b) => b.id === selectedComponent.idOrIndex);
+                  if (!rb) return null;
+
+                  return (
+                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
+                          <TbCircleHalf2 className="w-4 h-4 text-[#B85F45]" />
+                          <span>Round Bastion</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] font-bold text-[#8D7666] uppercase">Name</label>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <input
+                            type="text"
+                            value={rb.name || ''}
+                            placeholder="Round Bastion"
+                            onChange={(e) => updateRoundBastionName(selectedWall.id, rb.id, e.target.value)}
+                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                          />
+                          <button
+                            onClick={() => rollRandomName((name) => updateRoundBastionName(selectedWall.id, rb.id, name))}
+                            className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                            title="Random Name"
+                          >
+                            <TbDice5 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Radius */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Radius</span>
+                          <span className="text-[#8D7666]">{((rb.radius || 0.22) * 100).toFixed(0)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.08"
+                          max="0.50"
+                          step="0.01"
+                          value={rb.radius || 0.22}
+                          onChange={(e) =>
+                            updateRoundBastionProperties(selectedWall.id, rb.id, { radius: parseFloat(e.target.value) })
+                          }
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Height Above Wall */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <span>Height Above Wall</span>
+                          <span className="text-[#8D7666]">{((rb.heightOffset || 0.05) * 100).toFixed(0)} cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.0"
+                          max="0.30"
+                          step="0.01"
+                          value={rb.heightOffset || 0.05}
+                          onChange={(e) =>
+                            updateRoundBastionProperties(selectedWall.id, rb.id, { heightOffset: parseFloat(e.target.value) })
+                          }
+                          className="w-full accent-[#B85F45] cursor-pointer"
+                        />
+                      </div>
+
+                      {/* Flip Orientation */}
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] font-semibold text-[#4B382C]">Flip Orientation</span>
+                        <input
+                          type="checkbox"
+                          checked={rb.flipSide || false}
+                          onChange={(e) =>
+                            updateRoundBastionProperties(selectedWall.id, rb.id, { flipSide: e.target.checked })
+                          }
+                          className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                        <button
+                          onClick={focusCamera}
+                          className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                        >
+                          Focus
+                        </button>
+                        <button
+                          onClick={() => {
+                            removeRoundBastionFromWall(selectedWall.id, rb.id);
+                            setSelectedComponent(null);
+                          }}
+                          className="flex-1 py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer text-center"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()
+              )}
+
               {/* E. PARENT WALL INSPECTOR */}
               {(activeTool === 'building' || activeTool === 'walls') && selectedWall && !selectedComponent && (
                 <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
@@ -2463,8 +2614,8 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
                       <input
                         type="range"
-                        min="0.10"
-                        max="3.00"
+                        min="-5.00"
+                        max="15.00"
                         step="0.05"
                         value={selectedFoundation.height || 0.40}
                         onChange={(e) =>
@@ -2569,6 +2720,26 @@ export const RightToolSidebar: React.FC = () => {
 
                   {/* Sliders */}
                   <div className="space-y-2.5 pt-1 border-t border-[#D9C9B4]">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Scale</span>
+                        <span className="text-[#8D7666]">
+                          {(selectedStair.settings?.scale ?? 2.0).toFixed(1)}x
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="5.0"
+                        step="0.1"
+                        value={selectedStair.settings?.scale ?? 2.0}
+                        onChange={(e) =>
+                          updateStairSettings(selectedStair.id, { scale: parseFloat(e.target.value) })
+                        }
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
                         <span>Stair Width</span>

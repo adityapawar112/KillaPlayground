@@ -319,6 +319,7 @@ export function generateWallBufferGeometry(
     gates = [],
     towers = [],
     boxBastions = [],
+    roundBastions = [],
     manualBastionIndices = [],
     grandBastionIndices = [],
     excludedBastionIndices = [],
@@ -1138,6 +1139,154 @@ export function generateWallBufferGeometry(
     }
   }
 
+  // 6d. Semi-Circular Round Bastions (wall.roundBastions)
+  // Attached to the wall with its semicircular curved body protruding on the outer side of the fort
+  for (const rb of roundBastions) {
+    const origCount = isClosed && points.length >= 3 ? points.length : points.length - 1;
+    const segIdx = Math.max(0, Math.min(origCount - 1, rb.segmentIndex));
+    const pA = points[segIdx];
+    const pB = points[(segIdx + 1) % points.length];
+    if (!pA || !pB) continue;
+
+    const t = Math.max(0.05, Math.min(0.95, rb.t || 0.5));
+    const attachX = pA.x + (pB.x - pA.x) * t;
+    const attachZ = pA.z + (pB.z - pA.z) * t;
+
+    const dx = pB.x - pA.x;
+    const dz = pB.z - pA.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const tan = { x: dx / len, z: dz / len };
+    const norm = { x: -tan.z, z: tan.x };
+
+    let inDir = 1;
+    if (isClosed && points.length >= 3) {
+      const toCentroidX = centroidX - attachX;
+      const toCentroidZ = centroidZ - attachZ;
+      inDir = (norm.x * toCentroidX + norm.z * toCentroidZ) >= 0 ? 1 : -1;
+    } else {
+      const hPlus = sampleBilinearHeight(buffer, attachX + norm.x * 0.3, attachZ + norm.z * 0.3);
+      const hMinus = sampleBilinearHeight(buffer, attachX - norm.x * 0.3, attachZ - norm.z * 0.3);
+      inDir = hPlus >= hMinus ? 1 : -1;
+    }
+
+    // Default sits on OUTER side (opposite to inDir); flipSide inverts
+    let outDir = -inDir;
+    if (rb.flipSide) {
+      outDir = -outDir;
+    }
+    const outNorm = { x: norm.x * outDir, z: norm.z * outDir };
+
+    const radius = Math.max(0.08, Math.min(0.60, rb.radius || 0.18));
+    const bastionH = wallH + (rb.heightOffset || 0.04);
+
+    // Center the flat diameter of the semicircle directly on the outer edge of the fort wall
+    const edgeX = attachX + outNorm.x * halfThick;
+    const edgeZ = attachZ + outNorm.z * halfThick;
+
+    const bCenterX = edgeX + outNorm.x * (radius * 0.5);
+    const bCenterZ = edgeZ + outNorm.z * (radius * 0.5);
+    const groundY = sampleBilinearHeight(buffer, bCenterX, bCenterZ);
+
+    const botY = groundY - embedDepth;
+    const topY = groundY + bastionH;
+
+    // Discretize the semicircle in 12 angular steps from -PI/2 to PI/2, radiating outward from edgeX, edgeZ
+    const numSteps = 12;
+    const arcPoints: { x: number; z: number; normX: number; normZ: number }[] = [];
+    for (let k = 0; k <= numSteps; k++) {
+      const alpha = -Math.PI / 2 + (Math.PI * k) / numSteps;
+      const cosA = Math.cos(alpha);
+      const sinA = Math.sin(alpha);
+      const px = edgeX + (outNorm.x * cosA + tan.x * sinA) * radius;
+      const pz = edgeZ + (outNorm.z * cosA + tan.z * sinA) * radius;
+      const nX = outNorm.x * cosA + tan.x * sinA;
+      const nZ = outNorm.z * cosA + tan.z * sinA;
+      arcPoints.push({ x: px, z: pz, normX: nX, normZ: nZ });
+    }
+
+    // GROUP 0: Vertical Curved Masonry Faces
+    builder.setGroup(0);
+    for (let k = 0; k < numSteps; k++) {
+      const p0 = arcPoints[k];
+      const p1 = arcPoints[k + 1];
+      const midNormX = (p0.normX + p1.normX) * 0.5;
+      const midNormZ = (p0.normZ + p1.normZ) * 0.5;
+
+      const c0: [number, number, number] = [p0.x, botY, p0.z];
+      const c1: [number, number, number] = [p1.x, botY, p1.z];
+      const tc1: [number, number, number] = [p1.x, topY, p1.z];
+      const tc0: [number, number, number] = [p0.x, topY, p0.z];
+
+      const segLen = Math.hypot(p1.x - p0.x, p1.z - p0.z);
+      const u0 = (k / numSteps) * (Math.PI * radius) * effectiveUvScale;
+      const u1 = u0 + segLen * effectiveUvScale;
+
+      builder.addQuad(
+        c0, c1, tc1, tc0,
+        [midNormX, 0, midNormZ],
+        [u0, botY * effectiveUvScale],
+        [u1, botY * effectiveUvScale],
+        [u1, topY * effectiveUvScale],
+        [u0, topY * effectiveUvScale]
+      );
+    }
+
+    // GROUP 1: Top Semicircular Floor (triangular fan from outer wall edge)
+    builder.setGroup(1);
+    const centerTop: [number, number, number] = [edgeX, topY, edgeZ];
+    for (let k = 0; k < numSteps; k++) {
+      const p0 = arcPoints[k];
+      const p1 = arcPoints[k + 1];
+      const v0: [number, number, number] = [p0.x, topY, p0.z];
+      const v1: [number, number, number] = [p1.x, topY, p1.z];
+
+      builder.addTriangle(
+        centerTop, v0, v1,
+        [0, 1, 0],
+        [edgeX * effectiveUvScale, edgeZ * effectiveUvScale],
+        [p0.x * effectiveUvScale, p0.z * effectiveUvScale],
+        [p1.x * effectiveUvScale, p1.z * effectiveUvScale]
+      );
+    }
+
+    // GROUP 2: Pointed Kangare Battlements along the curved outer arc (Authentic 3D Kangare matching towers)
+    if (settings.crenellations) {
+      const numKangare = Math.max(3, Math.min(8, Math.round(5 * (radius / 0.18))));
+      const kThick = radius * 0.22;
+      for (let k = 0; k < numKangare; k++) {
+        const aStart = -Math.PI / 2 + ((k + 0.15) / numKangare) * Math.PI;
+        const aEnd = -Math.PI / 2 + ((k + 0.85) / numKangare) * Math.PI;
+        const aMid = (aStart + aEnd) * 0.5;
+
+        const cosStart = Math.cos(aStart);
+        const sinStart = Math.sin(aStart);
+        const cosEnd = Math.cos(aEnd);
+        const sinEnd = Math.sin(aEnd);
+        const cosMid = Math.cos(aMid);
+        const sinMid = Math.sin(aMid);
+
+        const cL: [number, number, number] = [
+          edgeX + (outNorm.x * cosStart + tan.x * sinStart) * radius,
+          topY,
+          edgeZ + (outNorm.z * cosStart + tan.z * sinStart) * radius,
+        ];
+        const cR: [number, number, number] = [
+          edgeX + (outNorm.x * cosEnd + tan.x * sinEnd) * radius,
+          topY,
+          edgeZ + (outNorm.z * cosEnd + tan.z * sinEnd) * radius,
+        ];
+
+        // unitInNorm points inward toward (edgeX, edgeZ)
+        const unitInNorm: [number, number, number] = [
+          -(outNorm.x * cosMid + tan.x * sinMid),
+          0,
+          -(outNorm.z * cosMid + tan.z * sinMid),
+        ];
+        addPointedKangara(cL, cR, unitInNorm, topY, baseCrenH * 0.9, kThick);
+      }
+    }
+  }
+
   // 7. Maha Darwaza (Arched Gateway Portal & Flanking Round Bastions)
   const gateCrenH = Math.max(0.04, Math.min(0.15, settings.crenellationHeight || 0.08));
   for (const ag of activeGates) {
@@ -1608,10 +1757,11 @@ export function calculateMagneticSnap(
     ? [...walls.filter((w) => w.id === activeWallId), ...walls.filter((w) => w.id !== activeWallId)]
     : walls;
 
-  // The 3 Fortifications: Towers, The Box, and Gates ALL slide continuously along wall segments (threshold 0.35m)
+  // The 4 Fortifications: Towers, Semicircular Round Bastions, The Box, and Gates ALL slide continuously along wall segments (threshold 0.35m)
   if (
     stamp === 'tower' ||
     stamp === 'box' ||
+    stamp === 'round_bastion' ||
     stamp === 'gate' ||
     stamp === 'buruj' ||
     stamp === 'grand_buruj'
@@ -1660,7 +1810,7 @@ export function calculateMagneticSnap(
           // Gate ghost rotation matches outward facing normal of the wall
           // Rampart Platform (box) ghost rotation matches inward facing normal into fort courtyard
           let rotY = Math.atan2(vx, vz);
-          if (stamp === 'gate') {
+          if (stamp === 'gate' || stamp === 'round_bastion') {
             rotY = Math.atan2(outNorm.x, outNorm.z);
           } else if (stamp === 'box' || stamp === 'grand_buruj') {
             rotY = Math.atan2(inNorm.x, inNorm.z);

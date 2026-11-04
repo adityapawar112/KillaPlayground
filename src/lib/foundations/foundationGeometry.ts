@@ -10,9 +10,9 @@ import { FoundationSlab } from '../state/useEditorStore';
  * UVs are scaled using the slab's tilingRepeat multiplier for crisp retro texture resolution.
  */
 export function generateFoundationBufferGeometry(slab: FoundationSlab): THREE.BufferGeometry {
-  const L = Math.max(0.05, slab.length);
-  const W = Math.max(0.05, slab.width);
-  const H = Math.max(0.05, slab.height);
+  const L = Math.max(0.05, Math.abs(slab.length));
+  const W = Math.max(0.05, Math.abs(slab.width));
+  const H = Math.max(0.05, Math.abs(slab.height));
   const T = Math.max(0.5, slab.tilingRepeat || 3.0);
 
   const hw = L / 2;

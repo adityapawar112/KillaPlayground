@@ -106,20 +106,26 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
 2. **Building Tool (Consolidated Fort Architecture & Foundations):**
    * Consolidates the former Wall and Spline tools into a unified fortress masonry suite. Retires obsolete flag and diya spline generation (which now exist as authentic solid 3D models), while migrating stepped stone stairs into the fortress tool.
    * **5 Operational Modes in `ToolModeSidebar.tsx`:**
-     * `Select`: Direct physical mesh picking of walls, towers, bastions, gates, foundations, and stairs.
-     * `Walls`: Continuous click-to-draft perimeter ramparts with automatic pointed battlements and elevation tracing.
-     * `Foundation`: Drag-to-build rectangular stone plinth builder on terrain:
-       * Pointer down anchors first corner $(x_1, z_1)$ on terrain surface.
-       * Pointer move renders a real-time translucent ghost bounding box.
-       * Pointer up finalizes opposite corner $(x_2, z_2)$, instantiating a solid stone foundation slab.
-       * Multi-material buffer geometry partitioning: Perimeter sides mapped to `mossy_stone_brick_128x128_pbr` (Group 0) and top horizontal deck mapped to `dark_stone_floor_128x128_pbr` (Group 1).
-       * Interactive parameters: Length ($dx$), Width ($dz$), Height (slab thickness: 10cm–300cm, default 40cm), Vertical Offset (-50cm to +200cm, default 0cm), and Texture Tiling (1x–10x UV multiplier).
-     * `Stairs`: Multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm) and stair spacing slider (1cm to 10cm).
-     * `Fortifications`: Continuous magnetic snap hologram placement for sliding round watchtowers, inward rampart bastions, and *Maha Darwaza* arched gateways along walls.
-   * **Procedural Geometry Engine (`wallGeometry.ts`, `foundationGeometry.ts` & `GeometryBuilder`):**
-     * Centerline resampling at 0.04m intervals with bilinear height sampling (`sampleBilinearHeight`).
-     * Murud-Janjira pointed crenellations with 2D polygon centroid orientation.
-     * Watertight Maha Darwaza gates with solid stone jambs and continuous top rampart walkways.
+     * `Select`: Direct physical mesh picking of walls, towers, bastions, gates, foundations, and stairs. Foundation slabs are strictly interactive in `Select` mode, preventing accidental selection during drafting.
+     * `Walls`: Continuous click-to-draft perimeter ramparts with automatic pointed battlements, elevation tracing, and Close Loop (`TbRefresh`) / Cancel Draft (`TbX`) controls.
+     * `Foundation`: 2-phase drag-and-extrude rectangular stone foundation plinth builder on terrain:
+       * *Phase 1 (Base footprint):* Pointer down anchors first corner $(x_1, z_1)$ on terrain surface; dragging renders a real-time translucent ghost box to opposite corner $(x_2, z_2)$.
+       * *Phase 2 (Height extrusion):* Pointer up locks the base footprint and transitions to vertical height extrusion. Mouse movement dynamically adjusts height via a normalized scaling factor (`0.008`). Left-click confirms and builds the solid slab.
+       * *Negative Height Extrusion:* Supports negative height values down to `-10.0m` (extending below the terrain mesh for sunken courtyards, cistern pits, and deep plinths) up to `+25.0m`.
+       * *Cancel Draft CTA:* Left properties panel features a dedicated "Cancel Draft" button (`TbX`) allowing builders to abort active drafts cleanly.
+       * *Multi-material geometry partitioning:* Perimeter sides mapped to `mossy_stone_brick_128x128_pbr` (Group 0) and top horizontal deck mapped to `dark_stone_floor_128x128_pbr` (Group 1).
+       * *Interactive parameters:* Length ($dx$), Width ($dz$), Height (-10.0m to +25.0m, default 0.40m), Vertical Offset (-0.5m to +2.0m, default 0.0m), and Texture Tiling (1x–10x UV multiplier).
+     * `Stairs`: Continuous drag-drawing or multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm), stair scale multiplier (2x default baseline), and stair spacing slider.
+     * `Fortifications`: Continuous magnetic snap hologram placement along walls for 4 authentic fortification types:
+       * *Sliding Round Watchtowers (`tower` / `buruj`):* Sliding cylindrical towers centered along the rampart.
+       * *Rampart Bastion Platforms (`box`):* Inward-facing rectangular fighting platforms extending into the fort courtyard.
+       * *Semicircular Round Bastions (`round_bastion`):* Semicircular bastions protruding outward from the fort wall. The flat diameter is centered flush on the outer wall edge (`edgeX = attachX + outNorm.x * halfThick`), preserving the interior walkway, and crowned with authentic 3D pointed Murud-Janjira Kangare battlements with shoulders.
+       * *Arched Gateways (`gate` / `Maha Darwaza`):* Watertight portals flanked by twin towers with continuous rampart walkways above.
+   * **Procedural Geometry Engine & Performance Architecture (`wallGeometry.ts`, `FortWalls.tsx`):**
+     * *Decoupled Zustand Subscriptions:* Hologram snaps (`wallSnapPreview`), draft states (`activeFoundationDraft`, `activeWallDraft`), and element hovers (`hoveredElement`) are isolated to dedicated child layers (`SnapHologramPreview`, `FoundationDraftLayer`, `WallDraftLayer`). The root `FortWalls` container only re-renders when the wall/foundation array changes.
+     * *Memoized EdgesGeometry:* Selection outlines across walls, foundations, and stairs pre-compute `THREE.EdgesGeometry` once via `useMemo` and dispose on unmount, completely eliminating 20–50ms per-frame CPU stalls during mouse movements.
+     * *Component Memoization:* `SingleWallMesh` and `FoundationMesh` are wrapped in `React.memo` with fine-grained state selectors.
+     * *Texture Color Fidelity & PBR Setup:* Diffuse basecolor maps (`brickTextures`, `floorTextures`, `darkStoneTextures`) explicitly enforce `colorSpace = THREE.SRGBColorSpace` with linear mipmapping (`THREE.LinearMipmapLinearFilter`), eliminating washed-out bleached white textures. Normal, roughness, and AO maps use `THREE.NoColorSpace` with `metalness: 0.0` and `roughness: 0.90` for authentic matte basalt stone.
 
 3. **Texture Tool (Terrain Texture Painting Studio):**
    * Directly paints retro pixel-art textures onto the terrain mesh without deforming elevation or affecting placed structures/walls.

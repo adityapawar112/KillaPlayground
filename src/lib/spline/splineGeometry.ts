@@ -231,7 +231,7 @@ export function generateStoneStepsGeometry(
     return new THREE.BufferGeometry();
   }
 
-  const scale = options?.scale ?? 1.0;
+  const scale = options?.scale ?? DEFAULT_SPLINE_SETTINGS.steps.scale ?? 2.0;
   const stepWidth = (options?.stepWidth ?? DEFAULT_SPLINE_SETTINGS.steps.stepWidth) * scale;
   const stepRun = (options?.stepRun ?? DEFAULT_SPLINE_SETTINGS.steps.stepRun) * scale;
   const stepRise = (options?.stepRise ?? DEFAULT_SPLINE_SETTINGS.steps.stepRise) * scale;

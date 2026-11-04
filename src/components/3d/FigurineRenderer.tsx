@@ -300,7 +300,7 @@ export const FigurineRenderer: React.FC = () => {
             return;
           }
 
-          // Target terrain mountain, fort ramparts, bastions, stone steps, courtyard bricks
+          // Target terrain mountain, fort ramparts, bastions, stone steps, foundations, courtyard bricks
           if (
             name === 'BaseTerrainMesh' ||
             name === 'TerrainMeshFallback' ||
@@ -308,6 +308,7 @@ export const FigurineRenderer: React.FC = () => {
             name.startsWith('StoneSteps_') ||
             name.startsWith('FortWall_') ||
             name.startsWith('Bastion_') ||
+            name.startsWith('Foundation_') ||
             name === 'CourtyardTerrain' ||
             name === 'CourtyardBricks'
           ) {

@@ -182,6 +182,7 @@ export const BaseTerrainContent: React.FC = () => {
   const isDraggingFoundationRef = useRef(false);
   const foundationAnchorRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const isDrawingStairsRef = useRef(false);
+  const lastStairPointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const isDrawingSplineRef = useRef(false);
   const lastSplinePointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
@@ -290,9 +291,10 @@ export const BaseTerrainContent: React.FC = () => {
 
     diffMaps.forEach((tex) => {
       tex.colorSpace = THREE.SRGBColorSpace;
-      tex.minFilter = THREE.NearestFilter;
-      tex.magFilter = THREE.NearestFilter;
-      tex.generateMipmaps = false;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
       tex.needsUpdate = true;
     });
 
@@ -543,8 +545,42 @@ export const BaseTerrainContent: React.FC = () => {
           return;
         }
 
-        // C. Foundation mode: Drag-to-build rectangular slab
+        // C. Foundation mode: Drag-to-build rectangular slab + height confirmation
         if (editor.buildingMode === 'foundation') {
+          // If already in height confirmation phase, clicking places and confirms the foundation slab!
+          if (editor.activeFoundationDraft && editor.activeFoundationDraft.phase === 'height') {
+            const draft = editor.activeFoundationDraft;
+            const dx = Math.abs(draft.x2 - draft.x1);
+            const dz = Math.abs(draft.z2 - draft.z1);
+            if (dx >= 0.15 && dz >= 0.15) {
+              const cx = (draft.x1 + draft.x2) / 2;
+              const cz = (draft.z1 + draft.z2) / 2;
+              const baseHeight = sampleBilinearHeight(stateBuffer, cx, cz);
+              const rawHeight = draft.height ?? editor.defaultFoundationHeight ?? 0.40;
+              const finalHeight = Math.max(-10.0, Math.min(25.0, Math.abs(rawHeight) < 0.05 ? (rawHeight < 0 ? -0.05 : 0.05) : rawHeight));
+              editor.addFoundation({
+                name: `Stone Foundation ${editor.foundations.length + 1}`,
+                x: cx,
+                z: cz,
+                y: baseHeight,
+                length: dx,
+                width: dz,
+                height: finalHeight,
+                verticalOffset: editor.defaultFoundationOffset || 0.0,
+                tilingRepeat: editor.defaultFoundationTiling || 3.0,
+              });
+              editor.setToastMessage(`Stone foundation slab constructed! Height: ${finalHeight.toFixed(2)}m`);
+            }
+            editor.setActiveFoundationDraft(null);
+            isDraggingFoundationRef.current = false;
+            foundationAnchorRef.current = null;
+            if (controls) {
+              controls.enabled = true;
+            }
+            invalidate();
+            return;
+          }
+
           if (controls) {
             controls.enabled = false;
           }
@@ -556,12 +592,13 @@ export const BaseTerrainContent: React.FC = () => {
             x2: e.point.x,
             z2: e.point.z,
             y: e.point.y,
+            phase: 'base',
           });
           invalidate();
           return;
         }
 
-        // D. Stairs mode: click along slope to place stone steps path
+        // D. Stairs mode: click or hold and drag along slope to place stone steps path
         if (editor.buildingMode === 'stairs') {
           if (controls) {
             controls.enabled = false;
@@ -571,33 +608,36 @@ export const BaseTerrainContent: React.FC = () => {
             editor.startStairs();
           }
           editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+          lastStairPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
           invalidate();
           return;
         }
 
-        // E. Select mode: Select foundation, stairs, or wall if clicked nearby
+        // E. Select mode: Select stairs or wall if clicked nearby (Foundations have exact 3D mesh raycasting)
         if (editor.buildingMode === 'select' || editor.wallMode === 'select') {
-          // Check foundation slabs first
-          let closestFoundationDist = Infinity;
-          let targetFoundationId: string | null = null;
-          for (const f of editor.foundations) {
-            const d = Math.hypot(e.point.x - f.x, e.point.z - f.z);
-            const radius = Math.max(f.length, f.width) / 2;
-            if (d < radius + 0.3 && d < closestFoundationDist) {
-              closestFoundationDist = d;
-              targetFoundationId = f.id;
+          // Check stone stairs
+          let closestStairDist = Infinity;
+          let targetStairId: string | null = null;
+          for (const s of editor.stairs) {
+            for (const pt of s.points) {
+              const d = Math.hypot(e.point.x - pt[0], e.point.z - pt[2]);
+              if (d < closestStairDist) {
+                closestStairDist = d;
+                targetStairId = s.id;
+              }
             }
           }
-          if (targetFoundationId) {
-            editor.setSelectedFoundationId(targetFoundationId);
+          if (targetStairId && closestStairDist < 0.35) {
+            editor.setSelectedStairId(targetStairId);
             editor.setSelectedWallId(null);
-            editor.setSelectedStairId(null);
-            editor.setToastMessage('Stone foundation slab selected.');
+            editor.setSelectedComponent(null);
+            editor.setSelectedFoundationId(null);
+            editor.setToastMessage('Stone staircase selected.');
             invalidate();
             return;
           }
 
-          // Check walls
+          // Check walls (radius 0.35m to avoid clashing with nearby stairs)
           let closestDist = Infinity;
           let targetWallId: string | null = null;
           for (const wall of editor.walls) {
@@ -609,7 +649,7 @@ export const BaseTerrainContent: React.FC = () => {
               }
             }
           }
-          if (targetWallId && closestDist < 0.6) {
+          if (targetWallId && closestDist < 0.35) {
             editor.setSelectedWallId(targetWallId);
             editor.setSelectedComponent(null);
             editor.setSelectedFoundationId(null);
@@ -837,22 +877,36 @@ export const BaseTerrainContent: React.FC = () => {
       if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
         if (cursorVisible) setCursorVisible(false);
 
-        // Foundation drag tracking (Ticket 09)
-        if (
-          editor.buildingMode === 'foundation' &&
-          isDraggingFoundationRef.current &&
-          foundationAnchorRef.current
-        ) {
-          e.stopPropagation();
-          editor.setActiveFoundationDraft({
-            x1: foundationAnchorRef.current.x,
-            z1: foundationAnchorRef.current.z,
-            x2: e.point.x,
-            z2: e.point.z,
-            y: foundationAnchorRef.current.y,
-          });
-          invalidate();
-          return;
+        // Foundation drag tracking & height extrusion
+        if (editor.buildingMode === 'foundation') {
+          if (editor.activeFoundationDraft?.phase === 'height') {
+            e.stopPropagation();
+            const clientY = (e.nativeEvent as MouseEvent)?.clientY ?? 0;
+            const startY = editor.activeFoundationDraft.startPointerY ?? clientY;
+            const delta = (startY - clientY) * 0.008;
+            const baseH = editor.defaultFoundationHeight || 0.40;
+            const newHeight = Math.max(-10.0, Math.min(25.0, +(baseH + delta).toFixed(2)));
+            editor.setActiveFoundationDraft({
+              ...editor.activeFoundationDraft,
+              height: newHeight,
+            });
+            invalidate();
+            return;
+          }
+
+          if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
+            e.stopPropagation();
+            editor.setActiveFoundationDraft({
+              x1: foundationAnchorRef.current.x,
+              z1: foundationAnchorRef.current.z,
+              x2: e.point.x,
+              z2: e.point.z,
+              y: foundationAnchorRef.current.y,
+              phase: 'base',
+            });
+            invalidate();
+            return;
+          }
         }
 
         // Magnetic snap hologram tracking (Fortifications mode only)
@@ -873,6 +927,7 @@ export const BaseTerrainContent: React.FC = () => {
           editor.setWallSnapPreview(null);
         }
 
+        // Continuous drag-drawing for walls
         if ((editor.buildingMode === 'walls' || editor.wallMode === 'draw') && isDrawingWallRef.current && lastWallPointRef.current) {
           e.stopPropagation();
           const dx = e.point.x - lastWallPointRef.current.x;
@@ -883,6 +938,22 @@ export const BaseTerrainContent: React.FC = () => {
             lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
             invalidate();
           }
+          return;
+        }
+
+        // Continuous drag-drawing for stairs
+        if (editor.buildingMode === 'stairs' && isDrawingStairsRef.current && lastStairPointRef.current) {
+          e.stopPropagation();
+          const dx = e.point.x - lastStairPointRef.current.x;
+          const dy = e.point.y - lastStairPointRef.current.y;
+          const dz = e.point.z - lastStairPointRef.current.z;
+          const dist = Math.hypot(dx, dy, dz);
+          if (dist >= 0.15) {
+            editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+            lastStairPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+            invalidate();
+          }
+          return;
         }
         return;
       }
@@ -1036,25 +1107,25 @@ export const BaseTerrainContent: React.FC = () => {
     if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
       const editor = useEditorStore.getState();
       const draft = editor.activeFoundationDraft;
-      if (draft) {
+      if (draft && draft.phase === 'base') {
         const dx = Math.abs(draft.x2 - draft.x1);
         const dz = Math.abs(draft.z2 - draft.z1);
         if (dx >= 0.15 && dz >= 0.15) {
-          const cx = (draft.x1 + draft.x2) / 2;
-          const cz = (draft.z1 + draft.z2) / 2;
-          const baseHeight = sampleBilinearHeight(stateBuffer, cx, cz);
-          editor.addFoundation({
-            name: `Stone Foundation ${editor.foundations.length + 1}`,
-            x: cx,
-            z: cz,
-            y: baseHeight,
-            length: dx,
-            width: dz,
+          isDraggingFoundationRef.current = false;
+          // Keep controls disabled during height adjustment phase so dragging doesn't orbit camera
+          if (controls) {
+            controls.enabled = false;
+          }
+          const clientY = (window.event as MouseEvent)?.clientY || window.innerHeight / 2;
+          editor.setActiveFoundationDraft({
+            ...draft,
+            phase: 'height',
             height: editor.defaultFoundationHeight || 0.40,
-            verticalOffset: editor.defaultFoundationOffset || 0.0,
-            tilingRepeat: editor.defaultFoundationTiling || 3.0,
+            startPointerY: clientY,
           });
-          editor.setToastMessage('Stone foundation slab constructed!');
+          editor.setToastMessage('Base locked! Move mouse up/down to adjust height, click to place.');
+          invalidate();
+          return;
         }
       }
       editor.setActiveFoundationDraft(null);
@@ -1068,6 +1139,7 @@ export const BaseTerrainContent: React.FC = () => {
 
     if (isDrawingStairsRef.current) {
       isDrawingStairsRef.current = false;
+      lastStairPointRef.current = null;
       if (controls) {
         controls.enabled = true;
       }
@@ -1127,25 +1199,24 @@ export const BaseTerrainContent: React.FC = () => {
       if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
         const editor = useEditorStore.getState();
         const draft = editor.activeFoundationDraft;
-        if (draft) {
+        if (draft && draft.phase === 'base') {
           const dx = Math.abs(draft.x2 - draft.x1);
           const dz = Math.abs(draft.z2 - draft.z1);
           if (dx >= 0.15 && dz >= 0.15) {
-            const cx = (draft.x1 + draft.x2) / 2;
-            const cz = (draft.z1 + draft.z2) / 2;
-            const baseHeight = sampleBilinearHeight(stateBuffer, cx, cz);
-            editor.addFoundation({
-              name: `Stone Foundation ${editor.foundations.length + 1}`,
-              x: cx,
-              z: cz,
-              y: baseHeight,
-              length: dx,
-              width: dz,
+            isDraggingFoundationRef.current = false;
+            if (controls) {
+              controls.enabled = false;
+            }
+            const clientY = (window.event as MouseEvent)?.clientY || window.innerHeight / 2;
+            editor.setActiveFoundationDraft({
+              ...draft,
+              phase: 'height',
               height: editor.defaultFoundationHeight || 0.40,
-              verticalOffset: editor.defaultFoundationOffset || 0.0,
-              tilingRepeat: editor.defaultFoundationTiling || 3.0,
+              startPointerY: clientY,
             });
-            editor.setToastMessage('Stone foundation slab constructed!');
+            editor.setToastMessage('Base locked! Move mouse up/down to adjust height, click to place.');
+            invalidate();
+            return;
           }
         }
         editor.setActiveFoundationDraft(null);
@@ -1159,6 +1230,7 @@ export const BaseTerrainContent: React.FC = () => {
 
       if (isDrawingStairsRef.current) {
         isDrawingStairsRef.current = false;
+        lastStairPointRef.current = null;
         if (controls) {
           controls.enabled = true;
         }

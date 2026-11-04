@@ -337,16 +337,25 @@ graph TD
     - Completely removes the standalone Spline tool (`spline`, Key `3`). Deprecates redundant flag and diya splines (which now exist as high-fidelity solid 3D models in the Figurine and Lighting tool catalogs).
     - Preserves and integrates stepped stone stairs into the Building tool as **`Stairs` Mode**.
   - **5 Unified Operational Modes in `ToolModeSidebar.tsx`**:
-    1. **`Select`**: Direct physical raycast picking of fort walls, bastions, towers, gates, foundations, and stone stairs. Displays glowing amber hover outline (`#E85D04`) and contextually populates the Right Scene Outliner and Element Properties Inspector.
-    2. **`Walls`**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira crenellations, continuous elevation tracing, and Finish/Cancel drafting CTAs.
-    3. **`Foundation`**: Drag-to-build rectangular stone foundation slabs directly on the terrain.
-       - Anchor point established on pointer down $(x_1, z_1)$.
-       - Live translucent ghost box renders dynamically as the pointer moves across the terrain.
-       - Opposite point established on pointer release $(x_2, z_2)$, instantiating a solid stone foundation slab.
-       - Interactive parameters: Length ($dx$), Width ($dz$), Height (slab thickness: 10cm–300cm, default 40cm), Vertical Offset (-50cm to +200cm, default 0cm), and Texture Tiling (1x–10x UV multiplier, default 3x).
+    1. **`Select`**: Direct physical raycast picking of fort walls, bastions, towers, gates, foundations, and stone stairs. Displays glowing amber hover outline (`#E85D04`) and contextually populates the Right Scene Outliner and Element Properties Inspector. Foundation slabs are strictly interactive in Select mode.
+    2. **`Walls`**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira crenellations, continuous elevation tracing, Close Loop (`TbRefresh`), and Finish/Cancel drafting CTAs.
+    3. **`Foundation`**: 2-phase drag-and-extrude rectangular stone foundation slabs directly on the terrain:
+       - Phase 1 (Base footprint): Pointer down anchors $(x_1, z_1)$; dragging renders live translucent rectangular ghost box to $(x_2, z_2)$.
+       - Phase 2 (Height extrusion): Pointer up locks base footprint and switches to vertical height extrusion. Mouse movement dynamically adjusts slab thickness with normalized sensitivity (`0.008`). Left-click confirms and builds the solid slab.
+       - Negative Depth: Supports negative heights down to `-10.0m` (extending below terrain surface) up to `+25.0m`.
+       - Cancel CTA: Inline Cancel Draft button (`TbX`) in the Left Properties Panel to cleanly abort in-progress drafts.
        - Multi-material buffer geometry partitioning: Perimeter sides mapped to `mossy_stone_brick_128x128_pbr` (Group 0) and top horizontal deck mapped to `dark_stone_floor_128x128_pbr` (Group 1).
-    4. **`Stairs`**: Multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (`stepOffset`: -15cm to +15cm) and stair spacing slider (`stepSpacing`: 1cm to 10cm).
-    5. **`Fortifications`**: Continuous magnetic snap hologram placement for sliding round watchtowers, inward rampart bastions, and *Maha Darwaza* arched gateways along walls.
+    4. **`Stairs`**: Continuous drag-drawing or multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (`stepOffset`: -15cm to +15cm), 2x default scale multiplier, and stair spacing slider.
+    5. **`Fortifications`**: Continuous magnetic snap hologram placement along walls for 4 authentic fortification types:
+       - Watchtowers (`tower` / `buruj`): Sliding cylindrical towers along ramparts.
+       - Rampart Platform Bastions (`box`): Inward-facing rectangular fighting platforms.
+       - Semicircular Round Bastions (`round_bastion`): Outward-protruding semicircular bastions centered flush on outer wall edge, crowned with 3D pointed Murud-Janjira Kangare battlements with shoulders.
+       - Arched Gateways (`gate` / `Maha Darwaza`): Watertight portals with continuous top rampart walkways.
+  - **Performance Optimization & Zero GPU/CPU Lag**:
+    - Decoupled `wallSnapPreview`, `activeFoundationDraft`, and `hoveredElement` subscriptions from root `FortWalls.tsx` container into dedicated isolated child layers.
+    - Memoized `EdgesGeometry` across `SingleWallMesh`, `FoundationMesh`, and `SplineMesh` with cleanup on unmount.
+    - Wrapped meshes in `React.memo` with fine-grained state selectors.
+    - Explicit `THREE.SRGBColorSpace` and `THREE.LinearMipmapLinearFilter` on diffuse textures, eliminating washed-out bleached white stone appearances.
   - **Unified Outliner & Inspector**:
     - Right Tool Sidebar displays consolidated structures tree under `FORT ARCHITECTURE`: Walls (with nested bastions/towers/gates), Foundations, and Stairs.
     - Element Properties Inspector allows real-time dimension, offset, elevation, and tiling adjustments for selected foundations and stairs.
@@ -354,11 +363,13 @@ graph TD
 ### Acceptance Criteria
 - [x] Top toolbar features "Building" tool; standalone Spline tool is completely removed.
 - [x] ToolModeSidebar renders the 5 operational modes: Select, Walls, Foundation, Stairs, Fortifications.
-- [x] In Foundation mode, dragging across terrain displays a live translucent rectangular ghost box.
-- [x] Releasing mouse builds a solid foundation slab textured with stone bricks on sides and dark stone floor on top.
+- [x] In Foundation mode, 2-phase drag-to-base and normalized height extrusion functions with negative elevation support and cancel draft CTA.
+- [x] Releasing mouse and clicking builds a solid foundation slab textured with stone bricks on sides and dark stone floor on top.
 - [x] Foundation height, vertical offset, length, width, and tiling repeat adjust interactively via sliders.
-- [x] In Stairs mode, clicking along slopes creates walkable stone staircases with adjustable offset and spacing.
-- [x] Wall drafting and magnetic snap fortifications function without regression.
+- [x] In Stairs mode, continuous dragging or clicking creates walkable stone staircases with 2x default scale and adjustable spacing.
+- [x] Round bastions center flush on outer wall edge with pointed Kangare crenellations matching watchtowers.
+- [x] Moving mouse over terrain or structures causes zero frame rate stalls (memoized edges geometry, isolated snap/draft subscriptions).
+- [x] Stone brick and basalt textures display authentic dark earthen tones without bleached/white artifacts.
 - [x] All building components can be selected, inspected, renamed, and deleted in the Right Outliner.
 
 ---

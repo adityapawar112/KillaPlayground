@@ -79,8 +79,18 @@ export default function HomePage() {
 
       const store = useEditorStore.getState();
 
-      // Close modal on Escape
+      // Cancel in-progress drafting or close modals on Escape
       if (e.key === 'Escape') {
+        if (store.activeFoundationDraft) {
+          store.setActiveFoundationDraft(null);
+          store.setToastMessage('Foundation placement canceled.');
+          return;
+        }
+        if (store.isDrawingStairs || store.activeStairDraft.length > 0) {
+          store.finishStairs();
+          store.setToastMessage('Stair drawing canceled.');
+          return;
+        }
         if (store.isStartupModalOpen) store.setStartupModalOpen(false);
         if (store.isAboutModalOpen) store.setAboutModalOpen(false);
         if (store.isShortcutsModalOpen) store.setShortcutsModalOpen(false);

@@ -164,6 +164,28 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     clearPaintBuffer(paintBuffer);
     paintTexture.needsUpdate = true;
 
+    // Clear all history stacks on reset
+    undoStack.length = 0;
+    redoStack.length = 0;
+    paintUndoStack.length = 0;
+    paintRedoStack.length = 0;
+    pondUndoStack.length = 0;
+    pondRedoStack.length = 0;
+    wallUndoStack.length = 0;
+    wallRedoStack.length = 0;
+    citadelUndoStack.length = 0;
+    citadelRedoStack.length = 0;
+    foliageUndoStack.length = 0;
+    foliageRedoStack.length = 0;
+    splineUndoStack.length = 0;
+    splineRedoStack.length = 0;
+    foundationUndoStack.length = 0;
+    foundationRedoStack.length = 0;
+    stairUndoStack.length = 0;
+    stairRedoStack.length = 0;
+    propUndoStack.length = 0;
+    propRedoStack.length = 0;
+
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry);
       refitTerrainBVH(terrainGeometry);

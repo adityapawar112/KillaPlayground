@@ -42,7 +42,7 @@ export const DEFAULT_SPLINE_SETTINGS: Record<SplineConversionType, Required<Spli
     stepOffset: 0.0,   // centered on path
     stepSpacing: 0.025,// 2.5cm between steps
     spacing: 0.025,
-    scale: 1.0,
+    scale: 2.0,        // 2x default scale as requested
   },
   flags: {
     stepWidth: 0.06,

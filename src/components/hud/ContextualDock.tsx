@@ -588,6 +588,14 @@ export const ContextualDock: React.FC = () => {
                     Finish Wall ({activeWallDraft.length} pts)
                   </button>
                   <button
+                    onClick={() => finishCurrentWall(true)}
+                    disabled={activeWallDraft.length < 3}
+                    title="Connect end to start point to form a closed fort loop"
+                    className="px-3 py-1 bg-[#8C4A32] hover:bg-[#783E29] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    Close Loop
+                  </button>
+                  <button
                     onClick={cancelCurrentWall}
                     className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
                   >
@@ -605,7 +613,7 @@ export const ContextualDock: React.FC = () => {
 
           {buildingMode === 'foundation' && (
             <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-              Click and drag diagonally on terrain to build stone foundation slab
+              Click and drag diagonally to draw base, move mouse to adjust height, click to place
             </span>
           )}
 

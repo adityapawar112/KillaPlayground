@@ -37,6 +37,8 @@ import {
   TbEdit,
   TbPalette,
   TbTrees,
+  TbRefresh,
+  TbCircleHalf2,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -108,6 +110,7 @@ export const LeftToolSidebar: React.FC = () => {
     removeWall,
     removeTowerFromWall,
     removeBoxBastionFromWall,
+    removeRoundBastionFromWall,
     removeGateFromWall,
     removeBastionFromNode,
     activeStamp,
@@ -482,7 +485,7 @@ export const LeftToolSidebar: React.FC = () => {
                           }
                         }}
                         disabled={activeWallDraft.length < 2}
-                        className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ${
+                        className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-sm ${
                           activeWallDraft.length >= 2
                             ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
                             : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
@@ -490,6 +493,25 @@ export const LeftToolSidebar: React.FC = () => {
                       >
                         <TbCheck className="w-4 h-4" />
                         Finish Wall
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          const id = finishCurrentWall(true);
+                          if (id) {
+                            setToastMessage('Wall closed into a continuous loop!');
+                          }
+                        }}
+                        disabled={activeWallDraft.length < 3}
+                        title="Connect end to start point to form a closed defensive loop (min 3 points)"
+                        className={`py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-sm ${
+                          activeWallDraft.length >= 3
+                            ? 'bg-[#8C4A32] text-white hover:bg-[#783E29] cursor-pointer'
+                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
+                        }`}
+                      >
+                        <TbRefresh className="w-3.5 h-3.5" />
+                        Close Loop
                       </button>
 
                       {activeWallDraft.length > 0 && (
@@ -595,18 +617,47 @@ export const LeftToolSidebar: React.FC = () => {
               {buildingMode === 'foundation' && (
                 <div className="space-y-3.5">
                   <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-1.5">
-                    <div className="text-[11px] font-semibold text-[#5C4638]">
-                      {activeFoundationDraft ? 'Drawing Foundation Slab...' : 'Drag-to-Build Rectangular Slab'}
+                    <div className="flex items-center justify-between">
+                      <div className="text-[11px] font-semibold text-[#5C4638]">
+                        {activeFoundationDraft?.phase === 'height'
+                          ? 'Extruding Slab Height...'
+                          : activeFoundationDraft
+                          ? 'Drawing Foundation Base...'
+                          : 'Drag-to-Build Rectangular Slab'}
+                      </div>
+                      {activeFoundationDraft && (
+                        <button
+                          onClick={() => {
+                            useEditorStore.getState().setActiveFoundationDraft(null);
+                            if (typeof window !== 'undefined' && (window as any).__orbitControls) {
+                              (window as any).__orbitControls.enabled = true;
+                            }
+                            setToastMessage('Foundation draft canceled.');
+                          }}
+                          title="Cancel Draft"
+                          className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer transition-colors"
+                        >
+                          <TbX className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                     {activeFoundationDraft ? (
                       <div className="text-[11px] text-[#B85F45] font-bold">
                         {(Math.abs(activeFoundationDraft.x2 - activeFoundationDraft.x1) * 100).toFixed(0)}cm ×{' '}
                         {(Math.abs(activeFoundationDraft.z2 - activeFoundationDraft.z1) * 100).toFixed(0)}cm
-                        <span className="block text-[10px] text-[#8D7666] font-normal mt-0.5">Release mouse to instantiate</span>
+                        {activeFoundationDraft.phase === 'height' ? (
+                          <span className="block text-[11px] text-[#8C4A32] font-semibold mt-0.5">
+                            Height: {((activeFoundationDraft.height || 0.40) * 100).toFixed(0)} cm (Click to confirm!)
+                          </span>
+                        ) : (
+                          <span className="block text-[10px] text-[#8D7666] font-normal mt-0.5">
+                            Release mouse to adjust height
+                          </span>
+                        )}
                       </div>
                     ) : (
                       <p className="text-[11px] text-[#634E40] leading-snug">
-                        Click and drag diagonally across terrain to build a leveled stone plinth for buildings and bastions.
+                        Click and drag diagonally across terrain to draw base, move mouse to adjust height, then click to place.
                       </p>
                     )}
                   </div>
@@ -620,8 +671,8 @@ export const LeftToolSidebar: React.FC = () => {
                       </div>
                       <input
                         type="range"
-                        min="0.10"
-                        max="3.00"
+                        min="-5.00"
+                        max="15.00"
                         step="0.05"
                         value={defaultFoundationHeight || 0.40}
                         onChange={(e) => setDefaultFoundationHeight(parseFloat(e.target.value))}
@@ -708,6 +759,22 @@ export const LeftToolSidebar: React.FC = () => {
 
                   {/* Stairway Sliders */}
                   <div className="space-y-3">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <span>Step Scale</span>
+                        <span className="text-[#8D7666]">{(stairSettings.scale ?? 2.0).toFixed(1)}x</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0.5"
+                        max="5.0"
+                        step="0.1"
+                        value={stairSettings.scale ?? 2.0}
+                        onChange={(e) => setStairSettings({ scale: parseFloat(e.target.value) })}
+                        className="w-full accent-[#B85F45] cursor-pointer"
+                      />
+                    </div>
+
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
                         <span>Stair Width</span>
@@ -798,10 +865,11 @@ export const LeftToolSidebar: React.FC = () => {
                     Choose a fortification to place continuously along ramparts.
                   </div>
 
-                  <div className="grid grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-2 gap-2">
                     {[
                       { id: 'tower' as FortStampType, label: 'Watchtower', desc: 'Round tower', icon: TbTower },
                       { id: 'box' as FortStampType, label: 'Rampart Bastion', desc: 'Platform bastion', icon: TbBuildingFortress },
+                      { id: 'round_bastion' as FortStampType, label: 'Round Bastion', desc: 'Semi-circular', icon: TbCircleHalf2 },
                       { id: 'gate' as FortStampType, label: 'Arched Gateway', desc: 'Fortified arch', icon: TbDoorEnter },
                     ].map((stamp) => {
                       const Icon = stamp.icon;
@@ -856,7 +924,7 @@ export const LeftToolSidebar: React.FC = () => {
                           {selectedWall.name || 'Defensive Rampart'}
                           {selectedComponent && (
                             <span className="text-[#B85F45] ml-1">
-                              ({selectedComponent.type === 'bastion' ? `Rampart Bastion ${Number(selectedComponent.idOrIndex) + 1}` : selectedComponent.type === 'tower' ? 'Watchtower' : selectedComponent.type === 'box' ? 'Rampart Bastion' : 'Arched Gateway'})
+                              ({selectedComponent.type === 'bastion' ? `Rampart Bastion ${Number(selectedComponent.idOrIndex) + 1}` : selectedComponent.type === 'tower' ? 'Watchtower' : selectedComponent.type === 'box' ? 'Rampart Bastion' : selectedComponent.type === 'round_bastion' ? 'Round Bastion' : 'Arched Gateway'})
                             </span>
                           )}
                         </div>
@@ -883,6 +951,8 @@ export const LeftToolSidebar: React.FC = () => {
                                 removeTowerFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
                               } else if (selectedComponent.type === 'box') {
                                 removeBoxBastionFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
+                              } else if (selectedComponent.type === 'round_bastion') {
+                                removeRoundBastionFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
                               } else if (selectedComponent.type === 'gate') {
                                 removeGateFromWall(selectedWall.id, String(selectedComponent.idOrIndex));
                               }

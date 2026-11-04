@@ -32,10 +32,10 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 │
 ▼
 [3. Unified Building Construction Tool]
-├── Walls: Click-to-draft perimeter ramparts with pointed crenellations
-├── Foundation: Click-and-drag rectangular stone plinths & courtyards with live ghosting
-├── Stairs: Walkable stepped stone masonry paths ascending mountain slopes
-└── Fortifications: Sliding watchtowers, inward rampart bastions, Maha Darwaza gates
+├── Walls: Click-to-draft perimeter ramparts with pointed crenellations & loop closing
+├── Foundation: 2-phase drag-and-extrude stone plinths with negative depth & cancel CTA
+├── Stairs: Continuous drag-drawn or point-by-point stone staircases ascending slopes
+└── Fortifications: Watchtowers, inward rampart bastions, round bastions, Maha Darwaza gates
 │
 ▼
 [4. Terrain Painting Studio]
@@ -108,16 +108,21 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 The standalone Wall and Spline tools are consolidated into a single high-velocity **Building** tool (`building`), eliminating redundant flag and diya splines (which now exist as authentic solid 3D models) while integrating stone steps directly alongside fort masonry:
 
 * **5 Unified Operational Modes in `ToolModeSidebar.tsx`**:
-  * **Select Mode**: Physical raycasting isolates fort ramparts, round watchtowers, bastions, gates, foundations, and stairs without proximity hijacking.
-  * **Walls Mode**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira battlements and continuous elevation adherence.
-  * **Foundation Mode**: Click-and-drag rectangular stone foundation builder:
-    * Pointer down anchors first corner $(x_1, z_1)$ on terrain.
-    * Pointer move renders a real-time translucent ghost bounding box.
-    * Pointer up finalizes opposite corner $(x_2, z_2)$, creating a solid stone foundation slab.
-    * Adjustable parameters: Length, Width, Height (slab thickness: 10cm to 300cm), Vertical Offset (-50cm to +200cm), and Texture Tiling (1x to 10x UV multiplier).
+  * **Select Mode**: Physical raycasting isolates fort ramparts, round watchtowers, bastions, gates, foundations, and stairs. Foundation slabs are strictly interactive in Select mode, preventing selection hijacking during active drafting.
+  * **Walls Mode**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira battlements, continuous elevation adherence, and Close Loop / Cancel Draft actions.
+  * **Foundation Mode**: 2-phase drag-and-extrude rectangular stone foundation plinth builder:
+    * *Phase 1 (Footprint):* Pointer down anchors first corner $(x_1, z_1)$ on terrain; dragging renders a real-time translucent amber ghost bounding box to opposite corner $(x_2, z_2)$.
+    * *Phase 2 (Normalized Height):* Pointer up locks the base footprint and transitions to vertical height extrusion. Mouse movement dynamically adjusts height via normalized sensitivity (`0.008`). Primary click confirms and creates the slab.
+    * *Negative Height Extrusion:* Supports negative height values down to `-10.0m` (extending below the terrain mesh for sunken courtyards, cistern pits, and deep plinths) up to `+25.0m`.
+    * *Cancel Draft CTA:* Left properties panel features a dedicated "Cancel Draft" button (`TbX`) allowing builders to abort active drafts cleanly.
+    * *Adjustable parameters:* Length, Width, Height (-10.0m to +25.0m), Vertical Offset (-0.5m to +2.0m), and Texture Tiling (1x to 10x UV multiplier).
     * Textured with `mossy_stone_brick_128x128_pbr` (perimeter sides) and `dark_stone_floor_128x128_pbr` (top deck).
-  * **Stairs Mode**: Multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm) and stair spacing slider (1cm to 10cm).
-  * **Fortifications Mode**: Continuous magnetic snap hologram placement for sliding round watchtowers, inward rampart bastions, and *Maha Darwaza* arched gateways along walls.
+  * **Stairs Mode**: Continuous drag-drawing or multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm), 2x default stair scale multiplier, and stair spacing slider.
+  * **Fortifications Mode**: Continuous magnetic snap hologram placement along walls for 4 authentic fortification types:
+    * *Sliding Round Watchtowers (`tower` / `buruj`):* Sliding cylindrical towers centered along the rampart.
+    * *Rampart Bastion Platforms (`box`):* Inward-facing rectangular fighting platforms extending into the fort courtyard.
+    * *Semicircular Round Bastions (`round_bastion`):* Semicircular bastions protruding outward from the fort wall with flat base centered flush on the outer wall edge, crowned with authentic 3D pointed Murud-Janjira Kangare battlements with shoulders matching towers.
+    * *Arched Gateways (`gate` / `Maha Darwaza`):* Watertight portals flanked by twin towers with continuous rampart walkways above.
 * **Miniature Tabletop Diorama Calibration**:
   * Scaled to realistic miniature diorama measurements (default 25cm height, 15cm thickness; range 10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding.
   * Sliders dynamically display physical units in centimeters (`cm`).

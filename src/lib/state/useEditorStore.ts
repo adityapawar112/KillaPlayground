@@ -245,6 +245,7 @@ interface EditorState {
   updateWallName: (wallId: string, name: string) => void;
   updateTowerName: (wallId: string, towerId: string, name: string) => void;
   updateBoxBastionName: (wallId: string, boxId: string, name: string) => void;
+  updateRoundBastionName: (wallId: string, bastionId: string, name: string) => void;
   updateGateName: (wallId: string, gateId: string, name: string) => void;
 
   setWallSettings: (settings: Partial<WallSettings>) => void;
@@ -269,6 +270,9 @@ interface EditorState {
   addBoxBastionToWall: (wallId: string, segmentIndex: number, t?: number, props?: Partial<import('../walls/wallTypes').WallBoxBastion>) => void;
   updateBoxBastionProperties: (wallId: string, boxId: string, props: Partial<import('../walls/wallTypes').WallBoxBastion>) => void;
   removeBoxBastionFromWall: (wallId: string, boxId: string) => void;
+  addRoundBastionToWall: (wallId: string, segmentIndex: number, t?: number, props?: Partial<import('../walls/wallTypes').WallRoundBastion>) => string;
+  updateRoundBastionProperties: (wallId: string, bastionId: string, props: Partial<import('../walls/wallTypes').WallRoundBastion>) => void;
+  removeRoundBastionFromWall: (wallId: string, bastionId: string) => void;
   addGateToWall: (wallId: string, segmentIndex: number, t?: number) => void;
   updateGateProperties: (wallId: string, gateId: string, props: Partial<WallGate>) => void;
   removeGateFromWall: (wallId: string, gateId: string) => void;
@@ -284,7 +288,16 @@ interface EditorState {
   // Foundation Slabs State (Ticket 09)
   foundations: FoundationSlab[];
   selectedFoundationId: string | null;
-  activeFoundationDraft: { x1: number; z1: number; x2: number; z2: number; y: number } | null;
+  activeFoundationDraft: {
+    x1: number;
+    z1: number;
+    x2: number;
+    z2: number;
+    y: number;
+    height?: number;
+    phase?: 'base' | 'height';
+    startPointerY?: number;
+  } | null;
   defaultFoundationHeight: number;
   defaultFoundationOffset: number;
   defaultFoundationTiling: number;
@@ -292,7 +305,16 @@ interface EditorState {
   updateFoundation: (id: string, updates: Partial<FoundationSlab>) => void;
   deleteFoundation: (id: string) => void;
   setSelectedFoundationId: (id: string | null) => void;
-  setActiveFoundationDraft: (draft: { x1: number; z1: number; x2: number; z2: number; y: number } | null) => void;
+  setActiveFoundationDraft: (draft: {
+    x1: number;
+    z1: number;
+    x2: number;
+    z2: number;
+    y: number;
+    height?: number;
+    phase?: 'base' | 'height';
+    startPointerY?: number;
+  } | null) => void;
   setDefaultFoundationHeight: (height: number) => void;
   setDefaultFoundationOffset: (offset: number) => void;
   setDefaultFoundationTiling: (tiling: number) => void;
@@ -763,6 +785,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const wall = state.walls.find((w) => w.id === selectedWallId);
       return {
         selectedWallId,
+        selectedFoundationId: null,
+        selectedStairId: null,
         wallSettings: wall ? { ...wall.settings } : state.wallSettings,
       };
     }),
@@ -777,7 +801,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }),
   setActiveStamp: (activeStamp) => set({ activeStamp, wallSnapPreview: null }),
   setWallSnapPreview: (wallSnapPreview) => set({ wallSnapPreview }),
-  setSelectedComponent: (selectedComponent) => set({ selectedComponent }),
+  setSelectedComponent: (selectedComponent) =>
+    set({
+      selectedComponent,
+      ...(selectedComponent ? { selectedFoundationId: null, selectedStairId: null } : {}),
+    }),
   addWallDraftPoint: (point) =>
     set((state) => ({ activeWallDraft: [...state.activeWallDraft, point] })),
   finishCurrentWall: (isClosed = false) => {
@@ -1017,6 +1045,65 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           : state.selectedComponent,
     }));
   },
+  addRoundBastionToWall: (wallId, segmentIndex, t = 0.5, props = {}) => {
+    pushUndoSnapshot();
+    const bastionId = `round_bastion_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const newBastion: import('../walls/wallTypes').WallRoundBastion = {
+      id: bastionId,
+      name: props.name || 'Round Bastion',
+      segmentIndex,
+      t,
+      radius: props.radius || 0.18,
+      heightOffset: props.heightOffset || 0.04,
+      flipSide: props.flipSide || false,
+    };
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return { ...w, roundBastions: [...(w.roundBastions || []), newBastion] };
+      }),
+      selectedWallId: wallId,
+      selectedComponent: { type: 'round_bastion', idOrIndex: bastionId, wallId },
+      selectedFoundationId: null,
+      selectedStairId: null,
+    }));
+    return bastionId;
+  },
+  updateRoundBastionProperties: (wallId, bastionId, props) => {
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          roundBastions: (w.roundBastions || []).map((b) => (b.id === bastionId ? { ...b, ...props } : b)),
+        };
+      }),
+    }));
+  },
+  removeRoundBastionFromWall: (wallId, bastionId) => {
+    pushUndoSnapshot();
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return { ...w, roundBastions: (w.roundBastions || []).filter((b) => b.id !== bastionId) };
+      }),
+      selectedComponent:
+        state.selectedComponent?.type === 'round_bastion' && state.selectedComponent.idOrIndex === bastionId
+          ? null
+          : state.selectedComponent,
+    }));
+  },
+  updateRoundBastionName: (wallId, bastionId, name) => {
+    set((state) => ({
+      walls: state.walls.map((w) => {
+        if (w.id !== wallId) return w;
+        return {
+          ...w,
+          roundBastions: (w.roundBastions || []).map((b) => (b.id === bastionId ? { ...b, name } : b)),
+        };
+      }),
+    }));
+  },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {
     pushUndoSnapshot();
     const gateId = `gate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
@@ -1157,6 +1244,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return id;
   },
   updateFoundation: (id, updates) => {
+    pushUndoSnapshot();
     set((state) => ({
       foundations: state.foundations.map((f) => (f.id === id ? { ...f, ...updates } : f)),
     }));
@@ -1169,7 +1257,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hoveredElement: state.hoveredElement?.id === id ? null : state.hoveredElement,
     }));
   },
-  setSelectedFoundationId: (id) => set({ selectedFoundationId: id }),
+  setSelectedFoundationId: (id) =>
+    set({
+      selectedFoundationId: id,
+      ...(id ? { selectedWallId: null, selectedComponent: null, selectedStairId: null } : {}),
+    }),
   setActiveFoundationDraft: (draft) => set({ activeFoundationDraft: draft }),
   setDefaultFoundationHeight: (defaultFoundationHeight) => set({ defaultFoundationHeight }),
   setDefaultFoundationOffset: (defaultFoundationOffset) => set({ defaultFoundationOffset }),
@@ -1187,6 +1279,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     stepRise: 0.015,
     stepOffset: 0.0,
     stepSpacing: 0.03,
+    scale: 2.0,
   },
   startStairs: () =>
     set({
@@ -1256,7 +1349,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hoveredElement: state.hoveredElement?.id === id ? null : state.hoveredElement,
     }));
   },
-  setSelectedStairId: (id) => set({ selectedStairId: id }),
+  setSelectedStairId: (id) =>
+    set({
+      selectedStairId: id,
+      ...(id ? { selectedWallId: null, selectedComponent: null, selectedFoundationId: null } : {}),
+    }),
   updateStairSettings: (id, settings) => {
     pushUndoSnapshot();
     set((state) => ({
@@ -1923,6 +2020,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       splines: [],
       walls: [],
+      foundations: [],
+      selectedFoundationId: null,
+      activeFoundationDraft: null,
+      stairs: [],
+      selectedStairId: null,
+      activeStairDraft: [],
+      isDrawingStairs: false,
       activeWallDraft: [],
       selectedWallId: null,
       wallStep: 'layout',

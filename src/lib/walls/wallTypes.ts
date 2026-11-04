@@ -73,6 +73,20 @@ export interface WallBoxBastion {
   flipSide?: boolean;   // invert inside/outside orientation
 }
 
+/**
+ * Procedural Semi-Circular Round Bastion (अर्धगोलाकार बुरुज)
+ * Protrudes as a semicircle on the outer side of the wall.
+ */
+export interface WallRoundBastion {
+  id: string;
+  name?: string;
+  segmentIndex: number; // segment between points[i] and points[i+1]
+  t: number;            // 0.0 to 1.0 along the segment (default 0.5)
+  radius: number;       // radius of semicircle in meters (default: 0.18m = 18cm)
+  heightOffset: number; // extra height above wall in meters (default: 0.04m = 4cm)
+  flipSide?: boolean;   // invert inside/outside orientation (default: false = outer side)
+}
+
 export interface WallPath {
   id: string;
   name?: string;
@@ -80,6 +94,7 @@ export interface WallPath {
   isClosed: boolean;
   towers?: WallTower[];             // Round towers placed along segments
   boxBastions?: WallBoxBastion[];   // Box bastions attached to wall
+  roundBastions?: WallRoundBastion[]; // Semi-circular bastions protruding on outer side
   gates: WallGate[];                // Arched gateways
   manualBastionIndices?: number[];  // indices of points with manual bastions
   grandBastionIndices?: number[];   // indices of points with grand bastions
@@ -95,7 +110,7 @@ export type WallMode = 'select' | 'draw' | 'fortify';
 
 export type WallStepperStep = 'layout' | 'fortify' | 'solidified';
 
-export type FortStampType = 'tower' | 'box' | 'gate' | 'buruj' | 'grand_buruj' | 'citadel' | null;
+export type FortStampType = 'tower' | 'box' | 'round_bastion' | 'gate' | 'buruj' | 'grand_buruj' | 'citadel' | null;
 
 export interface CitadelKeep {
   id: string;
@@ -109,7 +124,7 @@ export interface CitadelKeep {
 }
 
 export interface SelectedComponentRef {
-  type: 'gate' | 'bastion' | 'tower' | 'box' | 'citadel';
+  type: 'gate' | 'bastion' | 'tower' | 'box' | 'round_bastion' | 'citadel';
   idOrIndex: string | number;
   wallId?: string;
 }

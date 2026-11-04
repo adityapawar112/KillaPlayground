@@ -17,6 +17,7 @@ import {
   createDiyaFlameGeometry,
 } from '@/lib/spline/splineGeometry';
 import { SplinePath } from '@/lib/spline/splineTypes';
+import { calculateMagneticSnap } from '@/lib/walls/wallGeometry';
 import { handleStructurePointerDown, handleStructurePointerMove } from '@/lib/interaction/surfaceToolInteraction';
 
 // ============================================================================
@@ -113,12 +114,17 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
     return generateStoneStepsGeometry(spline.points, buffer, spline.settings);
   }, [spline.points, buffer, spline.settings]);
 
+  const edgesGeometry = useMemo(() => {
+    return new THREE.EdgesGeometry(geometry, 35);
+  }, [geometry]);
+
   useEffect(() => {
     invalidate();
     return () => {
       geometry.dispose();
+      edgesGeometry.dispose();
     };
-  }, [geometry, invalidate]);
+  }, [geometry, edgesGeometry, invalidate]);
 
   return (
     <group
@@ -134,18 +140,35 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
         onSelect();
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
-      onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
+      onPointerMove={(e) => {
+        handleStructurePointerMove(e, invalidate);
+        const editor = useEditorStore.getState();
+        const isFortify =
+          (editor.activeTool === 'building' && editor.buildingMode === 'fortifications') ||
+          (editor.activeTool === 'walls' && editor.wallMode === 'fortify');
+        if (isFortify && editor.activeStamp) {
+          const snap = calculateMagneticSnap(
+            editor.activeStamp,
+            e.point,
+            editor.walls,
+            editor.selectedWallId,
+            buffer
+          );
+          editor.setWallSnapPreview(snap);
+        }
+      }}
       onPointerOver={(e) => {
-        e.stopPropagation();
         const editor = useEditorStore.getState();
         const isSelectMode =
           (editor.activeTool === 'building' || editor.activeTool === 'walls')
             ? editor.buildingMode === 'select'
             : editor.activeTool === 'spline' && (editor.splineMode === 'select' || editor.splineMode === 'transform');
-        if (isSelectMode) onHover(true);
+        if (isSelectMode) {
+          e.stopPropagation();
+          onHover(true);
+        }
       }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
+      onPointerOut={() => {
         onHover(false);
       }}
     >
@@ -157,8 +180,7 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
         name={`StoneSteps_${spline.id}`}
       />
       {(isSelected || isHovered) && (
-        <lineSegments>
-          <edgesGeometry args={[geometry, 35]} />
+        <lineSegments geometry={edgesGeometry}>
           <lineBasicMaterial color={isHovered && !isSelected ? '#E85D04' : '#F59E0B'} linewidth={2} />
         </lineSegments>
       )}
@@ -254,18 +276,35 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
         onSelect();
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
-      onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
+      onPointerMove={(e) => {
+        handleStructurePointerMove(e, invalidate);
+        const editor = useEditorStore.getState();
+        const isFortify =
+          (editor.activeTool === 'building' && editor.buildingMode === 'fortifications') ||
+          (editor.activeTool === 'walls' && editor.wallMode === 'fortify');
+        if (isFortify && editor.activeStamp) {
+          const snap = calculateMagneticSnap(
+            editor.activeStamp,
+            e.point,
+            editor.walls,
+            editor.selectedWallId,
+            buffer
+          );
+          editor.setWallSnapPreview(snap);
+        }
+      }}
       onPointerOver={(e) => {
-        e.stopPropagation();
         const editor = useEditorStore.getState();
         const isSelectMode =
           (editor.activeTool === 'building' || editor.activeTool === 'walls')
             ? editor.buildingMode === 'select'
             : editor.activeTool === 'spline' && (editor.splineMode === 'select' || editor.splineMode === 'transform');
-        if (isSelectMode) onHover(true);
+        if (isSelectMode) {
+          e.stopPropagation();
+          onHover(true);
+        }
       }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
+      onPointerOut={() => {
         onHover(false);
       }}
       name={`FlagGroup_${spline.id}`}
@@ -379,18 +418,35 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
         onSelect();
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
-      onPointerMove={(e) => handleStructurePointerMove(e, invalidate)}
+      onPointerMove={(e) => {
+        handleStructurePointerMove(e, invalidate);
+        const editor = useEditorStore.getState();
+        const isFortify =
+          (editor.activeTool === 'building' && editor.buildingMode === 'fortifications') ||
+          (editor.activeTool === 'walls' && editor.wallMode === 'fortify');
+        if (isFortify && editor.activeStamp) {
+          const snap = calculateMagneticSnap(
+            editor.activeStamp,
+            e.point,
+            editor.walls,
+            editor.selectedWallId,
+            buffer
+          );
+          editor.setWallSnapPreview(snap);
+        }
+      }}
       onPointerOver={(e) => {
-        e.stopPropagation();
         const editor = useEditorStore.getState();
         const isSelectMode =
           (editor.activeTool === 'building' || editor.activeTool === 'walls')
             ? editor.buildingMode === 'select'
             : editor.activeTool === 'spline' && (editor.splineMode === 'select' || editor.splineMode === 'transform');
-        if (isSelectMode) onHover(true);
+        if (isSelectMode) {
+          e.stopPropagation();
+          onHover(true);
+        }
       }}
-      onPointerOut={(e) => {
-        e.stopPropagation();
+      onPointerOut={() => {
         onHover(false);
       }}
       name={`DiyaGroup_${spline.id}`}
@@ -431,6 +487,9 @@ export const SplineStructures: React.FC = () => {
     selectedStairId,
     setSelectedSplineId,
     setSelectedStairId,
+    setSelectedWallId,
+    setSelectedFoundationId,
+    setSelectedComponent,
     hoveredElement,
     setHoveredElement,
     splineMode,
@@ -448,17 +507,26 @@ export const SplineStructures: React.FC = () => {
   });
 
   useEffect(() => {
-    const all = [
-      darkStoneTextures.diffuse,
+    if (darkStoneTextures.diffuse) {
+      darkStoneTextures.diffuse.colorSpace = THREE.SRGBColorSpace;
+      darkStoneTextures.diffuse.wrapS = darkStoneTextures.diffuse.wrapT = THREE.RepeatWrapping;
+      darkStoneTextures.diffuse.generateMipmaps = true;
+      darkStoneTextures.diffuse.minFilter = THREE.LinearMipmapLinearFilter;
+      darkStoneTextures.diffuse.magFilter = THREE.LinearFilter;
+      darkStoneTextures.diffuse.needsUpdate = true;
+    }
+    const linearMaps = [
       darkStoneTextures.normal,
       darkStoneTextures.roughness,
       darkStoneTextures.ao,
     ];
-    all.forEach((tex) => {
+    linearMaps.forEach((tex) => {
       if (tex) {
+        tex.colorSpace = THREE.NoColorSpace;
         tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-        tex.minFilter = THREE.NearestFilter;
-        tex.magFilter = THREE.NearestFilter;
+        tex.generateMipmaps = false;
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
       }
     });
@@ -474,8 +542,8 @@ export const SplineStructures: React.FC = () => {
   } = useMemo(() => {
     // 1. Stone Steps Material
     const stoneMat = new THREE.MeshStandardMaterial({
-      roughness: 0.85,
-      metalness: 0.05,
+      roughness: 0.90,
+      metalness: 0.0,
       side: THREE.DoubleSide,
       shadowSide: THREE.DoubleSide,
     });
@@ -630,6 +698,9 @@ export const SplineStructures: React.FC = () => {
           if (isSelectMode) {
             setSelectedStairId(spline.id);
             setSelectedSplineId(spline.id);
+            setSelectedWallId(null);
+            setSelectedFoundationId(null);
+            setSelectedComponent(null);
             setToastMessage(`${spline.name || 'Stone Staircase'} selected.`);
           }
         };

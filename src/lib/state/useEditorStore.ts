@@ -2246,7 +2246,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         set({ timeOfDay: 12.0, sunElevation: 75, sunAzimuth: 180, nightMode: false });
         break;
       case 'sunset':
-        set({ timeOfDay: 17.5, sunElevation: 10, sunAzimuth: 270, nightMode: false });
+        set({ timeOfDay: 17.5, sunElevation: 20, sunAzimuth: 255, nightMode: false });
         break;
       case 'night':
         set({ timeOfDay: 21.0, sunElevation: 52, sunAzimuth: 230, nightMode: true });

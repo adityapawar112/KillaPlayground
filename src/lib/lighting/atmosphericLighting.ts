@@ -82,49 +82,49 @@ export function lerpNum(a: number, b: number, t: number): number {
 
 // 7 Master Keyframes across the 24-hour Diurnal Cycle
 const KEYFRAMES: LightingKeyframe[] = [
-  // 00:00 - Midnight
+  // 00:00 - Midnight (Luminous Full Moon Plain)
   {
     hour: 0.0,
-    sunColor: '#93C5FD',
-    sunIntensity: 0.35,
-    bounceColor: '#1E1B4B',
-    bounceIntensity: 0.12,
-    ambientColor: '#080D1A',
-    ambientIntensity: 0.22,
-    hemiSky: '#0F172A',
-    hemiGround: '#050814',
-    hemiIntensity: 0.22,
-    fogColor: '#050814',
-    fogDensity: 0.010,
-    exposure: 1.10,
-    skyGradient: 'radial-gradient(ellipse at 50% 10%, #0B132B 0%, #070B19 45%, #020617 80%, #000000 100%)',
-    sunDiscColor: '#E0F2FE',
+    sunColor: '#E0F2FE', // Luminous silvery-white moonlight
+    sunIntensity: 1.35,
+    bounceColor: '#38BDF8', // Cyan-blue celestial atmospheric fill
+    bounceIntensity: 0.50,
+    ambientColor: '#475569', // Slate/indigo ambient fill - makes cliffs, terrain, and shadows clearly visible
+    ambientIntensity: 0.85,
+    hemiSky: '#93C5FD', // Luminous sky radiance
+    hemiGround: '#1E293B', // Cool slate shadow fill
+    hemiIntensity: 0.80,
+    fogColor: '#0F172A', // Clear night horizon mist
+    fogDensity: 0.0025,
+    exposure: 1.28,
+    skyGradient: 'radial-gradient(ellipse at 50% 25%, #1E3A8A 0%, #172554 35%, #0F172A 70%, #030712 100%)',
+    sunDiscColor: '#F8FAFC',
     sunCoronaColor: '#93C5FD',
-    gridCell: '#1E2438',
-    gridSection: '#2F3B58',
+    gridCell: '#2A3655',
+    gridSection: '#3D4F7C',
     isNight: true,
     phaseName: 'Diwali Night',
   },
   // 05:00 - Pre-Dawn Twilight
   {
     hour: 5.0,
-    sunColor: '#A5B4FC',
-    sunIntensity: 0.45,
-    bounceColor: '#312E81',
-    bounceIntensity: 0.18,
-    ambientColor: '#1E1B4B',
-    ambientIntensity: 0.28,
-    hemiSky: '#1E293B',
-    hemiGround: '#0F172A',
-    hemiIntensity: 0.28,
+    sunColor: '#D8E4FF',
+    sunIntensity: 0.95,
+    bounceColor: '#38BDF8',
+    bounceIntensity: 0.38,
+    ambientColor: '#3B4A6B',
+    ambientIntensity: 0.65,
+    hemiSky: '#60A5FA',
+    hemiGround: '#293548',
+    hemiIntensity: 0.58,
     fogColor: '#0F172A',
-    fogDensity: 0.011,
-    exposure: 1.12,
+    fogDensity: 0.003,
+    exposure: 1.22,
     skyGradient: 'radial-gradient(ellipse at 50% 100%, #312E81 0%, #1E1B4B 35%, #0F172A 70%, #020617 100%)',
-    sunDiscColor: '#C7D2FE',
+    sunDiscColor: '#E0F2FE',
     sunCoronaColor: '#818CF8',
-    gridCell: '#232A42',
-    gridSection: '#374151',
+    gridCell: '#2A3655',
+    gridSection: '#3D4F7C',
     isNight: true,
     phaseName: 'Diwali Night',
   },
@@ -132,17 +132,17 @@ const KEYFRAMES: LightingKeyframe[] = [
   {
     hour: 6.0,
     sunColor: '#FDBA74', // Warm peach rose-gold
-    sunIntensity: 1.45,
+    sunIntensity: 1.55,
     bounceColor: '#FDBA74', // Warm morning fill
-    bounceIntensity: 0.45,
-    ambientColor: '#475569', // Cool slate morning sky
-    ambientIntensity: 0.55,
+    bounceIntensity: 0.50,
+    ambientColor: '#64748B', // Cool slate morning sky
+    ambientIntensity: 0.60,
     hemiSky: '#94A3B8',
     hemiGround: '#B45309', // Warm laterite mud
-    hemiIntensity: 0.55,
+    hemiIntensity: 0.60,
     fogColor: '#FED7AA', // Peach dawn horizon mist
-    fogDensity: 0.005,
-    exposure: 1.18,
+    fogDensity: 0.004,
+    exposure: 1.20,
     skyGradient: 'radial-gradient(ellipse at 50% 100%, #FED7AA 0%, #FCA5A5 25%, #475569 65%, #1E293B 100%)',
     sunDiscColor: '#FFF3E0',
     sunCoronaColor: '#FDBA74',
@@ -155,14 +155,14 @@ const KEYFRAMES: LightingKeyframe[] = [
   {
     hour: 12.0,
     sunColor: '#FFFDF0', // Crisp solar white-gold
-    sunIntensity: 1.60,
+    sunIntensity: 1.65,
     bounceColor: '#FED7AA', // Warm courtyard mud radiance
-    bounceIntensity: 0.45,
+    bounceIntensity: 0.50,
     ambientColor: '#E0F2FE', // Open airy blue sky ambient
-    ambientIntensity: 0.65,
+    ambientIntensity: 0.68,
     hemiSky: '#BAE6FD',
     hemiGround: '#9A3412',
-    hemiIntensity: 0.55,
+    hemiIntensity: 0.58,
     fogColor: '#F1F5F9', // Pale sunlit mist
     fogDensity: 0.003,
     exposure: 1.20,
@@ -174,95 +174,95 @@ const KEYFRAMES: LightingKeyframe[] = [
     isNight: false,
     phaseName: 'Noon',
   },
-  // 17:30 - Golden Hour (Blazing Saffron/Orange Sunlight & Twilight Indigo Shadows)
+  // 17:30 - Golden Hour (Brilliant Saffron Sun 30 Mins Before Sunset)
   {
     hour: 17.5,
-    sunColor: '#FB923C', // Fiery sunset saffron
-    sunIntensity: 1.85,
+    sunColor: '#F59E0B', // Radiant golden amber
+    sunIntensity: 2.80, // Bright, vibrant solar intensity
     bounceColor: '#EA580C', // Saturated laterite clay upward GI
-    bounceIntensity: 0.60,
-    ambientColor: '#3730A3', // Complementary twilight indigo ambient
-    ambientIntensity: 0.50,
-    hemiSky: '#4338CA', // Indigo sky
+    bounceIntensity: 0.90,
+    ambientColor: '#FB923C', // Warm golden ambient fill (eliminates pitch dark shadows)
+    ambientIntensity: 0.85,
+    hemiSky: '#FDBA74', // Golden sky
     hemiGround: '#C2410C', // Terracotta earth
-    hemiIntensity: 0.60,
+    hemiIntensity: 0.80,
     fogColor: '#9A3412', // Fiery Deccan sunset dust
-    fogDensity: 0.006,
-    exposure: 1.25,
-    skyGradient: 'radial-gradient(ellipse at 50% 100%, #EA580C 0%, #C2410C 30%, #4338CA 65%, #1E1B4B 85%, #0F172A 100%)',
-    sunDiscColor: '#FF9A3C',
-    sunCoronaColor: '#EA580C',
-    gridCell: '#8C583F',
-    gridSection: '#5C3826',
+    fogDensity: 0.0035,
+    exposure: 1.30,
+    skyGradient: 'radial-gradient(ellipse at 50% 100%, #FB923C 0%, #EA580C 30%, #9A3412 60%, #312E81 85%, #0F172A 100%)',
+    sunDiscColor: '#FFFBEB',
+    sunCoronaColor: '#F59E0B',
+    gridCell: '#9A6247',
+    gridSection: '#6B412D',
     isNight: false,
     phaseName: 'Golden Hour',
   },
   // 18.8 - Dusk / Sunset Afterglow
   {
     hour: 18.8,
-    sunColor: '#C084FC', // Violet-rose afterglow
-    sunIntensity: 0.85,
+    sunColor: '#FB7185', // Warm rose-gold afterglow
+    sunIntensity: 1.35,
     bounceColor: '#9A3412',
-    bounceIntensity: 0.28,
-    ambientColor: '#1E1B4B',
-    ambientIntensity: 0.32,
-    hemiSky: '#312E81',
-    hemiGround: '#431407',
-    hemiIntensity: 0.35,
+    bounceIntensity: 0.45,
+    ambientColor: '#4338CA',
+    ambientIntensity: 0.55,
+    hemiSky: '#6366F1',
+    hemiGround: '#7C2D12',
+    hemiIntensity: 0.52,
     fogColor: '#1E1B4B',
-    fogDensity: 0.010,
-    exposure: 1.15,
+    fogDensity: 0.004,
+    exposure: 1.22,
     skyGradient: 'radial-gradient(ellipse at 50% 100%, #9A3412 0%, #4338CA 40%, #1E1B4B 70%, #080D1A 100%)',
-    sunDiscColor: '#E879F9',
+    sunDiscColor: '#F472B6',
     sunCoronaColor: '#C084FC',
-    gridCell: '#3B2F4C',
-    gridSection: '#4F3E66',
+    gridCell: '#423554',
+    gridSection: '#584670',
     isNight: false,
     phaseName: 'Dusk',
   },
-  // 21:00 - Diwali Night (Silver-Blue Moonlight, Indigo Sky & Glowing Diyas)
+  // 21:00 - Diwali Night (Full Moon Visibility, Silver-Blue Landscape & Glowing Diyas)
   {
     hour: 21.0,
-    sunColor: '#93C5FD', // Luminous silver-blue moonlight
-    sunIntensity: 0.38,
-    bounceColor: '#1E1B4B',
-    bounceIntensity: 0.14,
-    ambientColor: '#080D1A',
-    ambientIntensity: 0.22,
-    hemiSky: '#0F172A',
-    hemiGround: '#050814',
-    hemiIntensity: 0.24,
-    fogColor: '#050814',
-    fogDensity: 0.010,
-    exposure: 1.10,
-    skyGradient: 'radial-gradient(ellipse at 50% 0%, #0B132B 0%, #070B19 45%, #020617 80%, #000000 100%)',
-    sunDiscColor: '#E0F2FE',
+    sunColor: '#E0F2FE', // Luminous silvery-white moonlight
+    sunIntensity: 1.35,
+    bounceColor: '#38BDF8', // Cyan-blue celestial atmospheric fill
+    bounceIntensity: 0.50,
+    ambientColor: '#475569', // Slate/indigo ambient fill - makes cliffs, terrain, and shadows clearly visible
+    ambientIntensity: 0.85,
+    hemiSky: '#93C5FD', // Luminous sky radiance
+    hemiGround: '#1E293B', // Cool slate shadow fill
+    hemiIntensity: 0.80,
+    fogColor: '#0F172A', // Clear night horizon mist
+    fogDensity: 0.0025,
+    exposure: 1.28,
+    skyGradient: 'radial-gradient(ellipse at 50% 25%, #1E3A8A 0%, #172554 35%, #0F172A 70%, #030712 100%)',
+    sunDiscColor: '#F8FAFC',
     sunCoronaColor: '#93C5FD',
-    gridCell: '#1E2438',
-    gridSection: '#2F3B58',
+    gridCell: '#2A3655',
+    gridSection: '#3D4F7C',
     isNight: true,
     phaseName: 'Diwali Night',
   },
   // 24:00 - Midnight (wraps seamlessly to hour 0.0)
   {
     hour: 24.0,
-    sunColor: '#93C5FD',
-    sunIntensity: 0.35,
-    bounceColor: '#1E1B4B',
-    bounceIntensity: 0.12,
-    ambientColor: '#080D1A',
-    ambientIntensity: 0.22,
-    hemiSky: '#0F172A',
-    hemiGround: '#050814',
-    hemiIntensity: 0.22,
-    fogColor: '#050814',
-    fogDensity: 0.010,
-    exposure: 1.10,
-    skyGradient: 'radial-gradient(ellipse at 50% 10%, #0B132B 0%, #070B19 45%, #020617 80%, #000000 100%)',
-    sunDiscColor: '#E0F2FE',
+    sunColor: '#E0F2FE',
+    sunIntensity: 1.35,
+    bounceColor: '#38BDF8',
+    bounceIntensity: 0.50,
+    ambientColor: '#475569',
+    ambientIntensity: 0.85,
+    hemiSky: '#93C5FD',
+    hemiGround: '#1E293B',
+    hemiIntensity: 0.80,
+    fogColor: '#0F172A',
+    fogDensity: 0.0025,
+    exposure: 1.28,
+    skyGradient: 'radial-gradient(ellipse at 50% 25%, #1E3A8A 0%, #172554 35%, #0F172A 70%, #030712 100%)',
+    sunDiscColor: '#F8FAFC',
     sunCoronaColor: '#93C5FD',
-    gridCell: '#1E2438',
-    gridSection: '#2F3B58',
+    gridCell: '#2A3655',
+    gridSection: '#3D4F7C',
     isNight: true,
     phaseName: 'Diwali Night',
   },
@@ -280,10 +280,8 @@ export function getAtmosphericLighting(
 ): AtmosphericLightingConfig {
   // If nightMode is explicitly toggled true but time is daytime, clamp evaluation to Diwali Night (21.0)
   let effectiveHour = timeOfDay;
-  if (nightMode && effectiveHour >= 6.0 && effectiveHour < 19.5) {
+  if (nightMode && effectiveHour >= 6.5 && effectiveHour < 18.5) {
     effectiveHour = 21.0;
-  } else if (!nightMode && (effectiveHour >= 19.5 || effectiveHour < 5.5)) {
-    effectiveHour = 12.0;
   }
 
   // Find bounding keyframes
@@ -350,4 +348,38 @@ export function getAtmosphericLighting(
     isNight,
     phaseName: currentPhase,
   };
+}
+
+/**
+ * Calculates whether festive diyas should be lit and their visual intensity factor.
+ * Diyas are lit throughout Golden Hour (~16:30), Dusk, Night, and early Dawn (~06:30),
+ * as well as whenever nightMode is explicitly active.
+ */
+export function getDiyaLightStatus(
+  timeOfDay: number,
+  nightMode: boolean
+): {
+  isLit: boolean;
+  intensityFactor: number;
+} {
+  if (nightMode) {
+    return { isLit: true, intensityFactor: 1.0 };
+  }
+
+  // Golden Hour starts ~16.5h (4:30 PM), night lasts through dawn until 06.5h (6:30 AM)
+  if (timeOfDay >= 16.5 || timeOfDay <= 6.5) {
+    if (timeOfDay >= 19.0 || timeOfDay <= 5.0) {
+      return { isLit: true, intensityFactor: 1.0 }; // Full night
+    }
+    if (timeOfDay >= 16.5 && timeOfDay < 19.0) {
+      // Golden Hour to Dusk: 0.70 to 1.0
+      const t = (timeOfDay - 16.5) / 2.5;
+      return { isLit: true, intensityFactor: 0.70 + 0.30 * t };
+    }
+    // Pre-dawn to early morning (5.0 to 6.5): 1.0 down to 0.65
+    const t = (timeOfDay - 5.0) / 1.5;
+    return { isLit: true, intensityFactor: 1.0 - 0.35 * t };
+  }
+
+  return { isLit: false, intensityFactor: 0.0 };
 }

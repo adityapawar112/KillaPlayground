@@ -159,11 +159,11 @@ describe('Lighting State Management in Editor Store', () => {
     expect(state.sunAzimuth).toBe(180);
     expect(state.nightMode).toBe(false);
 
-    // Sunset / Golden Hour preset
+    // Sunset / Golden Hour preset (30 mins before sunset, 20 deg elevation)
     store.setSunDirectionPreset('sunset');
     state = useEditorStore.getState();
     expect(state.timeOfDay).toBe(17.5);
-    expect(state.sunElevation).toBe(10);
+    expect(state.sunElevation).toBe(20);
     expect(state.nightMode).toBe(false);
 
     // Diwali Night preset

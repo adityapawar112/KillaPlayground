@@ -95,6 +95,9 @@ const initialPaintBuffer = createPaintBuffer();
 const initialPaintTexture = createPaintStateTexture(initialPaintBuffer);
 const initialPaintArrayTexture = createFallbackArrayTexture(52);
 
+let lastSculptNotifyTime = 0;
+let lastBVHRefitTime = 0;
+
 export const useTerrainStore = create<TerrainState>((set, get) => ({
   stateBuffer: initialBuffer,
   stateTexture: initialTexture,
@@ -218,10 +221,19 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     stateTexture.needsUpdate = true;
     if (terrainGeometry) {
       syncStateToGeometry(stateBuffer, terrainGeometry, dirty);
-      refitTerrainBVH(terrainGeometry);
+      const now = Date.now();
+      // Throttle BVH tree refits during active mouse drag to prevent main-thread stutter
+      if (now - lastBVHRefitTime > 120) {
+        lastBVHRefitTime = now;
+        refitTerrainBVH(terrainGeometry);
+      }
     }
 
-    set({ lastUpdated: Date.now() });
+    const now = Date.now();
+    if (now - lastSculptNotifyTime > 120) {
+      lastSculptNotifyTime = now;
+      set({ lastUpdated: now });
+    }
     return true;
   },
 
@@ -231,7 +243,6 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     if (!modified) return false;
 
     paintTexture.needsUpdate = true;
-    set({ lastUpdated: Date.now() });
     return true;
   },
 

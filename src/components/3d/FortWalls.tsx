@@ -150,13 +150,14 @@ const BoxPlatformSelectionMesh: React.FC<{
 const SingleWallMeshComponent: React.FC<{
   wall: WallPath;
   stateBuffer: Float32Array;
+  terrainVersion?: number;
   materials: THREE.Material[];
-}> = ({ wall, stateBuffer, materials }) => {
+}> = ({ wall, stateBuffer, terrainVersion, materials }) => {
   const { invalidate } = useThree();
   const geometry = useMemo(() => {
-    // Wall geometry regenerates when terrain heightmap changes
+    // Wall geometry regenerates when wall settings change or terrain heightmap changes
     return generateWallBufferGeometry(wall, stateBuffer);
-  }, [wall, stateBuffer]);
+  }, [wall, terrainVersion, stateBuffer]);
 
   const edgesGeometry = useMemo(() => {
     return new THREE.EdgesGeometry(geometry, 35);
@@ -1127,12 +1128,12 @@ export const FortWalls: React.FC = () => {
     <group name="FortWallsLayer">
       {/* Completed Fort Walls */}
       {walls.map((wall) => {
-        const ws = wall.settings || DEFAULT_WALL_SETTINGS;
         return (
           <SingleWallMesh
-            key={`${wall.id}_${lastUpdated}_${ws.uvScale}_${ws.height}_${ws.thickness}_${ws.flipCrenellations}`}
+            key={wall.id}
             wall={wall}
             stateBuffer={stateBuffer}
+            terrainVersion={lastUpdated}
             materials={wallMaterials}
           />
         );

@@ -3,10 +3,11 @@
 import React, { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { useTexture, Bvh } from '@react-three/drei';
-import { useThree, ThreeEvent } from '@react-three/fiber';
+import { useThree, useFrame, ThreeEvent } from '@react-three/fiber';
 import {
   createBaseTerrainGeometry,
   syncStateToGeometry,
+  refitTerrainBVH,
   TerrainBrushOptions,
   getTerrainNormalAt,
   getTerrainHeightAt,
@@ -24,21 +25,56 @@ import { FoliageInstance } from '@/lib/foliage/foliageTypes';
 /**
  * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
  */
-interface TerrainBrushCursorProps {
-  position: [number, number, number];
-  normal: [number, number, number];
-  radius: number;
-  subTool: string;
+export interface CursorStateRef {
+  x: number;
+  y: number;
+  z: number;
+  nx: number;
+  ny: number;
+  nz: number;
   visible: boolean;
 }
 
+interface TerrainBrushCursorProps {
+  cursorStateRef: React.MutableRefObject<CursorStateRef>;
+  radius: number;
+  subTool: string;
+  toolActive: boolean;
+}
+
 const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
-  position,
-  normal,
+  cursorStateRef,
   radius,
   subTool,
-  visible,
+  toolActive,
 }) => {
+  const groupRef = useRef<THREE.Group>(null);
+  const upVec = useMemo(() => new THREE.Vector3(0, 0, 1), []);
+  const normVec = useMemo(() => new THREE.Vector3(), []);
+  const quat = useMemo(() => new THREE.Quaternion(), []);
+
+  useFrame(() => {
+    const grp = groupRef.current;
+    if (!grp) return;
+    const st = cursorStateRef.current;
+    if (!st.visible || !toolActive) {
+      if (grp.visible) grp.visible = false;
+      return;
+    }
+    if (!grp.visible) grp.visible = true;
+
+    normVec.set(st.nx, st.ny, st.nz).normalize();
+    if (normVec.lengthSq() < 0.001) normVec.set(0, 1, 0);
+    quat.setFromUnitVectors(upVec, normVec);
+    grp.quaternion.copy(quat);
+
+    grp.position.set(
+      st.x + normVec.x * 0.025,
+      st.y + normVec.y * 0.025,
+      st.z + normVec.z * 0.025
+    );
+  });
+
   const color = useMemo(() => {
     switch (subTool) {
       case 'elevate':
@@ -66,28 +102,10 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
     }
   }, [subTool]);
 
-  const { quat, offsetPos } = useMemo(() => {
-    const q = new THREE.Quaternion();
-    const up = new THREE.Vector3(0, 0, 1);
-    const n = new THREE.Vector3(normal[0], normal[1], normal[2]).normalize();
-    if (n.lengthSq() < 0.001) n.set(0, 1, 0);
-    q.setFromUnitVectors(up, n);
-
-    // Offset along surface normal to completely eliminate z-fighting on slopes and cliffs
-    const pos: [number, number, number] = [
-      position[0] + n.x * 0.025,
-      position[1] + n.y * 0.025,
-      position[2] + n.z * 0.025,
-    ];
-    return { quat: q, offsetPos: pos };
-  }, [position[0], position[1], position[2], normal[0], normal[1], normal[2]]);
-
-  if (!visible) return null;
-
   const isSinglePoint = subTool === 'single';
 
   return (
-    <group position={offsetPos} quaternion={quat}>
+    <group ref={groupRef} visible={false}>
       {isSinglePoint ? (
         <>
           {/* Single Placement Pinpoint Target Reticle */}
@@ -187,9 +205,15 @@ export const BaseTerrainContent: React.FC = () => {
   const lastSplinePointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
   const pondOriginRef = useRef<{ x: number; y: number; z: number } | null>(null);
-  const [cursorPos, setCursorPos] = useState<[number, number, number]>([0, 0, 0]);
-  const [cursorNormal, setCursorNormal] = useState<[number, number, number]>([0, 1, 0]);
-  const [cursorVisible, setCursorVisible] = useState(false);
+  const cursorStateRef = useRef<CursorStateRef>({
+    x: 0,
+    y: 0,
+    z: 0,
+    nx: 0,
+    ny: 1,
+    nz: 0,
+    visible: false,
+  });
 
   const { camera, invalidate } = useThree();
   const rawControls = useThree((state) => state.controls);
@@ -201,7 +225,6 @@ export const BaseTerrainContent: React.FC = () => {
     paintTexture,
     paintArrayTexture,
     setPaintArrayTexture,
-    lastUpdated,
     setTerrainMesh,
     sculptTerrain,
     applyPaintBrush,
@@ -315,11 +338,6 @@ export const BaseTerrainContent: React.FC = () => {
   const geometry = useMemo(() => {
     return createBaseTerrainGeometry();
   }, []);
-
-  // Request render when terrain state updates (state sync and BVH refit are handled by terrainStore)
-  useEffect(() => {
-    invalidate();
-  }, [lastUpdated, invalidate]);
 
   // Create slope-aware CustomShaderMaterial with height blending and view-space normals
   const material = useMemo(() => {
@@ -435,6 +453,26 @@ export const BaseTerrainContent: React.FC = () => {
     },
     [getSlopeDirection, getEffectiveSlopeAngle, stateBuffer]
   );
+
+  const updateCursor = useCallback(
+    (point: THREE.Vector3, faceNormal?: THREE.Vector3) => {
+      const norm = computeCursorNormal(point, faceNormal);
+      cursorStateRef.current = {
+        x: point.x,
+        y: point.y,
+        z: point.z,
+        nx: norm[0],
+        ny: norm[1],
+        nz: norm[2],
+        visible: true,
+      };
+    },
+    [computeCursorNormal]
+  );
+
+  const hideCursor = useCallback(() => {
+    cursorStateRef.current.visible = false;
+  }, []);
 
   // Execute direct terrain sculpting with smooth radial falloff
   const executeSculpt = useCallback(
@@ -709,10 +747,7 @@ export const BaseTerrainContent: React.FC = () => {
           falloff: editor.paintBrushFalloff,
         });
 
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
         invalidate();
         return;
       }
@@ -748,9 +783,7 @@ export const BaseTerrainContent: React.FC = () => {
           };
           editor.addFoliageInstances([singleInstance]);
 
-          setCursorPos([e.point.x, e.point.y, e.point.z]);
-          setCursorNormal(norm);
-          setCursorVisible(true);
+          updateCursor(e.point, e.face?.normal);
           invalidate();
           return;
         }
@@ -804,10 +837,7 @@ export const BaseTerrainContent: React.FC = () => {
           }
         }
 
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
         invalidate();
         return;
       }
@@ -833,10 +863,7 @@ export const BaseTerrainContent: React.FC = () => {
           editor.removeProps(toRemove.map((p) => p.id));
         }
 
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
         invalidate();
         return;
       }
@@ -862,10 +889,7 @@ export const BaseTerrainContent: React.FC = () => {
           editor.removeLights(toRemove.map((l) => l.id));
         }
 
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
         invalidate();
         return;
       }
@@ -884,10 +908,7 @@ export const BaseTerrainContent: React.FC = () => {
         controls.enabled = false;
       }
 
-      const norm = computeCursorNormal(e.point, e.face?.normal);
-      setCursorPos([e.point.x, e.point.y, e.point.z]);
-      setCursorNormal(norm);
-      setCursorVisible(true);
+      updateCursor(e.point, e.face?.normal);
 
       if (editor.terrainSubTool === 'slope') {
         slopeAnchorRef.current = { x: e.point.x, z: e.point.z, height: e.point.y };
@@ -898,7 +919,7 @@ export const BaseTerrainContent: React.FC = () => {
 
       executeSculpt(e.point);
     },
-    [controls, executeSculpt, pushUndo, computeCursorNormal, invalidate]
+    [controls, executeSculpt, pushUndo, updateCursor, invalidate]
   );
 
   const handlePointerMove = useCallback(
@@ -906,7 +927,7 @@ export const BaseTerrainContent: React.FC = () => {
       const editor = useEditorStore.getState();
 
       if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
-        if (cursorVisible) setCursorVisible(false);
+        hideCursor();
 
         // Foundation drag tracking & height extrusion
         if (editor.buildingMode === 'foundation') {
@@ -990,7 +1011,7 @@ export const BaseTerrainContent: React.FC = () => {
       }
 
       if (editor.activeTool === 'spline') {
-        if (cursorVisible) setCursorVisible(false);
+        hideCursor();
         // If cursor raycast hit any structure in front of the terrain (walls, bastions, towers, platforms), do not draw on terrain under it
         if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
           return;
@@ -1015,10 +1036,7 @@ export const BaseTerrainContent: React.FC = () => {
       }
 
       if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        if (!cursorVisible) setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
 
         if (isPaintingRef.current) {
           e.stopPropagation();
@@ -1038,10 +1056,7 @@ export const BaseTerrainContent: React.FC = () => {
       }
 
       if (editor.activeTool === 'foliage') {
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        if (!cursorVisible) setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
 
         if (isPaintingRef.current) {
           e.stopPropagation();
@@ -1096,10 +1111,7 @@ export const BaseTerrainContent: React.FC = () => {
 
       // Handle Figurine Erase Tool Pointer Move & Brush Dragging
       if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        if (!cursorVisible) setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
 
         if (isPaintingRef.current) {
           e.stopPropagation();
@@ -1118,10 +1130,7 @@ export const BaseTerrainContent: React.FC = () => {
 
       // Handle Lighting & Fireworks Erase Tool Pointer Move & Brush Dragging
       if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
-        const norm = computeCursorNormal(e.point, e.face?.normal);
-        setCursorPos([e.point.x, e.point.y, e.point.z]);
-        setCursorNormal(norm);
-        if (!cursorVisible) setCursorVisible(true);
+        updateCursor(e.point, e.face?.normal);
 
         if (isPaintingRef.current) {
           e.stopPropagation();
@@ -1139,21 +1148,18 @@ export const BaseTerrainContent: React.FC = () => {
       }
 
       if (editor.activeTool !== 'terrain') {
-        if (cursorVisible) setCursorVisible(false);
+        hideCursor();
         return;
       }
 
-      const norm = computeCursorNormal(e.point, e.face?.normal);
-      setCursorPos([e.point.x, e.point.y, e.point.z]);
-      setCursorNormal(norm);
-      if (!cursorVisible) setCursorVisible(true);
+      updateCursor(e.point, e.face?.normal);
 
       if (isSculptingRef.current) {
         e.stopPropagation();
         executeSculpt(e.point);
       }
     },
-    [cursorVisible, executeSculpt, applyPaintBrush, computeCursorNormal, invalidate]
+    [executeSculpt, applyPaintBrush, updateCursor, hideCursor, invalidate]
   );
 
   const handlePointerUp = useCallback(() => {
@@ -1229,6 +1235,11 @@ export const BaseTerrainContent: React.FC = () => {
       pondOriginRef.current = null;
       slopeAnchorRef.current = null;
       isSculptingRef.current = false;
+      const geo = useTerrainStore.getState().terrainGeometry;
+      if (geo) {
+        refitTerrainBVH(geo);
+      }
+      useTerrainStore.setState({ lastUpdated: Date.now() });
       if (controls) {
         controls.enabled = true;
       }
@@ -1238,13 +1249,13 @@ export const BaseTerrainContent: React.FC = () => {
 
   const handlePointerLeave = useCallback(() => {
     if (!isSculptingRef.current && !isPaintingRef.current) {
-      setCursorVisible(false);
+      hideCursor();
     }
     const editor = useEditorStore.getState();
     if (editor.wallSnapPreview) {
       editor.setWallSnapPreview(null);
     }
-  }, []);
+  }, [hideCursor]);
 
   // Global window pointerup to catch pointer released outside mesh
   useEffect(() => {
@@ -1320,6 +1331,11 @@ export const BaseTerrainContent: React.FC = () => {
         pondOriginRef.current = null;
         slopeAnchorRef.current = null;
         isSculptingRef.current = false;
+        const geo = useTerrainStore.getState().terrainGeometry;
+        if (geo) {
+          refitTerrainBVH(geo);
+        }
+        useTerrainStore.setState({ lastUpdated: Date.now() });
         if (controls) {
           controls.enabled = true;
         }
@@ -1350,8 +1366,7 @@ export const BaseTerrainContent: React.FC = () => {
       </Bvh>
 
       <TerrainBrushCursor
-        position={cursorPos}
-        normal={cursorNormal}
+        cursorStateRef={cursorStateRef}
         radius={
           activeTool === 'foliage'
             ? foliageBrushRadius
@@ -1373,14 +1388,13 @@ export const BaseTerrainContent: React.FC = () => {
             ? paintSubTool
             : terrainSubTool
         }
-        visible={
-          cursorVisible &&
-          (activeTool === 'terrain' ||
-            activeTool === 'texture' ||
-            activeTool === 'paint' ||
-            activeTool === 'foliage' ||
-            (activeTool === 'prop' && propSubTool === 'erase') ||
-            (activeTool === 'lighting' && lightingSubTool === 'erase'))
+        toolActive={
+          activeTool === 'terrain' ||
+          activeTool === 'texture' ||
+          activeTool === 'paint' ||
+          activeTool === 'foliage' ||
+          (activeTool === 'prop' && propSubTool === 'erase') ||
+          (activeTool === 'lighting' && lightingSubTool === 'erase')
         }
       />
     </>

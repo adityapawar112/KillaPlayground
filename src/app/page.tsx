@@ -61,7 +61,6 @@ export default function HomePage() {
   }, [timeOfDay, nightMode, sunElevation, sunAzimuth]);
 
   const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
-  const lastUpdated = useTerrainStore((s) => s.lastUpdated);
   const undo = useTerrainStore((s) => s.undo);
   const redo = useTerrainStore((s) => s.redo);
   const canUndo = useTerrainStore.getState().canUndo();

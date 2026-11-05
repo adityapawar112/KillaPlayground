@@ -16,6 +16,32 @@ import { FoliageRenderer } from './FoliageRenderer';
 import { FigurineRenderer } from './FigurineRenderer';
 import { LightingRenderer } from './LightingRenderer';
 import { CelestialSkyRig } from './CelestialSkyRig';
+import { getAtmosphericLighting } from '@/lib/lighting/atmosphericLighting';
+
+// Atmospheric Environment Controller: ACESFilmic Tone Mapping & Fog Exp2
+const AtmosphericEnvironment: React.FC<{
+  toneMappingExposure: number;
+  fogColor: string;
+  fogDensity: number;
+}> = ({ toneMappingExposure, fogColor, fogDensity }) => {
+  const { gl, scene } = useThree();
+
+  useEffect(() => {
+    gl.toneMapping = THREE.ACESFilmicToneMapping;
+    gl.toneMappingExposure = toneMappingExposure;
+  }, [gl, toneMappingExposure]);
+
+  useEffect(() => {
+    if (!scene.fog) {
+      scene.fog = new THREE.FogExp2(fogColor, fogDensity);
+    } else {
+      scene.fog.color.set(fogColor);
+      (scene.fog as THREE.FogExp2).density = fogDensity;
+    }
+  }, [scene, fogColor, fogDensity]);
+
+  return null;
+};
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
@@ -71,6 +97,17 @@ const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
       <primitive object={lineZ} />
     </group>
   );
+};
+
+// Global invalidate bridge for demand frame-loop rendering
+const InvalidateBridge: React.FC = () => {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__killa_invalidate = invalidate;
+    }
+  }, [invalidate]);
+  return null;
 };
 
 // Keyboard Camera Navigation & Mouse Buttons Controller
@@ -257,6 +294,7 @@ interface KillaCanvasProps {
 export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
   const {
     nightMode,
+    timeOfDay,
     cameraViewPreset,
     setCameraViewPreset,
     activeTool,
@@ -268,20 +306,10 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Dynamic Sun / Moon directional vector computed from elevation & azimuth
-  const sunPosition = useMemo((): [number, number, number] => {
-    const phi = (sunElevation * Math.PI) / 180;
-    const theta = (sunAzimuth * Math.PI) / 180;
-    const r = 21.0;
-    const x = r * Math.cos(phi) * Math.sin(theta);
-    const y = Math.max(1.0, r * Math.sin(phi));
-    const z = r * Math.cos(phi) * Math.cos(theta);
-    return [x, y, z];
-  }, [sunElevation, sunAzimuth]);
-
-  const bouncePosition = useMemo((): [number, number, number] => {
-    return [-sunPosition[0] * 0.7, 6, -sunPosition[2] * 0.7];
-  }, [sunPosition]);
+  // Dynamic atmospheric parameters interpolated across time-of-day and solar coordinates
+  const atmosphericConfig = useMemo(() => {
+    return getAtmosphericLighting(timeOfDay, nightMode, sunElevation, sunAzimuth);
+  }, [timeOfDay, nightMode, sunElevation, sunAzimuth]);
 
   // Dynamic mouse control scheme:
   // - In 'select' mode: Left Click orbits background; Right Click orbits; Middle Click pans.
@@ -594,18 +622,31 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         />
 
         <CameraKeyboardController controlsRef={controlsRef} />
+        <InvalidateBridge />
 
-        {/* Courtyard Lighting Rig with Calibrated NormalBias to Eliminate Shadow Acne */}
-        <ambientLight intensity={nightMode ? 0.2 : 0.65} color={nightMode ? '#38bdf8' : '#fffbeb'} />
+        {/* 1. ACESFilmic Tone Mapping & Fog Controller */}
+        <AtmosphericEnvironment
+          toneMappingExposure={atmosphericConfig.toneMappingExposure}
+          fogColor={atmosphericConfig.fogColor}
+          fogDensity={atmosphericConfig.fogDensity}
+        />
+
+        {/* 2. Dynamic Ambient Sky Light */}
+        <ambientLight
+          intensity={atmosphericConfig.ambientIntensity}
+          color={atmosphericConfig.ambientColor}
+        />
+
+        {/* 3. Primary Celestial Directional Light (Sun / Moon) */}
         <directionalLight
-          position={sunPosition}
-          intensity={nightMode ? 0.35 : 1.4}
-          color={nightMode ? '#93c5fd' : '#fef3c7'}
+          position={atmosphericConfig.sunPosition}
+          intensity={atmosphericConfig.sunIntensity}
+          color={atmosphericConfig.sunColor}
           castShadow
           shadow-mapSize-width={2048}
           shadow-mapSize-height={2048}
           shadow-camera-near={1.0}
-          shadow-camera-far={32}
+          shadow-camera-far={34}
           shadow-camera-left={-8.5}
           shadow-camera-right={8.5}
           shadow-camera-top={8.5}
@@ -613,22 +654,23 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           shadow-bias={-0.0001}
           shadow-normalBias={0.035}
         />
-        {/* Secondary Warm Courtyard Ground Bounce Light */}
+
+        {/* 4. Mud Ground Bounce Indirect Radiance (Zero-Cost GI) */}
         <directionalLight
-          position={bouncePosition}
-          intensity={nightMode ? 0.15 : 0.4}
-          color={nightMode ? '#1e3a8a' : '#fed7aa'}
+          position={atmosphericConfig.bouncePosition}
+          intensity={atmosphericConfig.bounceIntensity}
+          color={atmosphericConfig.bounceColor}
         />
+
+        {/* 5. Dual-Radiance Hemisphere Light (Sky vs Terracotta Earth) */}
         <hemisphereLight
-          args={[
-            nightMode ? '#1e293b' : '#fef08a',
-            nightMode ? '#0f172a' : '#78350f',
-            nightMode ? 0.25 : 0.45,
-          ]}
+          color={atmosphericConfig.hemisphereSkyColor}
+          groundColor={atmosphericConfig.hemisphereGroundColor}
+          intensity={atmosphericConfig.hemisphereIntensity}
         />
 
         {/* 3D Celestial Sky Rig: Sun Disc / Corona & Moon Disc / Halo */}
-        <CelestialSkyRig />
+        <CelestialSkyRig config={atmosphericConfig} />
 
         {/* Blender-Style Infinite Fading Grid */}
         <Grid
@@ -636,10 +678,10 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           infiniteGrid
           cellSize={0.5}
           cellThickness={0.6}
-          cellColor={nightMode ? '#332c25' : '#e4d8c8'}
+          cellColor={atmosphericConfig.gridCellColor}
           sectionSize={2.5}
           sectionThickness={1.2}
-          sectionColor={nightMode ? '#524438' : '#c8b8a4'}
+          sectionColor={atmosphericConfig.gridSectionColor}
           fadeDistance={40}
           fadeStrength={1.8}
         />

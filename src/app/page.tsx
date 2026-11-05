@@ -16,6 +16,7 @@ import { AboutModal } from '@/components/modals/AboutModal';
 import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
+import { getAtmosphericLighting } from '@/lib/lighting/atmosphericLighting';
 
 const KillaCanvas = dynamic(
   () => import('@/components/3d/KillaCanvas').then((m) => m.KillaCanvas),
@@ -51,6 +52,14 @@ const KillaCanvas = dynamic(
 
 export default function HomePage() {
   const nightMode = useEditorStore((s) => s.nightMode);
+  const timeOfDay = useEditorStore((s) => s.timeOfDay);
+  const sunElevation = useEditorStore((s) => s.sunElevation);
+  const sunAzimuth = useEditorStore((s) => s.sunAzimuth);
+
+  const atmosphericConfig = React.useMemo(() => {
+    return getAtmosphericLighting(timeOfDay, nightMode, sunElevation, sunAzimuth);
+  }, [timeOfDay, nightMode, sunElevation, sunAzimuth]);
+
   const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
   const lastUpdated = useTerrainStore((s) => s.lastUpdated);
   const undo = useTerrainStore((s) => s.undo);
@@ -174,9 +183,10 @@ export default function HomePage() {
 
   return (
     <main
-      className={`relative w-screen h-screen overflow-hidden transition-colors duration-700 select-none ${
-        nightMode ? 'bg-[#151311]' : 'bg-[#F9F6F0]'
-      }`}
+      className="relative w-screen h-screen overflow-hidden transition-[background] duration-700 select-none"
+      style={{
+        background: atmosphericConfig.skyGradient,
+      }}
     >
       {/* 3D Canvas Viewport (100vw x 100vh) */}
       <div className="absolute inset-0 z-0">

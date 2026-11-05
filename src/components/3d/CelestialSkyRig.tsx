@@ -4,19 +4,31 @@ import React, { useMemo, useRef, useEffect } from 'react';
 import * as THREE from 'three';
 import { useThree, useFrame } from '@react-three/fiber';
 import { useEditorStore } from '@/lib/state/useEditorStore';
+import {
+  AtmosphericLightingConfig,
+  getAtmosphericLighting,
+} from '@/lib/lighting/atmosphericLighting';
+
+interface CelestialSkyRigProps {
+  config?: AtmosphericLightingConfig;
+}
 
 /**
  * CelestialSkyRig - 3D Physical Celestial Sun & Moon Atmospheric Sky Rig
  * Ticket 10 & 11: Festive Lighting, Time of Day & Diorama Studio
  *
  * Renders:
- * 1. Day Mode: Tangible 3D glowing Sun sphere with camera-facing radial corona billboard.
+ * 1. Day Mode: Tangible 3D glowing Sun sphere with camera-facing radial corona billboard (color-tinted by solar temperature).
  * 2. Night Mode: Luminous silver-blue Moon sphere with soft lunar halo billboard & twinkling starfield.
  * 3. Orbits dynamically in real time matching sunElevation and sunAzimuth.
  */
-export const CelestialSkyRig: React.FC = () => {
-  const { sunElevation, sunAzimuth, nightMode } = useEditorStore();
+export const CelestialSkyRig: React.FC<CelestialSkyRigProps> = ({ config }) => {
+  const { sunElevation, sunAzimuth, nightMode, timeOfDay } = useEditorStore();
   const { camera } = useThree();
+
+  const activeConfig = useMemo(() => {
+    return config || getAtmosphericLighting(timeOfDay, nightMode, sunElevation, sunAzimuth);
+  }, [config, timeOfDay, nightMode, sunElevation, sunAzimuth]);
 
   const sunGroupRef = useRef<THREE.Group>(null);
   const moonGroupRef = useRef<THREE.Group>(null);
@@ -164,7 +176,7 @@ export const CelestialSkyRig: React.FC = () => {
           {/* Luminous Sun Disc Sphere */}
           <mesh>
             <sphereGeometry args={[1.25, 24, 24]} />
-            <meshBasicMaterial color="#FFFDF5" />
+            <meshBasicMaterial color={activeConfig.sunDiscColor} />
           </mesh>
 
           {/* Camera-Facing Atmospheric Sun Corona Billboard */}
@@ -172,6 +184,7 @@ export const CelestialSkyRig: React.FC = () => {
             <planeGeometry args={[5.5, 5.5]} />
             <meshBasicMaterial
               map={sunCoronaTexture}
+              color={activeConfig.sunCoronaColor}
               transparent
               blending={THREE.AdditiveBlending}
               depthWrite={false}
@@ -188,7 +201,7 @@ export const CelestialSkyRig: React.FC = () => {
           <group ref={moonGroupRef} position={celestialPosition}>
             <mesh>
               <sphereGeometry args={[1.35, 24, 24]} />
-              <meshBasicMaterial color="#E0F2FE" />
+              <meshBasicMaterial color={activeConfig.sunDiscColor} />
             </mesh>
 
             {/* Camera-Facing Soft Lunar Halo Billboard */}
@@ -196,6 +209,7 @@ export const CelestialSkyRig: React.FC = () => {
               <planeGeometry args={[6.8, 6.8]} />
               <meshBasicMaterial
                 map={moonHaloTexture}
+                color={activeConfig.sunCoronaColor}
                 transparent
                 blending={THREE.AdditiveBlending}
                 depthWrite={false}
@@ -211,3 +225,4 @@ export const CelestialSkyRig: React.FC = () => {
     </group>
   );
 };
+

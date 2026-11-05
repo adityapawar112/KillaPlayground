@@ -1835,8 +1835,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setPaintColor: (color) => set({ paintColor: color }),
   setGrassDensity: (d) => set({ grassDensity: d }),
   setWaterMode: (mode) => set({ waterMode: mode }),
-  setNightMode: (night) => set({ nightMode: night }),
-  toggleNightMode: () => set((state) => ({ nightMode: !state.nightMode })),
+  setNightMode: (night) =>
+    set({
+      nightMode: night,
+      timeOfDay: night ? 21.0 : 12.0,
+      sunElevation: night ? 52 : 75,
+      sunAzimuth: night ? 230 : 180,
+    }),
+  toggleNightMode: () =>
+    set((state) => {
+      const nextNight = !state.nightMode;
+      return {
+        nightMode: nextNight,
+        timeOfDay: nextNight ? 21.0 : 12.0,
+        sunElevation: nextNight ? 52 : 75,
+        sunAzimuth: nextNight ? 230 : 180,
+      };
+    }),
   setMudLocked: (locked) => set({ mudLocked: locked }),
 
   startSpline: () => set({ isDrawingSpline: true, currentSplinePoints: [] }),

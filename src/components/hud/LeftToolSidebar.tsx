@@ -47,6 +47,7 @@ import {
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
+import { getAtmosphericLighting } from '@/lib/lighting/atmosphericLighting';
 import { getTextureById, TEXTURE_MANIFEST } from '@/lib/textures/textureManifest';
 import { getFoliageById, FOLIAGE_MANIFEST } from '@/lib/foliage/foliageManifest';
 import { getFigurineById, FIGURINE_MANIFEST } from '@/lib/figurines/figurineManifest';
@@ -2702,7 +2703,8 @@ export const LeftToolSidebar: React.FC = () => {
             const hours = Math.floor(timeOfDay);
             const minutes = Math.floor((timeOfDay - hours) * 60);
             const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-            const timePhase = nightMode ? 'Diwali Night' : timeOfDay >= 16.5 ? 'Golden Hour' : 'Day';
+            const atmospheric = getAtmosphericLighting(timeOfDay, nightMode, sunElevation, sunAzimuth);
+            const timePhase = atmospheric.phaseName;
 
             return (
               <div className="space-y-4">

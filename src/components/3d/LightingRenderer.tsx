@@ -19,7 +19,32 @@ import {
   disposeFireworkTextures,
 } from '@/lib/lighting/lightingGeometry';
 import { PyrotechnicsEngine, MAX_FIREWORK_PARTICLES } from '@/lib/lighting/pyrotechnicsEngine';
-import { DiyaLightPools } from './DiyaLightPools';
+import { getDiyaLightStatus } from '@/lib/lighting/atmosphericLighting';
+
+// Maximum fixed 3D point lights compiled into WebGL shader (0ms recompile, 0 lag)
+const MAX_3D_POINT_LIGHTS = 16;
+
+// Cached camera-facing volumetric halo texture for diya flames
+let cachedHaloTexture: THREE.CanvasTexture | null = null;
+function getDiyaHaloTexture(): THREE.CanvasTexture {
+  if (cachedHaloTexture) return cachedHaloTexture;
+  if (typeof document === 'undefined') return new THREE.CanvasTexture(null as any);
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d')!;
+  const grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  grad.addColorStop(0.0, 'rgba(255, 255, 230, 0.95)');
+  grad.addColorStop(0.2, 'rgba(255, 180, 20, 0.80)');
+  grad.addColorStop(0.55, 'rgba(235, 95, 0, 0.28)');
+  grad.addColorStop(1.0, 'rgba(200, 40, 0, 0.0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 64, 64);
+  cachedHaloTexture = new THREE.CanvasTexture(canvas);
+  cachedHaloTexture.generateMipmaps = false;
+  cachedHaloTexture.minFilter = THREE.LinearFilter;
+  return cachedHaloTexture;
+}
 
 // ============================================================================
 // 1. Procedural Diya Flame Component with Organic Flicker & White-Hot Core
@@ -27,10 +52,17 @@ import { DiyaLightPools } from './DiyaLightPools';
 const DiyaFlame: React.FC<{
   position: [number, number, number];
 }> = ({ position }) => {
+  const { nightMode, timeOfDay } = useEditorStore();
   const flameMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const flameMeshRef = useRef<THREE.Mesh>(null);
+  const spriteMatRef = useRef<THREE.SpriteMaterial>(null);
   const flameGeo = useMemo(() => createDiyaFlameGeometry(), []);
   const coreGeo = useMemo(() => createDiyaFlameCoreGeometry(), []);
+  const haloTex = useMemo(() => getDiyaHaloTexture(), []);
+
+  const diyaStatus = useMemo(() => {
+    return getDiyaLightStatus(timeOfDay, nightMode);
+  }, [timeOfDay, nightMode]);
 
   useEffect(() => {
     return () => {
@@ -41,12 +73,26 @@ const DiyaFlame: React.FC<{
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime();
+    const isLit = diyaStatus.isLit;
+    const factor = diyaStatus.intensityFactor;
+
     if (flameMatRef.current) {
-      // Natural organic flame flicker formula
-      const flicker = 1.9 + 0.45 * Math.sin(t * 14.0) * Math.cos(t * 22.0);
-      flameMatRef.current.emissiveIntensity = flicker;
+      if (!isLit) {
+        flameMatRef.current.emissiveIntensity = 0.05;
+      } else {
+        const flicker = 1.9 + 0.45 * Math.sin(t * 14.0) * Math.cos(t * 22.0);
+        flameMatRef.current.emissiveIntensity = flicker * factor;
+      }
     }
-    if (flameMeshRef.current) {
+    if (spriteMatRef.current) {
+      if (!isLit) {
+        spriteMatRef.current.opacity = 0;
+      } else {
+        const flicker = 0.85 + 0.15 * Math.sin(t * 13.0);
+        spriteMatRef.current.opacity = 0.80 * flicker * factor;
+      }
+    }
+    if (flameMeshRef.current && isLit) {
       // Organic dancing flame sway in evening breeze
       const swayX = Math.sin(t * 5.2) * 0.05 + Math.sin(t * 11.5) * 0.025;
       const swayZ = Math.cos(t * 4.0) * 0.04;
@@ -71,6 +117,18 @@ const DiyaFlame: React.FC<{
           <meshBasicMaterial color="#FFFBEB" transparent opacity={0.95} />
         </mesh>
       </mesh>
+
+      {/* Volumetric Radial Glow Halo Sprite (Camera-Facing Additive Bloom) */}
+      <sprite position={[0, 0.012, 0]} scale={[0.16, 0.16, 0.16]}>
+        <spriteMaterial
+          ref={spriteMatRef}
+          map={haloTex}
+          blending={THREE.AdditiveBlending}
+          transparent
+          opacity={0.8}
+          depthWrite={false}
+        />
+      </sprite>
     </group>
   );
 };
@@ -330,6 +388,92 @@ const LightingGhostPreview: React.FC<{
 };
 
 // ============================================================================
+// Spatial Clustering Solver for Diya 3D Lighting (Zero Camera Dependency)
+// ============================================================================
+interface DiyaSpatialCluster {
+  x: number;
+  y: number;
+  z: number;
+  count: number;
+  radius: number;
+}
+
+function computeSpatialClusters(diyas: PlacedLight[], maxClusters: number): DiyaSpatialCluster[] {
+  if (diyas.length === 0) return [];
+  if (diyas.length <= maxClusters) {
+    return diyas.map((d) => ({
+      x: d.position[0],
+      y: d.position[1] + 0.12,
+      z: d.position[2],
+      count: 1,
+      radius: 2.2 * (d.scale[0] || 1.0),
+    }));
+  }
+
+  // Choose initial cluster seeds distributed across the diyas array
+  const centroids: { x: number; y: number; z: number; count: number; sumDist: number }[] = [];
+  const step = Math.floor(diyas.length / maxClusters);
+  for (let i = 0; i < maxClusters; i++) {
+    const idx = Math.min(diyas.length - 1, i * step);
+    centroids.push({
+      x: diyas[idx].position[0],
+      y: diyas[idx].position[1] + 0.12,
+      z: diyas[idx].position[2],
+      count: 0,
+      sumDist: 0,
+    });
+  }
+
+  // 3 iterations of K-Means in 3D world coordinates (< 0.05ms)
+  for (let iter = 0; iter < 3; iter++) {
+    const sums = centroids.map(() => ({ x: 0, y: 0, z: 0, count: 0, sumDist: 0 }));
+
+    for (const d of diyas) {
+      let bestDistSq = Infinity;
+      let bestIdx = 0;
+      for (let c = 0; c < centroids.length; c++) {
+        const dx = d.position[0] - centroids[c].x;
+        const dy = (d.position[1] + 0.12) - centroids[c].y;
+        const dz = d.position[2] - centroids[c].z;
+        const distSq = dx * dx + dy * dy + dz * dz;
+        if (distSq < bestDistSq) {
+          bestDistSq = distSq;
+          bestIdx = c;
+        }
+      }
+      sums[bestIdx].x += d.position[0];
+      sums[bestIdx].y += (d.position[1] + 0.12);
+      sums[bestIdx].z += d.position[2];
+      sums[bestIdx].count += 1;
+      sums[bestIdx].sumDist += Math.sqrt(bestDistSq);
+    }
+
+    for (let c = 0; c < centroids.length; c++) {
+      if (sums[c].count > 0) {
+        centroids[c].x = sums[c].x / sums[c].count;
+        centroids[c].y = sums[c].y / sums[c].count;
+        centroids[c].z = sums[c].z / sums[c].count;
+        centroids[c].count = sums[c].count;
+        centroids[c].sumDist = sums[c].sumDist;
+      }
+    }
+  }
+
+  return centroids
+    .filter((c) => c.count > 0)
+    .map((c) => {
+      const avgSpread = c.count > 1 ? c.sumDist / c.count : 0.4;
+      return {
+        x: c.x,
+        y: c.y,
+        z: c.z,
+        count: c.count,
+        radius: Math.max(2.2, Math.min(4.8, 2.0 + avgSpread * 1.3)),
+      };
+    });
+}
+
+// ============================================================================
 // 6. Main Lighting & Fireworks Studio Renderer
 // ============================================================================
 export const LightingRenderer: React.FC = () => {
@@ -353,6 +497,7 @@ export const LightingRenderer: React.FC = () => {
     hoveredElement,
     setHoveredElement,
     nightMode,
+    timeOfDay,
     testFireworkTrigger,
     clearTestFireworkTrigger,
   } = useEditorStore();
@@ -361,10 +506,8 @@ export const LightingRenderer: React.FC = () => {
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
   const [ghostRot, setGhostRot] = useState<[number, number, number]>([0, 0, 0]);
 
-  // Fixed Pre-Allocated Dynamic Key Lights (Zero-recompile, strictly 3 point lights)
-  const keyLightRef1 = useRef<THREE.PointLight>(null);
-  const keyLightRef2 = useRef<THREE.PointLight>(null);
-  const keyLightRef3 = useRef<THREE.PointLight>(null);
+  // Statically Pre-Allocated 3D Omnidirectional Point Lights (Strictly 16 lights, 0ms shader recompile)
+  const pointLightRefs = useRef<Array<THREE.PointLight | null>>([]);
 
   // Pyrotechnics particle engine instance
   const pyrotechnics = useMemo(() => new PyrotechnicsEngine(), []);
@@ -451,31 +594,56 @@ export const LightingRenderer: React.FC = () => {
       }
     }
 
-    // 2. Dynamic Key Lights Spatial Allocation (Strictly 3 point lights, zero recompile)
-    // Avoid blown-out camera-popping hot spots: Key lights are reserved for focused inspection of selected/hovered lights
-    if (!nightMode) {
-      if (keyLightRef1.current) keyLightRef1.current.intensity = 0;
-      if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
-      if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
+    // 2. Dynamic 3D Omnidirectional Point Lights (Strictly 16 lights, 0ms shader recompile)
+    // Assigned via world-space spatial clustering so camera orbiting NEVER causes popping/jumping
+    const diyas = placedLights.filter((l) => l.category !== 'fireworks');
+    const diyaStatus = getDiyaLightStatus(timeOfDay, nightMode);
+
+    if (!diyaStatus.isLit || diyas.length === 0) {
+      for (let i = 0; i < MAX_3D_POINT_LIGHTS; i++) {
+        const light = pointLightRefs.current[i];
+        if (light) light.intensity = 0;
+      }
     } else {
+      const t = clock.getElapsedTime();
+      const flicker = 0.95 + 0.05 * Math.sin(t * 13.0) * Math.cos(t * 19.0);
       const activeInspectLight = selectedLight || hoveredLight;
-      if (activeInspectLight && keyLightRef1.current) {
-        const t = clock.getElapsedTime();
-        const flicker = 0.94 + 0.06 * Math.sin(t * 13.0);
-        keyLightRef1.current.position.set(
-          activeInspectLight.position[0],
-          activeInspectLight.position[1] + 0.25,
-          activeInspectLight.position[2]
-        );
-        keyLightRef1.current.distance = 2.2;
-        keyLightRef1.current.intensity = 0.65 * flicker;
-      } else if (keyLightRef1.current) {
-        keyLightRef1.current.intensity = 0;
+
+      let startIdx = 0;
+      if (activeInspectLight && activeInspectLight.category !== 'fireworks') {
+        const l0 = pointLightRefs.current[0];
+        if (l0) {
+          l0.position.set(
+            activeInspectLight.position[0],
+            activeInspectLight.position[1] + 0.12,
+            activeInspectLight.position[2]
+          );
+          l0.distance = 2.8 * (activeInspectLight.scale[0] || 1.0);
+          l0.intensity = 1.75 * diyaStatus.intensityFactor * flicker;
+        }
+        startIdx = 1;
       }
 
-      // Lights 2 & 3 remain at 0 during standard night mode so all diyas glow uniformly with DiyaLightPools
-      if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
-      if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
+      const remainingDiyas = activeInspectLight
+        ? diyas.filter((d) => d.id !== activeInspectLight.id)
+        : diyas;
+      const availableSlots = MAX_3D_POINT_LIGHTS - startIdx;
+      const clusters = computeSpatialClusters(remainingDiyas, availableSlots);
+
+      for (let i = 0; i < availableSlots; i++) {
+        const lightRef = pointLightRefs.current[startIdx + i];
+        if (!lightRef) continue;
+
+        if (i < clusters.length) {
+          const c = clusters[i];
+          lightRef.position.set(c.x, c.y, c.z);
+          lightRef.distance = c.radius;
+          const densityBoost = Math.min(2.5, 1.35 + 0.20 * Math.sqrt(c.count));
+          lightRef.intensity = densityBoost * diyaStatus.intensityFactor * flicker;
+        } else {
+          lightRef.intensity = 0;
+        }
+      }
     }
   });
 
@@ -754,34 +922,20 @@ export const LightingRenderer: React.FC = () => {
         );
       })}
 
-      {/* 2. Instanced Diya Ground Light Pools (1 Draw Call for all 250 diyas) */}
-      <DiyaLightPools />
-
-      {/* 3. Fixed Pre-Allocated Dynamic Key Lights (Strictly 3 lights, 0ms shader recompile) */}
-      <pointLight
-        ref={keyLightRef1}
-        color="#F59E0B"
-        distance={4.0}
-        decay={2.0}
-        intensity={0}
-        castShadow={false}
-      />
-      <pointLight
-        ref={keyLightRef2}
-        color="#F59E0B"
-        distance={3.5}
-        decay={2.0}
-        intensity={0}
-        castShadow={false}
-      />
-      <pointLight
-        ref={keyLightRef3}
-        color="#F59E0B"
-        distance={3.5}
-        decay={2.0}
-        intensity={0}
-        castShadow={false}
-      />
+      {/* 2. Statically Pre-Allocated 16 3D Omnidirectional Point Lights (Strictly 16 lights, 0ms shader recompile) */}
+      {Array.from({ length: MAX_3D_POINT_LIGHTS }).map((_, i) => (
+        <pointLight
+          key={i}
+          ref={(el) => {
+            pointLightRefs.current[i] = el;
+          }}
+          color="#FFA533"
+          distance={2.5}
+          decay={2.0}
+          intensity={0}
+          castShadow={false}
+        />
+      ))}
 
       {/* 4. Pyrotechnics Particles Simulation */}
       <points ref={pointsRef} geometry={particleGeo} material={particleMat} visible={false} frustumCulled={false} />

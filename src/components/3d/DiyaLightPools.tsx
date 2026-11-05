@@ -32,7 +32,7 @@ export const DiyaLightPools: React.FC = () => {
     return new THREE.ShaderMaterial({
       uniforms: {
         uColor: { value: new THREE.Color('#F59E0B') }, // Warm amber glow
-        uIntensity: { value: 1.6 },
+        uIntensity: { value: 1.35 },
         uTime: { value: 0 },
       },
       vertexShader: `
@@ -97,8 +97,8 @@ export const DiyaLightPools: React.FC = () => {
         diya.position[2]
       );
 
-      // Light radius scaled by diya size (base pool ~1.1m)
-      const baseRadius = 1.15 * diya.scale[0];
+      // Light radius scaled by diya size (calibrated pool ~0.95m)
+      const baseRadius = 0.95 * diya.scale[0];
       dummy.scale.set(baseRadius, 1.0, baseRadius);
       dummy.rotation.set(0, 0, 0);
 
@@ -127,3 +127,4 @@ export const DiyaLightPools: React.FC = () => {
     />
   );
 };
+

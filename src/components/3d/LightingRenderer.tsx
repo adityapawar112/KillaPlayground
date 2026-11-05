@@ -452,59 +452,30 @@ export const LightingRenderer: React.FC = () => {
     }
 
     // 2. Dynamic Key Lights Spatial Allocation (Strictly 3 point lights, zero recompile)
-    const diyas = placedLights.filter((l) => l.category !== 'fireworks');
-    if (!nightMode || diyas.length === 0) {
+    // Avoid blown-out camera-popping hot spots: Key lights are reserved for focused inspection of selected/hovered lights
+    if (!nightMode) {
       if (keyLightRef1.current) keyLightRef1.current.intensity = 0;
       if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
       if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
     } else {
-      const t = clock.getElapsedTime();
-      const flicker = 0.94 + 0.06 * Math.sin(t * 13.0);
-
-      // Key light 1: Priority to selected or hovered light, or first diya
-      const target1 = selectedLight || hoveredLight || diyas[0];
-      if (keyLightRef1.current && target1) {
+      const activeInspectLight = selectedLight || hoveredLight;
+      if (activeInspectLight && keyLightRef1.current) {
+        const t = clock.getElapsedTime();
+        const flicker = 0.94 + 0.06 * Math.sin(t * 13.0);
         keyLightRef1.current.position.set(
-          target1.position[0],
-          target1.position[1] + 0.16,
-          target1.position[2]
+          activeInspectLight.position[0],
+          activeInspectLight.position[1] + 0.25,
+          activeInspectLight.position[2]
         );
-        keyLightRef1.current.intensity = 1.8 * flicker;
+        keyLightRef1.current.distance = 2.2;
+        keyLightRef1.current.intensity = 0.65 * flicker;
+      } else if (keyLightRef1.current) {
+        keyLightRef1.current.intensity = 0;
       }
 
-      // Key lights 2 & 3: Closest remaining diyas to camera position
-      const remainingDiyas = diyas.filter((d) => d.id !== target1?.id);
-      if (remainingDiyas.length > 0) {
-        const camPos = camera.position;
-        remainingDiyas.sort((a, b) => {
-          const distA = Math.hypot(a.position[0] - camPos.x, a.position[1] - camPos.y, a.position[2] - camPos.z);
-          const distB = Math.hypot(b.position[0] - camPos.x, b.position[1] - camPos.y, b.position[2] - camPos.z);
-          return distA - distB;
-        });
-
-        if (keyLightRef2.current && remainingDiyas[0]) {
-          keyLightRef2.current.position.set(
-            remainingDiyas[0].position[0],
-            remainingDiyas[0].position[1] + 0.16,
-            remainingDiyas[0].position[2]
-          );
-          keyLightRef2.current.intensity = 1.6 * flicker;
-        }
-
-        if (keyLightRef3.current && remainingDiyas[1]) {
-          keyLightRef3.current.position.set(
-            remainingDiyas[1].position[0],
-            remainingDiyas[1].position[1] + 0.16,
-            remainingDiyas[1].position[2]
-          );
-          keyLightRef3.current.intensity = 1.4 * flicker;
-        } else if (keyLightRef3.current) {
-          keyLightRef3.current.intensity = 0;
-        }
-      } else {
-        if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
-        if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
-      }
+      // Lights 2 & 3 remain at 0 during standard night mode so all diyas glow uniformly with DiyaLightPools
+      if (keyLightRef2.current) keyLightRef2.current.intensity = 0;
+      if (keyLightRef3.current) keyLightRef3.current.intensity = 0;
     }
   });
 

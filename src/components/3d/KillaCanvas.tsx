@@ -3,7 +3,7 @@
 import React, { Suspense, useRef, useEffect, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { getOrbitMouseButtons, CameraControlButtons } from '@/lib/interaction/cameraControls';
@@ -101,12 +101,13 @@ const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
 
 // Global invalidate bridge for demand frame-loop rendering
 const InvalidateBridge: React.FC = () => {
-  const { invalidate } = useThree();
+  const { invalidate, scene } = useThree();
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).__killa_invalidate = invalidate;
+      (window as any).__threeScene = scene;
     }
-  }, [invalidate]);
+  }, [invalidate, scene]);
   return null;
 };
 
@@ -302,14 +303,36 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     splineMode,
     sunElevation,
     sunAzimuth,
+    isPlaying,
+    viewMode,
+    turntableSpeed,
+    cameraFov,
+    fogDensityMultiplier,
+    bounceIntensityMultiplier,
+    exposureMultiplier,
+    isCapturingScreenshot,
   } = useEditorStore();
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Dynamic atmospheric parameters interpolated across time-of-day and solar coordinates
+  // Dynamic atmospheric parameters interpolated across time-of-day, solar coordinates, and view sliders
   const atmosphericConfig = useMemo(() => {
-    return getAtmosphericLighting(timeOfDay, nightMode, sunElevation, sunAzimuth);
-  }, [timeOfDay, nightMode, sunElevation, sunAzimuth]);
+    const base = getAtmosphericLighting(timeOfDay, nightMode, sunElevation, sunAzimuth);
+    return {
+      ...base,
+      toneMappingExposure: base.toneMappingExposure * exposureMultiplier,
+      fogDensity: base.fogDensity * fogDensityMultiplier,
+      bounceIntensity: base.bounceIntensity * bounceIntensityMultiplier,
+    };
+  }, [
+    timeOfDay,
+    nightMode,
+    sunElevation,
+    sunAzimuth,
+    exposureMultiplier,
+    fogDensityMultiplier,
+    bounceIntensityMultiplier,
+  ]);
 
   // Dynamic mouse control scheme:
   // - In 'select' mode: Left Click orbits background; Right Click orbits; Middle Click pans.
@@ -550,7 +573,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
   }, []);
 
   // Set preset camera view from gizmo, sidebar, or menu bar
-  const handleSetCameraView = useCallback((view: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out') => {
+  const handleSetCameraView = useCallback((view: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out' | 'isometric' | 'rampart' | 'bastion') => {
     if (!controlsRef.current) return;
     const controls = controlsRef.current;
     const camera = controls.object;
@@ -564,9 +587,15 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     } else if (view === 'side') {
       camera.position.set(11, 3, 0);
       controls.target.set(0, 0.8, 0);
-    } else if (view === 'reset') {
+    } else if (view === 'isometric' || view === 'reset') {
       camera.position.set(7, 7, 7);
       controls.target.set(0, 0.5, 0);
+    } else if (view === 'rampart') {
+      camera.position.set(3, 1.2, 4.5);
+      controls.target.set(0, 0.8, 0);
+    } else if (view === 'bastion') {
+      camera.position.set(-4.5, 2.5, 4.5);
+      controls.target.set(0, 1.0, 0);
     } else if (view === 'zoom_in') {
       handleZoom(-1.5);
     } else if (view === 'zoom_out') {
@@ -591,7 +620,8 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     >
       <Canvas
         shadows="percentage"
-        frameloop="demand"
+        frameloop={isPlaying || viewMode === 'turntable' ? 'always' : 'demand'}
+        dpr={[1, 1.75]}
         gl={{
           antialias: true,
           alpha: true,
@@ -600,13 +630,13 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         }}
         className="w-full h-full block touch-none"
       >
-        <PerspectiveCamera makeDefault position={[7, 7, 7]} fov={45} />
+        <PerspectiveCamera makeDefault position={[7, 7, 7]} fov={cameraFov} />
 
         {/* OrbitControls:
             - In 'select' mode: Left Click orbits background; Right Click orbits; Middle Click pans.
             - In any tool mode other than 'select' (Terrain, Wall Draw/Fortify, Spline Draw, Texture, Foliage, Prop):
               Left Click orbit is completely removed (-1) to dedicate left click strictly to tool interactions.
-              Orbiting defaults to Right Click.
+              Orbiting defaults strictly to Right Click.
         */}
         <OrbitControls
           ref={controlsRef}
@@ -619,6 +649,8 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           maxPolarAngle={Math.PI / 2 - 0.05} // Constrain polar angle above floor
           target={[0, 0.5, 0]}
           mouseButtons={orbitMouseButtons as any}
+          autoRotate={viewMode === 'turntable'}
+          autoRotateSpeed={(turntableSpeed || 1.5) * 1.5}
         />
 
         <CameraKeyboardController controlsRef={controlsRef} />
@@ -672,22 +704,10 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         {/* 3D Celestial Sky Rig: Sun Disc / Corona & Moon Disc / Halo */}
         <CelestialSkyRig config={atmosphericConfig} />
 
-        {/* Blender-Style Infinite Fading Grid */}
-        <Grid
-          position={[0, -0.0025, 0]}
-          infiniteGrid
-          cellSize={0.5}
-          cellThickness={0.6}
-          cellColor={atmosphericConfig.gridCellColor}
-          sectionSize={2.5}
-          sectionThickness={1.2}
-          sectionColor={atmosphericConfig.gridSectionColor}
-          fadeDistance={40}
-          fadeStrength={1.8}
-        />
-
-        {/* Blender Red X-Axis & Green Y/Z-Depth Axis */}
-        <BlenderAxisLines nightMode={nightMode} />
+        {/* Blender Red X-Axis & Green Y/Z-Depth Axis (Suppressed during View presentation & Screenshots) */}
+        {!isCapturingScreenshot && activeTool !== 'view' && (
+          <BlenderAxisLines nightMode={nightMode} />
+        )}
 
         {/* Retaining Courtyard Red Clay Brick Perimeter */}
         <CourtyardBricks nightMode={nightMode} />

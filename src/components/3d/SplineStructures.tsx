@@ -653,14 +653,19 @@ export const SplineStructures: React.FC = () => {
   ]);
 
   const { invalidate } = useThree();
+  const isPlaying = useEditorStore((s) => s.isPlaying);
+  const flagTimeRef = useRef<number>(0);
 
   useEffect(() => {
     invalidate();
   }, [splines, selectedSplineId, isDrawingSpline, currentSplinePoints, invalidate]);
 
   // Per-frame animation for flag wind flutter and diya flame flicker
-  useFrame((state) => {
-    const time = state.clock.elapsedTime;
+  useFrame((_, delta) => {
+    if (isPlaying) {
+      flagTimeRef.current += delta;
+    }
+    const time = flagTimeRef.current;
 
     // 1. Update Flag Wind Sway Shader Time Uniform
     if (flagMaterial.userData.shader) {

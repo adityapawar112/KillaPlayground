@@ -94,9 +94,13 @@ const FoliageTypeGroup: React.FC<FoliageTypeGroupProps> = ({ typeId, instances }
     };
   }, [material, depthMaterial]);
 
-  // Update wind sway uniform on each animation frame
-  useFrame(({ clock }) => {
-    timeUniform.value = clock.getElapsedTime();
+  const isPlaying = useEditorStore((s) => s.isPlaying);
+
+  // Update wind sway uniform on each animation frame when playing
+  useFrame((_, delta) => {
+    if (isPlaying) {
+      timeUniform.value += delta;
+    }
   });
 
   // Calculate instance matrices buffer capacity

@@ -423,7 +423,7 @@ graph TD
 
 ## Ticket 11: Time-of-Day, Play/Pause Animation Engine & Quick-Action Diorama Bar
 
-- **Status**: `ready-for-agent`
+- **Status**: `verified`
 - **Blocked by**: `Ticket 07`, `Ticket 10`
 - **Delivers**:
   - **Dedicated Diorama & Sun View Tool (`view`)**:
@@ -432,7 +432,10 @@ graph TD
       - **Time of Day Slider** (`0:00` to `24:00` hours) with dynamic day/night transitions and quick presets: **Dawn (06:00)**, **Noon (12:00)**, **Golden Hour (17:30)**, and **Diwali Night (21:00)**.
       - **Sun / Moon Direction & Elevation (X-Axis Rotation)** slider (`-10°` to `90°` altitude above courtyard horizon) controlling sun/moon trajectory and dynamic shadow length.
       - **Sun / Moon Azimuth** slider (`0°` to `360°` compass bearing) directing shadow orientation across ramparts and courtyards.
-      - Orbit & Free-Fly spectator camera controls with zero accidental edits.
+      - **Camera Perspectives Presets**: Isometric (45°), Bird's Eye (90° Top-Down), Rampart Eye (15° Low Hero View), Bastion Hero (30° Citadel Corner), and Home Reset.
+      - **Camera Lens FOV Slider** (20° Telephoto to 80° Wide-Angle).
+      - **Turntable Exhibition Mode**: 360° continuous auto-spin with adjustable speed (0.5 to 4.0 RPM).
+      - **Atmospheric Fine-Tuning Calibration**: Mist & Fog Density, Terracotta Mud GI Bounce, and Tone Mapping Exposure calibration sliders.
   - **Atmospheric Lighting & 24-hr Diurnal Solar Arc Engine (`atmosphericLighting.ts`)**:
     - **Dynamic Color Temperature Grading**: 7 calibrated diurnal keyframes (Midnight 00:00, Dawn 06:00, Noon 12:00, Golden Hour 17:30, Dusk 18:48, Diwali Night 21:00, 24:00).
     - **Luminous Full Moon Night Calibration**: Silver-white moonlight (`#E0F2FE`, 1.35x), indigo shadow fill (`#475569`, 0.85x), dual-radiance hemisphere light (`#93C5FD` sky / `#1E293B` ground, 0.80x), and exposure `1.28`. Eliminates pitch-black voids, rendering terrain, water, cliffs, and fort walls clearly visible.
@@ -440,7 +443,7 @@ graph TD
     - **Zero-Cost Mud GI Bounce Radiance**: Directional light positioned upward from laterite clay simulating secondary bounce illumination.
     - **Deccan Plateau Horizon Mist / Depth Fog**: Exponential squared (`Exp2`) fog blending distant terrain smoothly into the diorama backdrop.
     - **ACESFilmic Tone Mapping & Exposure Calibration**: Prevents specular blowouts on stone and enriches mud and flame saturation.
-  - **Centered Quick-Action Diorama Bar**:
+  - **Centered Quick-Action Diorama Bar (`DioramaQuickBar.tsx`)**:
     - Tactile, floating 5-button control dock mounted centered directly above `BottomStatusBar.tsx`:
       - `☀️ Day`: Transitions diorama to warm daylight courtyard lighting.
       - `▶ Play`: Starts continuous 60 FPS animation loop for trees, particle effects, and continuous night fireworks.
@@ -455,16 +458,21 @@ graph TD
     - Switching from Day to Night automatically triggers all placed fireworks in the diorama once in a coordinated festive volley.
   - **Instant High-Res Viewport Screenshot**:
     - Screenshot button temporarily suppresses all HUD overlays (toolbars, sidebars, dock, minimizers), captures the WebGL canvas using `preserveDrawingBuffer`, triggers an immediate browser file download, and cleanly restores UI visibility with a success toast.
+  - **Infinite White Grid Removal**:
+    - Removed `<Grid infiniteGrid />` from the viewport across all tools, giving the diorama an authentic tabletop feel with its courtyard perimeter bricks.
 
 ### Acceptance Criteria
 - [x] Atmospheric lighting engine interpolates 24-hr solar arc with luminous full moon night and vibrant golden hour keyframes.
 - [x] Sun/moon direction, elevation, and azimuth sliders sweep dynamic shadows across fort walls and courtyards.
 - [x] Diyas automatically ignite during Golden Hour, Dusk, and Night, and remain lit through Dawn.
-- [ ] Quick-action diorama bar sits centered above the bottom status bar with Day, Play, Pause, Screenshot, and Night buttons.
-- [ ] Ambient tree fluttering and wind sway progress smoothly when Play is active without requiring mouse moves.
-- [ ] Clicking Pause immediately halts animation clock and freezes movement.
-- [ ] Switching to Night mode ignites all diyas and fires all placed fireworks once in celebration.
-- [ ] Clicking Screenshot captures an unobstructed, high-resolution PNG image directly to browser Downloads.
+- [x] Quick-action diorama bar sits centered above the bottom status bar with Day, Play, Pause, Screenshot, and Night buttons.
+- [x] Ambient tree fluttering and wind sway progress smoothly when Play is active without requiring mouse moves.
+- [x] Clicking Pause immediately halts animation clock and freezes movement.
+- [x] Switching to Night mode ignites all diyas and fires all placed fireworks once in celebration.
+- [x] Clicking Screenshot captures an unobstructed, high-resolution PNG image directly to browser Downloads.
+- [x] Viewport infinite white grid removed across all tools.
+- [x] View tool Left Sidebar enriched with camera presets, lens FOV slider, turntable controls, and atmospheric fine-tuning.
+- [x] Tool modes expanded with Orbit, Turntable, and Cinematic modes for the view tool and Fill mode for texture tool.
 
 ---
 

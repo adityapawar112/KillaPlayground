@@ -20,9 +20,35 @@ import {
 } from '@/lib/lighting/lightingGeometry';
 import { PyrotechnicsEngine, MAX_FIREWORK_PARTICLES } from '@/lib/lighting/pyrotechnicsEngine';
 import { getDiyaLightStatus } from '@/lib/lighting/atmosphericLighting';
+import {
+  computeSpatialClusters,
+  DIYA_POINT_LIGHT_BASE_INTENSITY,
+  DIYA_POINT_LIGHT_DECAY,
+  DIYA_POINT_LIGHT_COLOR,
+} from '@/lib/lighting/spatialClustering';
 
 // Maximum fixed 3D point lights compiled into WebGL shader (0ms recompile, 0 lag)
 const MAX_3D_POINT_LIGHTS = 16;
+
+// Cached circular spark texture for soft radiant firework embers (eliminates blocky square points)
+let cachedSparkTexture: THREE.CanvasTexture | null = null;
+function getFireworkSparkTexture(): THREE.CanvasTexture {
+  if (cachedSparkTexture) return cachedSparkTexture;
+  if (typeof document === 'undefined') return new THREE.CanvasTexture(null as any);
+  const canvas = document.createElement('canvas');
+  canvas.width = 32;
+  canvas.height = 32;
+  const ctx = canvas.getContext('2d')!;
+  const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  grad.addColorStop(0.25, 'rgba(255, 235, 180, 0.95)');
+  grad.addColorStop(0.55, 'rgba(245, 158, 11, 0.4)');
+  grad.addColorStop(1.0, 'rgba(217, 119, 6, 0.0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 32, 32);
+  cachedSparkTexture = new THREE.CanvasTexture(canvas);
+  return cachedSparkTexture;
+}
 
 // Cached camera-facing volumetric halo texture for diya flames
 let cachedHaloTexture: THREE.CanvasTexture | null = null;
@@ -52,10 +78,11 @@ function getDiyaHaloTexture(): THREE.CanvasTexture {
 const DiyaFlame: React.FC<{
   position: [number, number, number];
 }> = ({ position }) => {
-  const { nightMode, timeOfDay } = useEditorStore();
+  const { nightMode, timeOfDay, isPlaying } = useEditorStore();
   const flameMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const flameMeshRef = useRef<THREE.Mesh>(null);
   const spriteMatRef = useRef<THREE.SpriteMaterial>(null);
+  const flameTimeRef = useRef<number>(Math.random() * 10);
   const flameGeo = useMemo(() => createDiyaFlameGeometry(), []);
   const coreGeo = useMemo(() => createDiyaFlameCoreGeometry(), []);
   const haloTex = useMemo(() => getDiyaHaloTexture(), []);
@@ -71,8 +98,11 @@ const DiyaFlame: React.FC<{
     };
   }, [flameGeo, coreGeo]);
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+  useFrame((_, delta) => {
+    if (isPlaying) {
+      flameTimeRef.current += delta;
+    }
+    const t = flameTimeRef.current;
     const isLit = diyaStatus.isLit;
     const factor = diyaStatus.intensityFactor;
 
@@ -387,91 +417,7 @@ const LightingGhostPreview: React.FC<{
   );
 };
 
-// ============================================================================
-// Spatial Clustering Solver for Diya 3D Lighting (Zero Camera Dependency)
-// ============================================================================
-interface DiyaSpatialCluster {
-  x: number;
-  y: number;
-  z: number;
-  count: number;
-  radius: number;
-}
 
-function computeSpatialClusters(diyas: PlacedLight[], maxClusters: number): DiyaSpatialCluster[] {
-  if (diyas.length === 0) return [];
-  if (diyas.length <= maxClusters) {
-    return diyas.map((d) => ({
-      x: d.position[0],
-      y: d.position[1] + 0.12,
-      z: d.position[2],
-      count: 1,
-      radius: 2.2 * (d.scale[0] || 1.0),
-    }));
-  }
-
-  // Choose initial cluster seeds distributed across the diyas array
-  const centroids: { x: number; y: number; z: number; count: number; sumDist: number }[] = [];
-  const step = Math.floor(diyas.length / maxClusters);
-  for (let i = 0; i < maxClusters; i++) {
-    const idx = Math.min(diyas.length - 1, i * step);
-    centroids.push({
-      x: diyas[idx].position[0],
-      y: diyas[idx].position[1] + 0.12,
-      z: diyas[idx].position[2],
-      count: 0,
-      sumDist: 0,
-    });
-  }
-
-  // 3 iterations of K-Means in 3D world coordinates (< 0.05ms)
-  for (let iter = 0; iter < 3; iter++) {
-    const sums = centroids.map(() => ({ x: 0, y: 0, z: 0, count: 0, sumDist: 0 }));
-
-    for (const d of diyas) {
-      let bestDistSq = Infinity;
-      let bestIdx = 0;
-      for (let c = 0; c < centroids.length; c++) {
-        const dx = d.position[0] - centroids[c].x;
-        const dy = (d.position[1] + 0.12) - centroids[c].y;
-        const dz = d.position[2] - centroids[c].z;
-        const distSq = dx * dx + dy * dy + dz * dz;
-        if (distSq < bestDistSq) {
-          bestDistSq = distSq;
-          bestIdx = c;
-        }
-      }
-      sums[bestIdx].x += d.position[0];
-      sums[bestIdx].y += (d.position[1] + 0.12);
-      sums[bestIdx].z += d.position[2];
-      sums[bestIdx].count += 1;
-      sums[bestIdx].sumDist += Math.sqrt(bestDistSq);
-    }
-
-    for (let c = 0; c < centroids.length; c++) {
-      if (sums[c].count > 0) {
-        centroids[c].x = sums[c].x / sums[c].count;
-        centroids[c].y = sums[c].y / sums[c].count;
-        centroids[c].z = sums[c].z / sums[c].count;
-        centroids[c].count = sums[c].count;
-        centroids[c].sumDist = sums[c].sumDist;
-      }
-    }
-  }
-
-  return centroids
-    .filter((c) => c.count > 0)
-    .map((c) => {
-      const avgSpread = c.count > 1 ? c.sumDist / c.count : 0.4;
-      return {
-        x: c.x,
-        y: c.y,
-        z: c.z,
-        count: c.count,
-        radius: Math.max(2.2, Math.min(4.8, 2.0 + avgSpread * 1.3)),
-      };
-    });
-}
 
 // ============================================================================
 // 6. Main Lighting & Fireworks Studio Renderer
@@ -500,11 +446,15 @@ export const LightingRenderer: React.FC = () => {
     timeOfDay,
     testFireworkTrigger,
     clearTestFireworkTrigger,
+    isPlaying,
+    salvoTrigger,
+    fireworkSalvoEndTime,
   } = useEditorStore();
 
   const { scene, camera, raycaster, gl, invalidate } = useThree();
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
   const [ghostRot, setGhostRot] = useState<[number, number, number]>([0, 0, 0]);
+  const lightFlickerTimeRef = useRef<number>(0);
 
   // Statically Pre-Allocated 3D Omnidirectional Point Lights (Strictly 16 lights, 0ms shader recompile)
   const pointLightRefs = useRef<Array<THREE.PointLight | null>>([]);
@@ -524,7 +474,8 @@ export const LightingRenderer: React.FC = () => {
 
   const particleMat = useMemo(() => {
     return new THREE.PointsMaterial({
-      size: 0.08,
+      size: 0.055,
+      map: getFireworkSparkTexture(),
       vertexColors: true,
       transparent: true,
       opacity: 0.95,
@@ -538,11 +489,16 @@ export const LightingRenderer: React.FC = () => {
       particleGeo.dispose();
       particleMat.dispose();
       disposeFireworkTextures();
+      if (cachedSparkTexture) {
+        cachedSparkTexture.dispose();
+        cachedSparkTexture = null;
+      }
       pyrotechnics.reset();
     };
   }, [particleGeo, particleMat, pyrotechnics]);
 
   const lastTriggerTimestampRef = useRef<number>(0);
+  const lastSalvoTimestampRef = useRef<number>(0);
 
   // Respond to on-demand "Test Firework" action from store
   useEffect(() => {
@@ -566,6 +522,31 @@ export const LightingRenderer: React.FC = () => {
     invalidate();
   }, [testFireworkTrigger, pyrotechnics, invalidate, clearTestFireworkTrigger]);
 
+  // Respond to Celebratory Salvo trigger (e.g. transitioning to Night mode)
+  useEffect(() => {
+    if (!salvoTrigger || salvoTrigger <= lastSalvoTimestampRef.current) return;
+    lastSalvoTimestampRef.current = salvoTrigger;
+
+    const currentLights = useEditorStore.getState().placedLights;
+    const fireworks = currentLights.filter((l) => l.category === 'fireworks');
+    if (fireworks.length === 0) return;
+
+    fireworks.forEach((fw, idx) => {
+      const meta = getLightById(fw.type);
+      if (!meta) return;
+      setTimeout(() => {
+        pyrotechnics.triggerFirework(
+          fw.id,
+          meta,
+          fw.position,
+          fw.scale[0],
+          fw.burstHeight
+        );
+        invalidate();
+      }, idx * 140);
+    });
+  }, [salvoTrigger, pyrotechnics, invalidate]);
+
   const selectedLight = useMemo(() => {
     return placedLights.find((l) => l.id === selectedLightId) || null;
   }, [placedLights, selectedLightId]);
@@ -575,10 +556,73 @@ export const LightingRenderer: React.FC = () => {
     return placedLights.find((l) => l.id === hoveredLightId) || null;
   }, [placedLights, hoveredLightId]);
 
+  // 1. Memoized Diya List
+  const diyas = useMemo(() => {
+    return placedLights.filter((l) => l.category !== 'fireworks');
+  }, [placedLights]);
+
+  // 2. Deterministic Spatial Clusters (Memoized: Invariant to selection or hover, 0ms useFrame overhead)
+  const clusters = useMemo(() => {
+    return computeSpatialClusters(diyas, MAX_3D_POINT_LIGHTS);
+  }, [diyas]);
+
+  // Continuous nighttime loop & 5-second salvo scheduler
+  const fireworkSchedulesRef = useRef<Map<string, { nextFireTime: number; isFiring: boolean; finishTime: number }>>(
+    new Map()
+  );
+  const simTimeRef = useRef<number>(0);
+
   // Frame animation loop: Pyrotechnics particles & Zero-Recompile Key Lights Rig
-  useFrame(({ clock }, delta) => {
-    // 1. Pyrotechnics Particles Simulation
-    const hasActive = pyrotechnics.update(delta);
+  useFrame((_, delta) => {
+    // 1. Pyrotechnics Particles Simulation (freezes physics when isPlaying is false and salvo not active)
+    const isNightDark = nightMode || timeOfDay >= 17.5 || timeOfDay <= 6.0;
+    const isSalvoActive = Date.now() < fireworkSalvoEndTime;
+    const shouldSimulate = isPlaying || isSalvoActive;
+
+    // Continuous nighttime firework looping & 5-second celebratory salvo
+    if ((isPlaying && isNightDark) || isSalvoActive) {
+      simTimeRef.current += delta;
+      const simTime = simTimeRef.current;
+      const fireworks = placedLights.filter((l) => l.category === 'fireworks');
+
+      for (const fw of fireworks) {
+        let sched = fireworkSchedulesRef.current.get(fw.id);
+        if (!sched) {
+          // Staggered initial delay so all fireworks never launch at the exact same moment
+          const initialDelay = isSalvoActive ? Math.random() * 1.2 : 0.4 + Math.random() * 3.6;
+          sched = { nextFireTime: simTime + initialDelay, isFiring: false, finishTime: 0 };
+          fireworkSchedulesRef.current.set(fw.id, sched);
+        }
+
+        const meta = getLightById(fw.type);
+        if (!meta) continue;
+        const duration = meta.fireworkType === 'anaar' ? 3.8 : 2.8;
+
+        if (!sched.isFiring && simTime >= sched.nextFireTime) {
+          pyrotechnics.triggerFirework(
+            fw.id,
+            meta,
+            fw.position,
+            fw.scale[0],
+            fw.burstHeight
+          );
+          sched.isFiring = true;
+          sched.finishTime = simTime + duration;
+          invalidate();
+        } else if (sched.isFiring && simTime >= sched.finishTime) {
+          sched.isFiring = false;
+          // Organic pause whenever a firework finishes (0.4-1.2s in salvo, 1.4-3.5s in normal night play)
+          const pause = isSalvoActive ? 0.4 + Math.random() * 0.8 : 1.4 + Math.random() * 2.8;
+          sched.nextFireTime = simTime + pause;
+        }
+      }
+    } else {
+      if (fireworkSchedulesRef.current.size > 0) {
+        fireworkSchedulesRef.current.clear();
+      }
+    }
+
+    const hasActive = shouldSimulate ? pyrotechnics.update(delta) : pyrotechnics.activeCount > 0;
     if (hasActive) {
       if (pointsRef.current) {
         pointsRef.current.visible = true;
@@ -595,51 +639,32 @@ export const LightingRenderer: React.FC = () => {
     }
 
     // 2. Dynamic 3D Omnidirectional Point Lights (Strictly 16 lights, 0ms shader recompile)
-    // Assigned via world-space spatial clustering so camera orbiting NEVER causes popping/jumping
-    const diyas = placedLights.filter((l) => l.category !== 'fireworks');
+    // Assigned via world-space spatial clustering so selection/hover NEVER causes popping or shifting
     const diyaStatus = getDiyaLightStatus(timeOfDay, nightMode);
 
-    if (!diyaStatus.isLit || diyas.length === 0) {
+    if (!diyaStatus.isLit || clusters.length === 0) {
       for (let i = 0; i < MAX_3D_POINT_LIGHTS; i++) {
         const light = pointLightRefs.current[i];
         if (light) light.intensity = 0;
       }
     } else {
-      const t = clock.getElapsedTime();
-      const flicker = 0.95 + 0.05 * Math.sin(t * 13.0) * Math.cos(t * 19.0);
-      const activeInspectLight = selectedLight || hoveredLight;
-
-      let startIdx = 0;
-      if (activeInspectLight && activeInspectLight.category !== 'fireworks') {
-        const l0 = pointLightRefs.current[0];
-        if (l0) {
-          l0.position.set(
-            activeInspectLight.position[0],
-            activeInspectLight.position[1] + 0.12,
-            activeInspectLight.position[2]
-          );
-          l0.distance = 2.8 * (activeInspectLight.scale[0] || 1.0);
-          l0.intensity = 1.75 * diyaStatus.intensityFactor * flicker;
-        }
-        startIdx = 1;
+      if (isPlaying) {
+        lightFlickerTimeRef.current += delta;
       }
+      const t = lightFlickerTimeRef.current;
+      const flicker = 0.95 + 0.05 * Math.sin(t * 13.0) * Math.cos(t * 19.0);
 
-      const remainingDiyas = activeInspectLight
-        ? diyas.filter((d) => d.id !== activeInspectLight.id)
-        : diyas;
-      const availableSlots = MAX_3D_POINT_LIGHTS - startIdx;
-      const clusters = computeSpatialClusters(remainingDiyas, availableSlots);
-
-      for (let i = 0; i < availableSlots; i++) {
-        const lightRef = pointLightRefs.current[startIdx + i];
+      for (let i = 0; i < MAX_3D_POINT_LIGHTS; i++) {
+        const lightRef = pointLightRefs.current[i];
         if (!lightRef) continue;
 
         if (i < clusters.length) {
           const c = clusters[i];
           lightRef.position.set(c.x, c.y, c.z);
           lightRef.distance = c.radius;
-          const densityBoost = Math.min(2.5, 1.35 + 0.20 * Math.sqrt(c.count));
-          lightRef.intensity = densityBoost * diyaStatus.intensityFactor * flicker;
+          const densityMultiplier = Math.min(1.4, 0.85 + 0.15 * Math.sqrt(c.count));
+          lightRef.intensity =
+            DIYA_POINT_LIGHT_BASE_INTENSITY * densityMultiplier * diyaStatus.intensityFactor * flicker;
         } else {
           lightRef.intensity = 0;
         }
@@ -929,9 +954,9 @@ export const LightingRenderer: React.FC = () => {
           ref={(el) => {
             pointLightRefs.current[i] = el;
           }}
-          color="#FFA533"
-          distance={2.5}
-          decay={2.0}
+          color={DIYA_POINT_LIGHT_COLOR}
+          distance={3.5}
+          decay={DIYA_POINT_LIGHT_DECAY}
           intensity={0}
           castShadow={false}
         />

@@ -9,6 +9,7 @@ import { LeftToolSidebar } from '@/components/hud/LeftToolSidebar';
 import { ToolModeSidebar } from '@/components/hud/ToolModeSidebar';
 import { RightToolSidebar } from '@/components/hud/RightToolSidebar';
 import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
+import { DioramaQuickBar } from '@/components/hud/DioramaQuickBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
 import { StartupModal } from '@/components/modals/StartupModal';
@@ -61,6 +62,8 @@ export default function HomePage() {
   }, [timeOfDay, nightMode, sunElevation, sunAzimuth]);
 
   const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
+  const viewMode = useEditorStore((s) => s.viewMode);
+  const isCapturingScreenshot = useEditorStore((s) => s.isCapturingScreenshot);
   const undo = useTerrainStore((s) => s.undo);
   const redo = useTerrainStore((s) => s.redo);
   const canUndo = useTerrainStore.getState().canUndo();
@@ -166,6 +169,19 @@ export default function HomePage() {
         e.preventDefault();
       }
 
+      // Toggle Play / Pause Animation Engine (Space)
+      else if (e.code === 'Space' && !e.ctrlKey && !e.metaKey) {
+        store.togglePlay();
+        e.preventDefault();
+      }
+
+      // Quick Screenshot Capture (P)
+      else if (e.key.toLowerCase() === 'p' && !e.ctrlKey && !e.metaKey) {
+        const btn = document.querySelector('button[title*="Screenshot"]') as HTMLButtonElement;
+        if (btn) btn.click();
+        e.preventDefault();
+      }
+
       // Toggle Lock Mud (L)
       else if (e.key.toLowerCase() === 'l' && !e.ctrlKey && !e.metaKey) {
         store.setMudLocked(!store.mudLocked);
@@ -192,40 +208,50 @@ export default function HomePage() {
         <KillaCanvas />
       </div>
 
-      {/* Desktop Application Menu Bar + Webpage Title */}
-      <AppMenuBar
-        onUndo={undo}
-        onRedo={redo}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        onSetCameraView={(view) => setCameraViewPreset(view)}
-      />
 
-      {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
-      <TopToolBar />
 
-      {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
-      <LeftToolSidebar />
+      {/* Primary HUD Chrome (Cleanly suppressed during screenshot capture) */}
+      {!isCapturingScreenshot && (
+        <>
+          {/* Desktop Application Menu Bar + Webpage Title */}
+          <AppMenuBar
+            onUndo={undo}
+            onRedo={redo}
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onSetCameraView={(view) => setCameraViewPreset(view)}
+          />
 
-      {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
-      <ToolModeSidebar />
+          {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
+          <TopToolBar />
 
-      {/* Right Resizable Sidebar: Outliner + Contextual Inspector */}
-      <RightToolSidebar />
+          {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
+          <LeftToolSidebar />
 
-      {/* Unobtrusive Bottom Controls Strip */}
-      <BottomStatusBar />
+          {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
+          <ToolModeSidebar />
 
-      {/* Blender-Style Startup Splash / Project Hub */}
-      <StartupModal />
+          {/* Right Resizable Sidebar: Outliner + Contextual Inspector */}
+          <RightToolSidebar />
 
-      {/* Left-Half Screen Terrain Studio Drawer */}
-      <TerrainStudioDrawer />
+          {/* Floating Centered Quick-Action Diorama Bar (Ticket 11) */}
+          <DioramaQuickBar />
 
-      {/* Helper Modals */}
-      <ShortcutsModal />
-      <ResetConfirmModal />
-      <AboutModal />
+          {/* Unobtrusive Bottom Controls Strip */}
+          <BottomStatusBar />
+
+          {/* Blender-Style Startup Splash / Project Hub */}
+          <StartupModal />
+
+          {/* Left-Half Screen Terrain Studio Drawer */}
+          <TerrainStudioDrawer />
+
+          {/* Helper Modals */}
+          <ShortcutsModal />
+          <ResetConfirmModal />
+          <AboutModal />
+        </>
+      )}
     </main>
   );
 }

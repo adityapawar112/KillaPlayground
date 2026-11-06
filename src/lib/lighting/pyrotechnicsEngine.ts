@@ -24,9 +24,10 @@ export interface ActiveFireworkSpawner {
   scale: number;
   // For skyshot state machine
   phase?: 'ascent' | 'detonated' | 'finished';
-  rocketY?: number;
-  burstY?: number;
-  ascentSpeed?: number;
+  rocketPos?: [number, number, number];
+  targetBurst?: [number, number, number];
+  ascentVelocity?: [number, number, number];
+  ascentDuration?: number;
   sprayHeight?: number;
 }
 
@@ -134,10 +135,38 @@ export class PyrotechnicsEngine {
         sprayHeight: spray,
       });
     } else {
-      // Sky shot aerial rocket launcher (default low burst altitude ~100cm / 1.0m from launcher)
-      const altitude = (burstHeight ?? meta.burstAltitude ?? 1.0) * scale;
-      const burstY = position[1] + altitude;
-      const ascentSpeed = Math.max(1.8, altitude / 0.45); // Ascends over ~0.45 seconds
+      // Sky shot aerial rocket launcher:
+      // Base burst altitude preserved from item settings (default ~100cm / 1.0m)
+      const baseAltitude = burstHeight ?? meta.burstAltitude ?? 1.0;
+      // Automatic random variation: 20 cm above and below (±0.20m)
+      const heightJitter = (Math.random() * 2 - 1) * 0.20;
+      const effectiveAltitude = Math.max(0.35, (baseAltitude + heightJitter) * scale);
+
+      // Automatic random angle variation: up to 10 degree tilt (only for sky shots)
+      const tiltAngle = Math.random() * 10 * (Math.PI / 180); // 0 to 10 degrees in radians
+      const azimuthAngle = Math.random() * Math.PI * 2;
+      const dirX = Math.sin(tiltAngle) * Math.cos(azimuthAngle);
+      const dirY = Math.cos(tiltAngle);
+      const dirZ = Math.sin(tiltAngle) * Math.sin(azimuthAngle);
+
+      const targetBurst: [number, number, number] = [
+        position[0] + dirX * effectiveAltitude,
+        position[1] + dirY * effectiveAltitude,
+        position[2] + dirZ * effectiveAltitude,
+      ];
+
+      const ascentDuration = Math.max(0.35, 0.45 * Math.sqrt(effectiveAltitude / 1.0));
+      const startPos: [number, number, number] = [
+        position[0],
+        position[1] + 0.15 * scale,
+        position[2],
+      ];
+      const ascentVelocity: [number, number, number] = [
+        (targetBurst[0] - startPos[0]) / ascentDuration,
+        (targetBurst[1] - startPos[1]) / ascentDuration,
+        (targetBurst[2] - startPos[2]) / ascentDuration,
+      ];
+
       this.activeSpawners.push({
         id: instanceId,
         type: 'skyshot',
@@ -149,9 +178,10 @@ export class PyrotechnicsEngine {
         duration: 2.8,
         scale,
         phase: 'ascent',
-        rocketY: position[1] + 0.15 * scale,
-        burstY,
-        ascentSpeed,
+        rocketPos: [...startPos],
+        targetBurst,
+        ascentVelocity,
+        ascentDuration,
       });
     }
   }
@@ -169,37 +199,37 @@ export class PyrotechnicsEngine {
       spawner.elapsed += dt;
 
       if (spawner.type === 'anaar') {
-        // Continuous upward sparkling fountain spray from cone apex
+        // Continuous upward sparkling fountain spray from cone apex (calibrated tighter spray)
         if (spawner.elapsed < spawner.duration) {
           const spawnCount = Math.floor(18 * (dt / 0.016)); // ~18 sparks per frame at 60fps
           const apexY = spawner.origin[1] + 0.105 * spawner.scale;
           const speedMult = Math.sqrt((spawner.sprayHeight || 0.9) / 0.9);
 
           for (let i = 0; i < spawnCount; i++) {
-            // Cone spray angle with upward bias
+            // Tight conical spray angle with strong upward bias (matches authentic Diwali anaar reference)
             const angle = Math.random() * Math.PI * 2;
-            const spreadRad = Math.random() * 0.35;
-            const speed = (2.2 + Math.random() * 2.2) * spawner.scale * speedMult;
+            const spreadRad = Math.pow(Math.random(), 1.6) * 0.14; // significantly tighter spread (was 0.35)
+            const speed = (2.5 + Math.random() * 2.2) * spawner.scale * speedMult;
 
             const vx = Math.cos(angle) * spreadRad * speed;
             const vz = Math.sin(angle) * spreadRad * speed;
             const vy = speed;
 
             // Blend primary with golden crackle
-            const isGold = Math.random() < 0.4;
+            const isGold = Math.random() < 0.45;
             const sparkCol = isGold ? new THREE.Color('#FFFBEB') : spawner.primaryColor;
 
             this.spawnParticle(
-              spawner.origin[0] + (Math.random() - 0.5) * 0.02,
+              spawner.origin[0] + (Math.random() - 0.5) * 0.015,
               apexY,
-              spawner.origin[2] + (Math.random() - 0.5) * 0.02,
+              spawner.origin[2] + (Math.random() - 0.5) * 0.015,
               vx,
               vy,
               vz,
               sparkCol,
-              0.6 + Math.random() * 0.5, // 0.6 to 1.1s life
-              0.055 * spawner.scale,
-              -4.8, // gravity
+              0.55 + Math.random() * 0.45, // 0.55 to 1.0s life
+              0.034 * spawner.scale, // fine sparkling embers (was 0.055)
+              -5.2, // gravity
               0.97, // drag
               0 // spark type
             );
@@ -209,34 +239,40 @@ export class PyrotechnicsEngine {
           this.activeSpawners.splice(s, 1);
         }
       } else if (spawner.type === 'skyshot') {
-        // Two-phase aerial launcher
+        // Two-phase aerial launcher with random ±20cm height and 10° launch angle variation
         if (spawner.phase === 'ascent') {
-          // Phase 1: Rapid rocket ascent leaving smoke/tracer trail
-          const ascentSpeed = spawner.ascentSpeed || Math.max(1.8, 4.0 * spawner.scale);
-          spawner.rocketY = (spawner.rocketY || spawner.origin[1]) + ascentSpeed * dt;
+          const rocket = spawner.rocketPos || spawner.origin;
+          const vel = spawner.ascentVelocity || [0, 4.0 * spawner.scale, 0];
 
-          // Spawn tracer particles along the rocket path
+          rocket[0] += vel[0] * dt;
+          rocket[1] += vel[1] * dt;
+          rocket[2] += vel[2] * dt;
+
+          // Spawn tracer particles along the angled rocket path
           const tracerCount = Math.floor(4 * (dt / 0.016));
           for (let i = 0; i < tracerCount; i++) {
             const tracerColor = Math.random() < 0.5 ? spawner.accentColor : new THREE.Color('#FFFFFF');
             this.spawnParticle(
-              spawner.origin[0] + (Math.random() - 0.5) * 0.04,
-              spawner.rocketY - Math.random() * 0.1,
-              spawner.origin[2] + (Math.random() - 0.5) * 0.04,
-              (Math.random() - 0.5) * 0.2,
-              -0.5,
-              (Math.random() - 0.5) * 0.2,
+              rocket[0] + (Math.random() - 0.5) * 0.03,
+              rocket[1] - Math.random() * 0.06,
+              rocket[2] + (Math.random() - 0.5) * 0.03,
+              -vel[0] * 0.1 + (Math.random() - 0.5) * 0.15,
+              -0.4,
+              -vel[2] * 0.1 + (Math.random() - 0.5) * 0.15,
               tracerColor,
-              0.35,
-              0.045 * spawner.scale,
+              0.32,
+              0.036 * spawner.scale,
               -1.0,
               0.95,
               1 // tracer
             );
           }
 
-          // Check if reached burst altitude
-          if (spawner.rocketY >= (spawner.burstY || spawner.origin[1] + 1.0)) {
+          // Check if reached target burst coordinates or elapsed ascent duration
+          const target = spawner.targetBurst || [spawner.origin[0], spawner.origin[1] + 1.0, spawner.origin[2]];
+          const reachedTarget = rocket[1] >= target[1] || spawner.elapsed >= (spawner.ascentDuration || 0.45);
+
+          if (reachedTarget) {
             spawner.phase = 'detonated';
             this.detonateSkyShot(spawner);
           }
@@ -288,9 +324,9 @@ export class PyrotechnicsEngine {
    * Detonate Sky Shot high-altitude burst pattern
    */
   private detonateSkyShot(spawner: ActiveFireworkSpawner): void {
-    const cx = spawner.origin[0];
-    const cy = spawner.burstY || spawner.origin[1] + 1.0;
-    const cz = spawner.origin[2];
+    const cx = spawner.targetBurst ? spawner.targetBurst[0] : spawner.origin[0];
+    const cy = spawner.targetBurst ? spawner.targetBurst[1] : (spawner.origin[1] + 1.0);
+    const cz = spawner.targetBurst ? spawner.targetBurst[2] : spawner.origin[2];
     const theme = spawner.colorTheme;
     const count = 140;
 
@@ -401,6 +437,13 @@ export class PyrotechnicsEngine {
     this.maxLife[to] = this.maxLife[from];
     this.baseSize[to] = this.baseSize[from];
     this.pType[to] = this.pType[from];
+  }
+
+  /**
+   * Read-only view of active spawners for tests & diagnostics
+   */
+  getActiveSpawners(): readonly ActiveFireworkSpawner[] {
+    return this.activeSpawners;
   }
 
   /**

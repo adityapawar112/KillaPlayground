@@ -53,6 +53,28 @@ describe('Pyrotechnics Particle Engine', () => {
     expect(engine.activeCount).toBeGreaterThan(50); // Burst emits 100+ particles
   });
 
+  it('applies ±20cm height variation and up to 10 degree angle variation to sky shots', () => {
+    const skyshot = getLightById('skyshot_peony')!;
+    const baseHeight = 1.5;
+
+    for (let i = 0; i < 20; i++) {
+      engine.triggerFirework(`skyshot_test_${i}`, skyshot, [0, 0, 0], 1.0, baseHeight);
+      const spawner = engine.getActiveSpawners().find((s) => s.id === `skyshot_test_${i}`);
+      expect(spawner).toBeDefined();
+      expect(spawner?.targetBurst).toBeDefined();
+
+      const [tx, ty, tz] = spawner!.targetBurst!;
+      // Height should be within 1.5 ± 0.20m (1.30 to 1.70m)
+      expect(ty).toBeGreaterThanOrEqual(1.29);
+      expect(ty).toBeLessThanOrEqual(1.71);
+
+      // Horizontal tilt angle from vertical should be <= 10.5 degrees
+      const horizontalDist = Math.sqrt(tx * tx + tz * tz);
+      const actualAngleDeg = (Math.atan2(horizontalDist, ty) * 180) / Math.PI;
+      expect(actualAngleDeg).toBeLessThanOrEqual(10.5);
+    }
+  });
+
   it('cleans up and resets without leaking state', () => {
     const anaar = getLightById('anaar_emerald');
     engine.triggerFirework('test_anaar_2', anaar!, [1, 2, 3]);

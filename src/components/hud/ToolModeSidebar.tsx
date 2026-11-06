@@ -21,6 +21,10 @@ import {
   TbFocus2,
   TbChevronLeft,
   TbChevronDown,
+  TbRotateClockwise2,
+  TbRefresh,
+  TbMovie,
+  TbSparkles,
 } from 'react-icons/tb';
 import {
   useEditorStore,
@@ -30,7 +34,10 @@ import {
   TerrainSubTool,
   FoliageSubTool,
   LightingSubTool,
+  ViewMode,
 } from '@/lib/state/useEditorStore';
+import { useTerrainStore } from '@/lib/terrain/terrainStore';
+import { getTextureById } from '@/lib/textures/textureManifest';
 
 export const ToolModeSidebar: React.FC = () => {
   const {
@@ -51,6 +58,8 @@ export const ToolModeSidebar: React.FC = () => {
     setPropSubTool,
     lightingSubTool,
     setLightingSubTool,
+    viewMode,
+    setViewMode,
     leftSidebarWidth,
     isMobileSidebarMinimized,
     isToolModeMinimized,
@@ -60,7 +69,7 @@ export const ToolModeSidebar: React.FC = () => {
   } = useEditorStore();
 
   // Only render when the active tool has distinct operational modes
-  if (!['building', 'walls', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting'].includes(activeTool)) {
+  if (!['building', 'walls', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting', 'view'].includes(activeTool)) {
     return null;
   }
 
@@ -192,12 +201,13 @@ export const ToolModeSidebar: React.FC = () => {
               </>
             )}
 
-            {/* D. TEXTURE MODES: Paint | Erase */}
+            {/* D. TEXTURE MODES: Paint | Erase | Fill */}
             {(activeTool === 'texture' || activeTool === 'paint') && (
               <>
                 {[
                   { id: 'paint' as const, label: 'Paint', icon: TbBrush, title: 'Paint selected texture onto terrain' },
                   { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Restore base laterite soil' },
+                  { id: 'fill' as const, label: 'Fill', icon: TbSparkles, title: 'Flood fill diorama base with selected texture' },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = paintSubTool === m.id;
@@ -205,16 +215,26 @@ export const ToolModeSidebar: React.FC = () => {
                   return (
                     <button
                       key={m.id}
-                      onClick={() => setPaintSubTool(m.id)}
+                      onClick={() => {
+                        if (m.id === 'fill') {
+                          const sel = useEditorStore.getState().selectedTextureId;
+                          const meta = getTextureById(sel);
+                          const layerIdx = meta ? meta.layerIndex : 0;
+                          useTerrainStore.getState().fillPaintTerrain(layerIdx);
+                          useEditorStore.getState().setToastMessage('Base terrain filled with texture.');
+                        } else {
+                          setPaintSubTool(m.id as 'paint' | 'erase');
+                        }
+                      }}
                       title={m.title}
-                      className={`flex flex-col items-center justify-center py-2.5 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
+                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
                         isActive
                           ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm ring-1 ring-[#38281E]'
                           : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[10px] mt-1 leading-tight">
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+                      <span className="font-bold text-[9px] mt-1 leading-tight">
                         {m.label}
                       </span>
                     </button>
@@ -304,6 +324,37 @@ export const ToolModeSidebar: React.FC = () => {
                     <button
                       key={m.id}
                       onClick={() => setLightingSubTool(m.id)}
+                      title={m.title}
+                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
+                        isActive
+                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm ring-1 ring-[#38281E]'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                        {m.label}
+                      </span>
+                    </button>
+                  );
+                })}
+              </>
+            )}
+
+            {/* H. DIORAMA & SUN VIEW MODES: Orbit | Turntable (Ticket 11) */}
+            {activeTool === 'view' && (
+              <>
+                {[
+                  { id: 'orbit' as ViewMode, label: 'Orbit', icon: TbRotateClockwise2, title: 'Free 360° diorama orbit & spectator inspection' },
+                  { id: 'turntable' as ViewMode, label: 'Spin', icon: TbRefresh, title: 'Continuous 360° diorama exhibition spin' },
+                ].map((m) => {
+                  const Icon = m.icon;
+                  const isActive = viewMode === m.id;
+
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setViewMode(m.id)}
                       title={m.title}
                       className={`flex flex-col items-center justify-center py-2 px-1 rounded-xl transition-all cursor-pointer active:scale-95 ${
                         isActive

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import {
   TbMountain,
@@ -44,6 +44,13 @@ import {
   TbMoon,
   TbClock,
   TbCompass,
+  TbCamera,
+  TbRotateClockwise2,
+  TbMovie,
+  TbSunrise,
+  TbSunset,
+  TbCube,
+  TbChevronRight,
 } from 'react-icons/tb';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -227,6 +234,24 @@ export const LeftToolSidebar: React.FC = () => {
     setSunAzimuth,
     setSunDirectionPreset,
     nightMode,
+    isPlaying,
+    togglePlay,
+    viewMode,
+    setViewMode,
+    turntableSpeed,
+    setTurntableSpeed,
+    cameraFov,
+    setCameraFov,
+    fogDensityMultiplier,
+    setFogDensityMultiplier,
+    bounceIntensityMultiplier,
+    setBounceIntensityMultiplier,
+    exposureMultiplier,
+    setExposureMultiplier,
+    resetAtmosphericModifiers,
+    fireworkSalvoEndTime,
+    triggerFiveSecondSalvo,
+    setPosterModalOpen,
     toggleRightSidebar,
     leftSidebarWidth: sidebarWidth,
     setLeftSidebarWidth: setSidebarWidth,
@@ -250,6 +275,31 @@ export const LeftToolSidebar: React.FC = () => {
       }
     } catch {}
   }, []);
+
+  // 5-second celebration salvo countdown timer
+  const [salvoSecondsLeft, setSalvoSecondsLeft] = useState<number>(0);
+  useEffect(() => {
+    if (!fireworkSalvoEndTime) {
+      setSalvoSecondsLeft(0);
+      return;
+    }
+    const updateCountdown = () => {
+      const remainingMs = fireworkSalvoEndTime - Date.now();
+      if (remainingMs > 0) {
+        setSalvoSecondsLeft(Math.ceil(remainingMs / 1000));
+      } else {
+        setSalvoSecondsLeft(0);
+      }
+    };
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 200);
+    return () => clearInterval(timer);
+  }, [fireworkSalvoEndTime]);
+
+  const isSalvoActive = salvoSecondsLeft > 0;
+  const placedFireworksCount = useMemo(() => {
+    return placedLights.filter((l) => l.category === 'fireworks').length;
+  }, [placedLights]);
 
   const handleResizeStart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -573,7 +623,14 @@ export const LeftToolSidebar: React.FC = () => {
                     <div className="flex justify-between items-center text-[11px]">
                       <span className="font-semibold text-[#5C4638]">Draft Points:</span>
                       <span className="font-bold text-[#B85F45]">
-                        {activeWallDraft.length} {activeWallDraft.length < 2 ? '(Min 2 needed)' : '✓ Ready'}
+                        {activeWallDraft.length}{' '}
+                        {activeWallDraft.length < 2 ? (
+                          '(Min 2 needed)'
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-green-700">
+                            <TbCheck className="w-3.5 h-3.5" /> Ready
+                          </span>
+                        )}
                       </span>
                     </div>
 
@@ -823,7 +880,14 @@ export const LeftToolSidebar: React.FC = () => {
                     <div className="flex justify-between items-center text-[11px]">
                       <span className="font-semibold text-[#5C4638]">Stair Points:</span>
                       <span className="font-bold text-[#B85F45]">
-                        {activeStairDraft.length} {activeStairDraft.length < 2 ? '(Min 2 needed)' : '✓ Ready'}
+                        {activeStairDraft.length}{' '}
+                        {activeStairDraft.length < 2 ? (
+                          '(Min 2 needed)'
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-green-700">
+                            <TbCheck className="w-3.5 h-3.5" /> Ready
+                          </span>
+                        )}
                       </span>
                     </div>
 
@@ -1798,7 +1862,7 @@ export const LeftToolSidebar: React.FC = () => {
                         className="px-2 py-1 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[10px] font-bold text-[#4B382C] cursor-pointer shrink-0 transition-colors"
                         title="Open Figurine Vault Drawer"
                       >
-                        Change ➔
+                        <span className="flex items-center gap-0.5">Change <TbChevronRight className="w-3 h-3" /></span>
                       </button>
                     </div>
 
@@ -2240,7 +2304,7 @@ export const LeftToolSidebar: React.FC = () => {
                         className="px-2 py-1 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[10px] font-bold text-[#4B382C] cursor-pointer shrink-0 transition-colors"
                         title="Open Lighting Vault Drawer"
                       >
-                        Change ➔
+                        <span className="flex items-center gap-0.5">Change <TbChevronRight className="w-3 h-3" /></span>
                       </button>
                     </div>
 
@@ -2396,7 +2460,7 @@ export const LeftToolSidebar: React.FC = () => {
                               className="w-full py-2 bg-[#F59E0B] text-[#2B1E16] hover:bg-[#D97706] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                             >
                               <TbSparkles className="w-4 h-4 text-[#8F4938]" />
-                              <span>Test Firework Burst 🎆</span>
+                              <span>Test Firework Burst</span>
                             </button>
                           )}
 
@@ -2722,7 +2786,7 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
                   </div>
                   <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
-                    VIEW MODE
+                    {viewMode} MODE
                   </span>
                 </div>
 
@@ -2738,7 +2802,7 @@ export const LeftToolSidebar: React.FC = () => {
                           : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <span className="text-sm">🌅</span>
+                      <TbSunrise className="w-4 h-4 text-[#EA580C]" />
                       <span>Dawn (06:00)</span>
                     </button>
                     <button
@@ -2749,7 +2813,7 @@ export const LeftToolSidebar: React.FC = () => {
                           : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <span className="text-sm">☀️</span>
+                      <TbSun className="w-4 h-4 text-[#F59E0B]" />
                       <span>Noon (12:00)</span>
                     </button>
                     <button
@@ -2760,7 +2824,7 @@ export const LeftToolSidebar: React.FC = () => {
                           : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <span className="text-sm">🌇</span>
+                      <TbSunset className="w-4 h-4 text-[#D97706]" />
                       <span>Golden Hour</span>
                     </button>
                     <button
@@ -2771,10 +2835,49 @@ export const LeftToolSidebar: React.FC = () => {
                           : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <span className="text-sm">🪔</span>
+                      <TbFlame className="w-4 h-4 text-[#B85F45]" />
                       <span>Diwali Night</span>
                     </button>
                   </div>
+                </div>
+
+                {/* 3. Test Fireworks Celebration Salvo (Plays all fireworks for 5s regardless of time) */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <span>Diwali Fireworks Display</span>
+                    <span className="text-[10px] text-[#8D7666] font-mono">
+                      {placedFireworksCount} placed
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      triggerFiveSecondSalvo();
+                    }}
+                    disabled={isSalvoActive || placedFireworksCount === 0}
+                    className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer ${
+                      isSalvoActive
+                        ? 'bg-[#EADECF] text-[#8D7666] cursor-not-allowed border border-[#CDBCAB]'
+                        : placedFireworksCount === 0
+                        ? 'bg-[#FAF8F5] text-[#8D7666] border border-[#D9C9B4] cursor-not-allowed opacity-70'
+                        : 'bg-[#B85F45] text-white hover:bg-[#A04F38] active:scale-95 border border-[#96432D]'
+                    }`}
+                    title={
+                      placedFireworksCount === 0
+                        ? 'Place fireworks in the Lighting tool to test bursts'
+                        : 'Launch a 5-second celebratory salvo of all fireworks'
+                    }
+                  >
+                    <TbSparkles
+                      className={`w-4 h-4 ${isSalvoActive ? 'animate-spin text-[#B85F45]' : 'text-[#F59E0B]'}`}
+                    />
+                    <span>
+                      {isSalvoActive
+                        ? `Celebrating Fireworks Salvo (${salvoSecondsLeft}s)...`
+                        : placedFireworksCount === 0
+                        ? 'No Fireworks Placed'
+                        : 'Test Fireworks (5s Salvo)'}
+                    </span>
+                  </button>
                 </div>
 
                 {/* 3. Celestial Sliders mounted directly on panel background (No enclosing cards) */}
@@ -2837,18 +2940,120 @@ export const LeftToolSidebar: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 4. Reset & Info Card */}
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
-                  <TbEye className="w-5 h-5 mx-auto text-[#8F4938]" />
-                  <div className="text-xs font-bold text-[#4B382C]">Spectator Camera Controls</div>
+                {/* 4. Camera Perspectives (Mounted directly on panel background) */}
+                <div className="space-y-1.5 pt-1">
+                  <div className="text-[11px] font-semibold text-[#4B382C]">Camera Perspectives</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      onClick={() => setCameraViewPreset('isometric')}
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                    >
+                      <TbCube className="w-4 h-4 text-[#8D7666]" />
+                      <span>Isometric (45°)</span>
+                    </button>
+                    <button
+                      onClick={() => setCameraViewPreset('top')}
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                    >
+                      <TbEye className="w-4 h-4 text-[#8D7666]" />
+                      <span>Bird&apos;s Eye</span>
+                    </button>
+                    <button
+                      onClick={() => setCameraViewPreset('rampart')}
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                    >
+                      <TbBuildingFortress className="w-4 h-4 text-[#8D7666]" />
+                      <span>Rampart Eye</span>
+                    </button>
+                    <button
+                      onClick={() => setCameraViewPreset('bastion')}
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                    >
+                      <TbFlag className="w-4 h-4 text-[#B85F45]" />
+                      <span>Bastion Hero</span>
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setCameraViewPreset('reset')}
+                    className="w-full py-1 bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border border-[#CDBCAB] rounded-lg text-[11px] font-bold transition-colors cursor-pointer mt-1"
+                  >
+                    Reset Camera to Home
+                  </button>
+                </div>
+
+                {/* 5. Camera Lens / FOV & Turntable (Direct on panel background) */}
+                <div className="space-y-3.5 pt-1">
+                  <div>
+                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <span>Camera Lens (FOV)</span>
+                      <span className="text-[#8D7666] font-mono">{cameraFov}°</span>
+                    </div>
+                    <input
+                      type="range"
+                      min={20}
+                      max={80}
+                      step={1}
+                      value={cameraFov}
+                      onChange={(e) => setCameraFov(parseInt(e.target.value, 10))}
+                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                    />
+                    <div className="flex justify-between text-[9px] text-[#8D7666] mt-0.5">
+                      <span>25° Telephoto</span>
+                      <span>45° Standard</span>
+                      <span>75° Wide</span>
+                    </div>
+                  </div>
+
+                  {/* Turntable Showcase Controls */}
+                  <div>
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#4B382C] mb-1.5">
+                      <span>Turntable Exhibition</span>
+                      <button
+                        onClick={() => setViewMode(viewMode === 'turntable' ? 'orbit' : 'turntable')}
+                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                          viewMode === 'turntable'
+                            ? 'bg-[#B85F45] text-white'
+                            : 'bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]'
+                        }`}
+                      >
+                        {viewMode === 'turntable' ? 'Spinning Active' : 'Start 360° Spin'}
+                      </button>
+                    </div>
+                    {viewMode === 'turntable' && (
+                      <div>
+                        <div className="flex justify-between text-[10px] text-[#634E40] mb-0.5">
+                          <span>Spin Speed</span>
+                          <span className="font-mono">{turntableSpeed.toFixed(1)} RPM</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.5}
+                          max={4.0}
+                          step={0.1}
+                          value={turntableSpeed}
+                          onChange={(e) => setTurntableSpeed(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 6. Presentation Card & Actions */}
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                  <div className="flex items-center gap-2">
+                    <TbEye className="w-4 h-4 text-[#8F4938]" />
+                    <span className="text-xs font-bold text-[#4B382C]">Diorama Presentation</span>
+                  </div>
                   <p className="text-[11px] text-[#634E40] leading-relaxed">
-                    Rotate the sun and moon to sweep dynamic shadows across fort ramparts and courtyards. Full free-fly camera mode arrives in Ticket 11.
+                    Admire your fortress with cinematic lighting and dynamic shadows. Open the Poster Studio to capture commemorative 4-angle festival cards.
                   </p>
                   <button
-                    onClick={() => setSunDirectionPreset('noon')}
-                    className="w-full py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                    onClick={() => setPosterModalOpen(true)}
+                    className="w-full py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    Reset Lighting to Solar Noon
+                    <TbCamera className="w-3.5 h-3.5 text-[#B85F45]" />
+                    <span>Open 4-Angle Poster Studio</span>
                   </button>
                 </div>
               </div>

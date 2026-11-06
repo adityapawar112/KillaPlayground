@@ -96,6 +96,18 @@ export type ToolType =
   | 'grass';
 
 export type ShapeSubTool = 'push_left' | 'push_right' | 'pat_top';
+export type ViewMode = 'orbit' | 'turntable';
+export type CameraViewPreset =
+  | 'top'
+  | 'front'
+  | 'side'
+  | 'reset'
+  | 'zoom_in'
+  | 'zoom_out'
+  | 'isometric'
+  | 'rampart'
+  | 'bastion';
+export type PaintSubTool = 'paint' | 'erase';
 export type TerrainSubTool =
   | 'elevate'
   | 'plateau'
@@ -177,8 +189,8 @@ interface EditorState {
   // Texture Painting Studio State (Ticket 06)
   selectedTextureId: string;
   setSelectedTextureId: (id: string) => void;
-  paintSubTool: 'paint' | 'erase';
-  setPaintSubTool: (st: 'paint' | 'erase') => void;
+  paintSubTool: PaintSubTool;
+  setPaintSubTool: (st: PaintSubTool) => void;
   paintBrushRadius: number;
   setPaintBrushRadius: (r: number) => void;
   paintBrushStrength: number;
@@ -475,8 +487,8 @@ interface EditorState {
   // Camera & Navigation
   cameraResetTrigger: number;
   triggerCameraReset: () => void;
-  cameraViewPreset: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out' | null;
-  setCameraViewPreset: (view: 'top' | 'front' | 'side' | 'reset' | 'zoom_in' | 'zoom_out' | null) => void;
+  cameraViewPreset: CameraViewPreset | null;
+  setCameraViewPreset: (view: CameraViewPreset | null) => void;
 
   // Actions
   setActiveTool: (tool: ToolType) => void;
@@ -551,6 +563,30 @@ interface EditorState {
   setSunElevation: (deg: number) => void;
   setSunAzimuth: (deg: number) => void;
   setSunDirectionPreset: (preset: 'dawn' | 'noon' | 'sunset' | 'night') => void;
+
+  // Decoupled Animation Engine & Diorama Viewing Studio (Ticket 11)
+  isPlaying: boolean;
+  togglePlay: () => void;
+  setIsPlaying: (playing: boolean) => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+  turntableSpeed: number; // 0.2 to 5.0 rpm, default 1.5
+  setTurntableSpeed: (speed: number) => void;
+  cameraFov: number; // 20 to 80 degrees, default 45
+  setCameraFov: (fov: number) => void;
+  fogDensityMultiplier: number; // 0.0 to 2.5, default 1.0
+  setFogDensityMultiplier: (v: number) => void;
+  bounceIntensityMultiplier: number; // 0.0 to 2.5, default 1.0
+  setBounceIntensityMultiplier: (v: number) => void;
+  exposureMultiplier: number; // 0.7 to 1.6, default 1.0
+  setExposureMultiplier: (v: number) => void;
+  resetAtmosphericModifiers: () => void;
+  salvoTrigger: number;
+  triggerCelebrationSalvo: () => void;
+  fireworkSalvoEndTime: number;
+  triggerFiveSecondSalvo: () => void;
+  isCapturingScreenshot: boolean;
+  setIsCapturingScreenshot: (capturing: boolean) => void;
 
   // Metadata Actions
   setFortTitle: (title: string) => void;
@@ -1503,6 +1539,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   sunElevation: 48,
   sunAzimuth: 55,
 
+  // Decoupled Animation Engine & Diorama Viewing Studio State
+  isPlaying: true,
+  viewMode: 'orbit',
+  turntableSpeed: 1.5,
+  cameraFov: 45,
+  fogDensityMultiplier: 1.0,
+  bounceIntensityMultiplier: 1.0,
+  exposureMultiplier: 1.0,
+  salvoTrigger: 0,
+  fireworkSalvoEndTime: 0,
+  isCapturingScreenshot: false,
+
   fortTitle: 'Our Killa',
   builderName: 'Mavala Builder',
   templateId: 'raigad',
@@ -1841,6 +1889,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       timeOfDay: night ? 21.0 : 12.0,
       sunElevation: night ? 52 : 75,
       sunAzimuth: night ? 230 : 180,
+      ...(night ? { salvoTrigger: Date.now() } : {}),
     }),
   toggleNightMode: () =>
     set((state) => {
@@ -1850,6 +1899,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         timeOfDay: nextNight ? 21.0 : 12.0,
         sunElevation: nextNight ? 52 : 75,
         sunAzimuth: nextNight ? 230 : 180,
+        ...(nextNight ? { salvoTrigger: Date.now() } : {}),
       };
     }),
   setMudLocked: (locked) => set({ mudLocked: locked }),
@@ -2249,10 +2299,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         set({ timeOfDay: 17.5, sunElevation: 20, sunAzimuth: 255, nightMode: false });
         break;
       case 'night':
-        set({ timeOfDay: 21.0, sunElevation: 52, sunAzimuth: 230, nightMode: true });
+        set({ timeOfDay: 21.0, sunElevation: 52, sunAzimuth: 230, nightMode: true, salvoTrigger: Date.now() });
         break;
     }
   },
+
+  // Decoupled Animation Engine & Diorama Viewing Studio Actions
+  togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
+  setIsPlaying: (playing) => set({ isPlaying: playing }),
+  setViewMode: (mode) => set({ viewMode: mode }),
+  setTurntableSpeed: (speed) => set({ turntableSpeed: Math.max(0.2, Math.min(5.0, speed)) }),
+  setCameraFov: (fov) => set({ cameraFov: Math.max(20, Math.min(80, fov)) }),
+  setFogDensityMultiplier: (v) => set({ fogDensityMultiplier: Math.max(0.0, Math.min(2.5, v)) }),
+  setBounceIntensityMultiplier: (v) => set({ bounceIntensityMultiplier: Math.max(0.0, Math.min(2.5, v)) }),
+  setExposureMultiplier: (v) => set({ exposureMultiplier: Math.max(0.7, Math.min(1.6, v)) }),
+  resetAtmosphericModifiers: () =>
+    set({
+      fogDensityMultiplier: 1.0,
+      bounceIntensityMultiplier: 1.0,
+      exposureMultiplier: 1.0,
+    }),
+  triggerCelebrationSalvo: () => set({ salvoTrigger: Date.now() }),
+  triggerFiveSecondSalvo: () => set({ fireworkSalvoEndTime: Date.now() + 5000 }),
+  setIsCapturingScreenshot: (capturing) => set({ isCapturingScreenshot: capturing }),
 
   setFortTitle: (title) => set({ fortTitle: title }),
   setBuilderName: (name) => set({ builderName: name }),

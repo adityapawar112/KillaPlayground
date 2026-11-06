@@ -51,11 +51,12 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 │
 ▼
 [7. Festive Lighting & Fireworks Studio]
-├── 18 Diyas: Terracotta & painted lamps with active flames and warm night point lighting
-└── 10 Fireworks: Cone fountains (Anaar) & sky shots with 5 color variations & test pyrotechnics
+├── 18 Diyas: Terracotta & painted lamps with 16 3D point lights, volumetric halo flames & diurnal lighting
+└── 10 Fireworks: Cone fountains (Anaar) & sky shots with burst height adjustments & test pyrotechnics
 │
 ▼
-[8. Time-of-Day, Play/Pause Engine & Diorama Bar]
+[8. Time-of-Day, Atmospheric Engine & Diorama Bar]
+├── 24-hr Solar Arc Engine: Luminous Full Moon Night, Radiant Golden Hour, Dawn & Noon Presets
 └── Quick-Action Pill: Day | Play | Pause | Screenshot | Night with automatic celebration salvo
 │
 ▼
@@ -254,21 +255,33 @@ Dedicated pyrotechnic illumination studio bringing traditional Diwali celebratio
   * **Hand-Painted Festive Diyas (9 Unique Models):** Standalone colorful painted lamps (`diya_color_01` to `diya_color_09`).
   * **Diwali Cone Fountains / Anaar (5 Variations):** 3D inverted cone models with decorative retro paper casings in Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
   * **Diwali Sky Shots / Aerial Shells (5 Variations):** 3D cylinder launcher models in Multicolored Peony, Golden Willow, Silver Palm, Crackling Comet, and Saffron Ring.
-* **Diya Flame & Night Illumination:**
-  * Active flickering 3D flame particles with emissive bloom.
-  * In Night Mode, each placed diya casts an authentic warm amber `PointLight` (`#F59E0B`, radius: 3.5m, decay: 2.0) casting soft shadows over nearby mud slopes and ramparts.
+* **3D Diya Illumination Engine:**
+  * Procedural 3D teardrop flames with organic breeze sway, white-hot inner core, and camera-facing volumetric halo sprites for glowing visibility from any viewing angle.
+  * **16 Statically Pre-Allocated 3D Omnidirectional PointLights** (`#FFA533`, `decay: 2.0`, `distance: 2.2m–4.8m`) in JSX. Guarantees **0ms shader recompilation freezes** when placing, moving, or deleting lights.
+  * **Camera-Independent Spatial Clustering** (`computeSpatialClusters`): K-Means clustering in world coordinates ensures 360° camera orbiting causes **zero light popping, jumping, or white-hot bleaching**.
+  * **True 3D Illumination**: Completely eliminates flat 2D decal pools, illuminating vertical fort walls, ramparts, bastions, figurines, stone steps, and slopes in authentic PBR light.
+  * **Diurnal Diya Availability (`getDiyaLightStatus`)**: Diyas automatically ignite during Golden Hour (~16:30 onwards), reach full radiance throughout Diwali Night, and stay lit until morning Dawn (~06:30).
 * **Pyrotechnics Particle Engine:**
   * Cone fountains emit continuous sparkling upward showers with parabolic spray and crackling embers.
   * Sky shots launch ascending tracer rockets that detonate into radial burst patterns in the night sky.
   * Configurable particle parameters: color hue, velocity, spray height/spread, burst radius, gravity, and flicker rate.
-* **Workflow & Testing:**
-  * 3 Modes: `Place`, `Select`, `Delete`.
-  * Contextual Inspector features a **"Test Firework"** button to trigger and preview individual pyrotechnics on demand.
+  * **Adjustable Burst Height**: Slider in properties inspector allows setting the detonation altitude with a low default burst (~100cm from launcher).
+  * **Isolated Test Pipeline**: Timestamped trigger in store ensures fireworks detonate exclusively when the "Test Firework Burst" button is clicked, preventing accidental triggers during slider edits.
+* **4 Operational Workflow Modes:**
+  * **Place Mode**: Left properties panel (Scale, Heading, Randomize, Normal Align, Elevation Offset); Right panel renders Lighting Vault Asset Browser.
+  * **Select Mode**: Left panel renders selected item card, transform sliders, Surface Snap, "Test Firework Burst" button, and Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower) with Burst Height slider.
+  * **Transform Mode**: Left panel renders camera-relative 3D nudge pad and heading rotation; Right panel renders Outliner + Inspector.
+  * **Erase Mode**: Left panel renders Erase Radius slider directly on `bg-[#F3EBE0]` + crimson diorama brush circle GUI + Clear All Lights button; Right panel renders Outliner + Inspector.
 
 ---
 
-### Phase 8: Time-of-Day, Play/Pause Animation Engine & Quick-Action Diorama Bar
-Tactile diorama controls centered directly above the bottom status bar:
+### Phase 8: Time-of-Day, Atmospheric Engine & Quick-Action Diorama Bar
+Tactile diorama controls and 24-hr diurnal lighting engine:
+* **Atmospheric Lighting Engine (`atmosphericLighting.ts`):**
+  * **Luminous Full Moon Diwali Night**: Silver-white moonlight (`#E0F2FE`, 1.35x), indigo shadow fill (`#475569`, 0.85x), dual-radiance hemisphere light (`#93C5FD` sky / `#1E293B` ground, 0.80x), and exposure `1.28`. Eliminates pitch-black voids, rendering terrain, water, cliffs, and fort walls clearly visible matching real full-moon landscapes.
+  * **Vibrant Golden Hour**: Sun 30 minutes before sunset (elevation `20°`, azimuth `255°`, radiant saffron `#F59E0B` 2.80x, courtyard terracotta upward GI bounce `#EA580C` 0.90x, exposure `1.30`).
+  * **Deccan Plateau Horizon Mist**: Exponential squared fog blending distant terrain smoothly into the diorama backdrop.
+  * **ACESFilmic Tone Mapping**: Natural color grading preventing specular blowout on stone while enhancing flame vibrancy.
 * **5-Button Quick-Action Pill:**
   * `☀️ Day`: Transitions diorama to daylight courtyard lighting.
   * `▶ Play`: Starts continuous 60 FPS animation loop for trees, particle effects, and continuous night fireworks.

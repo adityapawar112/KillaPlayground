@@ -179,7 +179,7 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
 - **Position**: Docked directly adjacent to the right edge of the Left Sidebar (`left: ${leftSidebarWidth}px` when open, `left: 0` when Left Sidebar is minimized). Width: **68px**.
 - **Role**: Switches the active tool's operational mode in vertical icon + label orientation:
   - *Building*: `Select` (inspect & highlight), `Walls` (draft ramparts), `Foundation` (drag-to-build rectangular stone plinths), `Stairs` (draft walkable stepped stone masonry), `Fortifications` (snap bastions, towers, gates).
-  - *Lighting*: `Place` (stamp diyas & fireworks), `Select` (inspect & test fireworks), `Delete` (single/batch removal).
+  - *Lighting*: `Place` (stamp diyas & fireworks), `Select` (inspect & test fireworks), `Transform` (camera-relative 3D nudge pad & heading), `Erase` (radius & outliner batch deletion).
   - *Figurines*: `Place` (stamp assets), `Select` (inspect & tweak), `Transform` (3D nudge & rotate), `Erase` (radius & outliner deletion).
   - *Texture*: `Paint` (apply texture), `Erase` (restore base soil).
   - *Foliage*: `Scatter` (cluster painting), `Single` (hero planting), `Erase` (radius pruning).
@@ -195,10 +195,11 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
     - *Lighting Tool*: Placed Diyas and Diwali Fireworks with counts and test actions.
     - *Figurine Tool*: Historical figurines, garrisons, architecture, and ordnance.
   - **Lower Pane (`ELEMENT PROPERTIES` or Asset Browser)**: Contextual inspector or catalog:
-    - *Select & Transform Modes*: Displays unified `ELEMENT PROPERTIES` inspector (dimensions, height, offset, tiling, scale, heading, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
+    - *Select & Transform Modes*: Displays unified `ELEMENT PROPERTIES` inspector (dimensions, height, offset, tiling, scale, heading, burst height for fireworks, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
     - *Place Mode (Lighting)*: Displays the **Lighting Vault Asset Browser** (18 diyas, 10 fireworks, 3 categories, search, cards).
     - *Place Mode (Figurines)*: Displays the **Figurine Vault Asset Browser** (22 models across royalty, garrisons, architecture, and artillery).
     - *Texture & Foliage Tools*: Displays dedicated asset catalogs (52 textures, 117 flora species).
+    - *Erase Mode*: Upper pane lists Placed Elements outliner for rapid single/batch deletion; lower pane renders clean inspector.
     - *View Tool*: Right sidebar is completely hidden for unobstructed viewing.
 - **Tactile Resizing**: Left edge contains an 8px hoverable handle with 6 embossed grip dots.
 - **Minimizable**: Yes. Header button (`[ ▸ ]`) collapses panel to `translate-x-full` and deploys hanging tab (`[🏰 Outliner ▾]`).
@@ -366,7 +367,12 @@ To prevent visual clutter and maintain ergonomic consistency across all tool pan
   - **Texture Tool:**
     - `Paint`: Brush Radius, Strength, Edge Falloff, Tiling Repeat, Flood Terrain, Clear Paint.
     - `Erase`: Brush Radius, Strength, Clear Paint (no Edge Falloff or Tiling sliders).
-  - **Spline Tool:**
+  - **Lighting Tool:**
+    - `Place`: Placement Scale, Rotation Heading, Randomize Heading, Align to Normal, Elevation Offset.
+    - `Select`: Element Properties (Scale, Heading, Burst Height for fireworks), Test Firework Burst CTA, Duplicate, Snap Surface, Delete.
+    - `Transform`: 3D Nudge Pad, Heading Rotation, Uniform Scale, Snap Surface.
+    - `Erase`: Brush Radius slider directly on `bg-[#F3EBE0]` + Clear All Lights button.
+  - **Spline Tool / Stairs:**
     - `Draw`: Active points count, Finish Path CTA, Feature Type, Step dimension sliders.
     - `Select`: Selected path details, delete CTA.
     - `Transform`: Translate, rotate, and scale controls.
@@ -396,10 +402,10 @@ All interactive 3D tools must implement standard ergonomic wheel gestures, inter
 - The Right Sidebar ([`RightToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/RightToolSidebar.tsx)) is contextual:
   - For structural tools (Walls, Splines): Renders the hierarchical **Diorama Elements Outliner** and **Element Properties Inspector**.
   - For pure asset tools (Texture, Foliage): Renders the **Asset Browser** (e.g. Texture Browser with 52 textures, Foliage Browser with 117 species).
-  - For hybrid tools (Figurines & Architecture):
-    - **Place Mode**: Upper pane displays placed figurine count and summary, lower pane renders the **Figurine Vault Asset Browser** (40 models, 7 categories, search, visual cards).
-    - **Select & Transform Modes**: Upper pane renders the **Placed Figurines Outliner** with instant search and 2-way hover highlighting; lower pane renders the unified **Element Properties Inspector** (scale, heading, duplicate, snap surface, focus camera, delete, and 3D nudge pad) matching Walls and Spline tools.
-    - **Erase Mode**: Left sidebar provides the Brush Radius slider with crimson diorama brush circle; Right sidebar displays the Placed Figurines Outliner for rapid single/batch deletion.
+  - For hybrid tools (Figurines & Architecture, Lighting Studio):
+    - **Place Mode**: Upper pane displays placed count and summary, lower pane renders the **Asset Vault Browser** (e.g. Figurine Vault with 22 models across 6 categories; Lighting Vault with 28 lights and fireworks across 3 categories).
+    - **Select & Transform Modes**: Upper pane renders the **Placed Elements Outliner** with instant search and 2-way hover highlighting; lower pane renders the unified **Element Properties Inspector** (scale, heading, burst height for fireworks, "Test Firework Burst" button, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
+    - **Erase Mode**: Left sidebar provides the Brush Radius slider with crimson diorama brush circle; Right sidebar displays the Placed Elements Outliner for rapid single/batch deletion.
 - The Left Sidebar retains subtool parameter controls; the Right Sidebar handles asset browsing, outliner organization, and contextual inspection.
 
 ### Rule 16: Mandatory UI Consistency Verification Protocol
@@ -461,6 +467,26 @@ All diorama assets follow the **Modern Retro / PS1 (Flavor A)** visual standard:
 | **Courtyard Soil** | `/textures/Dirt/Dirt_03` | Terrain Splat 0 | diffuse, normal, roughness, ao | Sun-baked red laterite (*Tambdi Maati*) |
 | **Rock Escarpments** | `/textures/Rock/Rock_02` | Terrain Splat 1 | diffuse, normal, roughness, ao | Sheer cliff rock face with triplanar vertical blend |
 | **Pond & Moat Water** | `/textures/Water/blue_tarp_texture_128x128_pbr` | Water Shader | diffuse, normal, roughness, ao, metallic | Crinkled blue plastic sheet with specular ripples |
+
+---
+
+## Atmospheric Lighting & Diurnal Solar Arc Tokens (`atmosphericLighting.ts`)
+
+The diorama's lighting dynamically grades across the 24-hour solar arc with 7 master keyframes calibrated to authentic Sahyadri weather and festive Diwali nightfall:
+
+| Diurnal Phase | Keyframe Time | Sun / Moon Color | Sun Intensity | Ambient Fill | Ambient Intensity | Hemi Sky / Ground | Tone Exposure | Atmosphere & Sky Character |
+|---|---|---|---|---|---|---|---|---|
+| **Dawn** | `06:00` | `#FDBA74` (Warm rose-gold) | `1.55` | `#64748B` (Cool morning slate) | `0.60` | `#94A3B8` / `#B45309` | `1.20` | Soft peach-rose morning sun with elongated ethereal shadows; peach horizon mist (`#FED7AA`). |
+| **Solar Noon** | `12:00` | `#FFFDF0` (Crisp white-gold) | `1.65` | `#E0F2FE` (Open blue sky) | `0.68` | `#BAE6FD` / `#9A3412` | `1.20` | Maximum clarity, short vertical shadows, radiant courtyard mud radiance (`#FED7AA`). |
+| **Golden Hour** | `17:30` | `#F59E0B` (Radiant golden amber) | `2.80` | `#FB923C` (Warm golden fill) | `0.85` | `#FDBA74` / `#C2410C` | `1.30` | Sun 30 mins before sunset (elevation `20°`, azimuth `255°`); saturated laterite mud GI bounce (`#EA580C`, 0.90); fiery sunset dust (`#9A3412`). Diyas ignite. |
+| **Dusk** | `18:48` | `#FB7185` (Rose-gold afterglow) | `1.35` | `#4338CA` (Deep indigo twilight) | `0.55` | `#6366F1` / `#7C2D12` | `1.22` | Post-sunset violet afterglow; deep indigo mist fog (`#1E1B4B`). |
+| **Full Moon Diwali Night** | `21:00` / `00:00` | `#E0F2FE` (Luminous silvery-white) | `1.35` | `#475569` (Slate/indigo ambient fill) | `0.85` | `#93C5FD` / `#1E293B` | `1.28` | Authentic full moon landscape: silvery-cyan moonlight, indigo shadow fill, no pitch-black voids. All terrain, cliffs, and walls clearly visible; warm diyas sparkle with 3D point light. |
+
+### Diya Flame & Volumetric Glow Tokens
+- **Flame Teardrop Mesh**: Color `#FFAA00`, Emissive `#FF7700` (`emissiveIntensity: 2.2` with organic wind sway and breathing flicker).
+- **Flame Inner Core**: White-hot `#FFFBEB` (`opacity: 0.95`).
+- **Volumetric Billboard Halo Sprite**: Camera-facing radial additive bloom (`scale: [0.16, 0.16, 0.16]`, gradient `rgba(255, 255, 230, 0.95)` to `rgba(200, 40, 0, 0.0)`).
+- **3D Omnidirectional PointLight**: Pre-allocated `#FFA533` (`decay: 2.0`, `distance: 2.2m–4.8m`, `intensity: 1.65–2.5x`) providing real-time PBR illumination onto nearby fort walls, ramparts, bastions, figurines, and slopes.
 
 ---
 

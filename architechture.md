@@ -183,20 +183,35 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * *Hand-Painted Festive Diyas (9)*: Colorful painted lamps (`diya_color_01` to `diya_color_09`).
      * *Diwali Cone Fountains / Anaar (5)*: 3D inverted cone models with decorative retro paper casings in Saffron Amber, Emerald Green, Royal Violet, Ruby Crimson, and Golden Sparkle.
      * *Diwali Sky Shots / Aerial Shells (5)*: 3D cylinder launcher models in Multicolored Peony, Golden Willow, Silver Palm, Crackling Comet, and Saffron Ring.
-   * **Diya Flame Simulation & Warm Night PointLights:**
-     * Active flickering 3D flame particles with emissive bloom.
-     * In Night Mode, each placed diya casts an authentic warm amber `PointLight` (`#F59E0B`, radius: 3.5m, decay: 2.0) casting soft shadows over nearby mud slopes and ramparts.
-   * **Interactive Pyrotechnics Particle Engine:**
+   * **3D Diya Illumination Engine (Zero Flat Decals & Zero Shader Recompiles):**
+     * Eliminates flat 2D decal ground disks completely, replacing them with authentic 3D PBR illumination that lights up vertical fort walls, ramparts, bastions, figurines, stone steps, and slopes.
+     * **16 Statically Pre-Allocated 3D Omnidirectional PointLights** (`#FFA533`, `decay: 2.0`, `distance: 2.2m–4.8m`) compiled statically in JSX. Guarantees **0ms shader recompilation freezes** when placing, moving, or deleting lights.
+     * **Camera-Independent 3D World-Coordinate Spatial Clustering** (`computeSpatialClusters`): K-Means clustering in fixed world coordinates ensures that orbiting the camera 360° produces **zero light popping, zero jumping, and zero white-hot bleaching**.
+     * **Volumetric Flame Halos**: Procedural 3D flame teardrop with emissive sway, white-hot inner core, and camera-facing volumetric halo sprite (`<sprite>`) for bloom and visibility at any viewing angle.
+     * **Diurnal Diya Availability (`getDiyaLightStatus`)**: Diyas automatically ignite during Golden Hour (~16:30 onwards), reach full radiance throughout Diwali Night, and stay lit until morning Dawn (~06:30), or whenever `nightMode` is explicitly enabled.
+   * **Interactive Pyrotechnics Particle Engine (`pyrotechnicsEngine.ts`):**
+     * High-performance native Three.js particle engine (`THREE.Points`) using pre-allocated `Float32Array` buffers with zero per-frame garbage collection.
      * Cone Fountains emit a continuous sparkling upward shower with parabolic spray and crackling embers.
      * Sky Shots launch an ascending smoke/flare tracer that detonates into a dazzling spherical/willow burst in the night sky.
      * Configurable parameters matching fireworks standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
-   * **Workflow & Testing Actions:**
-     * 3 Modes: `Place`, `Select`, `Delete`.
-     * Inspector features a prominent **"Test Firework"** button allowing builders to detonate and preview the selected firework once on demand.
-     * Switching from Day to Night automatically triggers all placed fireworks in the diorama once in a coordinated festive volley.
+     * **Adjustable Burst Height**: Slider in properties inspector allows setting the detonation altitude with a low default burst (~100cm from launcher).
+     * **Isolated Test Pipeline**: Timestamped trigger in store (`testFireworkTrigger`) ensures fireworks detonate exclusively when the "Test Firework Burst" button is clicked, preventing accidental triggers during slider edits.
+   * **4 Operational Workflow Modes (`Place`, `Select`, `Transform`, `Erase`):**
+     * *Place Mode:* Left panel renders preview card and plain text sliders directly on `bg-[#F3EBE0]` (Scale, Heading, Randomize, Normal Align, Elevation Offset); Right panel renders Lighting Vault Asset Browser.
+     * *Select Mode:* Left panel renders selected item card, transform sliders, Surface Snap, "Test Firework Burst" button, and Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower) with Burst Height slider.
+     * *Transform Mode:* Left panel renders camera-relative 3D nudge pad and heading rotation; Right panel renders Outliner + Inspector.
+     * *Erase Mode:* Left panel renders Erase Radius slider directly on `bg-[#F3EBE0]` + crimson diorama brush circle GUI + Clear All Lights button; Right panel renders Outliner + Inspector.
+   * Switching from Day to Night automatically triggers all placed fireworks in the diorama once in a coordinated festive volley.
 
-7. **Viewing Tool (Free-Fly Spectator & Diorama Viewing Studio):**
+7. **Viewing Tool & Atmospheric Lighting Engine (`atmosphericLighting.ts`):**
    * Dedicated spectator and presentation tool in the secondary Top ToolBar (`view`):
+   * **Atmospheric Lighting & 24-hr Diurnal Solar Arc Engine:**
+     * **Dynamic Color Temperature Grading**: 7 calibrated diurnal keyframes (Midnight 00:00, Dawn 06:00, Noon 12:00, Golden Hour 17:30, Dusk 18:48, Diwali Night 21:00, 24:00).
+     * **Luminous Full Moon Night Calibration**: Silver-white moonlight (`#E0F2FE`, 1.35x), indigo shadow fill (`#475569`, 0.85x), dual-radiance hemisphere light (`#93C5FD` sky / `#1E293B` ground, 0.80x), and exposure `1.28`. Eliminates pitch-black voids, rendering terrain, water, cliffs, and fort walls clearly visible matching real full-moon landscapes.
+     * **Vibrant Golden Hour**: Sun 30 minutes before sunset (elevation `20°`, azimuth `255°`, radiant saffron `#F59E0B` 2.80x, courtyard terracotta upward GI bounce `#EA580C` 0.90x, exposure `1.30`).
+     * **Zero-Cost Mud GI Bounce Radiance**: Directional light positioned upward from laterite clay simulating secondary bounce illumination.
+     * **Deccan Plateau Horizon Mist / Depth Fog**: Exponential squared (`Exp2`) fog blending distant terrain smoothly into the diorama backdrop.
+     * **ACESFilmic Tone Mapping & Exposure Calibration**: Prevents specular blowouts on stone and enriches mud and flame saturation.
    * **Zero-Modification Viewport Guard:**
      * Disables all object selection, raycast drafting, brush rings, hover outlines, and hologram ghosts.
      * Clicks and drags anywhere on the viewport are strictly dedicated to camera navigation.
@@ -218,7 +233,7 @@ The user interface is architected into 6 independent, decoupled modules to provi
 1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`).
 2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 7 primary fort construction tools (Terrain, Building, Texture, Foliage, Figurines, Lighting, View) and camera preset view controls. Soil pipeline tools are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
 3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Minimizes into `[⚙️ Properties ▾]`.
-4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Building (`Select`, `Walls`, `Foundation`, `Stairs`, `Fortifications`), Lighting (`Place`, `Select`, `Delete`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Automatically hidden during `View` tool. Minimizes into `[🎯 Modes ▾]`.
+4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Building (`Select`, `Walls`, `Foundation`, `Stairs`, `Fortifications`), Lighting (`Place`, `Select`, `Transform`, `Erase`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Automatically hidden during `View` tool. Minimizes into `[🎯 Modes ▾]`.
 5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage / figurine / lighting vault browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Automatically hidden during `View` tool. Minimizes into `[🏰 Outliner ▾]`.
 6. **`QuickActionBar.tsx` & `BottomStatusBar.tsx`**:
    - `QuickActionBar.tsx`: Centered floating 5-button control dock mounted directly above `BottomStatusBar.tsx` (`[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`). Governs ambient animation loops and instant high-res viewport screenshot capture.
@@ -358,7 +373,11 @@ CREATE POLICY "Public read killas" ON public.killas FOR SELECT USING (true);
 
 1. **Single Draw-Call Instancing (`<Instances>`):**
    * All placed *Mavale* guards, trees, rocks, shrubs, cannons, and diyas render via `@react-three/drei`'s `<Instances>` per asset type.
-2. **Fake Clustered Glow for Diyas (Night Mode):**
-   * Use 1 global directional moonlight + warm ambient fill, rendering Diya flames with unlit emissive materials and distance-attenuated decal glows at **0.1ms GPU cost**.
-3. **Dynamic Frame Loop (`frameloop={isPlaying ? "always" : "demand"}`):**
+2. **Statically Pre-Allocated 16 3D Point Lights (0ms Shader Recompile & Zero Popping):**
+   * Pre-allocates strictly 16 omnidirectional `<pointLight>`s in JSX. Three.js compiles the PBR lighting shader once on startup; adding, moving, or deleting diyas adjusts numeric uniform intensities and positions rather than modifying the Three.js scene graph, guaranteeing **0ms shader recompilation freezes**.
+   * Camera-independent 3D world-coordinate spatial clustering (`computeSpatialClusters`) anchors lights to physical fort locations, completely eliminating camera-orbit popping and white-hot over-illumination.
+3. **Decoupled Brush Cursor Transform & Throttled BVH Refits:**
+   * Moves the 3D terrain brush cursor positioning to `cursorStateRef` and `useFrame`, decoupling 120Hz pointer moves from React component state. This eliminates 65,536-vertex React re-renders during mouse movement.
+   * Throttles `refitTerrainBVH` and `lastUpdated` store broadcasts to 120ms intervals during continuous drag, reducing pointer latency to **< 0.6ms per event** (steady 60+ FPS).
+4. **Dynamic Frame Loop (`frameloop={isPlaying ? "always" : "demand"}`):**
    * Continuous 60 FPS animation when `isPlaying: true` drives foliage wind sway, diya flames, and fireworks particles; drops back to `frameloop="demand"` on pause to reduce idle CPU/GPU load to 0%.

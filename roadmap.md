@@ -391,25 +391,32 @@ graph TD
     - Sky Shots launch an ascending rocket flare tracer with smoke trail that detonates at burst altitude into a dazzling spherical/willow particle burst in the diorama sky.
     - Fully configurable parameters matching pyrotechnic standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
   - **Consistent 4-Mode Workflow (Place, Select, Transform, Erase)**:
-    - `Place`: Left panel renders active preview card + plain text sliders directly on `bg-[#F3EBE0]`; Right panel renders Lighting Vault Asset Browser with search and 3 tabs: Clay Diyas (9), Painted Diyas (9), Fireworks (10).
-    - `Select`: Left panel renders selected item summary card + transform sliders + Surface Snap + "Test Firework" button + Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower).
+    - `Place`: Left panel renders active preview card + plain text sliders directly on `bg-[#F3EBE0]` (Scale, Heading, Randomize, Normal Align, Elevation Offset); Right panel renders Lighting Vault Asset Browser with search and 3 tabs: Clay Diyas (9), Painted Diyas (9), Fireworks (10).
+    - `Select`: Left panel renders selected item summary card + transform sliders + Surface Snap + "Test Firework" button + Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower) with Burst Height slider for fireworks.
     - `Transform`: Left panel renders fine-grained camera-relative nudge and heading controls; Right panel renders Outliner + Inspector.
-    - `Erase`: Left panel renders Erase Radius slider on `bg-[#F3EBE0]` + Clear All Lights button; Right panel renders Outliner + Inspector.
-  - **Night Diya Glow & PointLights**:
-    - Diyas feature active flickering 3D flame teardrop particles with emissive glow in `useFrame`.
-    - In night mode, a dynamic pool of up to 8 PointLights (`#F59E0B`, radius: 3.5m, decay: 2.0) illuminates nearby mud slopes and fort masonry with soft shadows without exceeding WebGL dynamic light budgets.
-  - **"Test Firework" Action**:
-    - Prominent festive "Test Firework" action button in both Left and Right sidebars allowing builders to launch, detonate, and preview any selected firework on demand.
+    - `Erase`: Left panel renders Brush Radius slider directly on `bg-[#F3EBE0]` + crimson diorama brush circle GUI + Clear All Lights button; Right panel renders Outliner + Inspector.
+  - **3D Diya Illumination Engine (Zero Flat Decals & Zero Recompile Freeze)**:
+    - Complete elimination of flat 2D decal ground disks (`DiyaLightPools.tsx`), replacing them with authentic 3D PBR illumination that realistically lights up vertical fort walls, ramparts, bastions, figurines, stone steps, and slopes.
+    - **16 Statically Pre-Allocated 3D Omnidirectional PointLights** (`#FFA533`, `decay: 2.0`, `distance: 2.2m–4.8m`) compiled statically in JSX. Guarantees **0ms shader recompilation freezes** when placing, moving, or deleting lights.
+    - **Camera-Independent 3D World-Coordinate Spatial Clustering** (`computeSpatialClusters`): K-Means clustering in fixed world coordinates guarantees that orbiting the camera 360° causes **zero light popping, zero jumping, and zero white-hot bleaching**.
+    - Procedural 3D teardrop flames with organic evening breeze sway, white-hot inner core, and camera-facing volumetric halo sprites (`<sprite>`) with additive blending for luminous visibility from any camera distance.
+  - **Diurnal Diya Availability (`getDiyaLightStatus`)**:
+    - Diyas automatically ignite during Golden Hour (~16:30 onwards), reach full radiance throughout Diwali Night, and stay lit until morning Dawn (~06:30), or whenever `nightMode` is explicitly enabled.
+  - **"Test Firework" Action & Isolated Trigger Pipeline**:
+    - Dedicated test trigger pipeline in store (`testFireworkTrigger` with timestamps and cleanup) ensuring fireworks detonate strictly upon clicking the "Test Firework Burst" action button without accidental re-triggers during slider adjustments.
+    - Burst height slider for fireworks with a calibrated low default burst (~100cm from launcher).
   - **Zero-Cost State Persistence & Undo/Redo**:
-    - Added `PlacedLight` to `SavedProjectSchema` and editor state with undo/redo snapshot buffering, legacy diya migration, and full reset handling.
+    - Added `PlacedLight` to `SavedProjectSchema` and editor state with undo/redo snapshot buffering, legacy diya migration, burst height serialization, and full reset handling.
 
 ### Acceptance Criteria
 - [x] Lighting tool appears in Top ToolBar as Key 6; Figurine tool no longer contains diya items.
 - [x] Lighting Vault drawer displays 3 tabs: Clay Diyas (9), Painted Diyas (9), and Fireworks (10).
-- [x] Placed diyas illuminate in warm amber point lighting and display animated flames during night mode.
+- [x] Placed diyas illuminate in 16 pre-allocated 3D point lights with volumetric halo flames, casting authentic light on vertical fort walls, ramparts, and figurines without flat 2D decal artifacts.
+- [x] Camera orbiting 360° produces zero popping or jumping of diya lights.
+- [x] Placing and deleting diyas causes zero WebGL shader recompilation freezes (0ms).
 - [x] Cone fountains sit upright on terrain/decks and spray sparkling fountain effects on test.
-- [x] Sky shots launch upward rockets that explode in the night sky with colorful particle bursts.
-- [x] "Test Firework" button triggers the pyrotechnic effect cleanly without frame drops.
+- [x] Sky shots launch upward rockets that explode at adjustable burst heights with colorful particle bursts.
+- [x] "Test Firework" button triggers pyrotechnic effects on demand without triggering on property slider edits.
 - [x] Placed lights and fireworks can be selected, moved, duplicated, and deleted with full undo/redo.
 
 ---
@@ -420,13 +427,19 @@ graph TD
 - **Blocked by**: `Ticket 07`, `Ticket 10`
 - **Delivers**:
   - **Dedicated Diorama & Sun View Tool (`view`)**:
-    - Primary toolbar **`View`** tool (`view`) designed for pure diorama presentation, inspection, and celestial lighting control.
+    - Primary toolbar **`View`** tool (`view`, Key `7`) designed for pure diorama presentation, inspection, and celestial lighting control.
     - Interactive Left Properties Sidebar with:
-      - **Time of Day Slider** (`0:00` to `24:00` hours) with dynamic day/night transitions and quick presets (Dawn, Noon, Golden Hour, Diwali Night).
+      - **Time of Day Slider** (`0:00` to `24:00` hours) with dynamic day/night transitions and quick presets: **Dawn (06:00)**, **Noon (12:00)**, **Golden Hour (17:30)**, and **Diwali Night (21:00)**.
       - **Sun / Moon Direction & Elevation (X-Axis Rotation)** slider (`-10°` to `90°` altitude above courtyard horizon) controlling sun/moon trajectory and dynamic shadow length.
       - **Sun / Moon Azimuth** slider (`0°` to `360°` compass bearing) directing shadow orientation across ramparts and courtyards.
       - Orbit & Free-Fly spectator camera controls with zero accidental edits.
-    - *(Note: A testing skeleton of the View tool is introduced in Ticket 10 for interactive celestial lighting evaluation).*
+  - **Atmospheric Lighting & 24-hr Diurnal Solar Arc Engine (`atmosphericLighting.ts`)**:
+    - **Dynamic Color Temperature Grading**: 7 calibrated diurnal keyframes (Midnight 00:00, Dawn 06:00, Noon 12:00, Golden Hour 17:30, Dusk 18:48, Diwali Night 21:00, 24:00).
+    - **Luminous Full Moon Night Calibration**: Silver-white moonlight (`#E0F2FE`, 1.35x), indigo shadow fill (`#475569`, 0.85x), dual-radiance hemisphere light (`#93C5FD` sky / `#1E293B` ground, 0.80x), and exposure `1.28`. Eliminates pitch-black voids, rendering terrain, water, cliffs, and fort walls clearly visible.
+    - **Vibrant Golden Hour**: Sun 30 minutes before sunset (elevation `20°`, azimuth `255°`, radiant saffron `#F59E0B` 2.80x, courtyard terracotta upward GI bounce `#EA580C` 0.90x, exposure `1.30`).
+    - **Zero-Cost Mud GI Bounce Radiance**: Directional light positioned upward from laterite clay simulating secondary bounce illumination.
+    - **Deccan Plateau Horizon Mist / Depth Fog**: Exponential squared (`Exp2`) fog blending distant terrain smoothly into the diorama backdrop.
+    - **ACESFilmic Tone Mapping & Exposure Calibration**: Prevents specular blowouts on stone and enriches mud and flame saturation.
   - **Centered Quick-Action Diorama Bar**:
     - Tactile, floating 5-button control dock mounted centered directly above `BottomStatusBar.tsx`:
       - `☀️ Day`: Transitions diorama to warm daylight courtyard lighting.
@@ -444,6 +457,9 @@ graph TD
     - Screenshot button temporarily suppresses all HUD overlays (toolbars, sidebars, dock, minimizers), captures the WebGL canvas using `preserveDrawingBuffer`, triggers an immediate browser file download, and cleanly restores UI visibility with a success toast.
 
 ### Acceptance Criteria
+- [x] Atmospheric lighting engine interpolates 24-hr solar arc with luminous full moon night and vibrant golden hour keyframes.
+- [x] Sun/moon direction, elevation, and azimuth sliders sweep dynamic shadows across fort walls and courtyards.
+- [x] Diyas automatically ignite during Golden Hour, Dusk, and Night, and remain lit through Dawn.
 - [ ] Quick-action diorama bar sits centered above the bottom status bar with Day, Play, Pause, Screenshot, and Night buttons.
 - [ ] Ambient tree fluttering and wind sway progress smoothly when Play is active without requiring mouse moves.
 - [ ] Clicking Pause immediately halts animation clock and freezes movement.

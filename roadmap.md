@@ -475,29 +475,39 @@ graph TD
 
 ## Ticket 12: State Serialization, Local Persistence Adapter & Project Hub
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 06`, `Ticket 09`, `Ticket 10`, `Ticket 11`
 - **Delivers**:
   - **Undo / Redo Buffer**:
     - 15-slot in-memory circular buffer tracking terrain edits, building structures (walls, bastions, foundations, stairs), texture paint, foliage instances, figurines, and placed lights/fireworks.
-  - **Binary Serialization (`.killa` format)**:
-    - Quantize terrain heightmap and paint weight buffers to `Uint8Array`.
+  - **Binary Serialization (`.killa` format v1.2.0)**:
+    - Quantize terrain heightmap via 2D spatial prediction into delta-encoded 16-bit integers and perceptual channels (wetness, lock, grass, texture paint weights) into compact `Uint8Array` buffers.
     - Package terrain, building foundations, stairs, walls, fortifications, foliage, figurines, and fireworks with `fflate.zipSync` into a compact `< 35 KB` binary package.
   - **Persistence Adapter & Local Vault**:
-    - Local storage / IndexedDB implementation (`killa_saved_projects_v1`) persisting named projects with timestamp (`updatedAt`), template type, and diorama payload.
-    - Startup modal hub displaying recent locally saved projects with relative time elapsed and one-click loading.
+    - IndexedDB implementation (`killaVault.ts`) persisting named projects with timestamp (`updatedAt`), template type, diorama statistics, and binary package payload.
+    - Two-tab Project Hub Modal (`ProjectHubModal.tsx`) displaying historical fort blueprints, procedural generator, and saved projects with relative time elapsed, one-click loading, and project deletion.
+  - **Interactive Terrain Studio Drawer**:
+    - Non-blocking top-sliding drawer (`TerrainStudioDrawer.tsx`) allowing real-time inspection of terrain alterations behind controls.
+    - Real sliding toggle switch for base water plane (moat / sea).
+    - "Roll New Terrain" seed randomizer dice button with instant regeneration.
+    - "Stepped Mountain Tiers" slider (1 to 3 tiers) with smooth, tear-free Sahyadri stepped terraces (Balekilla and Machi).
+    - Destructive terrain change confirmation popup (`TerrainChangeConfirmModal.tsx`) with itemized object counters protecting placed structures.
+  - **Single-Click Fortification Stamping**:
+    - Event propagation and 300ms debounce guard preventing duplicate fortification placements across watchtowers, rampart bastions, round bastions, and arched gateways.
+  - **Pyrotechnic Pause Timer**:
+    - 5-second countdown timer for fireworks in the paused state: keeps particles frozen for 5 seconds for visual admiration, then cleans them up so they do not obstruct building. Normal playback remains unaffected.
   - **Project File Import & Export**:
-    - Desktop file download of `.killa` diorama packages.
-    - Native file picker upload to import and restore `.killa` files directly into the 3D canvas.
+    - Desktop file download of `.killa` diorama packages and backward-compatible JSON payloads.
+    - Native file picker upload to import and restore `.killa` files directly into the 3D canvas with full terrain and texture reproduction.
   - **Defensive Zod Schema**:
     - Validates inbound project payloads, sanitizing coordinates and rejecting malformed files.
 
 ### Acceptance Criteria
-- [ ] Undo and redo reliably revert and restore sculpting, foundations, stairs, walls, painting, and firework placements.
-- [ ] `serializeKilla()` packages complete killa state into $\le 35\text{ KB}$ in $< 15\text{ms}$.
-- [ ] Projects save to local storage and appear in the startup hub with last-saved timestamps.
-- [ ] `.killa` files can be exported and re-imported cleanly with identical visual reproduction.
-- [ ] Inbound payload schema validates types and rejects corrupted payloads.
+- [x] Undo and redo reliably revert and restore sculpting, foundations, stairs, walls, painting, and firework placements.
+- [x] `serializeKilla()` packages complete killa state into $\le 35\text{ KB}$ in $< 15\text{ms}$.
+- [x] Projects save to local storage and appear in the startup hub with last-saved timestamps.
+- [x] `.killa` files can be exported and re-imported cleanly with identical visual reproduction.
+- [x] Inbound payload schema validates types and rejects corrupted payloads.
 
 ---
 

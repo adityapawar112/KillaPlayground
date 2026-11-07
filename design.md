@@ -457,6 +457,44 @@ Before authoring or modifying any HUD component or tool sidebar:
   - *Round Bastions (`round_bastion`):* Semicircular bastions must align their flat base diameter flush on the outer wall edge (`edgeX = attachX + outNorm.x * halfThick`), preserving rampart walkway transit while protruding defensively outward.
   - *Authentic Crenellations:* Round bastions must render 3D pointed Kangare battlements with shoulders matching watchtowers.
 
+### Rule 21: Project Hub & Modal Launchpad Anatomy (`ProjectHubModal.tsx`)
+- **Modal Container & Surfaces:**
+  - Backdrop: `fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm`.
+  - Outer Container: `bg-[#FAF8F5] border border-[#CDBCAB] rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden`.
+  - Header Banner: Warm gradient `bg-gradient-to-r from-[#8F4938] to-[#B85F45] text-[#FAF8F5] p-5`. Title rendered in `font-['Yatra_One'] text-2xl` with subtle subtitle.
+- **Tabbed Navigation Strip:**
+  - Background `bg-[#F3EBE0] border-b border-[#CDBCAB] p-2 flex gap-1.5`.
+  - Active Tab: `bg-[#4B382C] text-[#FAF8F5] shadow-xs`.
+  - Inactive Tab: `text-[#5C4638] hover:bg-[#E4D8CB]/80`.
+- **Card Anatomy & Interactivity:**
+  - Blueprint & project cards: `bg-[#F3EBE0]/60 border border-[#D9C9B4] hover:border-[#B85F45] rounded-xl p-3.5 transition-all`.
+  - Selected / Active Card: `border-[#B85F45] bg-[#B85F45]/10 ring-1 ring-[#B85F45]`.
+
+### Rule 22: Terrain Studio Drawer Anatomy & Direct Slider Mounting (`TerrainStudioDrawer.tsx`)
+- **Live Viewport Drawer Mounting:**
+  - Docked left edge drawer (`left-0 bottom-0 z-30`) allowing uninterrupted 3D diorama viewing while tweaking terrain parameters.
+  - Background `bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-xl`.
+- **Direct Slider Mounting (Rule 9 Enforcement):**
+  - All parameter sliders (Tableland Width, Peak Elevation, Cliff Steepness, Crags & Roughness, Stepped Mountain Tiers) **MUST sit directly on the panel background (`bg-[#F3EBE0]`)**.
+  - **NEVER** wrap individual property sliders in white cards.
+- **Interactive Sliding Toggle Switch Anatomy:**
+  - Never use ambiguous text buttons ("Active" / "Inactive") for binary features like the water plane.
+  - Always use an authentic sliding toggle track with smooth thumb translation:
+    - Track (Active): `w-11 h-6 bg-[#15803D] rounded-full p-0.5 transition-colors duration-200 ease-in-out`.
+    - Track (Inactive): `w-11 h-6 bg-[#D9C9B4] rounded-full p-0.5 transition-colors duration-200 ease-in-out`.
+    - Sliding Thumb: `w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-200 ease-in-out ${checked ? 'translate-x-5' : 'translate-x-0'}`.
+- **Standard Concise Labels:**
+  - Use clear, professional terminology: `Stepped Mountain Tiers`, `Water Plane`, `Tableland Width`.
+
+### Rule 23: Terrain Change Confirmation Modal Anatomy (`TerrainChangeConfirmModal.tsx`)
+- **Destructive Action Safety Guard:**
+  - Changing base fort terrain while structures exist displays a high-visibility confirmation alert:
+  - Header: Warning badge with amber icon (`TbAlertTriangle` in `#F59E0B`).
+  - Itemized Summary: Displays counts of placed elements that will be cleared (walls, foundations, stairs, foliage, figurines, diyas, fireworks).
+  - Actions:
+    - Confirm Destructive CTA: `bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded-xl shadow-sm`.
+    - Cancel CTA: `bg-[#FAF8F5] border border-[#D9C9B4] text-[#4B382C] hover:bg-[#EADECF] rounded-xl`.
+
 ---
 
 ## 3D Textures & Material Tokens
@@ -511,6 +549,8 @@ The diorama's lighting dynamically grades across the 24-hour solar arc with 7 ma
 - **Use `Strength` instead of `Opacity & Flow`.**
 - **Support `Shift/Ctrl/Alt + Scroll Wheel` shortcuts on all 3D tools.**
 - **Check existing sibling panels (e.g. Spline tool) and `design.md` before authoring any new UI.**
+- **Use real sliding toggle switches with smooth sliding knobs for binary feature states (like water plane).**
+- **Prompt confirmation before destructive base terrain changes if existing structures are present.**
 
 ### Don't
 - **Don't use cold corporate gray (`#F3F4F6`, `#E5E7EB`) or pure black (`#000000`).**
@@ -518,6 +558,9 @@ The diorama's lighting dynamically grades across the 24-hour solar arc with 7 ma
 - **Don't duplicate mode selectors inside the Left Tool Sidebar.**
 - **Don't show mode-irrelevant sliders (e.g. Tiling Repeat on an Eraser).**
 - **Don't insert decorative filler or tip cards into tool property panels.**
+- **Don't use ambiguous text buttons (e.g., Active/Inactive) for binary toggles.**
+- **Don't silently clear or displace existing placed structures when base terrain changes.**
+- **Don't let minimized tabs overlap each other or open sidebars.**
 - **Don't let minimized tabs overlap each other or open sidebars.**
 - **Don't select 3D objects with right-click or middle-click.**
 - **Don't use coarse ground proximity radius checks that hijack clicks near splines or walls.**

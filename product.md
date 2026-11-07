@@ -22,9 +22,11 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ## 3. End-to-End User Journey
 
 ```
-[1. Mode Selection]
-├── A. Historical Killa Blueprint (Pre-made Terrain + Chalk Wall Outlines)
-└── B. Freeform / From Scratch (Random Terrain Generator + Blank Ground)
+[1. Project Hub & Mode Selection]
+├── A. Historical Fort Blueprints (Raigad, Murud-Janjira, Sinhagad, Vijaydurg, Shivneri)
+├── B. Procedural Terrain Studio (Seed, Tableland, Elevation, Stepped Tiers 1-3, Water Toggle)
+├── C. Saved Dioramas Vault (Browser IndexedDB Storage with Instant Re-open & Delete)
+└── D. Portable File Import (.killa v1.2.0 binary package or legacy JSON)
 │
 ▼
 [2. Base Terrain Sculpting]
@@ -35,7 +37,7 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ├── Walls: Click-to-draft perimeter ramparts with pointed crenellations & loop closing
 ├── Foundation: 2-phase drag-and-extrude stone plinths with negative depth & cancel CTA
 ├── Stairs: Continuous drag-drawn or point-by-point stone staircases ascending slopes
-└── Fortifications: Watchtowers, inward rampart bastions, round bastions, Maha Darwaza gates
+└── Fortifications: Watchtowers, inward rampart bastions, round bastions, Maha Darwaza gates (Single-click debounced)
 │
 ▼
 [4. Terrain Painting Studio]
@@ -52,7 +54,7 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ▼
 [7. Festive Lighting & Fireworks Studio]
 ├── 18 Diyas: Terracotta & painted lamps with 16 3D point lights, volumetric halo flames & diurnal lighting
-└── 10 Fireworks: Cone fountains (Anaar) & sky shots with burst height adjustments & test pyrotechnics
+└── 10 Fireworks: Cone fountains (Anaar) & sky shots with burst height adjustments, test pyrotechnics & 5s pause timer
 │
 ▼
 [8. Time-of-Day, Atmospheric Engine & Diorama Viewing Studio]
@@ -67,7 +69,12 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 └── Interactive 3D Link OR Auto-Captured Multi-Angle Festive Poster with Marathi/English Title Header
 │
 ▼
-[10. Optional / Advanced: Tactile Soil Crafting Pipeline]
+[10. State Serialization, Local Persistence & Portable Packaging]
+├── Local IndexedDB Vault: Automatic multi-slot project persistence surviving page refreshes
+└── Export .killa Archive: Zero-cost fflate-compressed package saving heights, textures & props
+│
+▼
+[11. Optional / Advanced: Tactile Soil Crafting Pipeline]
 └── Dump Dry Soil -> Pour Water -> Push/Flatten from Top & Sides -> Dry/Lock Mud -> Freehand Mud Paint
 ```
 
@@ -75,21 +82,41 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 
 ## 4. Detailed Feature Specifications
 
-### Phase 1: Foundation & Mode Selection
-Upon opening the tool, the user starts inside a cozy backyard/courtyard diorama workspace (bordered by red clay bricks or a corner wall, just like a real society courtyard build)[cite: 1, 2] and chooses one of two starting modes:
+### Phase 1: Project Hub & Terrain Studio
 
-#### Option A: Historical Killa Blueprint Mode
-* **Curated Fort Selection:** User selects from iconic Maratha forts (e.g., *Raigad*, *Pratapgad*, *Sinhagad*, *Shivneri*, *Murud-Janjira*, *Vijaydurg*)[cite: 2].
-* **Pre-Molded Topography:** The base hill or coastal island terrain is already sculpted to match the real fort's elevation profile (e.g., an oval island surrounded by shallow water for *Murud-Janjira*[cite: 2], or a steep multi-tiered ridge for *Raigad*).
-* **Guided Wall Outlines:** Faint white chalk/rangoli-style footprint lines are drawn directly onto the terrain showing exactly where the outer ramparts (*tatbandi*), round bastions (*buruj*), gates (*Maha Darwaza*), and water cisterns (*taki*) belong.
-* **Reference Card:** A toggleable corner photo card shows how neighborhood builders traditionally style that specific fort[cite: 1, 2].
+Upon opening the tool (or selecting `File -> Open / Switch Fort`), the user is greeted by the **Project Hub Modal** (`ProjectHubModal.tsx`), a modern tactile studio launchpad with 4 primary workflows:
 
-#### Option B: Blank / Custom Killa Mode
-* **Random Terrain Generator:** Users click a **"Roll New Terrain"** button to generate organic base landscapes with a single click, along with simple sliders for:
-  * *Flat Courtyard vs. Steep Mountain Ridge*
-  * *Coastal/Island Setting vs. Inland Hilltop*
-  * *Base Perimeter Brick Border* (toggles the classic row of red construction bricks holding the mud pile together at the base)[cite: 1].
-* **No Guidelines:** Completely open canvas with zero pre-drawn wall outlines, allowing pure improvisation.
+#### 1. Historical Fort Blueprints
+* **Authentic Fortress Selection:** User chooses from iconic Maratha forts (*Raigad*, *Murud-Janjira*, *Sinhagad*, *Vijaydurg*, *Shivneri*).
+* **Calibrated Topography:** Each fort features a faithfully remade elevation profile:
+  * *Raigad Fort:* High Sahyadri tableland with sheer Takmak Tok rock drops and Ganga Sagar water tank basin.
+  * *Murud-Janjira Sea Fort:* Oval island fortress sitting gracefully inside the Arabian Sea with authentic defensive perimeter.
+  * *Sinhagad Fort:* High-altitude triangular mountain saddle and Kalyan Darwaza ridge.
+* **Pure Water Plane Architecture:** Sea forts feature clean, procedural water plane simulation rather than baked ground water textures, allowing the builder to toggle water planes on or off freely.
+* **Guided Wall Outlines:** Faint white chalk/rangoli-style footprint lines show where outer ramparts (*tatbandi*), round bastions (*buruj*), gates (*Maha Darwaza*), and water cisterns (*taki*) belong.
+
+#### 2. Procedural Mountain Terrain Studio
+* **Tactile Topography Sliders:**
+  * *Tableland Width (1.0m to 12.0m):* Width of the flat summit plateau where ramparts and figurines are erected.
+  * *Peak Elevation (0.5m to 4.0m):* Vertical height of the hillfort mountain.
+  * *Cliff Face Steepness (Gentle, Moderate, Sheer Escarpment):* Governs slope gradients.
+  * *Crags & Roughness (0% to 100%):* Fractal rocky crevices and surface displacement.
+  * *Stepped Mountain Tiers (1 to 3 Tiers):* Configures single-summit mountains, dual-tier plateaus, or triple-tiered hillforts with smooth continuous analytical sigmoid transitions, completely eliminating cliff tears or polygonal deformities.
+* **Roll New Seed Dice Button:** Instantaneously reshuffles the deterministic PRNG seed, generating a completely fresh organic mountain layout while preserving chosen slider dimensions.
+
+#### 3. Saved Dioramas Vault
+* **Local Browser Vault (IndexedDB):** Lists all killas saved in the browser with timestamps, thumbnail previews, and fort blueprints.
+* **One-Click Re-open & Delete:** Reopen past projects instantly or prune unwanted drafts without requiring server sync or login accounts.
+
+#### 4. Portable File Import / Open
+* **Direct File Drop & Picker:** Supports importing portable `.killa` v1.2.0 binary packages (with full heightmaps, painted textures, and placed structures) as well as legacy `.json` diorama state files.
+
+#### 5. Terrain Studio Drawer (`TerrainStudioDrawer.tsx`)
+* **Live Viewport Preview:** When sculpting or tuning procedural terrain, users can open the docked left Terrain Studio drawer. Unlike modal dialogs that obscure the 3D scene, the drawer lets users see real-time geometry updates directly in the diorama as sliders move.
+* **Dedicated Sliding Water Plane Toggle:** An intuitive, sliding iOS-style toggle switch (`bg-[#15803D]` green when active, `bg-[#D9C9B4]` when off) clearly indicates whether the diorama water plane is enabled, preventing accidental oversight for inland vs. coastal forts.
+
+#### 6. Terrain Change Confirmation Guard (`TerrainChangeConfirmModal.tsx`)
+* Whenever a builder changes the base fort terrain (switching blueprints or rolling a new procedural seed) while walls, foundations, stairs, foliage, figurines, or lights already exist, a modal alert prompts the user with an itemized count of placed objects, requiring explicit confirmation before clearing or transforming the scene to prevent accidental floating props.
 
 ---
 
@@ -123,6 +150,7 @@ The standalone Wall and Spline tools are consolidated into a single high-velocit
     * *Rampart Bastion Platforms (`box`):* Inward-facing rectangular fighting platforms extending into the fort courtyard.
     * *Semicircular Round Bastions (`round_bastion`):* Semicircular bastions protruding outward from the fort wall with flat base centered flush on the outer wall edge, crowned with authentic 3D pointed Murud-Janjira Kangare battlements with shoulders matching towers.
     * *Arched Gateways (`gate` / `Maha Darwaza`):* Watertight portals flanked by twin towers with continuous rampart walkways above.
+    * *Single-Click Placement Guarantee:* Event bubbling is cleanly halted (`e.stopPropagation()`) with a 300ms throttle guard in state management, ensuring exactly one fortification is placed per click and eliminating accidental double-placements.
 * **Miniature Tabletop Diorama Calibration**:
   * Scaled to realistic miniature diorama measurements (default 25cm height, 15cm thickness; range 10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding.
   * Sliders dynamically display physical units in centimeters (`cm`).
@@ -268,6 +296,7 @@ Dedicated pyrotechnic illumination studio bringing traditional Diwali celebratio
   * **Randomize Burst Height Toggle**: Switch in Place mode automatically assigns randomized burst heights ($0.60\text{m}$ to $2.40\text{m}$) to newly placed fireworks.
   * **Continuous Festive Night Playback**: During dark hours (sunset through early morning), fireworks cycle continuously with staggered launches and natural pauses between bursts.
   * **Isolated Test Pipeline**: Timestamped trigger in store ensures fireworks detonate exclusively when the "Test Firework Burst" button is clicked, preventing accidental triggers during slider edits.
+  * **5-Second Pause Countdown Timer**: Pausing the diorama freezes fireworks in a striking sculptural particle display. A 5-second countdown timer initiates: after 5 seconds, the frozen burst particles cleanly extinguish and reset, leaving the diorama completely clear for subsequent building and editing. Resuming Play mode restarts the celebration immediately without waiting for or being affected by the timer.
 * **4 Operational Workflow Modes:**
   * **Place Mode**: Left properties panel (Scale, Heading, Randomize Heading, Align to Normal, Elevation Offset, Burst Height, and Randomize Burst Height toggle); Right panel renders Lighting Vault Asset Browser with Clay Diyas (9), Painted Diyas (9), and Fireworks (10).
   * **Select Mode**: Left panel renders selected item card, transform sliders, Surface Snap, "Test Firework Burst" button, and Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower) with Burst Height slider.
@@ -327,7 +356,22 @@ Captures high-resolution snapshots of the user's finished killa from **4 cinemat
 
 ---
 
-### Phase 10: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
+### Phase 10: State Serialization, Local Persistence Adapter & Project Hub
+Provides robust, zero-cost state management and project packaging entirely within the client browser:
+* **Local Browser Vault (IndexedDB `killaVault.ts`):**
+  * Automatically saves and updates diorama changes locally.
+  * Refreshing or reopening the browser instantly restores the exact terrain heights, painted textures, walls, structures, figurines, and lights.
+  * Multi-slot project library displays saved dioramas with live timestamps, fort tags, and one-click open and delete controls.
+* **Portable Binary `.killa` v1.2.0 File Package:**
+  * Compresses the entire project state into a tiny `~25–45 KB` binary archive using `fflate` in $< 15\text{ms}$.
+  * Captures full topographical precision across all 65,536 elevation points (`terrain.bin`), 256×256×4 painted texture splat buffers (`texture_paint.bin`), and complete Zod-validated scene graph metadata (`manifest.json`).
+  * Enables seamless offline sharing of complete diorama files via WhatsApp, Discord, or drive links.
+* **Legacy Compatibility & Import Resilience:**
+  * Ingests previous JSON diorama files seamlessly, migrating legacy structures and filling in modern defaults without errors.
+
+---
+
+### Phase 11: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
 For builders desiring the authentic organic mud craft simulation:
 * **Soil Pour Tool:** Dumps loose dry soil mounds onto the terrain with simplex noise roughness.
 * **Water Sprinkler Tool:** Hydrates soil, turning it dark and malleable with specular wet sheen (`cracked_red_ground_1k`).

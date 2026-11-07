@@ -12,11 +12,13 @@ import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { DioramaQuickBar } from '@/components/hud/DioramaQuickBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
-import { StartupModal } from '@/components/modals/StartupModal';
-import { AboutModal } from '@/components/modals/AboutModal';
+import { ProjectHubModal } from '@/components/modals/ProjectHubModal';
 import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
+import { TerrainChangeConfirmModal } from '@/components/modals/TerrainChangeConfirmModal';
+import { AboutModal } from '@/components/modals/AboutModal';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
+import { useVaultHydration } from '@/lib/persistence/useVaultHydration';
 import { getAtmosphericLighting } from '@/lib/lighting/atmosphericLighting';
 
 const KillaCanvas = dynamic(
@@ -52,6 +54,8 @@ const KillaCanvas = dynamic(
 );
 
 export default function HomePage() {
+  useVaultHydration();
+
   const nightMode = useEditorStore((s) => s.nightMode);
   const timeOfDay = useEditorStore((s) => s.timeOfDay);
   const sunElevation = useEditorStore((s) => s.sunElevation);
@@ -102,6 +106,7 @@ export default function HomePage() {
           store.setToastMessage('Stair drawing canceled.');
           return;
         }
+        if (store.isTerrainConfirmOpen) store.setTerrainConfirmOpen(false);
         if (store.isStartupModalOpen) store.setStartupModalOpen(false);
         if (store.isAboutModalOpen) store.setAboutModalOpen(false);
         if (store.isShortcutsModalOpen) store.setShortcutsModalOpen(false);
@@ -240,11 +245,14 @@ export default function HomePage() {
           {/* Unobtrusive Bottom Controls Strip */}
           <BottomStatusBar />
 
-          {/* Blender-Style Startup Splash / Project Hub */}
-          <StartupModal />
-
-          {/* Left-Half Screen Terrain Studio Drawer */}
+          {/* Left-Side Dropdown Terrain Studio (Visible 3D Viewport) */}
           <TerrainStudioDrawer />
+
+          {/* Unified Project Hub & Fortress Studio (Ticket 12) */}
+          <ProjectHubModal />
+
+          {/* Terrain Change Confirmation Dialog (Ticket 12) */}
+          <TerrainChangeConfirmModal />
 
           {/* Helper Modals */}
           <ShortcutsModal />

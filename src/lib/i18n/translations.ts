@@ -348,6 +348,15 @@ export const TRANSLATIONS = {
       loadedSuccess: 'Project loaded successfully!',
       importSuccess: 'Project file imported successfully!',
       invalidFormat: 'Invalid project file format.',
+      tabBlueprints: 'Fort Blueprints',
+      tabProcedural: 'Procedural Terrain',
+      tabVault: 'Saved Dioramas',
+      exportKillaBtn: 'Export .killa',
+      terrainConfirmTitle: 'Change Base Terrain?',
+      terrainConfirmDesc: 'Changing the terrain will remove all existing walls, foundations, stairs, figurines, foliage, and lighting because their coordinates will no longer match the new landscape.',
+      terrainConfirmBackupBtn: 'Save Backup & Proceed',
+      terrainConfirmWipeBtn: 'Wipe & Change Terrain',
+      terrainConfirmCancelBtn: 'Cancel',
     },
 
     // Poster Studio Modal
@@ -734,6 +743,15 @@ export const TRANSLATIONS = {
       loadedSuccess: 'प्रकल्प यशस्वीरित्या लोड झाला!',
       importSuccess: 'प्रकल्प फाईल यशस्वीरित्या आयात झाली!',
       invalidFormat: 'अवैध फाईल फॉरमॅट.',
+      tabBlueprints: 'ऐतिहासिक किल्ले',
+      tabProcedural: 'स्वतःचा प्रदेश',
+      tabVault: 'साठवलेले किल्ले',
+      exportKillaBtn: '.killa निर्यात करा',
+      terrainConfirmTitle: 'भूमी बदलायची आहे का?',
+      terrainConfirmDesc: 'नवीन भूमी निवडल्यास अस्तित्वात असलेले तट, पायऱ्या, मावळे व दिवे काढले जातील कारण त्यांचे स्थान नवीन भूमीशी जुळणार नाही.',
+      terrainConfirmBackupBtn: 'बॅकअप घेऊन बदला',
+      terrainConfirmWipeBtn: 'सर्व काढून भूमी बदला',
+      terrainConfirmCancelBtn: 'रद्द करा',
     },
 
     // Poster Studio Modal
@@ -1120,6 +1138,15 @@ export const TRANSLATIONS = {
       loadedSuccess: 'प्रोजेक्ट सफलतापूर्वक लोड हुआ!',
       importSuccess: 'प्रोजेक्ट फ़ाइल सफलतापूर्वक आयात हुई!',
       invalidFormat: 'अमान्य फ़ाइल प्रारूप।',
+      tabBlueprints: 'ऐतिहासिक किले',
+      tabProcedural: 'कस्टम जमीन',
+      tabVault: 'सहेजे गए किले',
+      exportKillaBtn: '.killa निर्यात करें',
+      terrainConfirmTitle: 'जमीन बदलनी है?',
+      terrainConfirmDesc: 'नई जमीन चुनने पर मौजूदा दीवारें, सीढ़ियां, मूर्तियां और दीये हटा दिए जाएंगे क्योंकि उनका स्थान नई जमीन से मेल नहीं खाएगा।',
+      terrainConfirmBackupBtn: 'बैकअप लेकर बदलें',
+      terrainConfirmWipeBtn: 'हटाकर जमीन बदलें',
+      terrainConfirmCancelBtn: 'रद्द करें',
     },
 
     // Poster Studio Modal

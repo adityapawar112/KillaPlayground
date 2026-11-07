@@ -197,13 +197,14 @@ describe('Terrain Buffer & State Management', () => {
     }
     expect(maxH).toBeGreaterThan(1.6);
 
-    // Janjira: coastal water moat with high wetness and central island
+    // Janjira: island fortress surrounded by seabed (wetness = 0.0, 3D WaterPlane provides water)
     const janjiraBuffer = createStateBuffer();
     generateTerrainBlueprint('janjira', janjiraBuffer);
     const janjiraCenter = getTexel(janjiraBuffer, 128, 128);
     const janjiraMoat = getTexel(janjiraBuffer, 220, 220);
     expect(janjiraCenter.height).toBeGreaterThan(0.7);
-    expect(janjiraMoat.wetness).toBeGreaterThan(0.8);
+    expect(janjiraMoat.height).toBeLessThan(0.15);
+    expect(janjiraMoat.wetness).toBe(0.0);
   });
 
   it('safely refits BVH geometry without throwing or requiring unsafe casts', () => {
@@ -490,8 +491,8 @@ describe('Terrain Buffer & State Management', () => {
     });
 
     it('synchronizes pond water planes with undo/redo stack', async () => {
-      const { useTerrainStore } = await import('./terrainStore');
       const { useEditorStore } = await import('../state/useEditorStore');
+      const { useTerrainStore } = await import('./terrainStore');
 
       const terrainStore = useTerrainStore.getState();
       const editorStore = useEditorStore.getState();

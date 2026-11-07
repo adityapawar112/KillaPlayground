@@ -27,6 +27,7 @@ import {
   TbX,
   TbArrowsMinimize,
   TbArrowsMaximize,
+  TbFolderOpen,
 } from 'react-icons/tb';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -77,11 +78,13 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     setResetConfirmOpen,
     setShortcutsModalOpen,
     setStartupModalOpen,
+    openProjectHub,
     setAboutModalOpen,
     isTerrainDrawerOpen,
     setTerrainDrawerOpen,
     saveProjectLocally,
     exportProjectData,
+    exportKillaBinary,
     importProjectData,
     setToastMessage,
     toastMessage,
@@ -132,8 +135,8 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
   }, [saveProjectLocally, setStartupModalOpen, setToastMessage, t]);
 
   const handleExport = () => {
-    const json = exportProjectData();
-    const blob = new Blob([json], { type: 'application/json' });
+    const bytes = exportKillaBinary();
+    const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/octet-stream' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     const safeName = (fortTitle || 'my_killa').replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -151,9 +154,11 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const success = importProjectData(content);
+    reader.onload = async (event) => {
+      const buffer = event.target?.result;
+      if (!buffer) return;
+      const bytes = new Uint8Array(buffer as ArrayBuffer);
+      const success = await importProjectData(bytes);
       if (success) {
         setToastMessage(t.startupModal.importSuccess);
       } else {
@@ -161,14 +166,14 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
       }
       setTimeout(() => setToastMessage(null), 3000);
     };
-    reader.readAsText(file);
+    reader.readAsArrayBuffer(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setActiveMenu(null);
     setIsMobileMenuOpen(false);
   };
 
-  const handleSave = () => {
-    saveProjectLocally();
+  const handleSave = async () => {
+    await saveProjectLocally();
     setToastMessage(t.startupModal.savedSuccess);
     setTimeout(() => setToastMessage(null), 3000);
     setActiveMenu(null);
@@ -232,7 +237,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
-                  setTerrainDrawerOpen(true);
+                  setTerrainDrawerOpen(true, 'historical');
                 }}
                 className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border border-[#D9C9B4] text-xs font-bold cursor-pointer"
               >
@@ -256,7 +261,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setStartupModalOpen(true);
+                    openProjectHub('blueprints');
                   }}
                   className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
                 >
@@ -525,22 +530,16 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
           <button
             onClick={() => {
               setActiveMenu(null);
-              setTerrainDrawerOpen(!isTerrainDrawerOpen);
+              setTerrainDrawerOpen(!isTerrainDrawerOpen, 'historical');
             }}
-            className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer ${
-              isTerrainDrawerOpen
-                ? 'bg-[#4B382C] text-white border-[#38281E] shadow-sm'
-                : 'bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4]'
-            }`}
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4]"
             title={t.modeModal.subtitle}
           >
-            <TbBuildingCastle className={`w-3.5 h-3.5 ${isTerrainDrawerOpen ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
+            <TbBuildingCastle className="w-3.5 h-3.5 text-[#8F4938]" />
             <span className="tracking-wide uppercase font-sans">
               {displayFortTitle}
             </span>
-            <TbChevronDown className={`w-3 h-3 transition-transform duration-200 ${
-              isTerrainDrawerOpen ? 'rotate-180 text-[#F59E0B]' : 'text-[#8D7666]'
-            }`} />
+            <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
           </button>
 
           <div className="hidden xl:block w-[1px] h-4 bg-[#D9C9B4] mx-1" />
@@ -564,7 +563,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 <div className="absolute top-full left-0 mt-1 w-56 bg-[#F9F6F0] rounded-xl border border-[#D9C9B4] shadow-2xl py-1 z-50 text-xs">
                   <button
                     onClick={() => {
-                      setStartupModalOpen(true);
+                      openProjectHub('blueprints');
                       setActiveMenu(null);
                     }}
                     className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
@@ -594,6 +593,16 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   >
                     <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
                     <span>{t.modeModal.freeformTab}...</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      openProjectHub('vault');
+                      setActiveMenu(null);
+                    }}
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                  >
+                    <TbFolderOpen className="w-4 h-4 text-[#0284C7]" />
+                    <span>Saved Dioramas (Vault)...</span>
                   </button>
                   <div className="my-1 border-t border-[#D9C9B4]" />
                   <button
@@ -892,7 +901,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   </button>
                   <button
                     onClick={() => {
-                      setStartupModalOpen(true);
+                      openProjectHub('blueprints');
                       setActiveMenu(null);
                     }}
                     className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"

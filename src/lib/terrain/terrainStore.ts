@@ -42,6 +42,7 @@ interface TerrainState {
   // Actions
   setTerrainMesh: (mesh: THREE.Mesh | null, geometry: THREE.BufferGeometry | null) => void;
   loadTemplate: (templateId: string, freeformOpts?: import('./terrainGenerators').FreeformOptions) => void;
+  setFullTerrainState: (heights: Float32Array, paint: Uint8Array, templateId: string) => void;
   markTextureNeedsUpdate: () => void;
   markPaintTextureNeedsUpdate: () => void;
   setPaintArrayTexture: (tex: THREE.DataArrayTexture) => void;
@@ -150,6 +151,19 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       refitTerrainBVH(terrainGeometry);
     }
 
+    set({ activeTemplateId: templateId, lastUpdated: Date.now() });
+  },
+
+  setFullTerrainState: (heights, paint, templateId) => {
+    const { stateBuffer, stateTexture, paintBuffer, paintTexture, terrainGeometry } = get();
+    stateBuffer.set(heights);
+    paintBuffer.set(paint);
+    stateTexture.needsUpdate = true;
+    paintTexture.needsUpdate = true;
+    if (terrainGeometry) {
+      syncStateToGeometry(stateBuffer, terrainGeometry);
+      refitTerrainBVH(terrainGeometry);
+    }
     set({ activeTemplateId: templateId, lastUpdated: Date.now() });
   },
 
@@ -279,15 +293,18 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     }
     undoStack.push(stateBuffer.slice());
     paintUndoStack.push(paintBuffer.slice());
-    pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
-    wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
-    citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
-    foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
-    splineUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
-    foundationUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
-    stairUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
-    propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
-    lightUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedLights || [])));
+    const editor = typeof useEditorStore !== 'undefined' && useEditorStore?.getState ? useEditorStore.getState() : null;
+    if (editor) {
+      pondUndoStack.push([...(editor.pondWaterFeatures || [])]);
+      wallUndoStack.push(JSON.parse(JSON.stringify(editor.walls || [])));
+      citadelUndoStack.push(JSON.parse(JSON.stringify(editor.citadelKeeps || [])));
+      foliageUndoStack.push([...(editor.foliageInstances || [])]);
+      splineUndoStack.push(JSON.parse(JSON.stringify(editor.splines || [])));
+      foundationUndoStack.push(JSON.parse(JSON.stringify(editor.foundations || [])));
+      stairUndoStack.push(JSON.parse(JSON.stringify(editor.stairs || [])));
+      propUndoStack.push(JSON.parse(JSON.stringify(editor.placedProps || [])));
+      lightUndoStack.push(JSON.parse(JSON.stringify(editor.placedLights || [])));
+    }
     redoStack.length = 0;
     paintRedoStack.length = 0;
     pondRedoStack.length = 0;
@@ -353,58 +370,61 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       paintTexture.needsUpdate = true;
     }
 
-    if (pondUndoStack.length > 0) {
-      const prevPonds = pondUndoStack.pop()!;
-      pondRedoStack.push([...useEditorStore.getState().pondWaterFeatures]);
-      useEditorStore.getState().setPondWaterFeatures(prevPonds);
-    }
+    const editor = typeof useEditorStore !== 'undefined' && useEditorStore?.getState ? useEditorStore.getState() : null;
+    if (editor) {
+      if (pondUndoStack.length > 0) {
+        const prevPonds = pondUndoStack.pop()!;
+        pondRedoStack.push([...editor.pondWaterFeatures]);
+        editor.setPondWaterFeatures(prevPonds);
+      }
 
-    if (wallUndoStack.length > 0) {
-      const prevWalls = wallUndoStack.pop()!;
-      wallRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
-      useEditorStore.getState().setWalls(prevWalls);
-    }
+      if (wallUndoStack.length > 0) {
+        const prevWalls = wallUndoStack.pop()!;
+        wallRedoStack.push(JSON.parse(JSON.stringify(editor.walls)));
+        editor.setWalls(prevWalls);
+      }
 
-    if (citadelUndoStack.length > 0) {
-      const prevKeeps = citadelUndoStack.pop()!;
-      citadelRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
-      useEditorStore.getState().setCitadelKeeps(prevKeeps);
-    }
+      if (citadelUndoStack.length > 0) {
+        const prevKeeps = citadelUndoStack.pop()!;
+        citadelRedoStack.push(JSON.parse(JSON.stringify(editor.citadelKeeps)));
+        editor.setCitadelKeeps(prevKeeps);
+      }
 
-    if (foliageUndoStack.length > 0) {
-      const prevFoliage = foliageUndoStack.pop()!;
-      foliageRedoStack.push([...useEditorStore.getState().foliageInstances]);
-      useEditorStore.getState().setFoliageInstances(prevFoliage);
-    }
+      if (foliageUndoStack.length > 0) {
+        const prevFoliage = foliageUndoStack.pop()!;
+        foliageRedoStack.push([...editor.foliageInstances]);
+        editor.setFoliageInstances(prevFoliage);
+      }
 
-    if (splineUndoStack.length > 0) {
-      const prevSplines = splineUndoStack.pop()!;
-      splineRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
-      useEditorStore.getState().setSplines(prevSplines);
-    }
+      if (splineUndoStack.length > 0) {
+        const prevSplines = splineUndoStack.pop()!;
+        splineRedoStack.push(JSON.parse(JSON.stringify(editor.splines)));
+        editor.setSplines(prevSplines);
+      }
 
-    if (foundationUndoStack.length > 0) {
-      const prevFoundations = foundationUndoStack.pop()!;
-      foundationRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
-      useEditorStore.getState().setFoundations(prevFoundations);
-    }
+      if (foundationUndoStack.length > 0) {
+        const prevFoundations = foundationUndoStack.pop()!;
+        foundationRedoStack.push(JSON.parse(JSON.stringify(editor.foundations || [])));
+        editor.setFoundations(prevFoundations);
+      }
 
-    if (stairUndoStack.length > 0) {
-      const prevStairs = stairUndoStack.pop()!;
-      stairRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
-      useEditorStore.getState().setStairs(prevStairs);
-    }
+      if (stairUndoStack.length > 0) {
+        const prevStairs = stairUndoStack.pop()!;
+        stairRedoStack.push(JSON.parse(JSON.stringify(editor.stairs || [])));
+        editor.setStairs(prevStairs);
+      }
 
-    if (propUndoStack.length > 0) {
-      const prevProps = propUndoStack.pop()!;
-      propRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
-      useEditorStore.getState().setPlacedProps(prevProps);
-    }
+      if (propUndoStack.length > 0) {
+        const prevProps = propUndoStack.pop()!;
+        propRedoStack.push(JSON.parse(JSON.stringify(editor.placedProps)));
+        editor.setPlacedProps(prevProps);
+      }
 
-    if (lightUndoStack.length > 0) {
-      const prevLights = lightUndoStack.pop()!;
-      lightRedoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedLights || [])));
-      useEditorStore.getState().setPlacedLights(prevLights);
+      if (lightUndoStack.length > 0) {
+        const prevLights = lightUndoStack.pop()!;
+        lightRedoStack.push(JSON.parse(JSON.stringify(editor.placedLights || [])));
+        editor.setPlacedLights(prevLights);
+      }
     }
 
     stateTexture.needsUpdate = true;
@@ -444,58 +464,61 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       paintTexture.needsUpdate = true;
     }
 
-    if (pondRedoStack.length > 0) {
-      const nextPonds = pondRedoStack.pop()!;
-      pondUndoStack.push([...useEditorStore.getState().pondWaterFeatures]);
-      useEditorStore.getState().setPondWaterFeatures(nextPonds);
-    }
+    const editor = typeof useEditorStore !== 'undefined' && useEditorStore?.getState ? useEditorStore.getState() : null;
+    if (editor) {
+      if (pondRedoStack.length > 0) {
+        const nextPonds = pondRedoStack.pop()!;
+        pondUndoStack.push([...editor.pondWaterFeatures]);
+        editor.setPondWaterFeatures(nextPonds);
+      }
 
-    if (wallRedoStack.length > 0) {
-      const nextWalls = wallRedoStack.pop()!;
-      wallUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().walls)));
-      useEditorStore.getState().setWalls(nextWalls);
-    }
+      if (wallRedoStack.length > 0) {
+        const nextWalls = wallRedoStack.pop()!;
+        wallUndoStack.push(JSON.parse(JSON.stringify(editor.walls)));
+        editor.setWalls(nextWalls);
+      }
 
-    if (citadelRedoStack.length > 0) {
-      const nextKeeps = citadelRedoStack.pop()!;
-      citadelUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().citadelKeeps)));
-      useEditorStore.getState().setCitadelKeeps(nextKeeps);
-    }
+      if (citadelRedoStack.length > 0) {
+        const nextKeeps = citadelRedoStack.pop()!;
+        citadelUndoStack.push(JSON.parse(JSON.stringify(editor.citadelKeeps)));
+        editor.setCitadelKeeps(nextKeeps);
+      }
 
-    if (foliageRedoStack.length > 0) {
-      const nextFoliage = foliageRedoStack.pop()!;
-      foliageUndoStack.push([...useEditorStore.getState().foliageInstances]);
-      useEditorStore.getState().setFoliageInstances(nextFoliage);
-    }
+      if (foliageRedoStack.length > 0) {
+        const nextFoliage = foliageRedoStack.pop()!;
+        foliageUndoStack.push([...editor.foliageInstances]);
+        editor.setFoliageInstances(nextFoliage);
+      }
 
-    if (splineRedoStack.length > 0) {
-      const nextSplines = splineRedoStack.pop()!;
-      splineUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().splines)));
-      useEditorStore.getState().setSplines(nextSplines);
-    }
+      if (splineRedoStack.length > 0) {
+        const nextSplines = splineRedoStack.pop()!;
+        splineUndoStack.push(JSON.parse(JSON.stringify(editor.splines)));
+        editor.setSplines(nextSplines);
+      }
 
-    if (foundationRedoStack.length > 0) {
-      const nextFoundations = foundationRedoStack.pop()!;
-      foundationUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().foundations || [])));
-      useEditorStore.getState().setFoundations(nextFoundations);
-    }
+      if (foundationRedoStack.length > 0) {
+        const nextFoundations = foundationRedoStack.pop()!;
+        foundationUndoStack.push(JSON.parse(JSON.stringify(editor.foundations || [])));
+        editor.setFoundations(nextFoundations);
+      }
 
-    if (stairRedoStack.length > 0) {
-      const nextStairs = stairRedoStack.pop()!;
-      stairUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().stairs || [])));
-      useEditorStore.getState().setStairs(nextStairs);
-    }
+      if (stairRedoStack.length > 0) {
+        const nextStairs = stairRedoStack.pop()!;
+        stairUndoStack.push(JSON.parse(JSON.stringify(editor.stairs || [])));
+        editor.setStairs(nextStairs);
+      }
 
-    if (propRedoStack.length > 0) {
-      const nextProps = propRedoStack.pop()!;
-      propUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedProps)));
-      useEditorStore.getState().setPlacedProps(nextProps);
-    }
+      if (propRedoStack.length > 0) {
+        const nextProps = propRedoStack.pop()!;
+        propUndoStack.push(JSON.parse(JSON.stringify(editor.placedProps)));
+        editor.setPlacedProps(nextProps);
+      }
 
-    if (lightRedoStack.length > 0) {
-      const nextLights = lightRedoStack.pop()!;
-      lightUndoStack.push(JSON.parse(JSON.stringify(useEditorStore.getState().placedLights || [])));
-      useEditorStore.getState().setPlacedLights(nextLights);
+      if (lightRedoStack.length > 0) {
+        const nextLights = lightRedoStack.pop()!;
+        lightUndoStack.push(JSON.parse(JSON.stringify(editor.placedLights || [])));
+        editor.setPlacedLights(nextLights);
+      }
     }
 
     stateTexture.needsUpdate = true;

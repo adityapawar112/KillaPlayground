@@ -26,19 +26,16 @@ graph TD
   T09 --> T10
   T07 --> T11["Ticket 11: Time-of-Day, Play/Pause Engine & Diorama Bar"]
   T10 --> T11
-  T02 --> T12["Ticket 12: Free-Fly Spectator & Diorama Viewing Studio"]
+  
+  T06 --> T12["Ticket 12: State Serialization & Local Persistence Hub"]
   T09 --> T12
+  T10 --> T12
   T11 --> T12
   
-  T06 --> T13["Ticket 13: State Serialization & Local Persistence Hub"]
-  T09 --> T13
-  T10 --> T13
-  T11 --> T13
+  T12 --> T13["Ticket 13: Multi-Angle Festive Poster Studio & Share"]
   
-  T13 --> T14["Ticket 14: Multi-Angle Festive Poster Studio & Share"]
-  
-  T03 -.-> T15["Ticket 15: Tactile Soil Crafting Pipeline (Deferred)"]
-  T14 --> T16["Ticket 16: Verification Judges & Performance Readiness"]
+  T03 -.-> T14["Ticket 14: Tactile Soil Crafting Pipeline (Deferred)"]
+  T13 --> T15["Ticket 15: Verification Judges & Performance Readiness"]
 ```
 
 ---
@@ -423,19 +420,20 @@ graph TD
 
 ## Ticket 11: Time-of-Day, Play/Pause Animation Engine & Quick-Action Diorama Bar
 
-- **Status**: `verified`
+- **Status**: `completed` (Verified in Browser & Unit Tests)
 - **Blocked by**: `Ticket 07`, `Ticket 10`
 - **Delivers**:
   - **Dedicated Diorama & Sun View Tool (`view`)**:
     - Primary toolbar **`View`** tool (`view`, Key `7`) designed for pure diorama presentation, inspection, and celestial lighting control.
+    - Zero-modification viewport guard: raycasting and drafting disabled during view inspection.
     - Interactive Left Properties Sidebar with:
       - **Time of Day Slider** (`0:00` to `24:00` hours) with dynamic day/night transitions and quick presets: **Dawn (06:00)**, **Noon (12:00)**, **Golden Hour (17:30)**, and **Diwali Night (21:00)**.
       - **Sun / Moon Direction & Elevation (X-Axis Rotation)** slider (`-10°` to `90°` altitude above courtyard horizon) controlling sun/moon trajectory and dynamic shadow length.
       - **Sun / Moon Azimuth** slider (`0°` to `360°` compass bearing) directing shadow orientation across ramparts and courtyards.
       - **Camera Perspectives Presets**: Isometric (45°), Bird's Eye (90° Top-Down), Rampart Eye (15° Low Hero View), Bastion Hero (30° Citadel Corner), and Home Reset.
-      - **Camera Lens FOV Slider** (20° Telephoto to 80° Wide-Angle).
-      - **Turntable Exhibition Mode**: 360° continuous auto-spin with adjustable speed (0.5 to 4.0 RPM).
-      - **Atmospheric Fine-Tuning Calibration**: Mist & Fog Density, Terracotta Mud GI Bounce, and Tone Mapping Exposure calibration sliders.
+      - **Camera Lens FOV Slider** (20° Telephoto to 80° Wide-Angle, 45° Standard default).
+      - **Dual Navigation Modes**: Free Orbit Spectator Mode (`orbit`) and Continuous 360° Turntable Exhibition Mode (`spin`).
+      - **Celebration Fireworks 5s Salvo**: Dedicated test button that triggers all placed fireworks across the diorama for 5 seconds regardless of time, with a 5-second disable cooldown.
   - **Atmospheric Lighting & 24-hr Diurnal Solar Arc Engine (`atmosphericLighting.ts`)**:
     - **Dynamic Color Temperature Grading**: 7 calibrated diurnal keyframes (Midnight 00:00, Dawn 06:00, Noon 12:00, Golden Hour 17:30, Dusk 18:48, Diwali Night 21:00, 24:00).
     - **Luminous Full Moon Night Calibration**: Silver-white moonlight (`#E0F2FE`, 1.35x), indigo shadow fill (`#475569`, 0.85x), dual-radiance hemisphere light (`#93C5FD` sky / `#1E293B` ground, 0.80x), and exposure `1.28`. Eliminates pitch-black voids, rendering terrain, water, cliffs, and fort walls clearly visible.
@@ -450,16 +448,15 @@ graph TD
       - `⏸ Pause`: Freezes all wind sway and particle motion; returns canvas to on-demand rendering.
       - `📷 Screenshot`: Hides all HUD chrome, captures the full-resolution WebGL canvas buffer to PNG, triggers direct browser download (`killa-diorama-<timestamp>.png`), and restores the HUD.
       - `🌙 Night`: Transitions to night mode, igniting all placed diyas and firing a celebratory simultaneous fireworks salvo.
-  - **Decoupled Animation Engine**:
+  - **Decoupled Animation Engine & Night Fireworks**:
     - Tree vertex wind sway and foliage fluttering are decoupled from mouse movement; animation progression is strictly governed by the `isPlaying` state.
-    - When `isPlaying` is true: R3F Canvas runs in continuous frameloop (`frameloop="always"`), driving steady tree fluttering, flickering flame particles, and ambient diorama life.
-    - When `isPlaying` is false: R3F Canvas pauses animation time clock (`frameloop="demand"`), eliminating unnecessary background CPU/GPU cycles.
-  - **Day-to-Night Celebration Salvo**:
-    - Switching from Day to Night automatically triggers all placed fireworks in the diorama once in a coordinated festive volley.
-  - **Instant High-Res Viewport Screenshot**:
-    - Screenshot button temporarily suppresses all HUD overlays (toolbars, sidebars, dock, minimizers), captures the WebGL canvas using `preserveDrawingBuffer`, triggers an immediate browser file download, and cleanly restores UI visibility with a success toast.
-  - **Infinite White Grid Removal**:
+    - Continuous nighttime fireworks playback during dark hours with staggered launches and natural pauses.
+    - Cone fountains (*Anaar*) and sky shots feature automatic ±20 cm (±0.20m) height variation and 10° launch angle variation.
+    - "Randomize Burst Height" placement toggle switch in Left Tool Sidebar.
+    - Deterministic 16-point spatial clustering for diya lights, preventing white-hot bleaching and light-jumping.
+  - **Infinite White Grid Removal & Iconography**:
     - Removed `<Grid infiniteGrid />` from the viewport across all tools, giving the diorama an authentic tabletop feel with its courtyard perimeter bricks.
+    - All left panel tool headers and controls updated to Tabler React icons (`react-icons/tb`).
 
 ### Acceptance Criteria
 - [x] Atmospheric lighting engine interpolates 24-hr solar arc with luminous full moon night and vibrant golden hour keyframes.
@@ -471,42 +468,12 @@ graph TD
 - [x] Switching to Night mode ignites all diyas and fires all placed fireworks once in celebration.
 - [x] Clicking Screenshot captures an unobstructed, high-resolution PNG image directly to browser Downloads.
 - [x] Viewport infinite white grid removed across all tools.
-- [x] View tool Left Sidebar enriched with camera presets, lens FOV slider, turntable controls, and atmospheric fine-tuning.
-- [x] Tool modes expanded with Orbit, Turntable, and Cinematic modes for the view tool and Fill mode for texture tool.
+- [x] View tool Left Sidebar enriched with camera presets, lens FOV slider, turntable controls, and 5-second fireworks salvo.
+- [x] Tool modes provide Orbit Spectator and 360° Turntable Exhibition modes with full raycast drafting suppression.
 
 ---
 
-## Ticket 12: Free-Fly Spectator & Diorama Viewing Studio
-
-- **Status**: `ready-for-agent`
-- **Blocked by**: `Ticket 02`, `Ticket 09`, `Ticket 11`
-- **Delivers**:
-  - **Dedicated Viewing Tool**:
-    - New **`View`** tool (`view`) in the secondary Top ToolBar.
-    - Pure spectator mode designed for unobstructed diorama admiration and presentation without risk of accidental edits.
-  - **Zero-Modification Viewport Guard**:
-    - Disables all object selection, raycast drafting, brush rings, hover outlines, and hologram ghosts.
-    - Clicks and drags anywhere on the viewport are strictly dedicated to camera navigation.
-  - **Streamlined HUD Presentation**:
-    - Automatically collapses and hides the Left Properties Sidebar, ToolModeSidebar, and Right Scene Outliner upon entering View tool, giving builders maximum screen real estate.
-  - **Dual Navigation Camera Rig (Orbit & Free-Fly)**:
-    - **Orbit Spectator Mode**: Smooth, bounded 360° orbital rotation, panning, and zooming.
-    - **Free-Fly Mode**: First-person fly camera allowing users to glide through gateways, soar over bastions, and swoop down into courtyards:
-      - `WASD`: Fly forward, strafe left, fly backward, strafe right.
-      - `Q` / `E`: Elevate down / up.
-      - `Mouse Drag`: Smooth pitch and yaw camera look.
-      - `Fly Speed`: Slider in a minimal floating HUD pill adjusting velocity from 0.5 m/s to 15.0 m/s with `Shift` 2x turbo boost.
-
-### Acceptance Criteria
-- [ ] Selecting View tool hides tool mode and outliner sidebars for clean diorama display.
-- [ ] Clicking or dragging anywhere in the viewport does not select or stamp components.
-- [ ] User can switch between Orbit Spectator and Free-Fly camera modes.
-- [ ] Free-Fly mode smoothly translates camera via WASD/QE and mouse look.
-- [ ] Flying speed slider dynamically adjusts flight velocity.
-
----
-
-## Ticket 13: State Serialization, Local Persistence Adapter & Project Hub
+## Ticket 12: State Serialization, Local Persistence Adapter & Project Hub
 
 - **Status**: `ready-for-agent`
 - **Blocked by**: `Ticket 06`, `Ticket 09`, `Ticket 10`, `Ticket 11`
@@ -534,10 +501,10 @@ graph TD
 
 ---
 
-## Ticket 14: Showcase, Multi-Angle Festive Poster Studio & Share
+## Ticket 13: Showcase, Multi-Angle Festive Poster Studio & Share
 
 - **Status**: `ready-for-agent`
-- **Blocked by**: `Ticket 13`
+- **Blocked by**: `Ticket 12`
 - **Delivers**:
   - **Historical Blueprint Presets & Random Terrain**:
     - Raigad, Murud-Janjira, and Sinhagad pre-molded terrains with faint chalk outlines, plus "Roll New Terrain".
@@ -562,7 +529,7 @@ graph TD
 
 ---
 
-## Ticket 15: Tactile Soil & Mud Crafting Pipeline (Deferred / Advanced Phase)
+## Ticket 14: Tactile Soil & Mud Crafting Pipeline (Deferred / Advanced Phase)
 
 - **Status**: `deferred`
 - **Blocked by**: `Ticket 03`
@@ -585,10 +552,10 @@ graph TD
 
 ---
 
-## Ticket 16: Verification Judges, Testing & Deployment Readiness
+## Ticket 15: Verification Judges, Testing & Deployment Readiness
 
 - **Status**: `ready-for-agent`
-- **Blocked by**: `Ticket 14`
+- **Blocked by**: `Ticket 13`
 - **Delivers**:
   - **Vitest Unit Tests**:
     - Serialization/deserialization byte-size check ($\le 35\text{ KB}$).

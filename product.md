@@ -55,20 +55,19 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 └── 10 Fireworks: Cone fountains (Anaar) & sky shots with burst height adjustments & test pyrotechnics
 │
 ▼
-[8. Time-of-Day, Atmospheric Engine & Diorama Bar]
+[8. Time-of-Day, Atmospheric Engine & Diorama Viewing Studio]
 ├── 24-hr Solar Arc Engine: Luminous Full Moon Night, Radiant Golden Hour, Dawn & Noon Presets
-└── Quick-Action Pill: Day | Play | Pause | Screenshot | Night with automatic celebration salvo
+├── Camera Perspectives & Lens FOV: Isometric (45°), Bird's Eye, Rampart Eye, Bastion Hero & FOV Slider
+├── Continuous 360° Turntable Mode & Free Orbit Spectator with zero-modification viewport guard
+├── 5-Second Celebratory Fireworks Salvo Test Action
+└── Quick-Action Dock: Day | Play | Pause | Screenshot | Night with continuous festive night pyrotechnics
 │
 ▼
-[9. Free-Fly Spectator & Viewing Studio]
-└── Clean HUD-free diorama viewing with Orbit Spectator and WASD Free-Fly flight navigation
-│
-▼
-[10. Showcase, Multi-Angle Poster & Share]
+[9. Showcase, Multi-Angle Poster & Share]
 └── Interactive 3D Link OR Auto-Captured Multi-Angle Festive Poster with Marathi/English Title Header
 │
 ▼
-[11. Optional / Advanced: Tactile Soil Crafting Pipeline]
+[10. Optional / Advanced: Tactile Soil Crafting Pipeline]
 └── Dump Dry Soil -> Pour Water -> Push/Flatten from Top & Sides -> Dry/Lock Mud -> Freehand Mud Paint
 ```
 
@@ -262,27 +261,42 @@ Dedicated pyrotechnic illumination studio bringing traditional Diwali celebratio
   * **True 3D Illumination**: Completely eliminates flat 2D decal pools, illuminating vertical fort walls, ramparts, bastions, figurines, stone steps, and slopes in authentic PBR light.
   * **Diurnal Diya Availability (`getDiyaLightStatus`)**: Diyas automatically ignite during Golden Hour (~16:30 onwards), reach full radiance throughout Diwali Night, and stay lit until morning Dawn (~06:30).
 * **Pyrotechnics Particle Engine:**
-  * Cone fountains emit continuous sparkling upward showers with parabolic spray and crackling embers.
-  * Sky shots launch ascending tracer rockets that detonate into radial burst patterns in the night sky.
+  * Cone fountains emit continuous sparkling upward showers with parabolic spray and crackling embers. Fountain plume height automatically varies by $\pm 20\text{ cm}$ ($\pm 0.20\text{m}$) on each ignition for organic, realistic spray dynamics.
+  * Sky shots launch ascending tracer rockets that detonate into radial burst patterns in the night sky. Detonation altitude automatically varies by $\pm 20\text{ cm}$ ($\pm 0.20\text{m}$) with a $10^\circ$ launch angle variation for authentic aerial physics.
   * Configurable particle parameters: color hue, velocity, spray height/spread, burst radius, gravity, and flicker rate.
   * **Adjustable Burst Height**: Slider in properties inspector allows setting the detonation altitude with a low default burst (~100cm from launcher).
+  * **Randomize Burst Height Toggle**: Switch in Place mode automatically assigns randomized burst heights ($0.60\text{m}$ to $2.40\text{m}$) to newly placed fireworks.
+  * **Continuous Festive Night Playback**: During dark hours (sunset through early morning), fireworks cycle continuously with staggered launches and natural pauses between bursts.
   * **Isolated Test Pipeline**: Timestamped trigger in store ensures fireworks detonate exclusively when the "Test Firework Burst" button is clicked, preventing accidental triggers during slider edits.
 * **4 Operational Workflow Modes:**
-  * **Place Mode**: Left properties panel (Scale, Heading, Randomize, Normal Align, Elevation Offset); Right panel renders Lighting Vault Asset Browser.
+  * **Place Mode**: Left properties panel (Scale, Heading, Randomize Heading, Align to Normal, Elevation Offset, Burst Height, and Randomize Burst Height toggle); Right panel renders Lighting Vault Asset Browser with Clay Diyas (9), Painted Diyas (9), and Fireworks (10).
   * **Select Mode**: Left panel renders selected item card, transform sliders, Surface Snap, "Test Firework Burst" button, and Duplicate/Delete; Right panel renders Placed Lights Outliner (upper) + Element Properties Inspector (lower) with Burst Height slider.
   * **Transform Mode**: Left panel renders camera-relative 3D nudge pad and heading rotation; Right panel renders Outliner + Inspector.
   * **Erase Mode**: Left panel renders Erase Radius slider directly on `bg-[#F3EBE0]` + crimson diorama brush circle GUI + Clear All Lights button; Right panel renders Outliner + Inspector.
 
 ---
 
-### Phase 8: Time-of-Day, Atmospheric Engine & Quick-Action Diorama Bar
-Tactile diorama controls and 24-hr diurnal lighting engine:
+### Phase 8: Time-of-Day, Atmospheric Engine & Diorama Viewing Studio
+Comprehensive spectator and presentation studio designed for pure diorama admiration, time-of-day progression, and cinematic inspection:
+* **Zero Accidental Edits & Clean Display:**
+  * Object selection, raycast drafting, and brush rings are completely disabled.
+  * Viewport clicks and drags are dedicated 100% to camera navigation.
+  * Infinite white grid is permanently removed across all tools for a clean tabletop courtyard diorama aesthetic.
 * **Atmospheric Lighting Engine (`atmosphericLighting.ts`):**
   * **Luminous Full Moon Diwali Night**: Silver-white moonlight (`#E0F2FE`, 1.35x), indigo shadow fill (`#475569`, 0.85x), dual-radiance hemisphere light (`#93C5FD` sky / `#1E293B` ground, 0.80x), and exposure `1.28`. Eliminates pitch-black voids, rendering terrain, water, cliffs, and fort walls clearly visible matching real full-moon landscapes.
   * **Vibrant Golden Hour**: Sun 30 minutes before sunset (elevation `20°`, azimuth `255°`, radiant saffron `#F59E0B` 2.80x, courtyard terracotta upward GI bounce `#EA580C` 0.90x, exposure `1.30`).
   * **Deccan Plateau Horizon Mist**: Exponential squared fog blending distant terrain smoothly into the diorama backdrop.
   * **ACESFilmic Tone Mapping**: Natural color grading preventing specular blowout on stone while enhancing flame vibrancy.
-* **5-Button Quick-Action Pill:**
+  * **Time-of-Day Controls**: 24-hr slider (0:00 to 24:00) with quick presets: Dawn (06:00), Noon (12:00), Golden Hour (17:30), and Diwali Night (21:00).
+  * **Sun / Moon Directional Sliders**: Elevation (-10° to 90°) and Azimuth (0° to 360°) for sweeping dynamic shadows.
+* **Camera Perspectives & Exhibition Rig:**
+  * **Presets**: Isometric (45°), Bird's Eye (90° Top-Down), Rampart Eye (15° Low Hero View), Bastion Hero (30° Citadel Corner), and Home Reset.
+  * **Lens FOV Slider**: 20° Telephoto to 80° Wide-Angle (45° Standard default).
+  * **Turntable Exhibition Mode**: 360° continuous auto-spin exhibition mode.
+  * **Orbit Spectator Mode**: Free 360° orbital rotation, panning, and zooming.
+* **Celebratory 5-Second Fireworks Salvo**:
+  * Dedicated "Test Fireworks (5s)" action button in the View tool that fires all placed fireworks across the diorama for 5 seconds regardless of the current time of day, with a 5-second disable cooldown.
+* **5-Button Quick-Action Diorama Bar (`DioramaQuickBar.tsx`):**
   * `☀️ Day`: Transitions diorama to daylight courtyard lighting.
   * `▶ Play`: Starts continuous 60 FPS animation loop for trees, particle effects, and continuous night fireworks.
   * `⏸ Pause`: Freezes all wind sway and particle motion; returns canvas to on-demand rendering.
@@ -293,20 +307,7 @@ Tactile diorama controls and 24-hr diurnal lighting engine:
 
 ---
 
-### Phase 9: Free-Fly Spectator & Diorama Viewing Studio
-Unobstructed cinematic presentation mode:
-* **Zero Accidental Edits:**
-  * Object selection, raycast drafting, and brush rings are completely disabled.
-  * Viewport clicks and drags are dedicated 100% to camera navigation.
-* **Clean Canvas Display:**
-  * ToolModeSidebar and Right Scene Outliner are automatically hidden.
-* **Dual Camera Controls:**
-  * **Orbit Spectator:** Smooth 360° orbital rotation, panning, and zooming.
-  * **Free-Fly Mode:** First-person flight through gateways and over bastions using `WASD` (forward/strafe/backward), `Q`/`E` (fly down/up), mouse look, and adjustable flying speed slider (0.5 m/s to 15.0 m/s with `Shift` 2x turbo boost).
-
----
-
-### Phase 10: Showcase, Multi-Angle Poster Studio & Sharing
+### Phase 9: Showcase, Multi-Angle Poster Studio & Sharing
 Once the user clicks **"Finish Killa"**, the tool transitions into the **Showcase & Poster Studio**:
 
 #### 1. Automated Multi-Angle Poster Generator
@@ -326,7 +327,7 @@ Captures high-resolution snapshots of the user's finished killa from **4 cinemat
 
 ---
 
-### Phase 11: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
+### Phase 10: Advanced Tactile Soil Crafting Pipeline (Deferred Simulation)
 For builders desiring the authentic organic mud craft simulation:
 * **Soil Pour Tool:** Dumps loose dry soil mounds onto the terrain with simplex noise roughness.
 * **Water Sprinkler Tool:** Hydrates soil, turning it dark and malleable with specular wet sheen (`cracked_red_ground_1k`).

@@ -191,10 +191,12 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * **Diurnal Diya Availability (`getDiyaLightStatus`)**: Diyas automatically ignite during Golden Hour (~16:30 onwards), reach full radiance throughout Diwali Night, and stay lit until morning Dawn (~06:30), or whenever `nightMode` is explicitly enabled.
    * **Interactive Pyrotechnics Particle Engine (`pyrotechnicsEngine.ts`):**
      * High-performance native Three.js particle engine (`THREE.Points`) using pre-allocated `Float32Array` buffers with zero per-frame garbage collection.
-     * Cone Fountains emit a continuous sparkling upward shower with parabolic spray and crackling embers.
-     * Sky Shots launch an ascending smoke/flare tracer that detonates into a dazzling spherical/willow burst in the night sky.
+     * **Cone Fountains (*Anaar*):** Continuous upward sparkling shower with parabolic spray, crackling embers, and automatic ±20 cm (±0.20m) randomized plume height variation on each ignition.
+     * **Sky Shots (*Aerial Shells*):** Ascending tracer rockets with smoke trails that detonate into radial bursts with automatic ±20 cm (±0.20m) altitude variation and up to 10° organic launch angle variation.
      * Configurable parameters matching fireworks standards: color hue, particle velocity, spray height/spread, burst radius, gravity, and flicker rate.
      * **Adjustable Burst Height**: Slider in properties inspector allows setting the detonation altitude with a low default burst (~100cm from launcher).
+     * **Randomize Burst Height Placement Toggle**: Switch in Place mode automatically assigns randomized burst heights (0.60m to 2.40m) to newly placed fireworks.
+     * **Continuous Festive Night Playback**: During dark hours (sunset through early morning), fireworks cycle continuously with staggered launches and natural pauses between bursts.
      * **Isolated Test Pipeline**: Timestamped trigger in store (`testFireworkTrigger`) ensures fireworks detonate exclusively when the "Test Firework Burst" button is clicked, preventing accidental triggers during slider edits.
    * **4 Operational Workflow Modes (`Place`, `Select`, `Transform`, `Erase`):**
      * *Place Mode:* Left panel renders preview card and plain text sliders directly on `bg-[#F3EBE0]` (Scale, Heading, Randomize, Normal Align, Elevation Offset); Right panel renders Lighting Vault Asset Browser.
@@ -215,15 +217,19 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
    * **Zero-Modification Viewport Guard:**
      * Disables all object selection, raycast drafting, brush rings, hover outlines, and hologram ghosts.
      * Clicks and drags anywhere on the viewport are strictly dedicated to camera navigation.
-   * **Streamlined Clean Presentation:**
-     * Automatically collapses and hides the Left Properties Sidebar, ToolModeSidebar, and Right Scene Outliner upon entering View tool, giving builders maximum screen real estate.
-   * **Dual Navigation Camera Rig (Orbit & Free-Fly):**
-     * *Orbit Spectator Mode:* Smooth, bounded 360° orbital rotation, panning, and zooming.
-     * *Free-Fly Mode:* First-person fly camera allowing users to glide through gateways, soar over bastions, and swoop down into courtyards:
-       * `WASD`: Fly forward, strafe left, fly backward, strafe right.
-       * `Q` / `E`: Elevate down / up.
-       * `Mouse Drag`: Smooth pitch and yaw camera look.
-       * `Fly Speed`: Slider in a minimal floating HUD pill adjusting velocity from 0.5 m/s to 15.0 m/s with `Shift` 2x turbo boost.
+     * **24-hr Time of Day & Shadow Controls**: Continuous slider (0:00 to 24:00) with quick presets: Dawn (06:00), Noon (12:00), Golden Hour (17:30), and Diwali Night (21:00); Sun Elevation (-10° to 90°) and Sun Azimuth (0° to 360°) for real-time shadow direction sweeps.
+   * **Zero-Modification Viewport Guard:**
+     * Disables all object selection, raycast drafting, brush rings, hover outlines, and hologram ghosts.
+     * Clicks and drags anywhere on the viewport are strictly dedicated to camera navigation.
+     * Infinite white grid `<Grid infiniteGrid />` permanently removed across all tools for a clean tabletop courtyard diorama feel.
+   * **Camera Perspectives, Lens FOV & Exhibition Modes:**
+     * **Camera Perspective Presets:** Quick angle buttons: Isometric (45°), Bird's Eye (90° Top-Down), Rampart Eye (15° Low Hero View), Bastion Hero (30° Citadel Corner), and Home Reset.
+     * **Camera Lens FOV Slider:** 20° Telephoto to 80° Wide-Angle (45° Standard default).
+     * **Dual Navigation Modes:** Free Orbit Spectator Mode (`orbit`) and Continuous 360° Turntable Exhibition Mode (`spin`).
+     * **Celebration Fireworks 5s Salvo:** Dedicated test button that triggers all placed fireworks across the diorama for 5 seconds regardless of time, with a 5-second disable cooldown.
+   * **Centered Quick-Action Diorama Bar (`DioramaQuickBar.tsx`):**
+     * Floating 5-button dock mounted centered directly above status bar (`[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`).
+     * Governs decoupled ambient 60 FPS animation loop (tree wind sway, particle progression) and instant high-res viewport screenshot capture.
 
 ---
 

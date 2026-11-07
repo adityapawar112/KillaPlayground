@@ -403,7 +403,7 @@ All interactive 3D tools must implement standard ergonomic wheel gestures, inter
   - For structural tools (Walls, Splines): Renders the hierarchical **Diorama Elements Outliner** and **Element Properties Inspector**.
   - For pure asset tools (Texture, Foliage): Renders the **Asset Browser** (e.g. Texture Browser with 52 textures, Foliage Browser with 117 species).
   - For hybrid tools (Figurines & Architecture, Lighting Studio):
-    - **Place Mode**: Upper pane displays placed count and summary, lower pane renders the **Asset Vault Browser** (e.g. Figurine Vault with 22 models across 6 categories; Lighting Vault with 28 lights and fireworks across 3 categories).
+    - **Place Mode**: Upper pane displays placed count and summary, lower pane renders the **Asset Vault Browser** (e.g. Figurine Vault with 22 models across 6 categories; Lighting Vault with 28 lights and fireworks across 3 categories). In the Left Sidebar, fireworks feature a dedicated Burst Height slider and "Randomize Burst Height" toggle switch (`bg-[#15803D]` / `bg-[#D9C9B4]`).
     - **Select & Transform Modes**: Upper pane renders the **Placed Elements Outliner** with instant search and 2-way hover highlighting; lower pane renders the unified **Element Properties Inspector** (scale, heading, burst height for fireworks, "Test Firework Burst" button, duplicate, snap surface, focus camera, delete, and 3D nudge pad).
     - **Erase Mode**: Left sidebar provides the Brush Radius slider with crimson diorama brush circle; Right sidebar displays the Placed Elements Outliner for rapid single/batch deletion.
 - The Left Sidebar retains subtool parameter controls; the Right Sidebar handles asset browsing, outliner organization, and contextual inspection.
@@ -430,15 +430,22 @@ Before authoring or modifying any HUD component or tool sidebar:
 - **Direct Viewport Screenshot:**
   - Clicking `Screenshot` momentarily toggles a capture state that sets `opacity-0 pointer-events-none` on all UI overlays, captures the WebGL drawing buffer via `preserveDrawingBuffer`, triggers an immediate browser file download (`killa-diorama-<timestamp>.png`), and restores the HUD.
 
-### Rule 19: Free-Fly Spectator & Diorama Viewing Studio
-- **Unobstructed Viewport:**
-  - Selecting the `View` tool automatically closes and collapses the Left Tool Sidebar, ToolModeSidebar, and Right Scene Outliner.
+### Rule 19: Diorama & Sun View Tool (`view`) & Spectator Architecture
+- **Unobstructed Spectator Viewport:**
   - Zero raycast hit detection on structures or terrain: clicking or dragging anywhere in the canvas navigates the camera without placing, selecting, or deleting components.
-- **Floating Spectator Pill:**
-  - Minimalist floating HUD pill displaying:
-    - Navigation Mode Toggle: `[ Orbit Spectator | Free-Fly ]`
-    - Fly Speed Slider: `0.5m/s` to `15.0m/s` (with `Shift` 2x turbo boost).
-  - Controls micro-guide: `WASD: Fly • Q/E: Elevate • Drag: Look`.
+  - Infinite white grid `<Grid infiniteGrid />` permanently removed across all tools to provide an authentic tabletop courtyard diorama feel.
+- **Dedicated View Tool Properties Panel:**
+  - **Time Presets**: One-click quick-time buttons: Dawn (06:00), Noon (12:00), Golden Hour (17:30), and Diwali Night (21:00).
+  - **Time of Day Slider**: Continuous 24-hr slider (0:00 to 24:00) controlling diurnal color grading, sun/moon trajectory, and automatic diya ignition.
+  - **Sun / Moon Direction**: Sun Elevation (-10° to 90°) and Sun Azimuth (0° to 360°) sliders for real-time shadow direction across ramparts and courtyards.
+  - **Camera Perspectives**: Quick angle buttons: Isometric (45°), Bird's Eye (90° Top-Down), Rampart Eye (15° Low Hero View), Bastion Hero (30° Citadel Corner), and Home Reset.
+  - **Camera Lens FOV**: Slider adjusting focal length between 20° (Telephoto / isometric compression) and 80° (Wide-Angle / dramatic perspective), with 45° Standard default.
+  - **Celebration Fireworks Salvo**: Dedicated 5-second salvo test button that triggers all placed fireworks across the diorama for 5 seconds regardless of time, with a 5-second disable cooldown.
+- **Tool Mode Strip (View Tool):**
+  - **Orbit Spectator Mode (`orbit`)**: Free 360° orbital rotation, panning, and zooming.
+  - **Turntable Exhibition Mode (`spin`)**: Continuous 360° auto-spin exhibition for showcases and screen recording.
+- **Consistent Iconography & Micro-Interactions:**
+  - All left panel tool headers and actions use professional Tabler React icons (`react-icons/tb`) instead of inconsistent operating system emojis.
 
 ### Rule 20: 2-Phase Foundation Plinth Builder & Fortification Ergonomics
 - **2-Phase Drafting Workflow:**

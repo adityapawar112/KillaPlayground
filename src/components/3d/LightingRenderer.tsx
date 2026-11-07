@@ -433,6 +433,8 @@ export const LightingRenderer: React.FC = () => {
     lightPlacementScale,
     lightPlacementRotation,
     lightRandomRotation,
+    lightBurstHeight,
+    lightRandomBurstHeight,
     lightNormalAlign,
     lightElevationOffset,
     lightEraseRadius,
@@ -797,6 +799,13 @@ export const LightingRenderer: React.FC = () => {
           const rot = computeRotation(baseYaw, hit.normal);
           const scaleVal = lightPlacementScale * meta.defaultScale;
 
+          const isFirework = meta.category === 'fireworks';
+          const burstHeightVal = isFirework
+            ? (lightRandomBurstHeight
+                ? parseFloat((0.6 + Math.random() * 1.8).toFixed(2))
+                : lightBurstHeight)
+            : undefined;
+
           addLight({
             type,
             category: meta.category,
@@ -804,6 +813,7 @@ export const LightingRenderer: React.FC = () => {
             rotation: rot,
             scale: [scaleVal, scaleVal, scaleVal],
             colorTheme: meta.colorTheme,
+            burstHeight: burstHeightVal,
           });
         }
       } else if (lightingSubTool === 'erase') {
@@ -839,6 +849,8 @@ export const LightingRenderer: React.FC = () => {
     lightPlacementScale,
     lightPlacementRotation,
     lightRandomRotation,
+    lightBurstHeight,
+    lightRandomBurstHeight,
     lightNormalAlign,
     lightElevationOffset,
     lightEraseRadius,

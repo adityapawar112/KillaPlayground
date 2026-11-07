@@ -218,6 +218,8 @@ export const LeftToolSidebar: React.FC = () => {
     setLightElevationOffset,
     lightBurstHeight,
     setLightBurstHeight,
+    lightRandomBurstHeight,
+    setLightRandomBurstHeight,
     lightEraseRadius,
     setLightEraseRadius,
     updateLightTransform,
@@ -2392,21 +2394,47 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     {activeLight.category === 'fireworks' && (
-                      <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
-                          <span>Burst Height</span>
-                          <span className="text-[#8D7666]">{(lightBurstHeight * 100).toFixed(0)}cm</span>
+                      <>
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <span>Burst Height</span>
+                            <span className="text-[#8D7666]">
+                              {lightRandomBurstHeight ? 'Random' : `${(lightBurstHeight * 100).toFixed(0)}cm`}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0.4}
+                            max={3.5}
+                            step={0.1}
+                            value={lightBurstHeight}
+                            disabled={lightRandomBurstHeight}
+                            onChange={(e) => setLightBurstHeight(parseFloat(e.target.value))}
+                            className={`w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45] ${
+                              lightRandomBurstHeight ? 'opacity-40 cursor-not-allowed' : ''
+                            }`}
+                          />
                         </div>
-                        <input
-                          type="range"
-                          min={0.4}
-                          max={3.5}
-                          step={0.1}
-                          value={lightBurstHeight}
-                          onChange={(e) => setLightBurstHeight(parseFloat(e.target.value))}
-                          className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                        />
-                      </div>
+
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] font-semibold text-[#4B382C]">Randomize Burst Height</span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={lightRandomBurstHeight}
+                            onClick={() => setLightRandomBurstHeight(!lightRandomBurstHeight)}
+                            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                              lightRandomBurstHeight ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
+                            }`}
+                          >
+                            <div
+                              className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
+                                lightRandomBurstHeight ? 'translate-x-4' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </>
                     )}
 
                     <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#634E40] space-y-2">

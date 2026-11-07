@@ -121,7 +121,10 @@ export class PyrotechnicsEngine {
     this.activeSpawners = this.activeSpawners.filter((s) => s.id !== instanceId);
 
     if (fireworkType === 'anaar') {
-      const spray = (burstHeight ?? meta.sprayHeight ?? 0.9) * scale;
+      const baseSpray = burstHeight ?? meta.sprayHeight ?? 0.9;
+      // Automatic random variation: 20 cm above and below (±0.20m) for realistic organic plume height
+      const heightJitter = (Math.random() * 2 - 1) * 0.20;
+      const spray = Math.max(0.35, (baseSpray + heightJitter) * scale);
       this.activeSpawners.push({
         id: instanceId,
         type: 'anaar',

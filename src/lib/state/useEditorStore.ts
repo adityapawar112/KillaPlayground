@@ -406,6 +406,8 @@ interface EditorState {
   setLightElevationOffset: (offset: number) => void;
   lightBurstHeight: number;
   setLightBurstHeight: (height: number) => void;
+  lightRandomBurstHeight: boolean;
+  setLightRandomBurstHeight: (rand: boolean) => void;
   lightEraseRadius: number;
   setLightEraseRadius: (radius: number) => void;
   placedLights: PlacedLight[];
@@ -1527,6 +1529,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setLightElevationOffset: (offset) => set({ lightElevationOffset: offset }),
   lightBurstHeight: 1.0,
   setLightBurstHeight: (height) => set({ lightBurstHeight: height }),
+  lightRandomBurstHeight: false,
+  setLightRandomBurstHeight: (rand) => set({ lightRandomBurstHeight: rand }),
   lightEraseRadius: 0.8,
   setLightEraseRadius: (radius) => set({ lightEraseRadius: radius }),
   placedLights: [],
@@ -2177,9 +2181,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   addLight: (light) => {
     pushUndoSnapshot();
     const id = `light_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    let burstHeight = light.burstHeight;
+    if (burstHeight === undefined) {
+      if (light.category === 'fireworks') {
+        burstHeight = get().lightRandomBurstHeight
+          ? parseFloat((0.6 + Math.random() * 1.8).toFixed(2))
+          : get().lightBurstHeight;
+      } else {
+        burstHeight = get().lightBurstHeight;
+      }
+    }
     const newLight: PlacedLight = {
       ...light,
-      burstHeight: light.burstHeight ?? get().lightBurstHeight,
+      burstHeight,
       id,
       createdAt: Date.now(),
     };

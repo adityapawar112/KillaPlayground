@@ -75,6 +75,22 @@ describe('Pyrotechnics Particle Engine', () => {
     }
   });
 
+  it('applies ±20cm height variation to anaar cone fountains', () => {
+    const anaar = getLightById('anaar_saffron')!;
+    const baseHeight = 1.0;
+
+    for (let i = 0; i < 20; i++) {
+      engine.triggerFirework(`anaar_test_${i}`, anaar, [0, 0, 0], 1.0, baseHeight);
+      const spawner = engine.getActiveSpawners().find((s) => s.id === `anaar_test_${i}`);
+      expect(spawner).toBeDefined();
+      expect(spawner?.sprayHeight).toBeDefined();
+
+      // sprayHeight should be within 1.0 ± 0.20m (0.80 to 1.20m)
+      expect(spawner!.sprayHeight!).toBeGreaterThanOrEqual(0.79);
+      expect(spawner!.sprayHeight!).toBeLessThanOrEqual(1.21);
+    }
+  });
+
   it('cleans up and resets without leaking state', () => {
     const anaar = getLightById('anaar_emerald');
     engine.triggerFirework('test_anaar_2', anaar!, [1, 2, 3]);

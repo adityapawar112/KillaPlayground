@@ -12,6 +12,8 @@ describe('Lighting State Management in Editor Store', () => {
     store.setLightPlacementScale(1.0);
     store.setLightPlacementRotation(0);
     store.setLightRandomRotation(false);
+    store.setLightRandomBurstHeight(false);
+    store.setLightBurstHeight(1.0);
     store.setLightNormalAlign(0.0);
     store.setLightElevationOffset(0.0);
   });
@@ -25,6 +27,8 @@ describe('Lighting State Management in Editor Store', () => {
     expect(state.lightPlacementScale).toBe(1.0);
     expect(state.lightPlacementRotation).toBe(0);
     expect(state.lightRandomRotation).toBe(false);
+    expect(state.lightRandomBurstHeight).toBe(false);
+    expect(state.lightBurstHeight).toBe(1.0);
   });
 
   it('transitions between all 4 subtool modes cleanly (place, select, transform, erase)', () => {
@@ -141,6 +145,42 @@ describe('Lighting State Management in Editor Store', () => {
     store.updateLightTransform(id, { burstHeight: 1.8 });
     const updated = useEditorStore.getState().placedLights.find((l) => l.id === id);
     expect(updated?.burstHeight).toBe(1.8);
+  });
+
+  it('supports random burst height toggle when placing fireworks', () => {
+    const store = useEditorStore.getState();
+    store.setLightRandomBurstHeight(true);
+    expect(useEditorStore.getState().lightRandomBurstHeight).toBe(true);
+
+    const fwId = store.addLight({
+      type: 'anaar_saffron',
+      category: 'fireworks',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      colorTheme: 'saffron',
+    });
+
+    const placed = useEditorStore.getState().placedLights.find((l) => l.id === fwId);
+    expect(placed).toBeDefined();
+    expect(placed?.burstHeight).toBeDefined();
+    // Should be in randomized range 0.60m to 2.40m
+    expect(placed!.burstHeight!).toBeGreaterThanOrEqual(0.6);
+    expect(placed!.burstHeight!).toBeLessThanOrEqual(2.4);
+
+    // When disabled, uses lightBurstHeight
+    store.setLightRandomBurstHeight(false);
+    store.setLightBurstHeight(1.5);
+    const fwId2 = store.addLight({
+      type: 'anaar_saffron',
+      category: 'fireworks',
+      position: [0, 0, 0],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
+      colorTheme: 'saffron',
+    });
+    const placed2 = useEditorStore.getState().placedLights.find((l) => l.id === fwId2);
+    expect(placed2?.burstHeight).toBe(1.5);
   });
 
   it('manages time of day and celestial sun/moon direction properties', () => {

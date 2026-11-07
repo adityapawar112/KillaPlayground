@@ -179,6 +179,7 @@ const GhostReticle: React.FC<{
   scale: [number, number, number];
   type: string;
 }> = ({ position, rotation, scale, type }) => {
+  const { invalidate } = useThree();
   const [asset, setAsset] = useState<CachedFigurineAsset | null>(() => {
     const meta = getFigurineById(type) || FIGURINE_MANIFEST[0];
     return figurineAssetManager.getCached(meta.modelPath) || null;
@@ -187,11 +188,20 @@ const GhostReticle: React.FC<{
   useEffect(() => {
     let active = true;
     const meta = getFigurineById(type) || FIGURINE_MANIFEST[0];
-    figurineAssetManager.loadAsset(meta.modelPath).then((cached) => {
-      if (active) setAsset(cached);
-    }).catch(() => null);
+    const cached = figurineAssetManager.getCached(meta.modelPath);
+    if (cached) {
+      setAsset(cached);
+      invalidate();
+    } else {
+      figurineAssetManager.loadAsset(meta.modelPath).then((loaded) => {
+        if (active) {
+          setAsset(loaded);
+          invalidate();
+        }
+      }).catch(() => null);
+    }
     return () => { active = false; };
-  }, [type]);
+  }, [type, invalidate]);
 
   const ghostMaterial = useMemo(() => {
     return new THREE.MeshBasicMaterial({
@@ -216,28 +226,26 @@ const GhostReticle: React.FC<{
 };
 
 export const FigurineRenderer: React.FC = () => {
-  const {
-    activeTool,
-    propSubTool,
-    placedProps,
-    selectedPropType,
-    selectedPropId,
-    setSelectedPropId,
-    propPlacementScale,
-    propPlacementRotation,
-    propRandomRotation,
-    propNormalAlign,
-    propElevationOffset,
-    propEraseRadius,
-    addProp,
-    updatePropTransform,
-    removeProp,
-    removeProps,
-    hoveredElement,
-    setHoveredElement,
-  } = useEditorStore();
+  const activeTool = useEditorStore((s) => s.activeTool);
+  const propSubTool = useEditorStore((s) => s.propSubTool);
+  const placedProps = useEditorStore((s) => s.placedProps);
+  const selectedPropType = useEditorStore((s) => s.selectedPropType);
+  const selectedPropId = useEditorStore((s) => s.selectedPropId);
+  const setSelectedPropId = useEditorStore((s) => s.setSelectedPropId);
+  const propPlacementScale = useEditorStore((s) => s.propPlacementScale);
+  const propPlacementRotation = useEditorStore((s) => s.propPlacementRotation);
+  const propRandomRotation = useEditorStore((s) => s.propRandomRotation);
+  const propNormalAlign = useEditorStore((s) => s.propNormalAlign);
+  const propElevationOffset = useEditorStore((s) => s.propElevationOffset);
+  const propEraseRadius = useEditorStore((s) => s.propEraseRadius);
+  const addProp = useEditorStore((s) => s.addProp);
+  const updatePropTransform = useEditorStore((s) => s.updatePropTransform);
+  const removeProp = useEditorStore((s) => s.removeProp);
+  const removeProps = useEditorStore((s) => s.removeProps);
+  const hoveredElement = useEditorStore((s) => s.hoveredElement);
+  const setHoveredElement = useEditorStore((s) => s.setHoveredElement);
 
-  const { scene, camera, raycaster, gl } = useThree();
+  const { scene, camera, raycaster, gl, invalidate } = useThree();
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
   const [ghostRot, setGhostRot] = useState<[number, number, number]>([0, 0, 0]);
   const isDraggingProp = useRef(false);
@@ -268,6 +276,7 @@ export const FigurineRenderer: React.FC = () => {
   }, [placedProps, hoveredPropId]);
 
   // Raycast against mountain terrain and fort structures (walls, bastions, stone steps)
+  // OPTIMIZATION: Query pre-identified pickable root objects directly instead of traversing the whole scene graph every pointer move!
   const getSurfaceIntersection = useCallback(
     (clientX: number, clientY: number): { point: THREE.Vector3; normal: THREE.Vector3 } | null => {
       const rect = gl.domElement.getBoundingClientRect();
@@ -276,55 +285,37 @@ export const FigurineRenderer: React.FC = () => {
 
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
 
-      // Find targets: Terrain mesh, Fort walls, Bastions, and Stone steps
       const targets: THREE.Object3D[] = [];
-      scene.traverse((obj) => {
-        if ((obj as THREE.Mesh).isMesh) {
-          const mesh = obj as THREE.Mesh;
-          const name = mesh.name || '';
-          const parentName = mesh.parent?.name || '';
-
-          // Exclude figurines layer, selection rings, ghost preview, brush cursors, water plane
-          if (
-            name.includes('Figurine') ||
-            parentName.includes('Figurine') ||
-            parentName.includes('FigurinesLayer') ||
-            name.includes('SelectionRing') ||
-            parentName.includes('SelectionRing') ||
-            name.includes('Ghost') ||
-            parentName.includes('Ghost') ||
-            name.includes('Cursor') ||
-            name.includes('Grid') ||
-            name === 'WaterPlane'
-          ) {
-            return;
-          }
-
-          // Target terrain mountain, fort ramparts, bastions, stone steps, foundations, courtyard bricks
-          if (
-            name === 'BaseTerrainMesh' ||
-            name === 'TerrainMeshFallback' ||
-            parentName.startsWith('FortWall_') ||
-            name.startsWith('StoneSteps_') ||
-            name.startsWith('FortWall_') ||
-            name.startsWith('Bastion_') ||
-            name.startsWith('Foundation_') ||
-            name === 'CourtyardTerrain' ||
-            name === 'CourtyardBricks'
-          ) {
-            targets.push(mesh);
-          }
-        }
-      });
+      const terrain = scene.getObjectByName('BaseTerrainMesh') || scene.getObjectByName('TerrainMeshFallback');
+      if (terrain) targets.push(terrain);
+      const fortLayer = scene.getObjectByName('FortWallsLayer');
+      if (fortLayer) targets.push(fortLayer);
+      const splineLayer = scene.getObjectByName('SplineStructuresContainer') || scene.getObjectByName('SplineStructures');
+      if (splineLayer) targets.push(splineLayer);
+      const bricks = scene.getObjectByName('CourtyardRetainingBricks') || scene.getObjectByName('CourtyardBricks');
+      if (bricks) targets.push(bricks);
 
       if (targets.length > 0) {
-        const intersects = raycaster.intersectObjects(targets, false);
+        const intersects = raycaster.intersectObjects(targets, true);
         if (intersects.length > 0) {
-          const hit = intersects[0];
-          const normal = hit.face
-            ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize()
-            : new THREE.Vector3(0, 1, 0);
-          return { point: hit.point, normal };
+          for (const hit of intersects) {
+            const name = hit.object.name || '';
+            const parentName = hit.object.parent?.name || '';
+            if (
+              name.includes('Figurine') ||
+              parentName.includes('Figurine') ||
+              name.includes('SelectionRing') ||
+              name.includes('Ghost') ||
+              name.includes('Cursor') ||
+              name === 'WaterPlane'
+            ) {
+              continue;
+            }
+            const normal = hit.face
+              ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize()
+              : new THREE.Vector3(0, 1, 0);
+            return { point: hit.point, normal };
+          }
         }
       }
 
@@ -367,7 +358,10 @@ export const FigurineRenderer: React.FC = () => {
 
       const hit = getSurfaceIntersection(e.clientX, e.clientY);
       if (!hit) {
-        setGhostPos(null);
+        if (ghostPos !== null) {
+          setGhostPos(null);
+          invalidate();
+        }
         return;
       }
 
@@ -378,11 +372,13 @@ export const FigurineRenderer: React.FC = () => {
       if (propSubTool === 'place') {
         setGhostPos([hit.point.x, finalY, hit.point.z]);
         setGhostRot(rot);
+        invalidate(); // Smoothly update ghost position on demand frame-loop!
       } else if (propSubTool === 'transform' && isDraggingProp.current && selectedPropId) {
         updatePropTransform(selectedPropId, {
           position: [hit.point.x, finalY, hit.point.z],
           ...(propNormalAlign > 0 ? { rotation: rot } : {}),
         });
+        invalidate();
       }
     };
 
@@ -408,6 +404,7 @@ export const FigurineRenderer: React.FC = () => {
             rotation: rot,
             scale: [scaleVal, scaleVal, scaleVal],
           });
+          invalidate(); // Instantly render placed figurine without delay!
         }
       } else if (propSubTool === 'transform' && selectedPropId) {
         isDraggingProp.current = true;
@@ -429,9 +426,11 @@ export const FigurineRenderer: React.FC = () => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedPropId) {
           removeProp(selectedPropId);
+          invalidate();
         }
       } else if (e.key === 'Escape') {
         setSelectedPropId(null);
+        invalidate();
       }
     };
 
@@ -462,6 +461,7 @@ export const FigurineRenderer: React.FC = () => {
     updatePropTransform,
     removeProp,
     gl,
+    invalidate,
   ]);
 
   const isSelectableMode =

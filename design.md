@@ -495,6 +495,24 @@ Before authoring or modifying any HUD component or tool sidebar:
     - Confirm Destructive CTA: `bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded-xl shadow-sm`.
     - Cancel CTA: `bg-[#FAF8F5] border border-[#D9C9B4] text-[#4B382C] hover:bg-[#EADECF] rounded-xl`.
 
+### Rule 24: Zero-Jank Viewport Interaction & Demand Frameloop Ergonomics
+- **Camera Navigation & Magnetic Isolation:**
+  - Pointer moves with active buttons (`e.buttons !== 0`) MUST bypass magnetic snapping, hover detection, and raycast projection (e.g. `if (e.buttons !== 0) return;` in fortify mode and terrain handlers), ensuring right-click and middle-click camera orbiting and panning remain completely fluid at 60 FPS without calculation spikes.
+  - Sub-centimeter delta and snap equality guards (`Math.abs(prev[i] - next[i]) < 0.005`) MUST gate preview state changes to prevent unnecessary React and Zustand notifications.
+- **Static Shared Hologram & Marker Geometry Tokens:**
+  - Drafting markers and holographic snap previews MUST use pre-allocated static shared geometries and materials:
+    - Snapped Wall Hologram: `{colors.success}` (`#10B981`) with static wireframe geometry (`holoRingGeo`, `holoTowerGeo`, `holoBoxGeo`).
+    - Unsnapped / Free Hologram: `{colors.warning}` (`#F59E0B`) with static wireframe geometry.
+    - Draft Path Node: Static `#10B981` (start loop) and `#F59E0B` (intermediate) shared spheres.
+  - Geometry and material instances MUST NEVER be dynamically created (`new THREE.CylinderGeometry(...)`) inside per-frame render passes or pointermove callbacks.
+- **Decoupled Frameloop & Auto-Pause on Tool Switch:**
+  - To preserve ultra-responsive tactile editing and eliminate GPU/battery drain during construction, the viewport operates under `<Canvas frameloop="demand">` during normal editing.
+  - Switching primary tools (e.g. from Terrain to Building, Texture, Foliage, Figurine, or Lighting) MUST automatically pause animation playback (`isPlaying = false`), restoring demand rendering.
+  - Switching subtools or operational modes within the same tool (e.g. Draw to Fortify, Peak to Plateau, Place to Transform) MUST preserve active playback continuity without interrupting user preview.
+  - Continuous rendering (`frameloop="always"`) is strictly reserved for active playback (`isPlaying = true`), turntable auto-spin, and festive night exhibition viewing.
+- **Continuous Drag Cadence Throttling:**
+  - High-frequency drag tools (foliage scatter, foliage erase, terrain sculpt) MUST throttle continuous updates to a calibrated 35ms / 0.05m movement cadence, preventing redundant geometry modifications, spatial queries, or GC spikes during rapid sweeps.
+
 ---
 
 ## 3D Textures & Material Tokens
@@ -543,6 +561,10 @@ The diorama's lighting dynamically grades across the 24-hour solar arc with 7 ma
 - **Mount property sliders directly on the panel background (`bg-[#F3EBE0]`).** Reserve white containers only for headers and active item preview cards.
 - **Maintain non-colliding minimized tabs.** Coordinate dynamic positions using store-backed sidebar widths.
 - **Check `e.button === 0` on every 3D interactive mesh.** Never let right-click pan trigger object selection.
+- **Bypass snap and hover calculations when `e.buttons !== 0` during camera orbit and pan.**
+- **Use module-level static shared geometries and materials for snap holograms and draft markers.**
+- **Auto-pause playback on primary tool switch while preserving playback continuity on subtool/mode switch.**
+- **Throttle continuous drag tools (foliage paint/erase) to 35ms and 0.05m distance increments.**
 - **Use `Yatra One` for all display titles and fort names.** Pair with `Inter` for technical UI controls.
 - **Use `dark_stone_floor_128x128_pbr` for all structure walkways and floor decks.**
 - **Use `useTranslation()` for all UI strings.** Keep English UI clean without Marathi parenthetical labels.
@@ -561,8 +583,10 @@ The diorama's lighting dynamically grades across the 24-hour solar arc with 7 ma
 - **Don't use ambiguous text buttons (e.g., Active/Inactive) for binary toggles.**
 - **Don't silently clear or displace existing placed structures when base terrain changes.**
 - **Don't let minimized tabs overlap each other or open sidebars.**
-- **Don't let minimized tabs overlap each other or open sidebars.**
 - **Don't select 3D objects with right-click or middle-click.**
+- **Don't calculate magnetic snapping or wall raycasting while the user is orbiting or panning the camera.**
+- **Don't allocate new geometries or materials dynamically in render loops or pointermove callbacks.**
+- **Don't leave continuous animation playback running when switching between primary construction tools.**
 - **Don't use coarse ground proximity radius checks that hijack clicks near splines or walls.**
 - **Don't hardcode Marathi in parentheses in English labels.**
 - **Don't lose active object selection when transitioning from Select to Fortify or Transform.**

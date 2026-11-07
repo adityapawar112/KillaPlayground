@@ -205,6 +205,8 @@ export const BaseTerrainContent: React.FC = () => {
   const lastSplinePointRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const slopeAnchorRef = useRef<{ x: number; z: number; height: number } | null>(null);
   const pondOriginRef = useRef<{ x: number; y: number; z: number } | null>(null);
+  const lastFoliagePointRef = useRef<{ x: number; z: number } | null>(null);
+  const lastFoliageTimeRef = useRef<number>(0);
   const cursorStateRef = useRef<CursorStateRef>({
     x: 0,
     y: 0,
@@ -219,17 +221,15 @@ export const BaseTerrainContent: React.FC = () => {
   const rawControls = useThree((state) => state.controls);
   const controls = rawControls as unknown as { enabled: boolean } | null;
 
-  const {
-    stateBuffer,
-    stateTexture,
-    paintTexture,
-    paintArrayTexture,
-    setPaintArrayTexture,
-    setTerrainMesh,
-    sculptTerrain,
-    applyPaintBrush,
-    pushUndo,
-  } = useTerrainStore();
+  const stateBuffer = useTerrainStore((s) => s.stateBuffer);
+  const stateTexture = useTerrainStore((s) => s.stateTexture);
+  const paintTexture = useTerrainStore((s) => s.paintTexture);
+  const paintArrayTexture = useTerrainStore((s) => s.paintArrayTexture);
+  const setPaintArrayTexture = useTerrainStore((s) => s.setPaintArrayTexture);
+  const setTerrainMesh = useTerrainStore((s) => s.setTerrainMesh);
+  const sculptTerrain = useTerrainStore((s) => s.sculptTerrain);
+  const applyPaintBrush = useTerrainStore((s) => s.applyPaintBrush);
+  const pushUndo = useTerrainStore((s) => s.pushUndo);
 
   const activeTool = useEditorStore((s) => s.activeTool);
   const terrainSubTool = useEditorStore((s) => s.terrainSubTool);
@@ -244,7 +244,7 @@ export const BaseTerrainContent: React.FC = () => {
   const lightEraseRadius = useEditorStore((s) => s.lightEraseRadius);
   const lightingSubTool = useEditorStore((s) => s.lightingSubTool);
 
-  // Load 52 retro textures into DataArrayTexture asynchronously on client
+  // Load 52 retro textures into DataArrayTexture asynchronously on client once on mount
   useEffect(() => {
     loadTexturesIntoArray(TEXTURE_MANIFEST, paintArrayTexture).then((loaded) => {
       loaded.colorSpace = THREE.SRGBColorSpace;
@@ -252,7 +252,8 @@ export const BaseTerrainContent: React.FC = () => {
       setPaintArrayTexture(loaded);
       invalidate();
     });
-  }, [paintArrayTexture, setPaintArrayTexture, invalidate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Load retro pixel-art PBR texture maps (Flavor A: Crisp PS1 / Valheim modern retro diorama):
   // Load authentic Binbun Retroground PBR textures (10 essential maps, strictly <= 16 WebGL texture units budget):
@@ -339,7 +340,9 @@ export const BaseTerrainContent: React.FC = () => {
     return createBaseTerrainGeometry();
   }, []);
 
-  // Create slope-aware CustomShaderMaterial with height blending and view-space normals
+  // Create slope-aware CustomShaderMaterial with height blending and view-space normals.
+  // CRITICAL OPTIMIZATION: Instantiated ONCE for diorama lifetime.
+  // Dynamic changes to textures/repeat are updated directly via uniforms to eliminate synchronous WebGL shader recompiles!
   const material = useMemo(() => {
     return createTerrainMaterial({
       stateTexture,
@@ -359,7 +362,35 @@ export const BaseTerrainContent: React.FC = () => {
       textureRepeat: 16.0,
       cliffRepeat: 12.0,
     });
-  }, [stateTexture, paintTexture, paintArrayTexture, paintTextureRepeat, textures]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Update uniforms in place without destroying or recreating the shader program
+  useEffect(() => {
+    if (!material.uniforms) return;
+    if (paintArrayTexture && material.uniforms.uPaintAtlas) {
+      material.uniforms.uPaintAtlas.value = paintArrayTexture;
+    }
+    if (material.uniforms.uPaintRepeat) {
+      material.uniforms.uPaintRepeat.value = paintTextureRepeat;
+    }
+    if (material.uniforms.uPaintState) {
+      material.uniforms.uPaintState.value = paintTexture;
+    }
+    if (textures) {
+      if (material.uniforms.uWalkableDiff) material.uniforms.uWalkableDiff.value = textures.walkableDiff;
+      if (material.uniforms.uWalkableArm) material.uniforms.uWalkableArm.value = textures.walkableArm;
+      if (material.uniforms.uWalkableNor) material.uniforms.uWalkableNor.value = textures.walkableNor;
+      if (material.uniforms.uCliffDiff) material.uniforms.uCliffDiff.value = textures.cliffDiff;
+      if (material.uniforms.uCliffArm) material.uniforms.uCliffArm.value = textures.cliffArm;
+      if (material.uniforms.uCliffNor) material.uniforms.uCliffNor.value = textures.cliffNor;
+      if (material.uniforms.uCrackedDiff) material.uniforms.uCrackedDiff.value = textures.crackedDiff;
+      if (material.uniforms.uGrassDiff) material.uniforms.uGrassDiff.value = textures.grassDiff;
+      if (material.uniforms.uWaterDiff) material.uniforms.uWaterDiff.value = textures.waterDiff;
+      if (material.uniforms.uWaterNor) material.uniforms.uWaterNor.value = textures.waterNor;
+    }
+    invalidate();
+  }, [material, paintArrayTexture, paintTextureRepeat, paintTexture, textures, invalidate]);
 
   // Register mesh and geometry with terrain store
   useEffect(() => {
@@ -466,13 +497,17 @@ export const BaseTerrainContent: React.FC = () => {
         nz: norm[2],
         visible: true,
       };
+      invalidate(); // Re-render frame immediately so brush ring tracks pointer smoothly at 60fps!
     },
-    [computeCursorNormal]
+    [computeCursorNormal, invalidate]
   );
 
   const hideCursor = useCallback(() => {
-    cursorStateRef.current.visible = false;
-  }, []);
+    if (cursorStateRef.current.visible) {
+      cursorStateRef.current.visible = false;
+      invalidate();
+    }
+  }, [invalidate]);
 
   // Execute direct terrain sculpting with smooth radial falloff
   const executeSculpt = useCallback(
@@ -802,6 +837,8 @@ export const BaseTerrainContent: React.FC = () => {
         pushUndo();
 
         if (editor.foliageSubTool === 'scatter') {
+          lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
+          lastFoliageTimeRef.current = performance.now();
           const activeTypeIds =
             editor.foliageSelectMode === 'multi' && editor.selectedFoliageIds.length > 0
               ? editor.selectedFoliageIds
@@ -833,14 +870,16 @@ export const BaseTerrainContent: React.FC = () => {
             editor.addFoliageInstances(candidates);
           }
         } else if (editor.foliageSubTool === 'erase') {
-          const { erased } = eraseFoliageInRadius(
+          lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
+          lastFoliageTimeRef.current = performance.now();
+          const { erased, remaining } = eraseFoliageInRadius(
             e.point.x,
             e.point.z,
             editor.foliageBrushRadius,
             editor.foliageInstances
           );
           if (erased.length > 0) {
-            editor.removeFoliageInstances(erased.map((item) => item.id));
+            editor.setFoliageInstances(remaining);
           }
         }
 
@@ -970,6 +1009,7 @@ export const BaseTerrainContent: React.FC = () => {
 
         // Magnetic snap hologram tracking (Fortifications mode only)
         if ((editor.buildingMode === 'fortifications' || editor.wallMode === 'fortify') && editor.activeStamp) {
+          if (e.buttons !== 0) return;
           const snap = calculateMagneticSnap(
             editor.activeStamp,
             e.point,
@@ -1067,6 +1107,18 @@ export const BaseTerrainContent: React.FC = () => {
 
         if (isPaintingRef.current) {
           e.stopPropagation();
+          const now = performance.now();
+          if (lastFoliagePointRef.current) {
+            const dx = e.point.x - lastFoliagePointRef.current.x;
+            const dz = e.point.z - lastFoliagePointRef.current.z;
+            const dist = Math.hypot(dx, dz);
+            if (dist < 0.05 && now - lastFoliageTimeRef.current < 35) {
+              return;
+            }
+          }
+          lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
+          lastFoliageTimeRef.current = now;
+
           const foliageItem = getFoliageById(editor.selectedFoliageId) || FOLIAGE_MANIFEST[0];
 
           if (editor.foliageSubTool === 'scatter') {
@@ -1101,14 +1153,14 @@ export const BaseTerrainContent: React.FC = () => {
               editor.addFoliageInstances(candidates);
             }
           } else if (editor.foliageSubTool === 'erase') {
-            const { erased } = eraseFoliageInRadius(
+            const { erased, remaining } = eraseFoliageInRadius(
               e.point.x,
               e.point.z,
               editor.foliageBrushRadius,
               editor.foliageInstances
             );
             if (erased.length > 0) {
-              editor.removeFoliageInstances(erased.map((item) => item.id));
+              editor.setFoliageInstances(remaining);
             }
           }
           invalidate();
@@ -1214,9 +1266,11 @@ export const BaseTerrainContent: React.FC = () => {
 
     if (isPaintingRef.current) {
       isPaintingRef.current = false;
+      lastFoliagePointRef.current = null;
       if (controls) {
         controls.enabled = true;
       }
+      useTerrainStore.setState({ lastUpdated: Date.now() });
       invalidate();
     }
 
@@ -1310,9 +1364,11 @@ export const BaseTerrainContent: React.FC = () => {
 
       if (isPaintingRef.current) {
         isPaintingRef.current = false;
+        lastFoliagePointRef.current = null;
         if (controls) {
           controls.enabled = true;
         }
+        useTerrainStore.setState({ lastUpdated: Date.now() });
         invalidate();
       }
 

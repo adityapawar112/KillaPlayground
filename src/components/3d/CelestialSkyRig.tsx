@@ -23,7 +23,10 @@ interface CelestialSkyRigProps {
  * 3. Orbits dynamically in real time matching sunElevation and sunAzimuth.
  */
 export const CelestialSkyRig: React.FC<CelestialSkyRigProps> = ({ config }) => {
-  const { sunElevation, sunAzimuth, nightMode, timeOfDay } = useEditorStore();
+  const sunElevation = useEditorStore((s) => s.sunElevation);
+  const sunAzimuth = useEditorStore((s) => s.sunAzimuth);
+  const nightMode = useEditorStore((s) => s.nightMode);
+  const timeOfDay = useEditorStore((s) => s.timeOfDay);
   const { camera } = useThree();
 
   const activeConfig = useMemo(() => {

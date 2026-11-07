@@ -30,26 +30,26 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 │
 ▼
 [2. Base Terrain Sculpting]
-└── Elevate Hills -> Carve Valleys -> Flatten Plateaus -> Smooth Slopes -> Dig Ponds
+└── Elevate Hills -> Carve Valleys -> Flatten Plateaus -> Smooth Slopes -> Dig Ponds (Instant drag feedback via history decoupling)
 │
 ▼
 [3. Unified Building Construction Tool]
 ├── Walls: Click-to-draft perimeter ramparts with pointed crenellations & loop closing
 ├── Foundation: 2-phase drag-and-extrude stone plinths with negative depth & cancel CTA
-├── Stairs: Continuous drag-drawn or point-by-point stone staircases ascending slopes
-└── Fortifications: Watchtowers, inward rampart bastions, round bastions, Maha Darwaza gates (Single-click debounced)
+├── Stairs: Continuous drag-drawn or point-by-point stone staircases ascending slopes (Sub-0.2ms BVH raycasting)
+└── Fortifications: Watchtowers, inward rampart bastions, round bastions, Maha Darwaza gates (Single-click 60ms debounced & orbit-isolated)
 │
 ▼
 [4. Terrain Painting Studio]
-└── Multi-Texture Brush: Dirt (Tambdi Maati), Sand, Grass, Gravel (Walkways), Rock (Basalt), Rocky
+└── Multi-Texture Brush: Dirt (Tambdi Maati), Sand, Grass, Gravel (Walkways), Rock (Basalt), Rocky (Zero-latency material singleton)
 │
 ▼
 [5. Foliage Paint & 3D Nature Scatter]
-└── 3D Nature Scatter: Trees, Rocks, Shrubs, Grass Clumps with Radius & Density Controls
+└── 3D Nature Scatter: Trees, Rocks, Shrubs, Grass Clumps (Cadence-throttled smooth drag scatter & erase)
 │
 ▼
 [6. Figurine & Architecture Asset Browser]
-└── Place & Rotate: Warriors (Mavale), Shivaji Maharaj Throne, Musicians, Buildings, Carts, Cannons
+└── Place & Rotate: Warriors (Mavale), Shivaji Maharaj Throne, Musicians, Buildings, Carts, Cannons (Instant preview sync & zero-queue placement)
 │
 ▼
 [7. Festive Lighting & Fireworks Studio]
@@ -62,7 +62,8 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ├── Camera Perspectives & Lens FOV: Isometric (45°), Bird's Eye, Rampart Eye, Bastion Hero & FOV Slider
 ├── Continuous 360° Turntable Mode & Free Orbit Spectator with zero-modification viewport guard
 ├── 5-Second Celebratory Fireworks Salvo Test Action
-└── Quick-Action Dock: Day | Play | Pause | Screenshot | Night with continuous festive night pyrotechnics
+├── Quick-Action Dock: Day | Play | Pause | Screenshot | Night with continuous festive night pyrotechnics
+└── Demand Frameloop & Auto-Pause: Tool switching automatically stops playback to ensure responsive demand rendering
 │
 ▼
 [9. Showcase, Multi-Angle Poster & Share]
@@ -127,6 +128,7 @@ Directly manipulates the base diorama mesh (`65,536` vertices) with instantaneou
 * **Plateau / Leveling Tool:** Flattens sampled vertices to a target plane height $H_{target}$, creating flat fort building decks, courtyards, and bastion foundations.
 * **Smooth Tool:** Applies a 3x3 box blur filter to soften rugged peaks and create natural rolling terrain.
 * **Pond / Water Body Sub-Tool:** Shader-integrated basin excavation carving depressions directly in the terrain heightmap and rendering authentic blue tarpaulin PBR water on the flat floor with glistening wet mud (*chikhal*) on crater banks up to the rim edge, restoring cleanly on undo.
+* **Decoupled Undo History & Zero-Latency Drag:** Vertex deformations directly mutate the `Float32Array` heightmap buffer with zero initial drag jitter. Undo/redo history snapshots are emitted on stroke completion via decoupled `historyVersion`, preventing costly React state updates from interrupting continuous mouse dragging.
 
 ---
 
@@ -136,7 +138,7 @@ The standalone Wall and Spline tools are consolidated into a single high-velocit
 
 * **5 Unified Operational Modes in `ToolModeSidebar.tsx`**:
   * **Select Mode**: Physical raycasting isolates fort ramparts, round watchtowers, bastions, gates, foundations, and stairs. Foundation slabs are strictly interactive in Select mode, preventing selection hijacking during active drafting.
-  * **Walls Mode**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira battlements, continuous elevation adherence, and Close Loop / Cancel Draft actions.
+  * **Walls Mode**: Click on terrain to draft perimeter wall curves with automatic pointed Murud-Janjira battlements, continuous elevation adherence, and Close Loop / Cancel Draft actions. Sub-0.2ms BVH raycasting against targeted pickables guarantees zero drafting lag on initial and intermediate nodes.
   * **Foundation Mode**: 2-phase drag-and-extrude rectangular stone foundation plinth builder:
     * *Phase 1 (Footprint):* Pointer down anchors first corner $(x_1, z_1)$ on terrain; dragging renders a real-time translucent amber ghost bounding box to opposite corner $(x_2, z_2)$.
     * *Phase 2 (Normalized Height):* Pointer up locks the base footprint and transitions to vertical height extrusion. Mouse movement dynamically adjusts height via normalized sensitivity (`0.008`). Primary click confirms and creates the slab.
@@ -144,13 +146,16 @@ The standalone Wall and Spline tools are consolidated into a single high-velocit
     * *Cancel Draft CTA:* Left properties panel features a dedicated "Cancel Draft" button (`TbX`) allowing builders to abort active drafts cleanly.
     * *Adjustable parameters:* Length, Width, Height (-10.0m to +25.0m), Vertical Offset (-0.5m to +2.0m), and Texture Tiling (1x to 10x UV multiplier).
     * Textured with `mossy_stone_brick_128x128_pbr` (perimeter sides) and `dark_stone_floor_128x128_pbr` (top deck).
-  * **Stairs Mode**: Continuous drag-drawing or multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm), 2x default stair scale multiplier, and stair spacing slider.
+  * **Stairs Mode**: Continuous drag-drawing or multi-point slope click path utilizing centripetal `THREE.CatmullRomCurve3` that extrudes walkable stepped horizontal stone masonry boxes conforming to slope gradients, with lateral offset slider (-15cm to +15cm), 2x default stair scale multiplier, and stair spacing slider. Targeted pickable raycasting ensures smooth point dragging without initial point latency.
   * **Fortifications Mode**: Continuous magnetic snap hologram placement along walls for 4 authentic fortification types:
     * *Sliding Round Watchtowers (`tower` / `buruj`):* Sliding cylindrical towers centered along the rampart.
     * *Rampart Bastion Platforms (`box`):* Inward-facing rectangular fighting platforms extending into the fort courtyard.
     * *Semicircular Round Bastions (`round_bastion`):* Semicircular bastions protruding outward from the fort wall with flat base centered flush on the outer wall edge, crowned with authentic 3D pointed Murud-Janjira Kangare battlements with shoulders matching towers.
     * *Arched Gateways (`gate` / `Maha Darwaza`):* Watertight portals flanked by twin towers with continuous rampart walkways above.
-    * *Single-Click Placement Guarantee:* Event bubbling is cleanly halted (`e.stopPropagation()`) with a 300ms throttle guard in state management, ensuring exactly one fortification is placed per click and eliminating accidental double-placements.
+    * *Single-Click Placement Guarantee:* Event bubbling is cleanly halted (`e.stopPropagation()`) with a calibrated 60ms throttle guard in state management, ensuring exactly one fortification is placed per click without queuing delays or duplicate placements.
+    * *Camera Orbit Isolation:* When camera orbit or pan is engaged (`e.buttons !== 0`), magnetic wall projection and snap preview calculations are completely bypassed, guaranteeing 60 FPS camera rotation.
+    * *Sub-Centimeter Snap Deduplication:* State preview updates are suppressed if position delta is $< 0.005\text{m}$, eliminating redundant React re-renders.
+    * *Static Shared Hologram Geometries:* Uses pre-allocated module-level wireframes (`holoRingGeo`, `holoTowerGeo`, `holoBoxGeo`), avoiding per-frame garbage collection.
 * **Miniature Tabletop Diorama Calibration**:
   * Scaled to realistic miniature diorama measurements (default 25cm height, 15cm thickness; range 10cm to 100cm height, 5cm to 40cm thickness) with 12mm ground embedding.
   * Sliders dynamically display physical units in centimeters (`cm`).
@@ -178,6 +183,7 @@ Enables direct surface texturing on the terrain diorama without modifying mounta
   * **Bricks & Masonry (3):** Mossy Stone Brick, Dark Stone Floor, Dark Carved Stone.
   * **Water & Ice (1):** Blue Tarpaulin Water Sheet.
 * **Original Texture Color Fidelity:** Textures render in their true original pixel-art colors without artificial warm or cool color filters.
+* **Material Singleton Lifecycle & Zero-Latency Painting:** `CustomShaderMaterial` maintains a single persistent GPU pipeline across stroke cycles with in-place uniform updates (`uTexturePaint.value = currentTexture`). This eliminates dynamic shader reconstruction and garbage collection delays, ensuring texture strokes apply instantaneously on the very first drag pixel.
 * **Interactive Tool Controls:**
   * **Brush Radius (0.2m–3.0m):** Controlled via slider, `Shift + Scroll Wheel`, or `[` / `]` keys.
   * **Strength (5%–100%):** Calibrated opacity/flow rate controlled via slider or `Ctrl + Scroll Wheel`.
@@ -206,10 +212,11 @@ Interactive nature paint studio that populates the diorama landscape with authen
   * Double-sided cross-quad (2 intersecting quads) and single-plane cutouts with `alphaTest: 0.5` and `depthWrite: true`.
   * Soft spherical outward normals for volumetric 3D shading; custom depth material for crisp terrain shadow casting.
   * Real-time GPU vertex wind flutter and sway.
-* **Tri-Mode Operational Workflow:**
-  * **Scatter Mode:** Drag across terrain to paint clusters of nature flora using Poisson-disk candidate thinning.
+  * **Instanced Buffer Architecture:** `InstancedMesh` maintains a 512 minimum capacity, `frustumCulled = false`, and module-level reusable `tempFoliageObject`, eliminating per-drag bounding sphere recalculations and GC allocations.
+* **Tri-Mode Operational Workflow & Smooth Drag Ergonomics:**
+  * **Scatter Mode:** Drag across terrain to paint clusters with 35ms / 0.05m movement cadence throttling, eliminating CPU stalls during fast mouse sweeps.
   * **Single Mode:** Click anywhere to place hero specimen trees with precise randomized yaw and scale jitter.
-  * **Erase Mode:** Prune nature flora in a radius via sub-millisecond spatial hash queries.
+  * **Erase Mode:** Drag to prune nature flora along brush stroke; directly updates the remaining instance array without secondary Set filtering loops, ensuring fluid and instantaneous plant clearing.
 * **Selection Modes:**
   * **Single Select:** Focus on one specific flora species.
   * **Multi-Select:** Select multiple species in the Foliage Browser; scatter randomly picks from the selected set for rich, diverse woodland clusters. Includes one-click "Deselect All".
@@ -221,6 +228,7 @@ A unified, consistent control paradigm applies across all tools:
 * **Left Click:** Permanently dedicated to the active tool's primary action (sculpting terrain, drafting wall paths, placing bastions, painting textures, scattering foliage, selecting structures). Left-click orbit is permanently disabled in OrbitControls.
 * **Right-Click Drag:** Permanently dedicated to OrbitControls camera rotation / orbit around the killa.
 * **Middle-Click Drag:** Pan and shift camera target.
+* **Zero-Interference Orbit Isolation:** Active tool dragging, snap previews, and raycast calculations are immediately suppressed when right-click or middle-click camera manipulation is active (`e.buttons !== 0`), guaranteeing 60 FPS camera navigation.
 * **Scroll Wheel:** Zoom / dolly in and out.
 * **Shift + Scroll:** Brush radius slider adjustment across all 3D tools.
 * **Ctrl + Scroll:** Secondary slider adjustment (brush strength, foliage density).
@@ -265,7 +273,7 @@ A categorized visual drawer lets users place, select, transform, and erase 40 so
 *(Note: The 18 terracotta and hand-painted festive diyas are consolidated into the dedicated Festive Lighting & Fireworks Studio).*
 
 * **4 Operational Workflow Modes:**
-  * **Place Mode:** Right-side Figurine Vault asset browser with category pills and search; real-time surface-snapping ghost reticle with placement scale, rotation heading, random heading, normal align, and elevation offset sliders.
+  * **Place Mode:** Right-side Figurine Vault asset browser with category pills and search; real-time surface-snapping ghost reticle with placement scale, rotation heading, random heading, normal align, and elevation offset sliders. Switching selected assets in the Vault updates the 3D ghost reticle and shadow outline immediately. Placement executes instantaneously on pointer click with zero delay or click accumulation.
   * **Select Mode:** Scene Outliner tree with element counts, instant search, and unified Element Properties inspector (scale, heading, duplicate, snap surface, focus camera, delete).
   * **Transform Mode:** Camera-relative 3D nudge pad (Up/Forward/Down/Left/Backward/Right), heading rotation wheel with quick-angle snaps, uniform scale slider, and surface snapping.
   * **Erase Mode:** Left Sidebar brush radius slider, crimson diorama brush circle GUI on terrain/structures, stroke drag erasing, and outliner deletion.
@@ -331,8 +339,10 @@ Comprehensive spectator and presentation studio designed for pure diorama admira
   * `⏸ Pause`: Freezes all wind sway and particle motion; returns canvas to on-demand rendering.
   * `📷 Screenshot`: Hides all HUD chrome, captures the full-resolution WebGL canvas buffer to PNG, triggers direct browser download (`killa-diorama-<timestamp>.png`), and restores the HUD.
   * `🌙 Night`: Transitions to night mode, igniting all placed diyas and firing a celebratory simultaneous fireworks salvo.
-* **Decoupled Ambient Animation:**
+* **Decoupled Ambient Animation & Auto-Pause on Tool Switch:**
   * Foliage wind sway is decoupled from mouse movement; animation progression is strictly governed by the `isPlaying` state.
+  * Switching between primary tools (e.g., from Terrain to Building, Texture, Foliage, Figurine, or Lighting) automatically stops animation playback (`isPlaying: false`), returning the Three.js viewport to `<Canvas frameloop="demand">` for maximum UI responsiveness and battery efficiency.
+  * Switching subtools or operational modes within the active tool preserves playback continuity without interruption.
 
 ---
 

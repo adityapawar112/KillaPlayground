@@ -70,8 +70,8 @@ export default function HomePage() {
   const isCapturingScreenshot = useEditorStore((s) => s.isCapturingScreenshot);
   const undo = useTerrainStore((s) => s.undo);
   const redo = useTerrainStore((s) => s.redo);
-  const canUndo = useTerrainStore.getState().canUndo();
-  const canRedo = useTerrainStore.getState().canRedo();
+  const canUndo = useTerrainStore((s) => (s.historyVersion !== undefined ? s.canUndo() : s.canUndo()));
+  const canRedo = useTerrainStore((s) => (s.historyVersion !== undefined ? s.canRedo() : s.canRedo()));
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

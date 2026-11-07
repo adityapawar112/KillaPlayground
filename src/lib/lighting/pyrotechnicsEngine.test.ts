@@ -64,8 +64,12 @@ describe('Pyrotechnics Particle Engine', () => {
       expect(spawner?.targetBurst).toBeDefined();
 
       const [tx, ty, tz] = spawner!.targetBurst!;
-      // Height should be within 1.5 ± 0.20m (1.30 to 1.70m)
-      expect(ty).toBeGreaterThanOrEqual(1.29);
+      // Trajectory distance should be within 1.5 ± 0.20m (1.30 to 1.70m)
+      const trajectoryDist = Math.sqrt(tx * tx + ty * ty + tz * tz);
+      expect(trajectoryDist).toBeGreaterThanOrEqual(1.29);
+      expect(trajectoryDist).toBeLessThanOrEqual(1.71);
+      // Vertical height ty accounts for up to 10 deg tilt: min ty = 1.30 * cos(10 deg) ~= 1.2802m
+      expect(ty).toBeGreaterThanOrEqual(1.28);
       expect(ty).toBeLessThanOrEqual(1.71);
 
       // Horizontal tilt angle from vertical should be <= 10.5 degrees

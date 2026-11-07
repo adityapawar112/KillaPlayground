@@ -14,6 +14,9 @@ interface FoliageTypeGroupProps {
   instances: FoliageInstance[];
 }
 
+// Module-level reusable Object3D to eliminate allocations during drag placement/erasure
+const tempFoliageObject = new THREE.Object3D();
+
 const FoliageTypeGroup: React.FC<FoliageTypeGroupProps> = ({ typeId, instances }) => {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const [, setTextureVersion] = useState(0);
@@ -103,9 +106,9 @@ const FoliageTypeGroup: React.FC<FoliageTypeGroupProps> = ({ typeId, instances }
     }
   });
 
-  // Calculate instance matrices buffer capacity
+  // Calculate instance matrices buffer capacity with generous headroom to prevent recreations
   const capacity = useMemo(() => {
-    return Math.max(64, Math.pow(2, Math.ceil(Math.log2(Math.max(1, instances.length)))));
+    return Math.max(512, Math.pow(2, Math.ceil(Math.log2(Math.max(1, instances.length)))));
   }, [instances.length]);
 
   // Populate InstancedMesh transform matrix buffer
@@ -113,20 +116,17 @@ const FoliageTypeGroup: React.FC<FoliageTypeGroupProps> = ({ typeId, instances }
     const mesh = meshRef.current;
     if (!mesh) return;
 
-    const dummy = new THREE.Object3D();
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i];
-      dummy.position.set(inst.position[0], inst.position[1], inst.position[2]);
-      dummy.rotation.set(inst.rotation[0], inst.rotation[1], inst.rotation[2]);
-      dummy.scale.set(inst.scale[0], inst.scale[1], inst.scale[2]);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
+      tempFoliageObject.position.set(inst.position[0], inst.position[1], inst.position[2]);
+      tempFoliageObject.rotation.set(inst.rotation[0], inst.rotation[1], inst.rotation[2]);
+      tempFoliageObject.scale.set(inst.scale[0], inst.scale[1], inst.scale[2]);
+      tempFoliageObject.updateMatrix();
+      mesh.setMatrixAt(i, tempFoliageObject.matrix);
     }
 
     mesh.count = instances.length;
     mesh.instanceMatrix.needsUpdate = true;
-    mesh.computeBoundingBox();
-    mesh.computeBoundingSphere();
   }, [instances]);
 
   if (instances.length === 0) return null;
@@ -138,7 +138,7 @@ const FoliageTypeGroup: React.FC<FoliageTypeGroupProps> = ({ typeId, instances }
       customDepthMaterial={depthMaterial}
       castShadow
       receiveShadow
-      frustumCulled={true}
+      frustumCulled={false}
       raycast={() => null}
     />
   );

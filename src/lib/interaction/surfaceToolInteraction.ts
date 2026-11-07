@@ -11,6 +11,8 @@ import { getTerrainHeightAt, getTerrainNormalAt } from '../terrain/terrainBuffer
 let isPaintingSurface = false;
 let isDrawingSurfaceSpline = false;
 let lastSplinePoint: [number, number, number] | null = null;
+let lastSurfaceFoliagePoint: { x: number; z: number } | null = null;
+let lastSurfaceFoliageTime = 0;
 
 /**
  * Handles pointer-down on 3D structures (walls, bastions, gates, spline structures)
@@ -245,6 +247,17 @@ export function handleStructurePointerMove(
   // 3. Foliage Dragging
   if (editor.activeTool === 'foliage' && isPaintingSurface && e.buttons === 1) {
     e.stopPropagation();
+    const now = performance.now();
+    if (lastSurfaceFoliagePoint) {
+      const dx = e.point.x - lastSurfaceFoliagePoint.x;
+      const dz = e.point.z - lastSurfaceFoliagePoint.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist < 0.05 && now - lastSurfaceFoliageTime < 35) {
+        return true;
+      }
+    }
+    lastSurfaceFoliagePoint = { x: e.point.x, z: e.point.z };
+    lastSurfaceFoliageTime = now;
     const terrainStore = useTerrainStore.getState();
 
     if (editor.foliageSubTool === 'scatter') {
@@ -284,14 +297,14 @@ export function handleStructurePointerMove(
     }
 
     if (editor.foliageSubTool === 'erase') {
-      const { erased } = eraseFoliageInRadius(
+      const { erased, remaining } = eraseFoliageInRadius(
         e.point.x,
         e.point.z,
         editor.foliageBrushRadius,
         editor.foliageInstances
       );
       if (erased.length > 0) {
-        editor.removeFoliageInstances(erased.map((it) => it.id));
+        editor.setFoliageInstances(remaining);
       }
       invalidate();
       return true;

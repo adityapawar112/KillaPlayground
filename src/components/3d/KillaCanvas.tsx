@@ -115,7 +115,10 @@ const InvalidateBridge: React.FC = () => {
 const CameraKeyboardController: React.FC<{
   controlsRef: React.RefObject<OrbitControlsImpl | null>;
 }> = ({ controlsRef }) => {
-  const { cameraResetTrigger, activeTool, wallMode, splineMode } = useEditorStore();
+  const cameraResetTrigger = useEditorStore((s) => s.cameraResetTrigger);
+  const activeTool = useEditorStore((s) => s.activeTool);
+  const wallMode = useEditorStore((s) => s.wallMode);
+  const splineMode = useEditorStore((s) => s.splineMode);
 
   const resetCamera = useCallback(() => {
     if (!controlsRef.current) return;
@@ -293,25 +296,23 @@ interface KillaCanvasProps {
 }
 
 export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
-  const {
-    nightMode,
-    timeOfDay,
-    cameraViewPreset,
-    setCameraViewPreset,
-    activeTool,
-    wallMode,
-    splineMode,
-    sunElevation,
-    sunAzimuth,
-    isPlaying,
-    viewMode,
-    turntableSpeed,
-    cameraFov,
-    fogDensityMultiplier,
-    bounceIntensityMultiplier,
-    exposureMultiplier,
-    isCapturingScreenshot,
-  } = useEditorStore();
+  const nightMode = useEditorStore((s) => s.nightMode);
+  const timeOfDay = useEditorStore((s) => s.timeOfDay);
+  const cameraViewPreset = useEditorStore((s) => s.cameraViewPreset);
+  const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
+  const activeTool = useEditorStore((s) => s.activeTool);
+  const wallMode = useEditorStore((s) => s.wallMode);
+  const splineMode = useEditorStore((s) => s.splineMode);
+  const sunElevation = useEditorStore((s) => s.sunElevation);
+  const sunAzimuth = useEditorStore((s) => s.sunAzimuth);
+  const isPlaying = useEditorStore((s) => s.isPlaying);
+  const viewMode = useEditorStore((s) => s.viewMode);
+  const turntableSpeed = useEditorStore((s) => s.turntableSpeed);
+  const cameraFov = useEditorStore((s) => s.cameraFov);
+  const fogDensityMultiplier = useEditorStore((s) => s.fogDensityMultiplier);
+  const bounceIntensityMultiplier = useEditorStore((s) => s.bounceIntensityMultiplier);
+  const exposureMultiplier = useEditorStore((s) => s.exposureMultiplier);
+  const isCapturingScreenshot = useEditorStore((s) => s.isCapturingScreenshot);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 

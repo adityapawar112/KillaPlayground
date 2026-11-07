@@ -16,6 +16,26 @@ import { WallPath, WallPoint, DEFAULT_WALL_SETTINGS } from '@/lib/walls/wallType
 import { generateFoundationBufferGeometry } from '@/lib/foundations/foundationGeometry';
 import { handleStructurePointerDown, handleStructurePointerMove } from '@/lib/interaction/surfaceToolInteraction';
 
+// Static shared geometries & materials for wall draft node markers (0 allocations on drag!)
+const wallDraftCloseGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.04, 16);
+const wallDraftNodeGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.04, 16);
+const wallDraftCloseMat = new THREE.MeshBasicMaterial({ color: '#22c55e', transparent: true, opacity: 0.9 });
+const wallDraftStartMat = new THREE.MeshBasicMaterial({ color: '#eab308', transparent: true, opacity: 0.9 });
+const wallDraftNormalMat = new THREE.MeshBasicMaterial({ color: '#f97316', transparent: true, opacity: 0.9 });
+
+// Static shared geometries & materials for magnetic snap hologram preview (0 allocations on hover/orbit!)
+const holoRingGeo = new THREE.RingGeometry(0.18, 0.24, 32);
+const holoTowerGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.30, 16);
+const holoBoxGeo = new THREE.BoxGeometry(0.30, 0.30, 0.30);
+const holoBastionGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.30, 16, 1, false, -Math.PI / 2, Math.PI);
+const holoGateTowerGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.28, 12);
+const holoGateArchGeo = new THREE.BoxGeometry(0.22, 0.06, 0.12);
+
+const holoSnapRingMat = new THREE.MeshBasicMaterial({ color: '#10b981', transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+const holoUnsnapRingMat = new THREE.MeshBasicMaterial({ color: '#f59e0b', transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+const holoSnapMeshMat = new THREE.MeshBasicMaterial({ color: '#10b981', wireframe: true, transparent: true, opacity: 0.65 });
+const holoUnsnapMeshMat = new THREE.MeshBasicMaterial({ color: '#f59e0b', wireframe: true, transparent: true, opacity: 0.65 });
+
 /**
  * Draft wall preview line and node markers during construction.
  */
@@ -57,25 +77,16 @@ const WallDraftPreview: React.FC<{
       {draftPoints.map((p, idx) => {
         const isStart = idx === 0;
         const canClose = isStart && draftPoints.length >= 3;
+        const geo = canClose ? wallDraftCloseGeo : wallDraftNodeGeo;
+        const mat = canClose ? wallDraftCloseMat : isStart ? wallDraftStartMat : wallDraftNormalMat;
         return (
           <mesh
             key={`node_${idx}`}
             position={[p.x, p.y + 0.03, p.z]}
-          >
-            <cylinderGeometry
-              args={[
-                canClose ? 0.08 : 0.05,
-                canClose ? 0.08 : 0.05,
-                0.04,
-                16,
-              ]}
-            />
-            <meshBasicMaterial
-              color={canClose ? '#22c55e' : isStart ? '#eab308' : '#f97316'}
-              transparent
-              opacity={0.9}
-            />
-          </mesh>
+            geometry={geo}
+            material={mat}
+            raycast={() => null}
+          />
         );
       })}
     </group>
@@ -248,6 +259,7 @@ const SingleWallMeshComponent: React.FC<{
   };
 
   const handleWallPointerMove = (e: any) => {
+    if (e.buttons !== 0) return;
     if (handleStructurePointerMove(e, invalidate)) {
       return;
     }
@@ -707,78 +719,73 @@ const SnapHologramPreview: React.FC = () => {
 
   const [x, y, z] = snap.position;
   const isSnapped = snap.snapped;
-  const holoColor = isSnapped ? '#10b981' : '#f59e0b';
+  const ringMat = isSnapped ? holoSnapRingMat : holoUnsnapRingMat;
+  const meshMat = isSnapped ? holoSnapMeshMat : holoUnsnapMeshMat;
 
   return (
-    <group position={[x, y + 0.01, z]} rotation={[0, snap.rotationY || 0, 0]}>
+    <group position={[x, y + 0.01, z]} rotation={[0, snap.rotationY || 0, 0]} raycast={() => null}>
       {/* Magnetic Snap Ring Indicator */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.18, 0.24, 32]} />
-        <meshBasicMaterial
-          color={holoColor}
-          transparent
-          opacity={0.85}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <mesh
+        geometry={holoRingGeo}
+        material={ringMat}
+        rotation={[-Math.PI / 2, 0, 0]}
+        raycast={() => null}
+      />
 
       {/* Hologram 3D Silhouette: Tower (Sliding round cylinder) */}
       {(activeStamp === 'tower' || activeStamp === 'buruj') && (
-        <mesh position={[0, 0.15, 0]}>
-          <cylinderGeometry args={[0.13, 0.13, 0.30, 16]} />
-          <meshBasicMaterial
-            color={holoColor}
-            wireframe
-            transparent
-            opacity={0.65}
-          />
-        </mesh>
+        <mesh
+          geometry={holoTowerGeo}
+          material={meshMat}
+          position={[0, 0.15, 0]}
+          raycast={() => null}
+        />
       )}
 
-      {/* Hologram 3D Silhouette: Rampart Bastion Platform (Face stuck to wall, extending inward into courtyard) */}
+      {/* Hologram 3D Silhouette: Rampart Bastion Platform */}
       {activeStamp === 'box' && (
-        <mesh position={[0, 0.15, 0.15]}>
-          <boxGeometry args={[0.30, 0.30, 0.30]} />
-          <meshBasicMaterial
-            color={holoColor}
-            wireframe
-            transparent
-            opacity={0.65}
-          />
-        </mesh>
+        <mesh
+          geometry={holoBoxGeo}
+          material={meshMat}
+          position={[0, 0.15, 0.15]}
+          raycast={() => null}
+        />
       )}
 
-      {/* Hologram 3D Silhouette: Semi-Circular Round Bastion (Sits on outer side of wall) */}
+      {/* Hologram 3D Silhouette: Semi-Circular Round Bastion */}
       {activeStamp === 'round_bastion' && (
-        <mesh position={[0, 0.15, 0.075]}>
-          <cylinderGeometry args={[0.18, 0.18, 0.30, 16, 1, false, -Math.PI / 2, Math.PI]} />
-          <meshBasicMaterial
-            color={holoColor}
-            wireframe
-            transparent
-            opacity={0.65}
-          />
-        </mesh>
+        <mesh
+          geometry={holoBastionGeo}
+          material={meshMat}
+          position={[0, 0.15, 0.075]}
+          raycast={() => null}
+        />
       )}
 
-      {/* Hologram 3D Silhouette: Gate (Rotation matches outward-facing normal of the wall) */}
+      {/* Hologram 3D Silhouette: Gate */}
       {activeStamp === 'gate' && (
-        <group>
+        <group raycast={() => null}>
           {/* Left Flanking Tower along wall */}
-          <mesh position={[-0.15, 0.14, 0]}>
-            <cylinderGeometry args={[0.08, 0.08, 0.28, 12]} />
-            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
-          </mesh>
+          <mesh
+            geometry={holoGateTowerGeo}
+            material={meshMat}
+            position={[-0.15, 0.14, 0]}
+            raycast={() => null}
+          />
           {/* Right Flanking Tower along wall */}
-          <mesh position={[0.15, 0.14, 0]}>
-            <cylinderGeometry args={[0.08, 0.08, 0.28, 12]} />
-            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
-          </mesh>
+          <mesh
+            geometry={holoGateTowerGeo}
+            material={meshMat}
+            position={[0.15, 0.14, 0]}
+            raycast={() => null}
+          />
           {/* Portal Arch Lintel spanning across gateway */}
-          <mesh position={[0, 0.18, 0]}>
-            <boxGeometry args={[0.22, 0.06, 0.12]} />
-            <meshBasicMaterial color={holoColor} wireframe transparent opacity={0.65} />
-          </mesh>
+          <mesh
+            geometry={holoGateArchGeo}
+            material={meshMat}
+            position={[0, 0.18, 0]}
+            raycast={() => null}
+          />
         </group>
       )}
     </group>

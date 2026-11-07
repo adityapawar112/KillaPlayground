@@ -929,7 +929,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return { wallStep };
     }),
   setActiveStamp: (activeStamp) => set({ activeStamp, wallSnapPreview: null }),
-  setWallSnapPreview: (wallSnapPreview) => set({ wallSnapPreview }),
+  setWallSnapPreview: (wallSnapPreview) => {
+    const current = get().wallSnapPreview;
+    if (!current && !wallSnapPreview) return;
+    if (current && wallSnapPreview) {
+      if (
+        current.snapped === wallSnapPreview.snapped &&
+        current.rotationY === wallSnapPreview.rotationY &&
+        Math.abs(current.position[0] - wallSnapPreview.position[0]) < 0.01 &&
+        Math.abs(current.position[1] - wallSnapPreview.position[1]) < 0.01 &&
+        Math.abs(current.position[2] - wallSnapPreview.position[2]) < 0.01
+      ) {
+        return;
+      }
+    }
+    set({ wallSnapPreview });
+  },
   setSelectedComponent: (selectedComponent) =>
     set({
       selectedComponent,
@@ -1086,7 +1101,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   addTowerToWall: (wallId, segmentIndex, t = 0.5, radius) => {
     const now = Date.now();
-    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 60) {
       return;
     }
     lastFortificationPlacementTime = now;
@@ -1137,7 +1152,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   addBoxBastionToWall: (wallId, segmentIndex, t = 0.5, props) => {
     const now = Date.now();
-    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 60) {
       return;
     }
     lastFortificationPlacementTime = now;
@@ -1186,7 +1201,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   addRoundBastionToWall: (wallId, segmentIndex, t = 0.5, props = {}) => {
     const now = Date.now();
-    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 60) {
       return '';
     }
     lastFortificationPlacementTime = now;
@@ -1250,7 +1265,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {
     const now = Date.now();
-    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 60) {
       return;
     }
     lastFortificationPlacementTime = now;
@@ -2074,8 +2089,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   setActiveTool: (tool) => {
-    set({
+    set((state) => ({
       activeTool: tool,
+      isPlaying: tool !== state.activeTool ? false : state.isPlaying,
       isPropDrawerOpen: tool === 'prop',
       selectedWallId: null,
       selectedComponent: null,
@@ -2093,7 +2109,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       selectedPropId: null,
       selectedLightId: null,
       hoveredElement: null,
-    });
+    }));
   },
   setBrushRadius: (r) => set({ brushRadius: r }),
   setBrushStrength: (s) => set({ brushStrength: s }),

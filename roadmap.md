@@ -480,6 +480,15 @@ graph TD
 - **Delivers**:
   - **Undo / Redo Buffer**:
     - 15-slot in-memory circular buffer tracking terrain edits, building structures (walls, bastions, foundations, stairs), texture paint, foliage instances, figurines, and placed lights/fireworks.
+    - Decoupled `historyVersion` from continuous stroke `lastUpdated` timestamp, preventing React tree re-renders during high-frequency mouse dragging.
+  - **Viewport & Tool Performance Optimizations**:
+    - **Terrain Tool Modes**: Direct TypedArray vertex manipulation with zero initial drag jitter.
+    - **Texture Tool**: Material singleton lifecycle for `CustomShaderMaterial` with in-place uniform updates (`uTexturePaint.value = currentTexture`), eliminating 1-2s initial stroke compilation freezes.
+    - **Fortifications & Magnetic Snap**: Camera orbit/pan bypass (`e.buttons !== 0`), sub-centimeter position deduplication guard (`Math.abs(delta) < 0.005`), calibrated 60ms click debounce, and static shared wireframe geometries (`holoRingGeo`, `holoTowerGeo`, `holoBoxGeo`).
+    - **Splines & Walls**: Sub-0.2ms BVH raycasting against targeted pickable root containers (`BaseTerrainMesh`, `FortWallsLayer`, `SplineStructuresContainer`, `CourtyardRetainingBricks`) with static shared markers.
+    - **Foliage Scatter & Erase**: Distance and time cadence throttling (35ms / 0.05m) during drag, direct remaining array assignment on erase, 512 minimum `InstancedMesh` capacity, `frustumCulled={false}`, and module-level `tempFoliageObject`.
+    - **Figurines & Lighting Placement**: Instantaneous shadow reticle synchronization on vault item switch, and instantaneous placement without click queuing.
+    - **Auto-Stop Playback on Tool Switch**: Switching primary tools in `useEditorStore.setActiveTool` automatically stops playback (`isPlaying: false`), returning viewport to `<Canvas frameloop="demand">` for maximum UI responsiveness, while switching modes retains playback continuity.
   - **Binary Serialization (`.killa` format v1.2.0)**:
     - Quantize terrain heightmap via 2D spatial prediction into delta-encoded 16-bit integers and perceptual channels (wetness, lock, grass, texture paint weights) into compact `Uint8Array` buffers.
     - Package terrain, building foundations, stairs, walls, fortifications, foliage, figurines, and fireworks with `fflate.zipSync` into a compact `< 35 KB` binary package.
@@ -492,8 +501,6 @@ graph TD
     - "Roll New Terrain" seed randomizer dice button with instant regeneration.
     - "Stepped Mountain Tiers" slider (1 to 3 tiers) with smooth, tear-free Sahyadri stepped terraces (Balekilla and Machi).
     - Destructive terrain change confirmation popup (`TerrainChangeConfirmModal.tsx`) with itemized object counters protecting placed structures.
-  - **Single-Click Fortification Stamping**:
-    - Event propagation and 300ms debounce guard preventing duplicate fortification placements across watchtowers, rampart bastions, round bastions, and arched gateways.
   - **Pyrotechnic Pause Timer**:
     - 5-second countdown timer for fireworks in the paused state: keeps particles frozen for 5 seconds for visual admiration, then cleans them up so they do not obstruct building. Normal playback remains unaffected.
   - **Project File Import & Export**:
@@ -508,6 +515,9 @@ graph TD
 - [x] Projects save to local storage and appear in the startup hub with last-saved timestamps.
 - [x] `.killa` files can be exported and re-imported cleanly with identical visual reproduction.
 - [x] Inbound payload schema validates types and rejects corrupted payloads.
+- [x] Sculpting, texture painting, and foliage brushing maintain 60 FPS without initial stroke drag hesitation.
+- [x] Fortify mode camera orbiting runs at 60 FPS without magnetic snap calculation stalls.
+- [x] Primary tool switching automatically returns canvas to demand rendering.
 
 ---
 

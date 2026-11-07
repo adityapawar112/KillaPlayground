@@ -85,6 +85,7 @@ The diorama is structured into two complementary geometric layers:
      * Multi-texture blending maps **Dirt** (*Tambdi Maati*), **Sand**, **Grass**, **Gravel**, **Rock** (Deccan Basalt), and **Rocky** textures across the mesh.
      * Steep slope escarpments ($N_y < 0.78$) automatically transition into rock cliff faces via triplanar projection to prevent vertical UV stretching.
      * Brush strokes from the **Texture Tool (Studio)** write into discrete texture splat buffers (`terrainPaintBuffer.ts`) to paint authentic retro surface textures, pathways, grass greens, and ponds without affecting geometry.
+     * **Material Singleton Lifecycle:** `CustomShaderMaterial` is instantiated once during diorama mount (`useMemo([], [])`). Asynchronous texture loads and repeat factor adjustments mutate `material.uniforms` in place, completely eliminating synchronous WebGL shader program recompilations on initial brush drag.
 
 2. **The Structure & Prop Layer (Walls, Splines, Foliage & Figurines):**
    * Structures exist as discrete meshes positioned atop the terrain surface.
@@ -128,9 +129,12 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
        * *Rampart Bastion Platforms (`box`):* Inward-facing rectangular fighting platforms extending into the fort courtyard.
        * *Semicircular Round Bastions (`round_bastion`):* Semicircular bastions protruding outward from the fort wall. The flat diameter is centered flush on the outer wall edge (`edgeX = attachX + outNorm.x * halfThick`), preserving the interior walkway, and crowned with authentic 3D pointed Murud-Janjira Kangare battlements with shoulders.
        * *Arched Gateways (`gate` / `Maha Darwaza`):* Watertight portals flanked by twin towers with continuous rampart walkways above.
-       * *Single-Placement Debounce Guard:* Pointer events halt bubbling via `e.stopPropagation()` in `handleWallPointerDown`, coupled with a 300ms throttle guard (`lastFortificationPlacementTime`) in `useEditorStore.ts`. Completely eliminates duplicate / double-placement stamps on a single click.
+       * *Single-Placement Debounce Guard:* Pointer events halt bubbling via `e.stopPropagation()` in `handleWallPointerDown`, coupled with a calibrated 60ms throttle guard (`lastFortificationPlacementTime`) in `useEditorStore.ts`. Completely eliminates duplicate / double-placement stamps on a single click without dropping deliberate taps.
    * **Procedural Geometry Engine & Performance Architecture (`wallGeometry.ts`, `FortWalls.tsx`):**
      * *Decoupled Zustand Subscriptions:* Hologram snaps (`wallSnapPreview`), draft states (`activeFoundationDraft`, `activeWallDraft`), and element hovers (`hoveredElement`) are isolated to dedicated child layers (`SnapHologramPreview`, `FoundationDraftLayer`, `WallDraftLayer`). The root `FortWalls` container only re-renders when the wall/foundation array changes.
+     * *Camera Navigation & Orbit Isolation:* Pointer move handlers in `BaseTerrain.tsx`, `FortWalls.tsx`, and `SplineStructures.tsx` explicitly check `if (e.buttons !== 0) return;` to completely bypass magnetic snap calculations during camera orbiting or panning.
+     * *Sub-Centimeter Snap Deduplication:* `useEditorStore.setWallSnapPreview` verifies position and rotation delta before notifying Zustand subscribers, preventing 60–120Hz React re-renders of HUD panels during hover jitter.
+     * *Static Shared Hologram Geometries:* `SnapHologramPreview` reuses module-level pre-allocated geometries and materials (`holoRingGeo`, `holoTowerGeo`, `holoBoxGeo`, etc.), eliminating dynamic GPU buffer allocations during hover.
      * *Memoized EdgesGeometry:* Selection outlines across walls, foundations, and stairs pre-compute `THREE.EdgesGeometry` once via `useMemo` and dispose on unmount, completely eliminating 20–50ms per-frame CPU stalls during mouse movements.
      * *Component Memoization:* `SingleWallMesh` and `FoundationMesh` are wrapped in `React.memo` with fine-grained state selectors.
      * *Texture Color Fidelity & PBR Setup:* Diffuse basecolor maps (`brickTextures`, `floorTextures`, `darkStoneTextures`) explicitly enforce `colorSpace = THREE.SRGBColorSpace` with linear mipmapping (`THREE.LinearMipmapLinearFilter`), eliminating washed-out bleached white textures. Normal, roughness, and AO maps use `THREE.NoColorSpace` with `metalness: 0.0` and `roughness: 0.90` for authentic matte basalt stone.
@@ -161,6 +165,7 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * Bilinear terrain height sampling and surface normal orientation (`getTerrainHeightAt`, `getTerrainNormalAt`).
      * $O(1)$ spatial hash grid (`FoliageSpatialGrid`) for sub-millisecond radius queries during brush erasing and candidate thinning.
    * **Tri-Mode Workflow:** `Scatter` (drag to paint clusters), `Single` (click-to-plant hero specimen), and `Erase` (radius pruning).
+   * **High-Performance Drag & Buffer Architecture:** 35ms / 0.05m movement cadence gating in `BaseTerrain.tsx` and `surfaceToolInteraction.ts` prevents main-thread event flooding. `<instancedMesh>` allocates a minimum capacity of 512 instances to avoid buffer reallocation teardowns, recycles a module-level `THREE.Object3D`, disables frustum culling (`frustumCulled={false}`) for the diorama bounds, and bypasses double filtering on erase by setting remaining instances directly.
    * **Selection Flexibility:** Single-species focus or Multi-Select mode with random scatter selection and one-click "Deselect All".
 
 5. **Figurines & Architecture Tool (3D Asset Browser & Outliner Inspector):**
@@ -293,6 +298,17 @@ To prevent hanging folder guide tabs from colliding under any permutation of ope
    - Canvas dynamically switches between `frameloop="always"` (when `isPlaying: true`) and `frameloop="demand"` (when `isPlaying: false`), eliminating CPU/GPU idling overhead when paused.
 6. **Direct High-Resolution Viewport Screenshot Capture**:
    - The screenshot action temporarily suppresses all HUD overlays, captures the WebGL canvas using `preserveDrawingBuffer`, triggers an immediate browser file download (`killa-diorama-<timestamp>.png`), and restores the HUD.
+7. **Undo / Redo History Decoupling (`historyVersion`)**:
+   - `pushUndo()`, `undo()`, and `redo()` increment an integer `historyVersion` to notify undo/redo UI buttons without modifying `lastUpdated`.
+   - Terrain vertex mutations continue at 60 FPS in `stateBuffer` during active dragging without triggering expensive fort wall geometry re-extrusions or premature IndexedDB autosave cycles.
+   - Pointer-up marks the completed stroke and sets `lastUpdated: Date.now()`, ensuring fort walls conform accurately to final heights and the vault autosaves reliably.
+8. **Targeted Pickables BVH Raycast Architecture**:
+   - Raycasting for surface snapping in `FigurineRenderer` and `LightingRenderer` queries pre-identified root objects (`BaseTerrainMesh`, `FortWallsLayer`, `SplineStructuresContainer`, `CourtyardRetainingBricks`) with `recursive = true`.
+   - This bypasses whole-scene traversal (`scene.traverse`) on pointer move, dropping raycast execution times from several milliseconds to microseconds across dense scenes.
+9. **Automatic Playback Pause on Primary Tool Switch**:
+   - Changing primary tools in `useEditorStore.setActiveTool` sets `isPlaying: false` automatically.
+   - This returns the canvas to `frameloop="demand"`, pausing continuous vertex wind sway and pyrotechnic physics during active fort sculpting or construction.
+   - Switching tool modes/subtools (e.g. within Building or Terrain) preserves `isPlaying`, keeping animations running during mode changes.
 
 ---
 

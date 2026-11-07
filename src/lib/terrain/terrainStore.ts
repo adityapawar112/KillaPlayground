@@ -38,6 +38,7 @@ interface TerrainState {
   terrainGeometry: THREE.BufferGeometry | null;
   activeTemplateId: string;
   lastUpdated: number;
+  historyVersion: number;
 
   // Actions
   setTerrainMesh: (mesh: THREE.Mesh | null, geometry: THREE.BufferGeometry | null) => void;
@@ -109,6 +110,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
   terrainGeometry: null,
   activeTemplateId: 'scratch',
   lastUpdated: Date.now(),
+  historyVersion: 0,
 
   setPaintArrayTexture: (tex) => {
     const prev = get().paintArrayTexture;
@@ -243,11 +245,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       }
     }
 
-    const now = Date.now();
-    if (now - lastSculptNotifyTime > 120) {
-      lastSculptNotifyTime = now;
-      set({ lastUpdated: now });
-    }
+    // Do NOT notify lastUpdated during active drag — keeps main thread at 60fps without forcing fort wall geometry re-extrusions!
+    // Wall updates and vault synchronization cleanly trigger on pointer-up when the sculpting stroke finishes.
     return true;
   },
 
@@ -265,7 +264,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     pushUndo();
     fillEntireTerrain(paintBuffer, layerIndex);
     paintTexture.needsUpdate = true;
-    set({ lastUpdated: Date.now() });
+    set((s) => ({ lastUpdated: Date.now(), historyVersion: (s.historyVersion || 0) + 1 }));
   },
 
   clearPaintTerrain: () => {
@@ -273,7 +272,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     pushUndo();
     clearPaintBuffer(paintBuffer);
     paintTexture.needsUpdate = true;
-    set({ lastUpdated: Date.now() });
+    set((s) => ({ lastUpdated: Date.now(), historyVersion: (s.historyVersion || 0) + 1 }));
   },
 
   pushUndo: () => {
@@ -296,14 +295,14 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     const editor = typeof useEditorStore !== 'undefined' && useEditorStore?.getState ? useEditorStore.getState() : null;
     if (editor) {
       pondUndoStack.push([...(editor.pondWaterFeatures || [])]);
-      wallUndoStack.push(JSON.parse(JSON.stringify(editor.walls || [])));
-      citadelUndoStack.push(JSON.parse(JSON.stringify(editor.citadelKeeps || [])));
-      foliageUndoStack.push([...(editor.foliageInstances || [])]);
-      splineUndoStack.push(JSON.parse(JSON.stringify(editor.splines || [])));
-      foundationUndoStack.push(JSON.parse(JSON.stringify(editor.foundations || [])));
-      stairUndoStack.push(JSON.parse(JSON.stringify(editor.stairs || [])));
-      propUndoStack.push(JSON.parse(JSON.stringify(editor.placedProps || [])));
-      lightUndoStack.push(JSON.parse(JSON.stringify(editor.placedLights || [])));
+      wallUndoStack.push(editor.walls && editor.walls.length > 0 ? structuredClone(editor.walls) : []);
+      citadelUndoStack.push(editor.citadelKeeps && editor.citadelKeeps.length > 0 ? structuredClone(editor.citadelKeeps) : []);
+      foliageUndoStack.push(editor.foliageInstances && editor.foliageInstances.length > 0 ? [...editor.foliageInstances] : []);
+      splineUndoStack.push(editor.splines && editor.splines.length > 0 ? structuredClone(editor.splines) : []);
+      foundationUndoStack.push(editor.foundations && editor.foundations.length > 0 ? structuredClone(editor.foundations) : []);
+      stairUndoStack.push(editor.stairs && editor.stairs.length > 0 ? structuredClone(editor.stairs) : []);
+      propUndoStack.push(editor.placedProps && editor.placedProps.length > 0 ? structuredClone(editor.placedProps) : []);
+      lightUndoStack.push(editor.placedLights && editor.placedLights.length > 0 ? structuredClone(editor.placedLights) : []);
     }
     redoStack.length = 0;
     paintRedoStack.length = 0;
@@ -316,7 +315,8 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
     stairRedoStack.length = 0;
     propRedoStack.length = 0;
     lightRedoStack.length = 0;
-    set({ lastUpdated: Date.now() });
+    // Notify history for undo/redo UI buttons without bumping lastUpdated (which falsely triggers 3D geometry rebuilds before drawing)
+    set((s) => ({ historyVersion: (s.historyVersion || 0) + 1 }));
   },
 
   canUndo: () =>
@@ -432,7 +432,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       syncStateToGeometry(stateBuffer, terrainGeometry);
       refitTerrainBVH(terrainGeometry);
     }
-    set({ lastUpdated: Date.now() });
+    set((s) => ({ lastUpdated: Date.now(), historyVersion: (s.historyVersion || 0) + 1 }));
     return true;
   },
 
@@ -526,7 +526,7 @@ export const useTerrainStore = create<TerrainState>((set, get) => ({
       syncStateToGeometry(stateBuffer, terrainGeometry);
       refitTerrainBVH(terrainGeometry);
     }
-    set({ lastUpdated: Date.now() });
+    set((s) => ({ lastUpdated: Date.now(), historyVersion: (s.historyVersion || 0) + 1 }));
     return true;
   },
 }));

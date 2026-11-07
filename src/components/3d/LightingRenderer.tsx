@@ -78,7 +78,9 @@ function getDiyaHaloTexture(): THREE.CanvasTexture {
 const DiyaFlame: React.FC<{
   position: [number, number, number];
 }> = ({ position }) => {
-  const { nightMode, timeOfDay, isPlaying } = useEditorStore();
+  const nightMode = useEditorStore((s) => s.nightMode);
+  const timeOfDay = useEditorStore((s) => s.timeOfDay);
+  const isPlaying = useEditorStore((s) => s.isPlaying);
   const flameMatRef = useRef<THREE.MeshStandardMaterial>(null);
   const flameMeshRef = useRef<THREE.Mesh>(null);
   const spriteMatRef = useRef<THREE.SpriteMaterial>(null);
@@ -423,35 +425,33 @@ const LightingGhostPreview: React.FC<{
 // 6. Main Lighting & Fireworks Studio Renderer
 // ============================================================================
 export const LightingRenderer: React.FC = () => {
-  const {
-    activeTool,
-    lightingSubTool,
-    placedLights,
-    selectedLightType,
-    selectedLightId,
-    setSelectedLightId,
-    lightPlacementScale,
-    lightPlacementRotation,
-    lightRandomRotation,
-    lightBurstHeight,
-    lightRandomBurstHeight,
-    lightNormalAlign,
-    lightElevationOffset,
-    lightEraseRadius,
-    addLight,
-    updateLightTransform,
-    removeLight,
-    removeLights,
-    hoveredElement,
-    setHoveredElement,
-    nightMode,
-    timeOfDay,
-    testFireworkTrigger,
-    clearTestFireworkTrigger,
-    isPlaying,
-    salvoTrigger,
-    fireworkSalvoEndTime,
-  } = useEditorStore();
+  const activeTool = useEditorStore((s) => s.activeTool);
+  const lightingSubTool = useEditorStore((s) => s.lightingSubTool);
+  const placedLights = useEditorStore((s) => s.placedLights);
+  const selectedLightType = useEditorStore((s) => s.selectedLightType);
+  const selectedLightId = useEditorStore((s) => s.selectedLightId);
+  const setSelectedLightId = useEditorStore((s) => s.setSelectedLightId);
+  const lightPlacementScale = useEditorStore((s) => s.lightPlacementScale);
+  const lightPlacementRotation = useEditorStore((s) => s.lightPlacementRotation);
+  const lightRandomRotation = useEditorStore((s) => s.lightRandomRotation);
+  const lightBurstHeight = useEditorStore((s) => s.lightBurstHeight);
+  const lightRandomBurstHeight = useEditorStore((s) => s.lightRandomBurstHeight);
+  const lightNormalAlign = useEditorStore((s) => s.lightNormalAlign);
+  const lightElevationOffset = useEditorStore((s) => s.lightElevationOffset);
+  const lightEraseRadius = useEditorStore((s) => s.lightEraseRadius);
+  const addLight = useEditorStore((s) => s.addLight);
+  const updateLightTransform = useEditorStore((s) => s.updateLightTransform);
+  const removeLight = useEditorStore((s) => s.removeLight);
+  const removeLights = useEditorStore((s) => s.removeLights);
+  const hoveredElement = useEditorStore((s) => s.hoveredElement);
+  const setHoveredElement = useEditorStore((s) => s.setHoveredElement);
+  const nightMode = useEditorStore((s) => s.nightMode);
+  const timeOfDay = useEditorStore((s) => s.timeOfDay);
+  const testFireworkTrigger = useEditorStore((s) => s.testFireworkTrigger);
+  const clearTestFireworkTrigger = useEditorStore((s) => s.clearTestFireworkTrigger);
+  const isPlaying = useEditorStore((s) => s.isPlaying);
+  const salvoTrigger = useEditorStore((s) => s.salvoTrigger);
+  const fireworkSalvoEndTime = useEditorStore((s) => s.fireworkSalvoEndTime);
 
   const { scene, camera, raycaster, gl, invalidate } = useThree();
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
@@ -700,6 +700,7 @@ export const LightingRenderer: React.FC = () => {
   });
 
   // Raycast against mountain terrain and fort structures
+  // OPTIMIZATION: Query pre-identified pickable root objects directly instead of traversing the whole scene graph every pointer move!
   const getSurfaceIntersection = useCallback(
     (clientX: number, clientY: number): { point: THREE.Vector3; normal: THREE.Vector3 } | null => {
       const rect = gl.domElement.getBoundingClientRect();
@@ -709,51 +710,36 @@ export const LightingRenderer: React.FC = () => {
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
 
       const targets: THREE.Object3D[] = [];
-      scene.traverse((obj) => {
-        if ((obj as THREE.Mesh).isMesh) {
-          const mesh = obj as THREE.Mesh;
-          const name = mesh.name || '';
-          const parentName = mesh.parent?.name || '';
-
-          // Exclude lights layer, rings, ghost preview, cursors, water
-          if (
-            name.includes('PlacedLight') ||
-            parentName.includes('PlacedLight') ||
-            name.includes('SelectionRing') ||
-            parentName.includes('SelectionRing') ||
-            name.includes('Ghost') ||
-            parentName.includes('Ghost') ||
-            name.includes('Cursor') ||
-            name.includes('Grid') ||
-            name === 'WaterPlane'
-          ) {
-            return;
-          }
-
-          if (
-            name === 'BaseTerrainMesh' ||
-            name === 'TerrainMeshFallback' ||
-            parentName.startsWith('FortWall_') ||
-            name.startsWith('StoneSteps_') ||
-            name.startsWith('FortWall_') ||
-            name.startsWith('Bastion_') ||
-            name.startsWith('Foundation_') ||
-            name === 'CourtyardTerrain' ||
-            name === 'CourtyardBricks'
-          ) {
-            targets.push(mesh);
-          }
-        }
-      });
+      const terrain = scene.getObjectByName('BaseTerrainMesh') || scene.getObjectByName('TerrainMeshFallback');
+      if (terrain) targets.push(terrain);
+      const fortLayer = scene.getObjectByName('FortWallsLayer');
+      if (fortLayer) targets.push(fortLayer);
+      const splineLayer = scene.getObjectByName('SplineStructuresContainer') || scene.getObjectByName('SplineStructures');
+      if (splineLayer) targets.push(splineLayer);
+      const bricks = scene.getObjectByName('CourtyardRetainingBricks') || scene.getObjectByName('CourtyardBricks');
+      if (bricks) targets.push(bricks);
 
       if (targets.length > 0) {
-        const intersects = raycaster.intersectObjects(targets, false);
+        const intersects = raycaster.intersectObjects(targets, true);
         if (intersects.length > 0) {
-          const hit = intersects[0];
-          const normal = hit.face
-            ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize()
-            : new THREE.Vector3(0, 1, 0);
-          return { point: hit.point, normal };
+          for (const hit of intersects) {
+            const name = hit.object.name || '';
+            const parentName = hit.object.parent?.name || '';
+            if (
+              name.includes('PlacedLight') ||
+              parentName.includes('PlacedLight') ||
+              name.includes('SelectionRing') ||
+              name.includes('Ghost') ||
+              name.includes('Cursor') ||
+              name === 'WaterPlane'
+            ) {
+              continue;
+            }
+            const normal = hit.face
+              ? hit.face.normal.clone().transformDirection(hit.object.matrixWorld).normalize()
+              : new THREE.Vector3(0, 1, 0);
+            return { point: hit.point, normal };
+          }
         }
       }
 
@@ -789,7 +775,10 @@ export const LightingRenderer: React.FC = () => {
 
     const handlePointerMove = (e: PointerEvent) => {
       if (activeTool !== 'lighting') {
-        setGhostPos(null);
+        if (ghostPos !== null) {
+          setGhostPos(null);
+          invalidate();
+        }
         return;
       }
 
@@ -802,11 +791,18 @@ export const LightingRenderer: React.FC = () => {
           const rot = computeRotation(baseYaw, hit.normal);
           setGhostPos([hit.point.x, hit.point.y + lightElevationOffset, hit.point.z]);
           setGhostRot(rot);
+          invalidate(); // Smoothly render ghost tracking mouse on demand frame-loop!
         } else {
-          setGhostPos(null);
+          if (ghostPos !== null) {
+            setGhostPos(null);
+            invalidate();
+          }
         }
       } else {
-        setGhostPos(null);
+        if (ghostPos !== null) {
+          setGhostPos(null);
+          invalidate();
+        }
       }
     };
 
@@ -840,6 +836,7 @@ export const LightingRenderer: React.FC = () => {
             colorTheme: meta.colorTheme,
             burstHeight: burstHeightVal,
           });
+          invalidate(); // Immediately render placed light!
         }
       } else if (lightingSubTool === 'erase') {
         // Erase brush deletion
@@ -856,6 +853,7 @@ export const LightingRenderer: React.FC = () => {
           }
           if (toRemove.length > 0) {
             removeLights(toRemove);
+            invalidate();
           }
         }
       }

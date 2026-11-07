@@ -20,6 +20,14 @@ import { SplinePath } from '@/lib/spline/splineTypes';
 import { calculateMagneticSnap } from '@/lib/walls/wallGeometry';
 import { handleStructurePointerDown, handleStructurePointerMove } from '@/lib/interaction/surfaceToolInteraction';
 
+// Static shared geometries & materials for draft spline node markers (0 allocations on drag!)
+const draftPinSphereGeo = new THREE.SphereGeometry(0.045, 16, 16);
+const draftPinCylinderGeo = new THREE.CylinderGeometry(0.01, 0.01, 0.04, 8);
+const draftPinStartMat = new THREE.MeshBasicMaterial({ color: '#10B981', depthTest: false, transparent: true, opacity: 0.9 });
+const draftPinEndMat = new THREE.MeshBasicMaterial({ color: '#EF4444', depthTest: false, transparent: true, opacity: 0.9 });
+const draftPinMidMat = new THREE.MeshBasicMaterial({ color: '#F59E0B', depthTest: false, transparent: true, opacity: 0.9 });
+const draftPinBaseMat = new THREE.MeshBasicMaterial({ color: '#2B1E16', depthTest: false });
+
 // ============================================================================
 // 1. DRAFT SPLINE CURVE & NODES PREVIEW COMPONENT
 // ============================================================================
@@ -68,18 +76,12 @@ const DraftSplinePreview: React.FC<DraftSplinePreviewProps> = ({ points }) => {
       {points.map((pt, idx) => {
         const isStart = idx === 0;
         const isEnd = idx === points.length - 1 && points.length > 1;
-        const pinColor = isStart ? '#10B981' : isEnd ? '#EF4444' : '#F59E0B';
+        const pinMat = isStart ? draftPinStartMat : isEnd ? draftPinEndMat : draftPinMidMat;
 
         return (
           <group key={`draft_pin_${idx}`} position={[pt[0], pt[1] + 0.04, pt[2]]}>
-            <mesh raycast={() => null}>
-              <sphereGeometry args={[0.045, 16, 16]} />
-              <meshBasicMaterial color={pinColor} depthTest={false} transparent opacity={0.9} />
-            </mesh>
-            <mesh position={[0, -0.02, 0]} raycast={() => null}>
-              <cylinderGeometry args={[0.01, 0.01, 0.04, 8]} />
-              <meshBasicMaterial color="#2B1E16" depthTest={false} />
-            </mesh>
+            <mesh geometry={draftPinSphereGeo} material={pinMat} raycast={() => null} />
+            <mesh geometry={draftPinCylinderGeo} material={draftPinBaseMat} position={[0, -0.02, 0]} raycast={() => null} />
           </group>
         );
       })}
@@ -141,6 +143,7 @@ const StoneStepsMesh: React.FC<StoneStepsMeshProps> = ({
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
       onPointerMove={(e) => {
+        if (e.buttons !== 0) return;
         handleStructurePointerMove(e, invalidate);
         const editor = useEditorStore.getState();
         const isFortify =
@@ -277,6 +280,7 @@ const FlagInstances: React.FC<FlagInstancesProps> = ({
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
       onPointerMove={(e) => {
+        if (e.buttons !== 0) return;
         handleStructurePointerMove(e, invalidate);
         const editor = useEditorStore.getState();
         const isFortify =
@@ -419,6 +423,7 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
       }}
       onPointerDown={(e) => handleStructurePointerDown(e, invalidate)}
       onPointerMove={(e) => {
+        if (e.buttons !== 0) return;
         handleStructurePointerMove(e, invalidate);
         const editor = useEditorStore.getState();
         const isFortify =
@@ -474,27 +479,25 @@ const DiyaInstances: React.FC<DiyaInstancesProps> = ({
 // 5. MAIN SPLINE STRUCTURES CONTAINER
 // ============================================================================
 export const SplineStructures: React.FC = () => {
-  const {
-    activeTool,
-    buildingMode,
-    splines,
-    stairs,
-    currentSplinePoints,
-    activeStairDraft,
-    isDrawingSpline,
-    isDrawingStairs,
-    selectedSplineId,
-    selectedStairId,
-    setSelectedSplineId,
-    setSelectedStairId,
-    setSelectedWallId,
-    setSelectedFoundationId,
-    setSelectedComponent,
-    hoveredElement,
-    setHoveredElement,
-    splineMode,
-    setToastMessage,
-  } = useEditorStore();
+  const activeTool = useEditorStore((s) => s.activeTool);
+  const buildingMode = useEditorStore((s) => s.buildingMode);
+  const splines = useEditorStore((s) => s.splines);
+  const stairs = useEditorStore((s) => s.stairs);
+  const currentSplinePoints = useEditorStore((s) => s.currentSplinePoints);
+  const activeStairDraft = useEditorStore((s) => s.activeStairDraft);
+  const isDrawingSpline = useEditorStore((s) => s.isDrawingSpline);
+  const isDrawingStairs = useEditorStore((s) => s.isDrawingStairs);
+  const selectedSplineId = useEditorStore((s) => s.selectedSplineId);
+  const selectedStairId = useEditorStore((s) => s.selectedStairId);
+  const setSelectedSplineId = useEditorStore((s) => s.setSelectedSplineId);
+  const setSelectedStairId = useEditorStore((s) => s.setSelectedStairId);
+  const setSelectedWallId = useEditorStore((s) => s.setSelectedWallId);
+  const setSelectedFoundationId = useEditorStore((s) => s.setSelectedFoundationId);
+  const setSelectedComponent = useEditorStore((s) => s.setSelectedComponent);
+  const hoveredElement = useEditorStore((s) => s.hoveredElement);
+  const setHoveredElement = useEditorStore((s) => s.setHoveredElement);
+  const splineMode = useEditorStore((s) => s.splineMode);
+  const setToastMessage = useEditorStore((s) => s.setToastMessage);
 
   const stateBuffer = useTerrainStore((s) => s.stateBuffer);
 

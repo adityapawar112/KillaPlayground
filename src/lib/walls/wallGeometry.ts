@@ -5,7 +5,7 @@ import {
   TERRAIN_RESOLUTION,
   STATE_CHANNELS,
 } from '../terrain/terrainBuffer';
-import { WallPath, WallPoint, WallSettings, WallGate, CitadelKeep, FortStampType } from './wallTypes';
+import { WallPath, WallPoint, WallSettings, DEFAULT_WALL_SETTINGS, WallGate, CitadelKeep, FortStampType } from './wallTypes';
 
 /**
  * Diorama stone masonry scale factor.
@@ -315,7 +315,7 @@ export function generateWallBufferGeometry(
   const {
     points,
     isClosed,
-    settings,
+    settings: rawSettings,
     gates = [],
     towers = [],
     boxBastions = [],
@@ -329,6 +329,20 @@ export function generateWallBufferGeometry(
   if (points.length < 2) {
     return builder.build();
   }
+  const settings: WallSettings = {
+    ...DEFAULT_WALL_SETTINGS,
+    ...(rawSettings || {
+      height: (wall as any).height ?? DEFAULT_WALL_SETTINGS.height,
+      thickness: (wall as any).thickness ?? DEFAULT_WALL_SETTINGS.thickness,
+      uvScale: DEFAULT_WALL_SETTINGS.uvScale,
+      autoBastions: (wall as any).autoBastions ?? DEFAULT_WALL_SETTINGS.autoBastions,
+      bastionRadius: (wall as any).bastionRadius ?? DEFAULT_WALL_SETTINGS.bastionRadius,
+      crenellations: (wall as any).hasCrenellations ?? DEFAULT_WALL_SETTINGS.crenellations,
+      crenellationHeight: DEFAULT_WALL_SETTINGS.crenellationHeight,
+      crenellationWidth: DEFAULT_WALL_SETTINGS.crenellationWidth,
+      flipCrenellations: (wall as any).flipRim ?? DEFAULT_WALL_SETTINGS.flipCrenellations,
+    }),
+  };
   const halfThick = settings.thickness * 0.5;
   const wallH = settings.height;
   const effectiveUvScale = settings.uvScale * BRICK_UV_MULTIPLIER;

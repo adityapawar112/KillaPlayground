@@ -573,6 +573,31 @@ export const LightingRenderer: React.FC = () => {
     new Map()
   );
   const simTimeRef = useRef<number>(0);
+  const pauseTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 5-second pause countdown: After 5 seconds in paused state, clear frozen particles so they don't block building.
+  // Crucially, this 5-second timer ONLY applies to the paused state (!isPlaying) and never to the play button.
+  useEffect(() => {
+    if (!isPlaying) {
+      pauseTimerRef.current = setTimeout(() => {
+        pyrotechnics.reset();
+        if (pointsRef.current) {
+          pointsRef.current.visible = false;
+        }
+        invalidate();
+      }, 5000);
+    } else {
+      if (pauseTimerRef.current) {
+        clearTimeout(pauseTimerRef.current);
+        pauseTimerRef.current = null;
+      }
+    }
+    return () => {
+      if (pauseTimerRef.current) {
+        clearTimeout(pauseTimerRef.current);
+      }
+    };
+  }, [isPlaying, pyrotechnics, invalidate]);
 
   // Frame animation loop: Pyrotechnics particles & Zero-Recompile Key Lights Rig
   useFrame((_, delta) => {

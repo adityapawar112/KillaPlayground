@@ -14,6 +14,7 @@ export interface FreeformOptions {
   cliffSteepness?: number;   // cliff drop power (3.0 to 8.0)
   roughness?: number;        // surface crag strength (0.0 to 1.0)
   waterLevel?: number;       // base water level (0.0 to 0.45m)
+  tiers?: number;            // stepped mountain terraces: 1, 2, or 3 (default: 2)
 }
 
 // Simple seeded PRNG for reproducible simplex noise
@@ -74,7 +75,7 @@ export function generateTerrainBlueprint(
       const grass = 0.0;
 
       if (templateId === 'raigad') {
-        // --- RAIGAD FORT: Organic Crescent Balekilla + Takmak Tok Cliff Spur ---
+        // --- RAIGAD FORT: Organic Crescent Balekilla + Natural Takmak Tok Spur ---
         const warpX = noise2D(x * 0.35 + 1.2, z * 0.35 - 1.8) * 0.45;
         const warpZ = noise2D(x * 0.35 - 2.4, z * 0.35 + 2.7) * 0.45;
         const wx = x + warpX;
@@ -84,42 +85,43 @@ export function generateTerrainBlueprint(
         const wr = Math.sqrt(wx * wx + wz * wz);
 
         // Organic crescent shape with wide royal building tableland
-        const crescentRadius = 2.7 * (1.0 + 0.22 * Math.cos(wAngle - 0.4) + 0.15 * Math.sin(2.0 * wAngle));
+        const crescentRadius = 2.75 * (1.0 + 0.20 * Math.cos(wAngle - 0.4) + 0.12 * Math.sin(2.0 * wAngle));
         const normDist = wr / Math.max(0.5, crescentRadius);
 
         // Broad flat Balekilla summit
-        let balekilla = 1.95 / (1.0 + Math.pow(normDist, 5.0));
-        if (balekilla > 1.65) {
-          balekilla = 1.65 + (balekilla - 1.65) * 0.15; // Flatten summit for building
+        let balekilla = 1.90 / (1.0 + Math.pow(normDist, 4.8));
+        if (balekilla > 1.62) {
+          balekilla = 1.62 + (balekilla - 1.62) * 0.12; // Flat buildable summit
         }
 
-        // Takmak Tok dramatic narrow rock execution spur pointing north-west to (-3.0, -1.6)
-        const spurDx = x - -3.0;
-        const spurDz = z - -1.6;
-        const spurAxis = (-spurDx * 0.85 - spurDz * 0.52);
-        const spurCross = (spurDx * 0.52 - spurDz * 0.85);
+        // Takmak Tok: natural continuous spur extending north-westward
+        const spurDot = (-x * 0.85 - z * 0.52);
+        const spurDistAlong = spurDot - 1.2;
+        const spurCross = Math.abs(x * 0.52 - z * 0.85);
         let spur = 0.0;
-        if (spurAxis >= -0.8 && spurAxis <= 2.2) {
-          const alongFactor = Math.exp(-Math.pow(spurAxis / 1.8, 2.0));
-          const crossFactor = Math.exp(-Math.pow(spurCross / 0.42, 2.0));
-          spur = 1.55 * alongFactor * crossFactor;
+        if (spurDistAlong > -0.5 && spurDistAlong < 2.4 && spurCross < 1.0) {
+          const taper = Math.max(0.0, 1.0 - spurDistAlong / 2.5);
+          const widthTaper = 0.65 * (0.8 + 0.2 * taper);
+          const crossFalloff = Math.exp(-Math.pow(spurCross / widthTaper, 2.5));
+          const spurH = (1.60 - spurDistAlong * 0.14) * crossFalloff * taper;
+          spur = Math.max(0.0, spurH);
         }
 
-        // Holicha Mal lower assembly ground terrace extending east (1.25m elevation)
+        // Holicha Mal lower assembly ground terrace extending east (1.20m elevation)
         const lowerDx = x - 1.8;
-        const lowerDz = z - -0.6;
-        const lowerDist = Math.sqrt(lowerDx * lowerDx * 0.8 + lowerDz * lowerDz * 1.4);
-        const lowerTerrace = 1.25 / (1.0 + Math.pow(lowerDist / 1.5, 4.0));
+        const lowerDz = z - -0.5;
+        const lowerDist = Math.sqrt(lowerDx * lowerDx * 0.9 + lowerDz * lowerDz * 1.3);
+        const lowerTerrace = 1.22 / (1.0 + Math.pow(lowerDist / 1.5, 4.0));
 
-        // Subtle Sahyadri crags
-        const crags = noise2D(x * 0.8, z * 0.8) * 0.08;
+        // Subtle Sahyadri rock crags
+        const crags = noise2D(x * 0.8, z * 0.8) * 0.07;
         let rawH = Math.max(balekilla, Math.max(spur, lowerTerrace)) + crags;
 
         height = Math.max(0.0, rawH * edgeMask);
-        wetness = 0.0; // Dry, authentic matte laterite soil
+        wetness = 0.0; // Clean dry soil and basalt substrate (no blue water paint)
 
       } else if (templateId === 'sinhagad') {
-        // --- SINHAGAD FORT: Triangular Mountain Tableland with Kalyan Darwaja Defile ---
+        // --- SINHAGAD FORT: Triangular Mountain Tableland with Kalyan Darwaja Saddle ---
         const warpX = noise2D(x * 0.32 + 2.1, z * 0.32 - 1.4) * 0.45;
         const warpZ = noise2D(x * 0.32 - 1.7, z * 0.32 + 3.1) * 0.45;
         const wx = x + warpX;
@@ -129,54 +131,55 @@ export function generateTerrainBlueprint(
         const wr = Math.sqrt(wx * wx + wz * wz);
 
         // Triangular mountain profile with broad building deck
-        const triRadius = 2.85 * (1.0 + 0.28 * Math.cos(3.0 * wAngle - 0.5) + 0.12 * Math.sin(wAngle));
+        const triRadius = 2.80 * (1.0 + 0.24 * Math.cos(3.0 * wAngle - 0.5) + 0.10 * Math.sin(wAngle));
         const normDist = wr / Math.max(0.5, triRadius);
 
-        let tableland = 1.92 / (1.0 + Math.pow(normDist, 4.8));
+        let tableland = 1.90 / (1.0 + Math.pow(normDist, 4.8));
         if (tableland > 1.62) {
-          tableland = 1.62 + (tableland - 1.62) * 0.16; // Flatten summit plateau
+          tableland = 1.62 + (tableland - 1.62) * 0.14; // Flatten summit plateau
         }
 
-        // Zunjar Machi narrow finger ridge extending south to (0.2, 2.8)
+        // Zunjar Machi narrow defensive finger ridge extending south to (0.2, 2.6)
         const machiDx = x - 0.2;
-        const machiDz = z - 2.8;
-        const machiDist = Math.sqrt(machiDx * machiDx * 3.5 + machiDz * machiDz * 0.7);
-        const zunjarMachi = 1.35 * Math.exp(-machiDist * 1.1);
+        const machiDz = z - 2.6;
+        const machiDist = Math.sqrt(machiDx * machiDx * 3.0 + machiDz * machiDz * 0.8);
+        const zunjarMachi = 1.35 * Math.exp(-machiDist * 1.0);
 
-        // Kalyan Darwaja gorge notch (cleft in the cliff edge)
-        const gorgeDx = x - -1.8;
-        const gorgeDz = z - 1.1;
-        const gorgeDist = Math.sqrt(gorgeDx * gorgeDx + gorgeDz * gorgeDz);
-        const gorgeCleft = 0.45 * Math.exp(-gorgeDist * 2.2);
+        // Kalyan Darwaja: smooth, natural U-shaped pass / saddle on the west ridge (NO sharp clefts!)
+        const passDx = x - -1.8;
+        const passDz = z - 1.0;
+        const passDist = Math.sqrt(passDx * passDx + passDz * passDz);
+        const passDip = 0.22 * Math.exp(-Math.pow(passDist / 0.85, 2.0));
 
-        const crags = noise2D(x * 0.75, z * 0.75) * 0.09;
-        let rawH = Math.max(tableland, zunjarMachi) - gorgeCleft + crags;
+        const crags = noise2D(x * 0.75, z * 0.75) * 0.07;
+        let rawH = Math.max(tableland - passDip, zunjarMachi) + crags;
 
         height = Math.max(0.0, rawH * edgeMask);
-        wetness = 0.0; // Dry matte mountain soil
+        wetness = 0.0; // Clean dry soil and basalt substrate (no blue water paint)
 
       } else if (templateId === 'janjira') {
-        // --- MURUD-JANJIRA: Oval Marine Island with 19 Rounded Bastions ---
+        // --- MURUD-JANJIRA: Oval Marine Island Fortress (100% Dry Rock/Soil, No Inbuilt Water) ---
         const islandAngle = Math.atan2(z, x);
-        // 19 rounded bastions projecting into the water
-        const bastionRipple = Math.sin(islandAngle * 19.0) * 0.18;
-        // Natural oval island perimeter
-        const ovalRadius = 3.35 + Math.cos(islandAngle * 2.0) * 0.35 + bastionRipple;
+        // Low-frequency harmonic bastion perimeter bulges (no high-frequency jagged aliasing)
+        const bastionBulge = Math.cos(islandAngle * 8.0) * 0.08 + Math.sin(islandAngle * 4.0) * 0.06;
+        const ovalRadius = 3.20 + Math.cos(islandAngle * 2.0) * 0.35 + bastionBulge;
 
-        const distToIslandEdge = ovalRadius - r;
-        const islandMask = 1.0 / (1.0 + Math.exp(-distToIslandEdge * 4.5));
+        // Smooth sigmoidal cliff drop into sea moat
+        const distFromCenter = r / ovalRadius;
+        let islandDeck = 1.25 / (1.0 + Math.pow(distFromCenter, 6.0));
+        if (islandDeck > 1.05) {
+          islandDeck = 1.05 + (islandDeck - 1.05) * 0.10; // Flat fortified interior court
+        }
 
-        // Broad fortified interior tableland
-        let islandHeight = 1.35 + noise2D(x * 0.4, z * 0.4) * 0.08;
-        // Central sweet-water tank (Kasa) courtyard depression
-        const centerTank = 0.42 * Math.exp(-r * r * 1.8);
+        // Central sweet-water cistern (Kasa) courtyard depression
+        const centerTank = 0.28 * Math.exp(-r * r * 1.4);
 
-        let rawH = (islandHeight - centerTank) * islandMask;
+        // Smooth seabed slope under the 3D water plane (waterLevel = 0.22m)
+        const seabed = 0.06;
+        let rawH = Math.max(seabed, islandDeck - centerTank);
+
         height = Math.max(0.02, rawH * edgeMask);
-
-        // Land is 100% dry and matte (wetness = 0.0), eliminating the glossy plastic look!
-        // Sea water moat seabed (underwater beyond the island perimeter) is set to 1.0
-        wetness = r > 3.6 ? 1.0 : 0.0;
+        wetness = 0.0; // Submerged terrain is natural earth/sand, 3D WaterPlane provides water
 
       } else if (templateId === 'pratapgad') {
         // --- PRATAPGAD FORT: Double-Tiered Mountain Fort (Balekilla + Bhavani Machi) ---
@@ -185,56 +188,56 @@ export function generateTerrainBlueprint(
         const upperDz = z - -0.6;
         const upperAngle = Math.atan2(upperDz, upperDx);
         const upperR = Math.sqrt(upperDx * upperDx + upperDz * upperDz);
-        const upperRadius = 1.8 * (1.0 + 0.18 * Math.cos(upperAngle * 2.0));
-        let upperTier = 2.05 / (1.0 + Math.pow(upperR / upperRadius, 5.2));
-        if (upperTier > 1.7) {
-          upperTier = 1.7 + (upperTier - 1.7) * 0.15;
+        const upperRadius = 1.8 * (1.0 + 0.15 * Math.cos(upperAngle * 2.0));
+        let upperTier = 2.00 / (1.0 + Math.pow(upperR / upperRadius, 5.0));
+        if (upperTier > 1.68) {
+          upperTier = 1.68 + (upperTier - 1.68) * 0.14;
         }
 
         // Tier 2: Lower Bhavani Temple Spur / Machi at (-1.6, 1.2)
         const lowerDx = x - -1.6;
         const lowerDz = z - 1.2;
         const lowerDist = Math.sqrt(lowerDx * lowerDx * 0.9 + lowerDz * lowerDz * 1.2);
-        let lowerTier = 1.28 / (1.0 + Math.pow(lowerDist / 1.6, 4.2));
-        if (lowerTier > 1.1) {
-          lowerTier = 1.1 + (lowerTier - 1.1) * 0.18;
+        let lowerTier = 1.25 / (1.0 + Math.pow(lowerDist / 1.6, 4.2));
+        if (lowerTier > 1.08) {
+          lowerTier = 1.08 + (lowerTier - 1.08) * 0.15;
         }
 
-        // Connecting saddle ramp between tiers
+        // Smooth connecting saddle ramp between tiers
         const rampDx = x - -0.5;
         const rampDz = z - 0.3;
-        const rampDist = Math.sqrt(rampDx * rampDx * 1.8 + rampDz * rampDz * 1.8);
-        const connectingRamp = 1.35 * Math.exp(-rampDist * 1.2);
+        const rampDist = Math.sqrt(rampDx * rampDx * 1.5 + rampDz * rampDz * 1.5);
+        const connectingRamp = 1.30 * Math.exp(-rampDist * 1.2);
 
-        const crags = noise2D(x * 0.7, z * 0.7) * 0.08;
+        const crags = noise2D(x * 0.7, z * 0.7) * 0.07;
         let rawH = Math.max(upperTier, Math.max(lowerTier, connectingRamp)) + crags;
 
         height = Math.max(0.0, rawH * edgeMask);
-        wetness = 0.0;
+        wetness = 0.0; // Dry matte mountain soil
 
       } else if (templateId === 'vijaydurg') {
-        // --- VIJAYDURG NAVAL FORT: Concentric Marine Peninsula Fortress ---
-        const warpX = noise2D(x * 0.4 + 1.5, z * 0.4 - 2.0) * 0.4;
-        const warpZ = noise2D(x * 0.4 - 1.8, z * 0.4 + 1.9) * 0.4;
+        // --- VIJAYDURG NAVAL FORT: Concentric Marine Peninsula (No Cliff Cuts, No Inbuilt Water) ---
+        const warpX = noise2D(x * 0.35 + 1.5, z * 0.35 - 2.0) * 0.35;
+        const warpZ = noise2D(x * 0.35 - 1.8, z * 0.35 + 1.9) * 0.35;
         const wx = (x - 0.2) + warpX;
         const wz = z + warpZ;
 
-        // Curved peninsula jutting out to sea
-        const penRadius = 3.1 + Math.sin(Math.atan2(wz, wx) * 3.0) * 0.35;
-        const penDist = Math.sqrt(wx * wx * 0.85 + wz * wz * 1.2) / penRadius;
+        // Curved peninsula projecting out into the Arabian Sea
+        const penRadius = 3.20 + Math.sin(Math.atan2(wz, wx) * 2.0) * 0.28;
+        const penDist = Math.sqrt(wx * wx * 0.80 + wz * wz * 1.15) / penRadius;
 
-        // Stepped triple rampart terraces
-        let penBase = 1.45 / (1.0 + Math.pow(penDist, 5.0));
-        if (penBase > 1.18) {
-          penBase = 1.18 + (penBase - 1.18) * 0.15; // Broad building deck
+        // Smooth stepped triple rampart terraces dipping into the sea:
+        let penBase = 1.35 / (1.0 + Math.pow(penDist, 4.5));
+        if (penBase > 1.15) {
+          penBase = 1.15 + (penBase - 1.15) * 0.12; // Flat building deck
         }
 
-        // Sea moat cut off
-        const seaMoat = r > 3.6 ? 0.05 : 1.0;
-        let rawH = penBase * seaMoat;
+        // Smooth seabed slope under the 3D water plane (waterLevel = 0.20m), NO sudden cookie-cutter cut!
+        const seabed = 0.06;
+        let rawH = Math.max(seabed, penBase);
 
         height = Math.max(0.02, rawH * edgeMask);
-        wetness = r > 3.5 ? 1.0 : 0.0; // Dry land, submerged seabed
+        wetness = 0.0; // Submerged terrain is natural earth/sand, 3D WaterPlane provides water
 
       } else {
         // --- FREEFORM / SCRATCH: Organic Multi-Harmonic Mountain with Stepped Decks ---
@@ -242,6 +245,7 @@ export function generateTerrainBlueprint(
         const tablelandWidth = freeformOpts?.tablelandWidth ?? 3.4;
         const cliffSteepness = freeformOpts?.cliffSteepness ?? 5.5;
         const roughness = freeformOpts?.roughness ?? 0.5;
+        const tiers = Math.max(1, Math.min(3, Math.round(freeformOpts?.tiers ?? 2)));
 
         // Seed-based phase angles for unique organic mountain shapes on every roll
         const phi1 = (seed * 0.137) % (Math.PI * 2);
@@ -261,26 +265,35 @@ export function generateTerrainBlueprint(
         const organicRadius = (tablelandWidth * 0.62) * (1.0 + h1 + h2 + h3 + nWarp);
         const t = r / Math.max(0.6, organicRadius);
 
-        // Smooth plateau dropoff:
-        // When t < 0.85: On the summit tableland!
-        // When t between 0.85 and 1.35: Steep cliff drop!
-        // When t > 1.4: Base level (0)!
         const cliffPower = cliffSteepness * 0.9;
-        let mountainH = elevation / (1.0 + Math.pow(Math.max(0.0, (t - 0.2) / 0.8), cliffPower));
+        let mountainH = 0.0;
+
+        if (tiers === 1) {
+          // Single-Tier Summit: One grand central tableland sloping down to courtyard
+          mountainH = elevation / (1.0 + Math.pow(Math.max(0.0, (t - 0.20) / 0.80), cliffPower));
+        } else if (tiers === 2) {
+          // Dual-Tier Fort: High royal Balekilla peak + expansive lower Machi terrace shelf
+          // Upper Balekilla drops at t ~ 0.55
+          const step1 = (elevation * 0.48) / (1.0 + Math.pow(Math.max(0.0, (t - 0.15) / 0.52), cliffPower));
+          // Lower Machi terrace extends outward organically along theta
+          const machiMod = 1.0 + 0.22 * Math.cos(theta + phi2);
+          const tLower = 1.18 * machiMod;
+          const step2 = (elevation * 0.52) / (1.0 + Math.pow(Math.max(0.0, (t - 0.30) / Math.max(0.2, tLower - 0.30)), cliffPower * 0.9));
+          mountainH = step1 + step2;
+        } else {
+          // Triple-Tier Fort: Royal Balekilla + Middle Machi shelf + Lower concentric defensive terrace
+          const step1 = (elevation * 0.34) / (1.0 + Math.pow(Math.max(0.0, (t - 0.12) / 0.38), cliffPower));
+          const step2 = (elevation * 0.33) / (1.0 + Math.pow(Math.max(0.0, (t - 0.25) / 0.70), cliffPower * 0.9));
+          const machiMod = 1.0 + 0.20 * Math.cos(theta + phi2);
+          const tLower = 1.35 * machiMod;
+          const step3 = (elevation * 0.33) / (1.0 + Math.pow(Math.max(0.0, (t - 0.40) / Math.max(0.2, tLower - 0.40)), cliffPower * 0.85));
+          mountainH = step1 + step2 + step3;
+        }
 
         // Broad flat building deck on the summit plateau
         const flatCap = elevation * 0.82;
         if (mountainH > flatCap) {
           mountainH = flatCap + (mountainH - flatCap) * 0.15;
-        }
-
-        // Secondary Machi terrace spur:
-        // Extends an organic lower shelf (52% elevation) along one flank for stepped fortification building
-        const machiAngle = Math.sin(theta + phi2);
-        if (machiAngle > 0.20 && t >= 0.70 && t <= 1.42) {
-          const machiDist = Math.abs(t - 1.05) / 0.36;
-          const machiH = (elevation * 0.52) / (1.0 + Math.pow(machiDist, 4.0));
-          mountainH = Math.max(mountainH, machiH);
         }
 
         // Natural basalt rock crags on slopes; flat decks remain smooth and buildable

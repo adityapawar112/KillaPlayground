@@ -550,6 +550,13 @@ export const BaseTerrainContent: React.FC = () => {
             } else {
               editor.setToastMessage('Hover closer to a wall segment (<35cm) to place rampart bastion.');
             }
+          } else if (editor.activeStamp === 'round_bastion') {
+            if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
+              editor.addRoundBastionToWall(snap.wallId, snap.segmentIndex, snap.t);
+              editor.setToastMessage('Round Bastion placed! Click along wall to place another.');
+            } else {
+              editor.setToastMessage('Hover closer to a wall segment (<35cm) to place round bastion.');
+            }
           } else if (editor.activeStamp === 'gate') {
             if (snap.snapped && snap.wallId && snap.segmentIndex !== undefined) {
               editor.addGateToWall(snap.wallId, snap.segmentIndex, snap.t);

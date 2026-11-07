@@ -238,6 +238,13 @@ const SingleWallMeshComponent: React.FC<{
     if (handleStructurePointerDown(e, invalidate)) {
       return;
     }
+    const editor = useEditorStore.getState();
+    const isFortify =
+      (editor.activeTool === 'building' && editor.buildingMode === 'fortifications') ||
+      (editor.activeTool === 'walls' && editor.wallMode === 'fortify');
+    if (isFortify && editor.activeStamp) {
+      e.stopPropagation();
+    }
   };
 
   const handleWallPointerMove = (e: any) => {

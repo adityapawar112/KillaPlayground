@@ -3,6 +3,8 @@ import { z } from 'zod';
 import { COLORS } from '../constants/tokens';
 import { useTerrainStore } from '../terrain/terrainStore';
 import { getTerrainHeightAt } from '../terrain/terrainBuffer';
+import { serializeKilla, deserializeKilla } from '../persistence/killaSerializer';
+import { saveVaultProject, loadVaultProject, getVaultProjects, deleteVaultProject, VaultProjectMeta } from '../persistence/killaVault';
 import {
   WallPath,
   WallPoint,
@@ -142,7 +144,16 @@ export interface SavedProject {
   name: string;
   templateId: string;
   updatedAt: number;
-  data: {
+  createdAt?: number;
+  stats?: {
+    wallsCount: number;
+    foundationsCount: number;
+    stairsCount: number;
+    propsCount: number;
+    lightsCount: number;
+    foliageCount: number;
+  };
+  data?: {
     splines: SplinePath[];
     walls?: WallPath[];
     citadelKeeps?: CitadelKeep[];
@@ -456,6 +467,24 @@ interface EditorState {
   isTerrainDrawerOpen: boolean;
   terrainDrawerTab: 'historical' | 'freeform';
 
+  // Project Hub & Fortress Studio (Ticket 12 Unified Architecture)
+  projectHubTab: 'blueprints' | 'procedural' | 'vault';
+  setProjectHubTab: (tab: 'blueprints' | 'procedural' | 'vault') => void;
+  openProjectHub: (tab?: 'blueprints' | 'procedural' | 'vault') => void;
+
+  // Terrain Change Confirmation
+  isTerrainConfirmOpen: boolean;
+  pendingTerrainChange: {
+    templateId: string;
+    title: string;
+    waterLevel?: number;
+    freeformOpts?: any;
+  } | null;
+  setTerrainConfirmOpen: (open: boolean) => void;
+  setPendingTerrainChange: (change: any) => void;
+  requestTerrainChange: (templateId: string, title: string, waterLevel?: number, freeformOpts?: any) => void;
+  confirmTerrainChange: () => void;
+
   // Base Water Level State
   waterLevel: number; // 0.0 to 0.45
   waterLevelActive: boolean;
@@ -468,19 +497,21 @@ interface EditorState {
     tablelandWidth: number;
     cliffSteepness: number;
     roughness: number;
+    tiers: number;
     seed: number;
   };
-  setFreeformSetting: (key: 'elevation' | 'tablelandWidth' | 'cliffSteepness' | 'roughness' | 'seed', val: number) => void;
+  setFreeformSetting: (key: 'elevation' | 'tablelandWidth' | 'cliffSteepness' | 'roughness' | 'tiers' | 'seed', val: number) => void;
   randomizeFreeformSeed: () => void;
 
-  // Local Saved Projects Vault
+  // Local Saved Projects Vault (IndexedDB + binary serialization)
   savedProjects: SavedProject[];
   loadSavedProjects: () => void;
   saveProjectLocally: (name?: string) => string;
-  loadProjectLocally: (id: string) => boolean;
-  deleteProjectLocally: (id: string) => void;
-  importProjectData: (jsonStr: string) => boolean;
+  loadProjectLocally: (id: string) => Promise<boolean>;
+  deleteProjectLocally: (id: string) => Promise<void>;
+  importProjectData: (data: string | Uint8Array) => boolean;
   exportProjectData: () => string;
+  exportKillaBinary: () => Uint8Array;
 
   // Notification Toast
   toastMessage: string | null;
@@ -644,6 +675,9 @@ const pushUndoSnapshot = () => {
     // Graceful fallback if invoked during initial module bootstrapping
   }
 };
+
+// 300ms debounce guard preventing duplicate fortification stamp placements on raw pointer clicks
+let lastFortificationPlacementTime = 0;
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   locale: 'en',
@@ -1051,6 +1085,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   addTowerToWall: (wallId, segmentIndex, t = 0.5, radius) => {
+    const now = Date.now();
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+      return;
+    }
+    lastFortificationPlacementTime = now;
     pushUndoSnapshot();
     const towerId = `tower_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     set((state) => {
@@ -1097,6 +1136,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   addBoxBastionToWall: (wallId, segmentIndex, t = 0.5, props) => {
+    const now = Date.now();
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+      return;
+    }
+    lastFortificationPlacementTime = now;
     pushUndoSnapshot();
     const boxId = `box_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newBox: import('../walls/wallTypes').WallBoxBastion = {
@@ -1141,6 +1185,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   addRoundBastionToWall: (wallId, segmentIndex, t = 0.5, props = {}) => {
+    const now = Date.now();
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+      return '';
+    }
+    lastFortificationPlacementTime = now;
     pushUndoSnapshot();
     const bastionId = `round_bastion_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newBastion: import('../walls/wallTypes').WallRoundBastion = {
@@ -1200,6 +1249,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
   addGateToWall: (wallId, segmentIndex, t = 0.5) => {
+    const now = Date.now();
+    if (process.env.NODE_ENV !== 'test' && now - lastFortificationPlacementTime < 300) {
+      return;
+    }
+    lastFortificationPlacementTime = now;
     pushUndoSnapshot();
     const gateId = `gate_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newGate: WallGate = {
@@ -1620,22 +1674,160 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     tablelandWidth: 3.4,
     cliffSteepness: 5.5,
     roughness: 0.5,
+    tiers: 2,
     seed: 42,
   },
   setFreeformSetting: (key, val) => {
-    set((state) => {
-      const updated = { ...state.freeformSettings, [key]: val };
-      if (state.templateId === 'scratch') {
-        import('../terrain/terrainStore').then((m) => {
-          m.useTerrainStore.getState().loadTemplate('scratch', updated);
-        });
-      }
-      return { freeformSettings: updated };
+    const state = get();
+    const current = state.freeformSettings || {
+      elevation: 1.45,
+      tablelandWidth: 3.4,
+      cliffSteepness: 5.5,
+      roughness: 0.5,
+      tiers: 2,
+      seed: 42,
+    };
+    const updated = { ...current, [key]: val };
+    set({
+      freeformSettings: updated,
+      templateId: 'scratch',
+      fortTitle: 'Custom Fort',
     });
+    useTerrainStore.getState().loadTemplate('scratch', updated);
   },
   randomizeFreeformSeed: () => {
+    const { walls, foundations, stairs, splines, placedProps, placedLights, foliageInstances, pondWaterFeatures, freeformSettings, waterLevel } = get();
+    const objectCount =
+      walls.length +
+      (foundations?.length || 0) +
+      (stairs?.length || 0) +
+      splines.length +
+      placedProps.length +
+      (placedLights?.length || 0) +
+      (foliageInstances?.length || 0) +
+      pondWaterFeatures.length;
+
     const newSeed = Math.floor(Math.random() * 1000000);
-    get().setFreeformSetting('seed', newSeed);
+    const updated = {
+      ...(freeformSettings || {
+        elevation: 1.45,
+        tablelandWidth: 3.4,
+        cliffSteepness: 5.5,
+        roughness: 0.5,
+        seed: 42,
+      }),
+      seed: newSeed,
+    };
+
+    if (objectCount > 0) {
+      get().requestTerrainChange('scratch', 'Custom Fort', waterLevel, updated);
+    } else {
+      get().setFreeformSetting('seed', newSeed);
+    }
+  },
+
+  // Project Hub & Terrain Change State
+  projectHubTab: 'blueprints',
+  setProjectHubTab: (tab) => set({ projectHubTab: tab }),
+  openProjectHub: (tab) => set((s) => ({ isStartupModalOpen: true, projectHubTab: tab || s.projectHubTab })),
+
+  isTerrainConfirmOpen: false,
+  pendingTerrainChange: null,
+  setTerrainConfirmOpen: (open) => set({ isTerrainConfirmOpen: open }),
+  setPendingTerrainChange: (pending) => set({ pendingTerrainChange: pending }),
+
+  requestTerrainChange: (templateId, title, waterLevel, freeformOpts) => {
+    const { walls, foundations, stairs, splines, placedProps, placedLights, foliageInstances, pondWaterFeatures } = get();
+    const objectCount =
+      walls.length +
+      (foundations?.length || 0) +
+      (stairs?.length || 0) +
+      splines.length +
+      placedProps.length +
+      (placedLights?.length || 0) +
+      (foliageInstances?.length || 0) +
+      pondWaterFeatures.length;
+
+    if (objectCount > 0) {
+      set({
+        pendingTerrainChange: { templateId, title, waterLevel, freeformOpts },
+        isTerrainConfirmOpen: true,
+      });
+    } else {
+      pushUndoSnapshot();
+      if (waterLevel !== undefined) {
+        set({ waterLevel, waterLevelActive: waterLevel > 0.05 });
+      }
+      set({ templateId, fortTitle: title });
+      if (templateId === 'scratch' && freeformOpts) {
+        set((s) => ({
+          freeformSettings: {
+            ...(s.freeformSettings || {
+              elevation: 1.45,
+              tablelandWidth: 3.4,
+              cliffSteepness: 5.5,
+              roughness: 0.5,
+              tiers: 2,
+              seed: 42,
+            }),
+            ...freeformOpts,
+          },
+        }));
+      }
+      useTerrainStore.getState().clearPaintTerrain();
+      useTerrainStore.getState().loadTemplate(templateId, freeformOpts);
+    }
+  },
+
+  confirmTerrainChange: () => {
+    const { pendingTerrainChange } = get();
+    if (!pendingTerrainChange) return;
+
+    pushUndoSnapshot();
+    set({
+      walls: [],
+      foundations: [],
+      stairs: [],
+      citadelKeeps: [],
+      splines: [],
+      placedProps: [],
+      placedLights: [],
+      foliageInstances: [],
+      pondWaterFeatures: [],
+      templateId: pendingTerrainChange.templateId,
+      fortTitle: pendingTerrainChange.title,
+      isTerrainConfirmOpen: false,
+      pendingTerrainChange: null,
+    });
+
+    if (pendingTerrainChange.waterLevel !== undefined) {
+      set({
+        waterLevel: pendingTerrainChange.waterLevel,
+        waterLevelActive: pendingTerrainChange.waterLevel > 0.05,
+      });
+    }
+
+    if (pendingTerrainChange.templateId === 'scratch' && pendingTerrainChange.freeformOpts) {
+      set((s) => ({
+        freeformSettings: {
+          ...(s.freeformSettings || {
+            elevation: 1.45,
+            tablelandWidth: 3.4,
+            cliffSteepness: 5.5,
+            roughness: 0.5,
+            tiers: 2,
+            seed: 42,
+          }),
+          ...pendingTerrainChange.freeformOpts,
+        },
+      }));
+    }
+
+    useTerrainStore.getState().clearPaintTerrain();
+    useTerrainStore.getState().loadTemplate(
+      pendingTerrainChange.templateId,
+      pendingTerrainChange.freeformOpts
+    );
   },
 
   savedProjects: [],
@@ -1647,121 +1839,146 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   cameraViewPreset: null,
   setCameraViewPreset: (v) => set({ cameraViewPreset: v }),
 
-  loadSavedProjects: () => {
-    const projects = getInitialSavedProjects();
-    const dontShow = getInitialStartupPref();
-    set({
-      savedProjects: projects,
-      dontShowStartupModal: dontShow,
-    });
+  loadSavedProjects: async () => {
+    try {
+      const projects = await getVaultProjects();
+      const dontShow = getInitialStartupPref();
+      set({
+        savedProjects: projects as any,
+        dontShowStartupModal: dontShow,
+      });
+    } catch (err) {
+      console.warn('Failed to load saved projects:', err);
+    }
   },
 
   saveProjectLocally: (name) => {
-    const { splines, walls, placedProps, placedLights, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode, savedProjects } = get();
-    const projectName = name?.trim() || fortTitle || 'Untitled Killa';
+    const state = get();
+    const terrain = useTerrainStore.getState();
+    const projectName = name?.trim() || state.fortTitle || 'Untitled Killa';
     const projectId = `killa_${Date.now()}`;
-    const newProject: SavedProject = {
+    const blob = serializeKilla(state, {
+      stateBuffer: terrain.stateBuffer,
+      paintBuffer: terrain.paintBuffer,
+    });
+
+    saveVaultProject(projectName, blob, {
       id: projectId,
-      name: projectName,
-      templateId,
-      updatedAt: Date.now(),
-      data: {
-        splines,
-        walls,
-        placedProps,
-        placedLights: placedLights || [],
-        pondWaterFeatures,
-        foliageInstances: foliageInstances || [],
-        fortTitle: projectName,
-        builderName,
-        templateId,
-        paintColor,
-        waterMode,
+      templateId: state.templateId,
+      stats: {
+        wallsCount: state.walls.length,
+        foundationsCount: (state.foundations || []).length,
+        stairsCount: (state.stairs || []).length,
+        propsCount: state.placedProps.length,
+        lightsCount: (state.placedLights || []).length,
+        foliageCount: (state.foliageInstances || []).length,
       },
-    };
+    })
+      .then(async () => {
+        const updated = await getVaultProjects();
+        set({ savedProjects: updated as any });
+      })
+      .catch((err) => {
+        console.warn('Failed to save to vault:', err);
+      });
 
-    const existingIndex = savedProjects.findIndex((p) => p.name.toLowerCase() === projectName.toLowerCase());
-    let updatedProjects: SavedProject[];
-    if (existingIndex >= 0) {
-      updatedProjects = [...savedProjects];
-      updatedProjects[existingIndex] = newProject;
-    } else {
-      updatedProjects = [newProject, ...savedProjects];
-    }
-
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProjects));
-      } catch (err) {
-        console.error('Failed to save to localStorage:', err);
-      }
-    }
-
-    set({ savedProjects: updatedProjects, fortTitle: projectName });
+    set({ fortTitle: projectName });
     return projectId;
   },
 
-  loadProjectLocally: (id) => {
-    const { savedProjects } = get();
-    const proj = savedProjects.find((p) => p.id === id);
-    if (!proj || !proj.data) return false;
+  loadProjectLocally: async (id) => {
+    try {
+      const record = await loadVaultProject(id);
+      if (!record || !record.packageBlob) return false;
+      const pkg = deserializeKilla(record.packageBlob);
+      if (!pkg) return false;
 
-    // Migrate any legacy diya props from placedProps to placedLights if needed
-    const rawProps = proj.data.placedProps || [];
-    const rawLights: PlacedLight[] = proj.data.placedLights || [];
-    const migratedLights: PlacedLight[] = [...rawLights];
-    const remainingProps: PlacedProp[] = [];
+      useTerrainStore.getState().setFullTerrainState(
+        pkg.terrainBuffer,
+        pkg.paintBuffer,
+        pkg.manifest.templateId
+      );
 
-    for (const p of rawProps) {
-      if (p.type && p.type.startsWith('diya_')) {
-        migratedLights.push({
-          id: p.id,
-          type: p.type,
-          category: p.type.startsWith('diya_color') ? 'diyas_color' : 'diyas_clay',
-          position: p.position,
-          rotation: p.rotation,
-          scale: p.scale,
-          createdAt: Date.now(),
-        });
-      } else {
-        remainingProps.push(p);
-      }
+      set({
+        fortTitle: pkg.manifest.fortTitle,
+        builderName: pkg.manifest.builderName,
+        templateId: pkg.manifest.templateId,
+        waterLevel: pkg.manifest.waterLevel,
+        waterLevelActive: pkg.manifest.waterLevelActive,
+        freeformSettings: pkg.manifest.freeformSettings
+          ? {
+              elevation: pkg.manifest.freeformSettings.elevation ?? 1.45,
+              tablelandWidth: pkg.manifest.freeformSettings.tablelandWidth ?? 3.4,
+              cliffSteepness: pkg.manifest.freeformSettings.cliffSteepness ?? 5.5,
+              roughness: pkg.manifest.freeformSettings.roughness ?? 0.5,
+              tiers: (pkg.manifest.freeformSettings as any).tiers ?? 2,
+              seed: pkg.manifest.freeformSettings.seed ?? 42,
+            }
+          : (get().freeformSettings || {
+              elevation: 1.45,
+              tablelandWidth: 3.4,
+              cliffSteepness: 5.5,
+              roughness: 0.5,
+              tiers: 2,
+              seed: 42,
+            }),
+        paintColor: pkg.manifest.paintColor,
+        waterMode: (pkg.manifest.waterMode as any) || 'tarpaulin',
+        walls: pkg.scene.walls,
+        foundations: pkg.scene.foundations,
+        stairs: pkg.scene.stairs,
+        citadelKeeps: pkg.scene.citadelKeeps,
+        splines: pkg.scene.splines,
+        placedProps: pkg.scene.placedProps,
+        placedLights: pkg.scene.placedLights,
+        foliageInstances: pkg.scene.foliageInstances,
+        pondWaterFeatures: pkg.scene.pondWaterFeatures,
+        isStartupModalOpen: false,
+      });
+      return true;
+    } catch (err) {
+      console.error('Failed to load project from vault:', err);
+      return false;
     }
-
-    set({
-      splines: proj.data.splines || [],
-      walls: proj.data.walls || [],
-      placedProps: remainingProps,
-      placedLights: migratedLights,
-      pondWaterFeatures: proj.data.pondWaterFeatures || [],
-      foliageInstances: proj.data.foliageInstances || [],
-      fortTitle: proj.data.fortTitle || proj.name,
-      builderName: proj.data.builderName || 'Mavala Builder',
-      templateId: proj.data.templateId || 'raigad',
-      paintColor: proj.data.paintColor || COLORS.basalt,
-      waterMode: proj.data.waterMode || 'tarpaulin',
-      isStartupModalOpen: false,
-    });
-    return true;
   },
 
-  deleteProjectLocally: (id) => {
-    const { savedProjects } = get();
-    const updated = savedProjects.filter((p) => p.id !== id);
-    if (typeof window !== 'undefined') {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (err) {
-        console.error('Failed to update localStorage:', err);
-      }
+  deleteProjectLocally: async (id) => {
+    try {
+      await deleteVaultProject(id);
+      const updated = await getVaultProjects();
+      set({ savedProjects: updated as any });
+    } catch (err) {
+      console.warn('Failed to delete project from vault:', err);
     }
-    set({ savedProjects: updated });
+  },
+
+  exportKillaBinary: () => {
+    const state = get();
+    const terrain = useTerrainStore.getState();
+    return serializeKilla(state, {
+      stateBuffer: terrain.stateBuffer,
+      paintBuffer: terrain.paintBuffer,
+    });
   },
 
   exportProjectData: () => {
-    const { splines, walls, foundations, stairs, placedProps, placedLights, pondWaterFeatures, foliageInstances, fortTitle, builderName, templateId, paintColor, waterMode } = get();
+    const {
+      splines,
+      walls,
+      foundations,
+      stairs,
+      placedProps,
+      placedLights,
+      pondWaterFeatures,
+      foliageInstances,
+      fortTitle,
+      builderName,
+      templateId,
+      paintColor,
+      waterMode,
+    } = get();
     const payload = {
-      version: '1.0.0',
+      version: '1.2.0',
       exportedAt: new Date().toISOString(),
       fortTitle,
       builderName,
@@ -1780,20 +1997,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return JSON.stringify(payload, null, 2);
   },
 
-  importProjectData: (jsonStr) => {
+  importProjectData: (data: string | Uint8Array) => {
     try {
-      const raw = JSON.parse(jsonStr);
-      const parsed = SavedProjectSchema.safeParse(raw);
-      if (!parsed.success) {
-        console.warn('Invalid project format:', parsed.error);
-        return false;
+      const pkg = deserializeKilla(data);
+      if (!pkg) return false;
+
+      pushUndoSnapshot();
+
+      const hasCustomTerrain = pkg.terrainBuffer && pkg.terrainBuffer.some((v) => v !== 0);
+      if (hasCustomTerrain) {
+        useTerrainStore.getState().setFullTerrainState(
+          pkg.terrainBuffer,
+          pkg.paintBuffer,
+          pkg.manifest.templateId
+        );
+      } else {
+        useTerrainStore.getState().loadTemplate(pkg.manifest.templateId);
       }
-      const data = parsed.data;
 
       const importedStairs: StairPath[] =
-        (data as any).stairs && (data as any).stairs.length > 0
-          ? (data as any).stairs
-          : (data.splines || [])
+        (pkg.scene as any).stairs && (pkg.scene as any).stairs.length > 0
+          ? (pkg.scene as any).stairs
+          : (pkg.scene.splines || [])
               .filter((s: any) => s.type === 'steps')
               .map((s: any) => ({
                 id: s.id,
@@ -1803,50 +2028,47 @@ export const useEditorStore = create<EditorState>((set, get) => ({
                 createdAt: s.createdAt || Date.now(),
               }));
 
-      // Migrate legacy diya props from data.placedProps if present
-      const rawProps = data.placedProps || [];
-      const rawLights: PlacedLight[] = (data as any).placedLights || [];
-      const migratedLights: PlacedLight[] = [...rawLights];
-      const remainingProps: PlacedProp[] = [];
-
-      for (const p of rawProps) {
-        if (p.type && p.type.startsWith('diya_')) {
-          migratedLights.push({
-            id: p.id,
-            type: p.type,
-            category: p.type.startsWith('diya_color') ? 'diyas_color' : 'diyas_clay',
-            position: p.position,
-            rotation: p.rotation,
-            scale: p.scale,
-            createdAt: Date.now(),
-          });
-        } else {
-          remainingProps.push(p);
-        }
-      }
-
       set({
-        fortTitle: data.fortTitle,
-        builderName: data.builderName,
-        templateId: data.templateId,
-        paintColor: data.paintColor,
-        waterMode: data.waterMode as any,
-        splines: data.splines,
-        walls: (data as any).walls || [],
-        foundations: (data as any).foundations || [],
+        fortTitle: pkg.manifest.fortTitle,
+        builderName: pkg.manifest.builderName,
+        templateId: pkg.manifest.templateId,
+        waterLevel: pkg.manifest.waterLevel,
+        waterLevelActive: pkg.manifest.waterLevelActive,
+        freeformSettings: pkg.manifest.freeformSettings
+          ? {
+              elevation: pkg.manifest.freeformSettings.elevation ?? 1.45,
+              tablelandWidth: pkg.manifest.freeformSettings.tablelandWidth ?? 3.4,
+              cliffSteepness: pkg.manifest.freeformSettings.cliffSteepness ?? 5.5,
+              roughness: pkg.manifest.freeformSettings.roughness ?? 0.5,
+              tiers: (pkg.manifest.freeformSettings as any).tiers ?? 2,
+              seed: pkg.manifest.freeformSettings.seed ?? 42,
+            }
+          : (get().freeformSettings || {
+              elevation: 1.45,
+              tablelandWidth: 3.4,
+              cliffSteepness: 5.5,
+              roughness: 0.5,
+              tiers: 2,
+              seed: 42,
+            }),
+        paintColor: pkg.manifest.paintColor,
+        waterMode: (pkg.manifest.waterMode as any) || 'tarpaulin',
+        walls: pkg.scene.walls || [],
+        foundations: pkg.scene.foundations || [],
         stairs: importedStairs,
-        placedProps: remainingProps,
-        placedLights: migratedLights,
-        pondWaterFeatures: data.pondWaterFeatures || [],
-        foliageInstances: (data as any).foliageInstances || [],
+        citadelKeeps: pkg.scene.citadelKeeps || [],
+        splines: pkg.scene.splines || [],
+        placedProps: pkg.scene.placedProps || [],
+        placedLights: pkg.scene.placedLights || [],
+        foliageInstances: pkg.scene.foliageInstances || [],
+        pondWaterFeatures: pkg.scene.pondWaterFeatures || [],
         isStartupModalOpen: false,
       });
 
-      // Also auto-save into local projects list
-      get().saveProjectLocally(data.fortTitle);
+      get().saveProjectLocally(pkg.manifest.fortTitle);
       return true;
     } catch (err) {
-      console.error('Failed to parse project JSON:', err);
+      console.error('Failed to import project:', err);
       return false;
     }
   },

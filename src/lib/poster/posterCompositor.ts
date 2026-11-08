@@ -16,7 +16,7 @@ export interface PosterTextOptions {
   builderName?: string;
   builderCreditLine?: string;
   festiveGreeting?: string;
-  stampStyle?: 'traditional-banner' | 'minimal-stamp' | 'crest-ribbon' | 'none';
+  stampStyle?: 'traditional-banner' | 'minimal-stamp' | 'royal-plaque' | 'none';
   fontFamily?: 'Yatra One' | 'Modak' | 'Inter';
   showBuilderCredit?: boolean;
 }
@@ -164,32 +164,21 @@ export async function composeFestivePoster(params: ComposePosterParams): Promise
 
     ctx.save();
 
-    // 1. Shadow beneath slot
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
-    ctx.shadowBlur = 10;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 4;
-
-    // 2. Clip rounded rectangle
+    // Clip rounded rectangle for each photo slot without outer borders or shadow bleed
     ctx.beginPath();
     if (typeof (ctx as any).roundRect === 'function') {
       (ctx as any).roundRect(slot.x, slot.y, slot.width, slot.height, radius);
     } else {
       ctx.rect(slot.x, slot.y, slot.width, slot.height);
     }
-    ctx.fillStyle = '#23211E';
-    ctx.fill();
-
-    // Clear shadow for content draw
-    ctx.shadowColor = 'transparent';
     ctx.clip();
 
-    // 3. Draw 3D view image with object-fit: cover
+    // Draw 3D view image with object-fit: cover
     if (slotImg) {
       drawCover(ctx, slotImg, slot.x, slot.y, slot.width, slot.height);
     } else {
-      // Placeholder if slot is unassigned
-      ctx.fillStyle = '#3E2F24';
+      // Subtle translucent placeholder while slot is unassigned / loading
+      ctx.fillStyle = 'rgba(35, 33, 30, 0.45)';
       ctx.fillRect(slot.x, slot.y, slot.width, slot.height);
       ctx.fillStyle = '#D9C9B4';
       ctx.font = 'bold 20px sans-serif';
@@ -198,19 +187,6 @@ export async function composeFestivePoster(params: ComposePosterParams): Promise
       ctx.fillText(`Slot ${index + 1}`, slot.x + slot.width / 2, slot.y + slot.height / 2);
     }
 
-    ctx.restore();
-
-    // 4. Subtle border stroke
-    ctx.save();
-    ctx.strokeStyle = 'rgba(250, 248, 245, 0.65)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    if (typeof (ctx as any).roundRect === 'function') {
-      (ctx as any).roundRect(slot.x, slot.y, slot.width, slot.height, radius);
-    } else {
-      ctx.rect(slot.x, slot.y, slot.width, slot.height);
-    }
-    ctx.stroke();
     ctx.restore();
   });
 
@@ -288,28 +264,81 @@ export async function composeFestivePoster(params: ComposePosterParams): Promise
       ctx.fillStyle = 'rgba(253, 230, 138, 0.95)';
       ctx.font = `600 14px "${fontFamily}", sans-serif`;
       ctx.fillText(creditText, stampX, stampY);
-    } else if (stampStyle === 'crest-ribbon') {
-      // Ribbon badge directly beneath grid
-      const ribbonY = (template.gridBounds.y + template.gridBounds.height) * canvasHeight + 12;
-      const ribbonW = canvasWidth * 0.58;
-      const ribbonH = 34;
-      const ribbonX = (canvasWidth - ribbonW) / 2;
+    } else if (stampStyle === 'royal-plaque') {
+      // Royal Basalt Plaque / Shilalekh Inscription Cartouche
+      const plaqueH = 64;
+      const rawY = (template.gridBounds.y + template.gridBounds.height) * canvasHeight + 14;
+      const maxY = canvasHeight - plaqueH - 24;
+      const plaqueY = Math.min(rawY, maxY);
+      const plaqueW = Math.min(canvasWidth * 0.72, 760);
+      const plaqueX = (canvasWidth - plaqueW) / 2;
 
-      ctx.fillStyle = 'rgba(232, 93, 4, 0.92)';
+      // 1. Plaque Shadow
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+      ctx.shadowBlur = 14;
+      ctx.shadowOffsetY = 4;
+
+      // 2. Deep Basalt Stone Background with Gradient
+      const stoneGrad = ctx.createLinearGradient(plaqueX, plaqueY, plaqueX, plaqueY + plaqueH);
+      stoneGrad.addColorStop(0, '#26201B');
+      stoneGrad.addColorStop(0.5, '#1B1714');
+      stoneGrad.addColorStop(1, '#151210');
+
+      ctx.fillStyle = stoneGrad;
       ctx.beginPath();
       if (typeof (ctx as any).roundRect === 'function') {
-        (ctx as any).roundRect(ribbonX, ribbonY, ribbonW, ribbonH, 17);
+        (ctx as any).roundRect(plaqueX, plaqueY, plaqueW, plaqueH, 8);
       } else {
-        ctx.rect(ribbonX, ribbonY, ribbonW, ribbonH);
+        ctx.rect(plaqueX, plaqueY, plaqueW, plaqueH);
       }
       ctx.fill();
 
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold 16px "${fontFamily}", sans-serif`;
+      // Clear shadow
+      ctx.shadowColor = 'transparent';
+
+      // 3. Ornate Double Gold Trim
+      // Outer gold trim
+      ctx.strokeStyle = '#D4AF37';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Inner hairline gold inlay
+      const inset = 3.5;
+      ctx.strokeStyle = 'rgba(212, 175, 55, 0.45)';
+      ctx.lineWidth = 0.75;
+      ctx.beginPath();
+      if (typeof (ctx as any).roundRect === 'function') {
+        (ctx as any).roundRect(plaqueX + inset, plaqueY + inset, plaqueW - 2 * inset, plaqueH - 2 * inset, 6);
+      } else {
+        ctx.rect(plaqueX + inset, plaqueY + inset, plaqueW - 2 * inset, plaqueH - 2 * inset);
+      }
+      ctx.stroke();
+
+      // 4. Inscription Typography
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const ribbonText = festiveGreeting ? `${fortTitle} • ${festiveGreeting}` : fortTitle;
-      ctx.fillText(ribbonText, canvasWidth / 2, ribbonY + ribbonH / 2);
+
+      const hasGreetingOrCredit = Boolean(festiveGreeting || creditText);
+      if (hasGreetingOrCredit) {
+        // Line 1: Fort Title flanked by ornamental diamonds
+        ctx.fillStyle = '#FFFBEB';
+        ctx.font = `bold 19px "${fontFamily}", sans-serif`;
+        const titleLine = `✦  ${fortTitle}  ✦`;
+        ctx.fillText(titleLine, canvasWidth / 2, plaqueY + 22);
+
+        // Line 2: Festive wish / builder credit line in antique gold
+        ctx.fillStyle = '#E5C378';
+        ctx.font = `600 13px "${fontFamily}", sans-serif`;
+        const subLine = festiveGreeting
+          ? `${festiveGreeting}${builderName ? ` • ${builderName}` : ''}`
+          : creditText;
+        ctx.fillText(subLine, canvasWidth / 2, plaqueY + 45);
+      } else {
+        // Single centered line
+        ctx.fillStyle = '#FFFBEB';
+        ctx.font = `bold 22px "${fontFamily}", sans-serif`;
+        ctx.fillText(`✦  ${fortTitle}  ✦`, canvasWidth / 2, plaqueY + plaqueH / 2);
+      }
     }
 
     ctx.restore();

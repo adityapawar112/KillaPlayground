@@ -96,7 +96,7 @@ const LOCALE_PRESETS = {
     banners: {
       'traditional-banner': 'Bottom Banner',
       'minimal-stamp': 'Corner Stamp',
-      'crest-ribbon': 'Crest Ribbon',
+      'royal-plaque': 'Royal Plaque',
       'none': 'Pure Artwork',
     },
     cleanNone: 'None (Clean)',
@@ -139,7 +139,7 @@ const LOCALE_PRESETS = {
     banners: {
       'traditional-banner': 'तळ पट्टी',
       'minimal-stamp': 'कोपरा मुद्रा',
-      'crest-ribbon': 'रिबन बिल्ला',
+      'royal-plaque': 'राजकीय शिलालेख',
       'none': 'केवळ कलाकृती',
     },
     cleanNone: 'काही नाही (स्वच्छ)',
@@ -182,7 +182,7 @@ const LOCALE_PRESETS = {
     banners: {
       'traditional-banner': 'निचली पट्टी',
       'minimal-stamp': 'कोना मुहर',
-      'crest-ribbon': 'रिबन बिल्ला',
+      'royal-plaque': 'राजकीय शिलालेख',
       'none': 'केवल कलाकृति',
     },
     cleanNone: 'कोई नहीं (खाली)',
@@ -219,11 +219,21 @@ export const PosterStudioModal: React.FC = () => {
   const [fortTitle, setFortTitle] = useState<string>(presets.defaultTitle);
   const [builderName, setBuilderName] = useState<string>(presets.defaultBuilder);
   const [festiveGreeting, setFestiveGreeting] = useState<string>(presets.defaultGreeting);
-  const [stampStyle, setStampStyle] = useState<'traditional-banner' | 'minimal-stamp' | 'crest-ribbon' | 'none'>('traditional-banner');
+  const [stampStyle, setStampStyle] = useState<'traditional-banner' | 'minimal-stamp' | 'royal-plaque' | 'none'>('traditional-banner');
   const [showBuilderCredit, setShowBuilderCredit] = useState<boolean>(true);
 
   // 6. Local screenshot gallery
   const [galleryScreenshots, setGalleryScreenshots] = useState<LocalScreenshot[]>([]);
+
+  // Confirmation Dialog state for screenshot deletion & clear-all
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    type: 'clear-all' | 'delete-single';
+    screenshotId?: string;
+  }>({
+    isOpen: false,
+    type: 'clear-all',
+  });
 
   // 7. Preview and export state
   const [exportFormat, setExportFormat] = useState<'png' | 'jpeg'>('png');
@@ -232,6 +242,8 @@ export const PosterStudioModal: React.FC = () => {
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
+  const slotRequestVersions = useRef<number[]>([0, 0, 0, 0]);
+  const initialCapturedRef = useRef(false);
 
   // Synchronize locale changes to default inputs if user hasn't heavily customized
   useEffect(() => {
@@ -265,60 +277,122 @@ export const PosterStudioModal: React.FC = () => {
     }
   }, [imageCount, gridLayout]);
 
-  // Capture snapshots for all active slots
-  const renderSlots = useCallback(async () => {
-    setIsCapturing(true);
-    const newCanvases: (HTMLCanvasElement | null)[] = [null, null, null, null];
+  // Capture single slot canvas cleanly given its source
+  const captureSingleSlotCanvas = useCallback(async (source: SlotSourceConfig): Promise<HTMLCanvasElement | null> => {
+    if (source.type === 'gallery' && source.galleryDataUrl) {
+      const img = new Image();
+      img.src = source.galleryDataUrl;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+      const c = document.createElement('canvas');
+      c.width = img.width || 1080;
+      c.height = img.height || 340;
+      const ctx = c.getContext('2d')!;
+      ctx.drawImage(img, 0, 0);
+      return c;
+    }
 
-    try {
-      for (let i = 0; i < imageCount; i++) {
-        const source = slotSources[i] || { type: 'perspective', perspectiveId: 'isometric' };
+    if (source.type === 'current') {
+      return await captureHeadlessSnapshot({
+        perspective: 'current',
+        width: 1080,
+        height: 340,
+      });
+    }
 
-        if (source.type === 'gallery' && source.galleryDataUrl) {
-          const img = new Image();
-          img.src = source.galleryDataUrl;
-          await new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
+    const pId = source.perspectiveId || 'isometric';
+    return await captureHeadlessSnapshot({
+      perspective: pId,
+      width: 1080,
+      height: 340,
+    });
+  }, []);
+
+  // Atomic update for a single slot's source & canvas (No race conditions, no bouncing!)
+  const updateSlot = useCallback(
+    async (slotIdx: number, newSource: SlotSourceConfig) => {
+      const version = ++slotRequestVersions.current[slotIdx];
+
+      setSlotSources((prev) => {
+        const next = [...prev];
+        next[slotIdx] = newSource;
+        return next;
+      });
+
+      try {
+        setIsCapturing(true);
+        const canvas = await captureSingleSlotCanvas(newSource);
+        // Only commit if this is still the most recent request for this slot
+        if (slotRequestVersions.current[slotIdx] === version) {
+          setSlotCanvases((prev) => {
+            const next = [...prev];
+            next[slotIdx] = canvas;
+            return next;
           });
-          const c = document.createElement('canvas');
-          c.width = img.width || 1080;
-          c.height = img.height || 720;
-          const ctx = c.getContext('2d')!;
-          ctx.drawImage(img, 0, 0);
-          newCanvases[i] = c;
-        } else if (source.type === 'current') {
-          const c = await captureHeadlessSnapshot({
-            perspective: 'current',
-            width: 1080,
-            height: 340,
-          });
-          newCanvases[i] = c;
-        } else {
-          const pId = source.perspectiveId || 'isometric';
-          const c = await captureHeadlessSnapshot({
-            perspective: pId,
-            width: 1080,
-            height: 340,
-          });
-          newCanvases[i] = c;
         }
+      } catch (err) {
+        console.error(`Failed to capture slot ${slotIdx + 1}:`, err);
+      } finally {
+        setIsCapturing(false);
       }
-      setSlotCanvases(newCanvases);
+    },
+    [captureSingleSlotCanvas]
+  );
+
+  // Capture snapshots for all active slots (initial open or user-requested Recapture All)
+  const captureAllSlots = useCallback(async () => {
+    setIsCapturing(true);
+    try {
+      const results = await Promise.all(
+        Array.from({ length: 4 }).map(async (_, idx) => {
+          const version = ++slotRequestVersions.current[idx];
+          if (idx >= imageCount) return { idx, version, canvas: null };
+          const src = slotSources[idx] || { type: 'perspective', perspectiveId: 'isometric' };
+          const c = await captureSingleSlotCanvas(src);
+          return { idx, version, canvas: c };
+        })
+      );
+
+      setSlotCanvases((prev) => {
+        const next = [...prev];
+        for (const res of results) {
+          if (slotRequestVersions.current[res.idx] === res.version) {
+            next[res.idx] = res.canvas;
+          }
+        }
+        return next;
+      });
     } catch (err) {
-      console.error('Error capturing slot snapshots:', err);
+      console.error('Error capturing all slot snapshots:', err);
     } finally {
       setIsCapturing(false);
     }
-  }, [imageCount, slotSources]);
+  }, [imageCount, slotSources, captureSingleSlotCanvas]);
 
   // Capture initial slots on modal open
   useEffect(() => {
     if (isPosterModalOpen) {
       preloadTemplateAssets(POSTER_TEMPLATES[selectedTemplateId]);
-      renderSlots();
+      if (!initialCapturedRef.current) {
+        initialCapturedRef.current = true;
+        captureAllSlots();
+      }
+    } else {
+      initialCapturedRef.current = false;
     }
-  }, [isPosterModalOpen, selectedTemplateId, renderSlots]);
+  }, [isPosterModalOpen, selectedTemplateId, captureAllSlots]);
+
+  // When imageCount increases, ensure any uncaptured visible slot is captured
+  useEffect(() => {
+    if (!isPosterModalOpen) return;
+    for (let i = 0; i < imageCount; i++) {
+      if (!slotCanvases[i]) {
+        updateSlot(i, slotSources[i] || { type: 'perspective', perspectiveId: 'isometric' });
+      }
+    }
+  }, [imageCount, isPosterModalOpen, slotCanvases, slotSources, updateSlot]);
 
   // Re-composite full poster whenever slots, template, or text options change
   useEffect(() => {
@@ -389,42 +463,64 @@ export const PosterStudioModal: React.FC = () => {
 
   // Assign a perspective to a slot
   const handleAssignPerspective = (slotIdx: number, pId: CameraPerspectiveId) => {
-    setSlotSources((prev) => {
-      const next = [...prev];
-      next[slotIdx] = { type: pId === 'current' ? 'current' : 'perspective', perspectiveId: pId };
-      return next;
+    updateSlot(slotIdx, {
+      type: pId === 'current' ? 'current' : 'perspective',
+      perspectiveId: pId,
     });
-    // Trigger recapture for that slot
-    setTimeout(renderSlots, 20);
   };
 
   // Assign a gallery screenshot to a specific slot
   const handleAssignGalleryShot = (slotIdx: number, dataUrl: string) => {
-    setSlotSources((prev) => {
-      const next = [...prev];
-      next[slotIdx] = { type: 'gallery', galleryDataUrl: dataUrl };
-      return next;
+    updateSlot(slotIdx, {
+      type: 'gallery',
+      galleryDataUrl: dataUrl,
     });
     setActiveGallerySlotIndex(null);
-    setTimeout(renderSlots, 20);
     setToastMessage(`Assigned snapshot to Slot ${slotIdx + 1}`);
   };
 
-  // Delete screenshot from gallery
-  const handleDeleteScreenshot = async (e: React.MouseEvent, id: string) => {
+  // Open confirmation dialog for deleting a single screenshot
+  const handleRequestDeleteScreenshot = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
-    await deleteLocalScreenshot(id);
-    await refreshGallery();
-    setToastMessage('Snapshot deleted from local gallery');
+    setConfirmDialog({
+      isOpen: true,
+      type: 'delete-single',
+      screenshotId: id,
+    });
   };
 
-  // Clear all screenshots
-  const handleClearAllScreenshots = async () => {
-    if (confirm('Clear all saved screenshots from local storage?')) {
+  // Open confirmation dialog for clearing all screenshots
+  const handleRequestClearAllScreenshots = () => {
+    setConfirmDialog({
+      isOpen: true,
+      type: 'clear-all',
+    });
+  };
+
+  // Execute confirmed deletion action
+  const handleConfirmAction = async () => {
+    if (confirmDialog.type === 'clear-all') {
       await clearAllLocalScreenshots();
       await refreshGallery();
-      setToastMessage('Local gallery cleared');
+      setToastMessage(
+        locale === 'mr'
+          ? 'स्थानिक गॅलरी रिकामी केली'
+          : locale === 'hi'
+          ? 'स्थानीय गैलरी खाली कर दी गई'
+          : 'Local gallery cleared'
+      );
+    } else if (confirmDialog.type === 'delete-single' && confirmDialog.screenshotId) {
+      await deleteLocalScreenshot(confirmDialog.screenshotId);
+      await refreshGallery();
+      setToastMessage(
+        locale === 'mr'
+          ? 'स्क्रीनशॉट हटवला'
+          : locale === 'hi'
+          ? 'स्क्रीनशॉट हटा दिया गया'
+          : 'Snapshot deleted from local gallery'
+      );
     }
+    setConfirmDialog({ isOpen: false, type: 'clear-all' });
   };
 
   // Download high-resolution poster
@@ -660,7 +756,7 @@ export const PosterStudioModal: React.FC = () => {
                   <span>{locale === 'mr' ? 'चित्रांचे कोन व स्रोत' : locale === 'hi' ? 'चित्रों के कोण व स्रोत' : 'Slot Angles & Sources'}</span>
                 </label>
                 <button
-                  onClick={renderSlots}
+                  onClick={captureAllSlots}
                   className="flex items-center gap-1 text-[11px] font-bold text-[#B85F45] hover:text-[#8F4938] transition-colors cursor-pointer"
                   title="Recapture all slots"
                 >
@@ -751,7 +847,7 @@ export const PosterStudioModal: React.FC = () => {
                             <div className="flex items-center gap-1.5">
                               {galleryScreenshots.length > 0 && (
                                 <button
-                                  onClick={handleClearAllScreenshots}
+                                  onClick={handleRequestClearAllScreenshots}
                                   className="text-[9px] font-bold text-red-600 hover:text-red-700 cursor-pointer flex items-center gap-0.5"
                                 >
                                   <TbTrash className="w-2.5 h-2.5" />
@@ -789,7 +885,7 @@ export const PosterStudioModal: React.FC = () => {
                                     className="w-full h-full object-cover"
                                   />
                                   <button
-                                    onClick={(e) => handleDeleteScreenshot(e, shot.id)}
+                                    onClick={(e) => handleRequestDeleteScreenshot(e, shot.id)}
                                     className="absolute top-1 right-1 p-1 rounded bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
                                     title="Delete from local gallery"
                                   >
@@ -895,7 +991,7 @@ export const PosterStudioModal: React.FC = () => {
                   {locale === 'mr' ? 'मुद्रा / पट्टी शैली' : locale === 'hi' ? 'मुहर / पट्टी शैली' : 'Banner / Watermark Style'}
                 </span>
                 <div className="grid grid-cols-2 gap-1">
-                  {(['traditional-banner', 'minimal-stamp', 'crest-ribbon', 'none'] as const).map((sId) => (
+                  {(['traditional-banner', 'minimal-stamp', 'royal-plaque', 'none'] as const).map((sId) => (
                     <button
                       key={sId}
                       onClick={() => setStampStyle(sId)}
@@ -1007,6 +1103,78 @@ export const PosterStudioModal: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Custom Themed In-App Confirmation Modal for Screenshot Deletion */}
+        {confirmDialog.isOpen && (
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs select-none"
+          >
+            <div className="w-full max-w-sm bg-[#FAF8F5] border-2 border-[#D9C9B4] rounded-2xl p-5 shadow-2xl text-[#4B382C] space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
+                  <TbTrash className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-[#4B382C]">
+                    {confirmDialog.type === 'clear-all'
+                      ? locale === 'mr'
+                        ? 'सर्व स्क्रीनशॉट हटवायचे?'
+                        : locale === 'hi'
+                        ? 'सभी स्क्रीनशॉट हटाएं?'
+                        : 'Clear All Screenshots?'
+                      : locale === 'mr'
+                      ? 'हा स्क्रीनशॉट हटवायचा?'
+                      : locale === 'hi'
+                      ? 'यह स्क्रीनशॉट हटाएं?'
+                      : 'Delete Screenshot?'}
+                  </h3>
+                  <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
+                    {confirmDialog.type === 'clear-all'
+                      ? locale === 'mr'
+                        ? 'तुम्हाला खात्री आहे की तुम्ही सर्व स्क्रीनशॉट हटवू इच्छिता? ही कृती पूर्ववत केली जाऊ शकत नाही.'
+                        : locale === 'hi'
+                        ? 'क्या आप वाकई स्थानीय स्टोरेज से सभी स्क्रीनशॉट हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।'
+                        : 'Are you sure you want to delete all saved snapshots from local storage? This action cannot be undone.'
+                      : locale === 'mr'
+                      ? 'तुम्हाला हा स्क्रीनशॉट गॅलरीतून कायमचा हटवायचा आहे का?'
+                      : locale === 'hi'
+                      ? 'क्या आप इस स्क्रीनशॉट को गैलरी से हटाना चाहते हैं?'
+                      : 'Are you sure you want to delete this snapshot from your local gallery?'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D9C9B4]">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDialog({ isOpen: false, type: 'clear-all' })}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#634E40] bg-[#EFE8DD] hover:bg-[#E0D5C5] border border-[#D9C9B4] transition-colors cursor-pointer"
+                >
+                  {locale === 'mr' ? 'रद्द करा' : locale === 'hi' ? 'रद्द करें' : 'Cancel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAction}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow-xs transition-colors cursor-pointer"
+                >
+                  {confirmDialog.type === 'clear-all'
+                    ? locale === 'mr'
+                      ? 'सर्व हटवा'
+                      : locale === 'hi'
+                      ? 'सभी हटाएं'
+                      : 'Clear All'
+                    : locale === 'mr'
+                    ? 'हटवा'
+                    : locale === 'hi'
+                    ? 'हटाएं'
+                    : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

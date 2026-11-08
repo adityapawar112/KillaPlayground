@@ -9,6 +9,7 @@ import * as THREE from 'three';
 class FoliageTextureManager {
   private cache = new Map<string, THREE.Texture>();
   private loader: THREE.TextureLoader | null = null;
+  private listeners = new Map<string, Set<(tex: THREE.Texture) => void>>();
 
   private getLoader(): THREE.TextureLoader {
     if (!this.loader) {
@@ -19,17 +20,29 @@ class FoliageTextureManager {
 
   /**
    * Retrieves or asynchronously loads a texture for the given sprite URL.
-   * Returns a valid THREE.Texture immediately (non-suspending).
+   * Returns a valid THREE.Texture immediately (non-suspending and side-effect free).
    */
   getTexture(url: string, onLoad?: (texture: THREE.Texture) => void): THREE.Texture {
     if (this.cache.has(url)) {
-      return this.cache.get(url)!;
+      const existing = this.cache.get(url)!;
+      if (onLoad) {
+        if (existing.image) {
+          queueMicrotask(() => onLoad(existing));
+        } else {
+          this.onTextureLoaded(url, onLoad);
+        }
+      }
+      return existing;
     }
 
     if (typeof document === 'undefined') {
       const dummy = new THREE.Texture();
       this.cache.set(url, dummy);
       return dummy;
+    }
+
+    if (onLoad) {
+      this.onTextureLoaded(url, onLoad);
     }
 
     const loader = this.getLoader();
@@ -41,7 +54,15 @@ class FoliageTextureManager {
         loaded.minFilter = THREE.NearestMipmapLinearFilter;
         loaded.generateMipmaps = true;
         loaded.needsUpdate = true;
-        onLoad?.(loaded);
+        if (typeof window !== 'undefined' && (window as any).__killa_invalidate) {
+          (window as any).__killa_invalidate();
+        }
+
+        const callbacks = this.listeners.get(url);
+        if (callbacks) {
+          callbacks.forEach((cb) => cb(loaded));
+          this.listeners.delete(url);
+        }
       },
       undefined,
       (err) => {
@@ -56,6 +77,31 @@ class FoliageTextureManager {
 
     this.cache.set(url, texture);
     return texture;
+  }
+
+  /**
+   * Subscribes to texture load completion safely from React useEffect.
+   * Returns an unsubscribe function.
+   */
+  onTextureLoaded(url: string, callback: (texture: THREE.Texture) => void): () => void {
+    const existing = this.cache.get(url);
+    if (existing && existing.image) {
+      queueMicrotask(() => callback(existing));
+      return () => {};
+    }
+
+    if (!this.listeners.has(url)) {
+      this.listeners.set(url, new Set());
+    }
+    const set = this.listeners.get(url)!;
+    set.add(callback);
+
+    return () => {
+      set.delete(callback);
+      if (set.size === 0) {
+        this.listeners.delete(url);
+      }
+    };
   }
 
   /**
@@ -81,8 +127,8 @@ class FoliageTextureManager {
       tex.dispose();
     }
     this.cache.clear();
+    this.listeners.clear();
   }
 }
 
 export const foliageTextureManager = new FoliageTextureManager();
-

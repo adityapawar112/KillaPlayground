@@ -28,12 +28,29 @@ const FoliageTypeGroup: React.FC<FoliageTypeGroupProps> = ({ typeId, instances }
     );
   }, [typeId]);
 
-  // Synchronous, non-suspending texture retrieval via manager
+  // Synchronous, non-suspending texture retrieval via manager (pure render phase, zero side-effects)
   const texture = useMemo(() => {
-    return foliageTextureManager.getTexture(foliageItem.spritePath, () => {
-      setTextureVersion((v) => v + 1);
-    });
+    return foliageTextureManager.getTexture(foliageItem.spritePath);
   }, [foliageItem.spritePath]);
+
+  // Safely trigger re-render / frame invalidation in useEffect after mounting once texture loads
+  useEffect(() => {
+    let isMounted = true;
+    if (!texture.image) {
+      const unsubscribe = foliageTextureManager.onTextureLoaded(foliageItem.spritePath, () => {
+        if (isMounted) {
+          setTextureVersion((v) => v + 1);
+        }
+      });
+      return () => {
+        isMounted = false;
+        unsubscribe();
+      };
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [foliageItem.spritePath, texture]);
 
   // Geometry: Single vertical plane for grass/bushes/palms; cross-quad for symmetrical trees
   const geometry = useMemo(() => {

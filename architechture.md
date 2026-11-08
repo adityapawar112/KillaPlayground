@@ -322,54 +322,25 @@ An optional authentic simulation layer to be implemented in a subsequent phase:
 
 ---
 
-### 4.6 Client-Side 4-Angle Festive Poster Generator (₹0 Server Cost)
-Do not send screenshots to a backend server. Generate the entire high-res collage inside the user's browser in `< 400ms`:
+### 4.6 Client-Side Multi-Angle Festive Poster Studio (₹0 Server Cost)
+Do not send screenshots to a backend server. Generate the entire high-res collage inside the user's browser in `< 400ms` using client-side headless Three.js rendering and 2D canvas compositing:
 
-```typescript
-// ponytail: reuse the active WebGLRenderer + a single OffscreenCanvas(1080, 1920)
-async function generateKillaPoster(
-  gl: THREE.WebGLRenderer,
-  scene: THREE.Scene,
-  killaTitle: string,
-  builderName: string
-): Promise<Blob> {
-  const poster = new OffscreenCanvas(1080, 1920);
-  const ctx = poster.getContext('2d')!;
-  const snapCam = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
+1. **5-Layer Sandwich Compositor (`posterCompositor.ts`):**
+   * **Layer 1 (Base Vector Art)**: Background SVG (`design_01` to `design_04`).
+   * **Layer 2 (Multi-Angle Diorama Grid)**: 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view).
+   * **Layer 3 (Overlay 1)**: Foreground architectural badges, sky fireworks, or mountain elements (`layer_02_...`).
+   * **Layer 4 (Overlay 2)**: Foreground figures, artillery cannon, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
+   * **Layer 5 (Typography & Stamp)**: Customizable fort titles, builder credits, festive greetings, and watermark banners in authentic Devanagari typography (`Yatra One`, `Modak`, `Inter`).
 
-  // 4 preset cinematic camera matrices: [Bird's-Eye, Maha Darwaza Low, Throne Close-Up, Night Angle]
-  const shots = [
-    { pos: [8, 9, 8], look: [0, 1, 0], rect: [40, 260, 1000, 680] },   // Hero Top
-    { pos: [3, 1.2, 4], look: [0, 1.5, 0], rect: [40, 960, 490, 490] }, // Low Gate
-    { pos: [0, 3.2, 2.2], look: [0, 2.5, 0], rect: [550, 960, 490, 490] }, // Maharaj Throne
-    { pos: [-5, 3, 5], look: [0, 1, 0], rect: [40, 1470, 1000, 320] }   // Wide Ramparts
-  ];
+2. **Headless Offscreen Snapshot Engine (`posterSnapshotEngine.ts`):**
+   * Uses `THREE.WebGLRenderTarget` to render at fixed dimensions independent of client screen size (zero DOM resolution distortion across mobile, tablet, 1080p, and 4K displays).
+   * 4 standardized camera perspectives matching app navigation: Isometric (45°), Bird's Eye (Top-Down), Rampart Eye (15° Low), and Bastion Hero (30° Citadel Corner).
+   * Viewport screenshot button in `DioramaQuickBar.tsx` captures headless 1920 × 1080 snapshots and saves 2 copies: browser file download and local IndexedDB gallery storage.
 
-  // Fill festive parchment/dark-gold background
-  ctx.fillStyle = '#1c140d';
-  ctx.fillRect(0, 0, 1080, 1920);
-
-  for (const shot of shots) {
-    snapCam.position.set(...(shot.pos as [number, number, number]));
-    snapCam.lookAt(...(shot.look as [number, number, number]));
-    gl.render(scene, snapCam);
-    ctx.drawImage(gl.domElement, ...shot.rect);
-  }
-
-  // Draw Marathi / English calligraphic header using preloaded Google Font (Yatra One / Modak)
-  await document.fonts.load('72px "Yatra One"');
-  ctx.fillStyle = '#f59e0b';
-  ctx.font = '72px "Yatra One"';
-  ctx.textAlign = 'center';
-  ctx.fillText(killaTitle || 'आमचा दिवाळी किल्ला', 540, 130);
-
-  ctx.fillStyle = '#fde68a';
-  ctx.font = '32px sans-serif';
-  ctx.fillText(`निर्मिती: ${builderName} • दिवाळीच्या हार्दिक शुभेच्छा`, 540, 195);
-
-  return poster.convertToBlob({ type: 'image/jpeg', quality: 0.92 });
-}
-```
+3. **Instant Export & Sharing (`posterShare.ts`):**
+   * Direct PNG/JPG download.
+   * Web Share API (`navigator.share`) on mobile and supported desktop browsers.
+   * Direct image copy to system clipboard (`navigator.clipboard.write([new ClipboardItem(...)])`).
 
 ---
 

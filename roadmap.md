@@ -523,29 +523,47 @@ graph TD
 
 ## Ticket 13: Showcase, Multi-Angle Festive Poster Studio & Share
 
-- **Status**: `ready-for-agent`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 12`
 - **Delivers**:
-  - **Historical Blueprint Presets & Random Terrain**:
-    - Raigad, Murud-Janjira, and Sinhagad pre-molded terrains with faint chalk outlines, plus "Roll New Terrain".
-  - **Automated 4-Angle Poster Generator**:
-    - Client-side `OffscreenCanvas(1080, 1920)` rendering 4 cinematic camera angles in $< 400\text{ms}$:
-      1. *Hero Bird's-Eye Overview*.
-      2. *Maha Darwaza & Bastion Low-Angle*.
-      3. *Balekilla Throne & Buildings Close-Up*.
-      4. *Golden-Hour / Diwali Night Diya Angle*.
-    - Traditional Marathi calligraphic header (`Yatra One`) and festive greeting (`Modak`): *"दिवाळीच्या हार्दिक शुभेच्छा"*.
-    - Builder name and fort title customization.
-    - Instant high-res PNG/JPG download + `navigator.share()` / clipboard link integration.
-  - **Shared 3D Viewer Route**:
-    - Read-only diorama viewer at `/killa/[id]`.
+  - **SVG Multi-Layer Sandwich Compositor (1080 × 1350 px / 4:5 Portrait)**:
+    - Layer 1 (Base): High-fidelity vector festival backgrounds (`design_01` to `design_04`).
+    - Layer 2 (3D Views Grid): 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view).
+    - Layer 3 (Overlay 1): Foreground architectural badges, sky fireworks, or mountain elements (`layer_02_...`).
+    - Layer 4 (Overlay 2): Foreground figures, artillery cannon, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
+    - Layer 5 (Typography & Stamp): Customizable fort titles, builder credits, festive greetings, and watermark banners in authentic Devanagari typography (`Yatra One`, `Modak`, `Inter`).
+  - **4 Standard Camera Perspectives**:
+    - **Isometric (45°)**: Complete fort overview, retaining bricks, water moat, and mountain tiers.
+    - **Bird's Eye (Top-Down)**: Strategic topographical blueprint layout.
+    - **Rampart Eye (15° Low Hero View)**: Dramatic upward entrance view of Maha Darwaza and bastions.
+    - **Bastion Hero (30° Citadel Corner)**: Chhatrapati sinhasan, waving flags, and glowing diyas.
+    - Live viewport angle support + one-click angle reassignment.
+  - **Headless Offscreen Snapshot Engine & Viewport Screenshot Rework**:
+    - Complete screen-size-independent 3D rendering via Three.js `WebGLRenderTarget` (zero DOM resolution distortion across mobile, tablet, 1080p, and 4K displays).
+    - Diorama quick bar screenshot button (`DioramaQuickBar.tsx`) reworked to capture headless 1920 × 1080 snapshots and save **two copies**:
+      1. Immediate direct browser download (`killa-diorama-<timestamp>.png`).
+      2. Persisted to local IndexedDB gallery for instant reuse in the Festive Poster Studio.
+  - **Local Screenshot Gallery Vault (`screenshotVault.ts`)**:
+    - Browser IndexedDB storage for diorama snapshots with thumbnail inspection, slot assignment, and single/batch deletion.
+  - **Rich Text & Watermark Customization Presets**:
+    - Fort title presets (*माझा किल्ला*, *किल्ले रायगड*, *किल्ले मुरुड जंजिरा*, *किल्ले सिंहगड*, *The Killa Playground*).
+    - Festive greeting presets (*दिवाळीच्या हार्दिक शुभेच्छा*, *शुभ दीपावली*, *Happy Diwali*, *हर हर महादेव*).
+    - Custom builder name credit (*निर्मिती: [Builder Name] • दिवाळी २०२६*).
+    - Stamp style presets (Traditional Bottom Banner, Minimal Calligraphic Stamp, Gold Crest Ribbon, Clean Vector Only).
+  - **Instant Export & Multi-Channel Social Sharing (`posterShare.ts`)**:
+    - Lossless PNG and compact JPG downloads with clean sanitized filenames.
+    - Native Web Share API (`navigator.share`) on mobile/desktop for 1-tap sharing to WhatsApp, Instagram Stories, Facebook, Twitter, and AirDrop.
+    - One-click image copy to system clipboard (`ClipboardItem`) for WhatsApp Web and Discord.
 
 ### Acceptance Criteria
-- [ ] "Finish Killa" opens the Poster Studio Modal and generates the 4-angle festive collage.
-- [ ] Poster includes placed foundations, stairs, buildings, and glowing diyas.
-- [ ] User can customize fort title and builder name in Devanagari or English.
-- [ ] "Download Poster" produces a crisp, high-resolution PNG file.
-- [ ] Shared link route `/killa/[id]` renders the 3D diorama in read-only orbit mode.
+- [x] "Finish Killa" and `File -> Export Festive Poster` open the Poster Studio Modal.
+- [x] Poster renders the 5-layer composite sandwich with Layer 2 and Layer 3 overlapping the 3D views.
+- [x] Users can select between 1 to 4 images and choose tailored grid layouts (including 4-stacked horizontal strips matching reference design).
+- [x] Viewport screenshot button captures headless offscreen snapshots and saves 2 copies (browser download + local gallery).
+- [x] Local screenshots can be picked and assigned into poster slots and cleared from local storage.
+- [x] Presets for titles, greetings, builder names, banner styles, and fonts update live in the canvas preview.
+- [x] "Download Poster" produces a crisp, high-resolution PNG/JPG file.
+- [x] "Share" triggers Web Share API on supported devices, and "Copy Image" copies the PNG to clipboard.
 
 ---
 

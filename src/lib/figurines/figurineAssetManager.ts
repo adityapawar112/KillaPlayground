@@ -142,6 +142,18 @@ class FigurineAssetManager {
             modelPath.includes('kitchen')
           ) {
             scaleFactor = 0.45;
+          } else if (modelPath.includes('admin_building') || modelPath.includes('commander_quarters')) {
+            scaleFactor = 0.50;
+          } else if (modelPath.includes('temple')) {
+            scaleFactor = 0.45;
+          } else if (modelPath.includes('maratha_navy_gallivat')) {
+            scaleFactor = 0.85;
+          } else if (modelPath.includes('maratha_navy_gurab')) {
+            scaleFactor = 0.95;
+          } else if (modelPath.includes('tiger')) {
+            scaleFactor = 0.18;
+          } else if (modelPath.includes('monkey')) {
+            scaleFactor = 0.12;
           }
 
           cleanGeom.scale(scaleFactor, scaleFactor, scaleFactor);

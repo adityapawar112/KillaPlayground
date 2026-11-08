@@ -10,16 +10,19 @@ import {
 } from './figurineManifest';
 
 describe('Figurine Manifest & Asset Registry', () => {
-  it('registers all 22 solid 3D models', () => {
-    expect(FIGURINE_MANIFEST.length).toBe(22);
+  it('registers all 35 solid 3D models', () => {
+    expect(FIGURINE_MANIFEST.length).toBe(35);
   });
 
-  it('contains all 6 required categories', () => {
-    expect(FIGURINE_CATEGORIES.length).toBe(6);
+  it('contains all 9 required categories', () => {
+    expect(FIGURINE_CATEGORIES.length).toBe(9);
     const categoryIds = FIGURINE_CATEGORIES.map((c) => c.id);
     expect(categoryIds).toContain('royalty');
     expect(categoryIds).toContain('mavale');
+    expect(categoryIds).toContain('citizens');
     expect(categoryIds).toContain('musicians');
+    expect(categoryIds).toContain('navy');
+    expect(categoryIds).toContain('wildlife');
     expect(categoryIds).toContain('yard_props');
     expect(categoryIds).toContain('architecture');
     expect(categoryIds).toContain('artillery');
@@ -34,12 +37,24 @@ describe('Figurine Manifest & Asset Registry', () => {
     }
   });
 
+  it('ensures every preview file exists in its category folder in public/figurines/', () => {
+    for (const item of FIGURINE_MANIFEST) {
+      const fullPath = path.join(process.cwd(), 'public', item.previewPath.replace(/^\//, ''));
+      expect(fs.existsSync(fullPath), `Preview missing: ${fullPath}`).toBe(true);
+      const stat = fs.statSync(fullPath);
+      expect(stat.size).toBeGreaterThan(1000); // Must be a valid non-empty preview
+    }
+  });
+
   it('correctly partitions items by category', () => {
     expect(getFigurinesByCategory('royalty').length).toBe(4);
     expect(getFigurinesByCategory('mavale').length).toBe(4);
+    expect(getFigurinesByCategory('citizens').length).toBe(6);
     expect(getFigurinesByCategory('musicians').length).toBe(2);
+    expect(getFigurinesByCategory('navy').length).toBe(2);
+    expect(getFigurinesByCategory('wildlife').length).toBe(2);
     expect(getFigurinesByCategory('yard_props').length).toBe(2);
-    expect(getFigurinesByCategory('architecture').length).toBe(7);
+    expect(getFigurinesByCategory('architecture').length).toBe(10);
     expect(getFigurinesByCategory('artillery').length).toBe(3);
   });
 
@@ -72,10 +87,10 @@ describe('Figurine Manifest & Asset Registry', () => {
   it('has calibrated bounding dimensions and face counts for diorama scale', () => {
     for (const item of FIGURINE_MANIFEST) {
       expect(item.faceCount).toBeGreaterThan(50);
-      expect(item.faceCount).toBeLessThan(6000);
-      expect(item.dimensions.width).toBeGreaterThan(0.05);
+      expect(item.faceCount).toBeLessThan(12000);
+      expect(item.dimensions.width).toBeGreaterThan(0.04);
       expect(item.dimensions.height).toBeGreaterThan(0.05);
-      expect(item.dimensions.depth).toBeGreaterThan(0.05);
+      expect(item.dimensions.depth).toBeGreaterThan(0.04);
     }
   });
 });

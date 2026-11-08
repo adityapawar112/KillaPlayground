@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import { getFigurineById, FIGURINE_MANIFEST } from './figurineManifest';
 
 describe('Figurine Diorama Geometry & Normalization Standards', () => {
-  it('guarantees all 22 figurine catalog entries exist and have valid models', () => {
-    expect(FIGURINE_MANIFEST.length).toBe(22);
+  it('guarantees all 35 figurine catalog entries exist and have valid models', () => {
+    expect(FIGURINE_MANIFEST.length).toBe(35);
     for (const item of FIGURINE_MANIFEST) {
       expect(item.id).toBeTruthy();
       expect(item.modelPath).toMatch(/\.glb$/);

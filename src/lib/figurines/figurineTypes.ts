@@ -6,7 +6,10 @@
 export type FigurineCategory =
   | 'royalty'
   | 'mavale'
+  | 'citizens'
   | 'musicians'
+  | 'navy'
+  | 'wildlife'
   | 'yard_props'
   | 'architecture'
   | 'artillery';

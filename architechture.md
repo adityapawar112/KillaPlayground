@@ -326,21 +326,41 @@ An optional authentic simulation layer to be implemented in a subsequent phase:
 Do not send screenshots to a backend server. Generate the entire high-res collage inside the user's browser in `< 400ms` using client-side headless Three.js rendering and 2D canvas compositing:
 
 1. **5-Layer Sandwich Compositor (`posterCompositor.ts`):**
-   * **Layer 1 (Base Vector Art)**: Background SVG (`design_01` to `design_04`).
-   * **Layer 2 (Multi-Angle Diorama Grid)**: 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view).
-   * **Layer 3 (Overlay 1)**: Foreground architectural badges, sky fireworks, or mountain elements (`layer_02_...`).
+   * **Layer 1 (Base Vector Art)**: Background SVG from 4 curated historical themes (`archway_citadel`, `maratha_garrison`, `sahyadri_sunset`, `fortress_bastion`).
+   * **Layer 2 (Multi-Angle Diorama Grid)**: 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view). **Transparent photo grid gaps** (`border: none`, transparent spacing) allow the rich base artwork to show through seamlessly without dark box fills or heavy borders.
+   * **Layer 3 (Overlay 1)**: Foreground architectural badges and sky fireworks (`layer_02_...`). Unused cliff backgrounds pruned to ensure clean framing.
    * **Layer 4 (Overlay 2)**: Foreground figures, artillery cannon, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
-   * **Layer 5 (Typography & Stamp)**: Customizable fort titles, builder credits, festive greetings, and watermark banners in authentic Devanagari typography (`Yatra One`, `Modak`, `Inter`).
+   * **Layer 5 (Typography & Stamp)**: Cultural Devanagari display typography (`Yatra One`) with strict multilingual locale isolation (no transliterated Marathi text leaked in English mode). Supports 4 watermark/banner styles: **Royal Stone Plaque** (*Shilalekh* / राजकीय शिलालेख with carved basalt `#26201B` to `#151210` gradient, double gold trim `#D4AF37`, and gold diamond accents `✦`), Traditional Bottom Banner, Corner Stamp, and Pure Artwork.
 
-2. **Headless Offscreen Snapshot Engine (`posterSnapshotEngine.ts`):**
+2. **Headless Offscreen Snapshot Engine & Diurnal Lighting Pipeline (`posterSnapshotEngine.ts`):**
    * Uses `THREE.WebGLRenderTarget` to render at fixed dimensions independent of client screen size (zero DOM resolution distortion across mobile, tablet, 1080p, and 4K displays).
-   * 4 standardized camera perspectives matching app navigation: Isometric (45°), Bird's Eye (Top-Down), Rampart Eye (15° Low), and Bastion Hero (30° Citadel Corner).
-   * Viewport screenshot button in `DioramaQuickBar.tsx` captures headless 1920 × 1080 snapshots and saves 2 copies: browser file download and local IndexedDB gallery storage.
+   * 4 standardized camera perspectives matching app navigation: Isometric (45°), Bird's Eye (Top-Down), Rampart Eye (15° Low), and Bastion Hero (30° Citadel Corner), plus live camera orientation.
+   * **Diurnal Atmospheric Sky & Lighting Override Pipeline**:
+     - `applyAtmosphericConfigToScene(scene, timeOfDay)` temporarily overrides scene lighting (directional sun, ambient fill, hemisphere sky/ground, point lights, exponential fog, and ACESFilmic tone mapping) to accurately match the slot's chosen diurnal phase (Dawn, Noon, Golden Hour, or Diwali Night).
+     - `drawAtmosphericSkyToCanvas(ctx, width, height, timeOfDay)` composites the diurnal atmospheric gradient onto the snapshot background:
+       * *Dawn (06:00)*: Peach-rose to cool morning slate gradient (`#FDBA74` to `#64748B`).
+       * *Noon (12:00)*: Open daylight blue gradient (`#60A5FA` to `#BAE6FD`).
+       * *Golden Hour (17:30)*: Saffron sunset amber gradient (`#C2410C` to `#F59E0B`).
+       * *Diwali Night (21:00)*: Deep midnight indigo gradient (`#0B0F19` to `#1E1B4B`) with procedural twinkling white stars.
+     - Scene lighting and fog are cleanly restored to their live interactive states immediately after rendering, causing zero visual disruption in the main viewport.
+   * **Atomic Per-Slot Capture & Monotonic Request Versioning**:
+     - Per-slot capture requests track monotonically increasing IDs (`slotRequestVersions[slotIndex] = ++lastRequestId`).
+     - Stale asynchronous snapshot callbacks resolve as no-ops, eliminating race conditions, image flickering, and slot-reverting bugs when rapidly switching angles, time-of-day, or screenshots.
+   * **4-Tile Time-of-Day Selector**:
+     - Each slot features a dedicated 4-tile time toggle (Dawn, Noon, Golden Hour, Diwali Night) with randomized diurnal default assignments on modal open.
 
-3. **Instant Export & Sharing (`posterShare.ts`):**
-   * Direct PNG/JPG download.
+3. **Local Screenshot Vault (`screenshotVault.ts` & `ConfirmDialog.tsx`):**
+   - Browser IndexedDB storage (`killa_screenshots_db`, store `screenshots`) for diorama snapshots.
+   - Viewport screenshot button in `DioramaQuickBar.tsx` captures headless 1920 × 1080 snapshots and dual-saves:
+     1. Immediate direct browser download (`killa-diorama-<timestamp>.png`).
+     2. Persisted to local IndexedDB gallery for instant assignment to poster slots.
+   - Custom in-app confirmation dialogs (`ConfirmDialog.tsx`) protect against accidental deletion of single screenshots or batch vault clearing, replacing invasive browser `window.confirm()`.
+
+4. **Instant Export & Sharing (`posterShare.ts`):**
+   * Direct lossless PNG and compact JPG downloads.
    * Web Share API (`navigator.share`) on mobile and supported desktop browsers.
    * Direct image copy to system clipboard (`navigator.clipboard.write([new ClipboardItem(...)])`).
+   * WhatsApp and X (Twitter) social web intents.
 
 ---
 
@@ -421,3 +441,7 @@ CREATE POLICY "Public read killas" ON public.killas FOR SELECT USING (true);
    * Pyrotechnics particle engine freezes simulation on pause, maintaining visual burst aesthetics for 5 seconds before gently extinguishing paused particle instances. Eliminates continuous particle calculations when inactive while keeping the diorama viewport completely unobstructed for subsequent construction and editing.
 7. **Zero-Copy TypedArray Binary Serialization:**
    * Heightmap and texture splat data serialize directly from pre-existing TypedArrays (`Float32Array`, `Uint8Array`) into `fflate.zipSync`, avoiding intermediate JavaScript object allocation and garbage collection spikes during save/export.
+8. **Foliage Texture Manager Post-Mount Subscription Pattern:**
+   * Separates pure texture retrieval in `useMemo` from listener registration. Registers texture load callbacks inside `useEffect` via `onTextureLoaded(spritePath, callback)` with `isMounted` guards and `queueMicrotask` dispatch, eliminating React warning: "Can't perform a React state update on a component that hasn't mounted yet".
+9. **Atomic Monotonic Slot Capture & RenderTarget Cleanup:**
+   * Headless snapshot render target (`THREE.WebGLRenderTarget`) and canvas buffers are disposed immediately after pixels are extracted; monotonic request tracking (`slotRequestVersions[slotIndex] = ++lastRequestId`) discards stale asynchronous render completions, preventing memory leaks and UI race conditions.

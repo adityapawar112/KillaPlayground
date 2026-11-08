@@ -66,8 +66,8 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 └── Demand Frameloop & Auto-Pause: Tool switching automatically stops playback to ensure responsive demand rendering
 │
 ▼
-[9. Showcase, Multi-Angle Poster & Share]
-└── Interactive 3D Link OR Auto-Captured Multi-Angle Festive Poster with Marathi/English Title Header
+[9. Showcase, Multi-Angle Poster Studio & Share]
+└── Multi-Template Festive Poster Studio (4 Curated Themes, 1-4 Views Grid, Atmospheric Sky Gradients, 4-Tile Diurnal Lighting Toggle, Screenshot Vault & Multi-Channel Share)
 │
 ▼
 [10. State Serialization, Local Persistence & Portable Packaging]
@@ -337,7 +337,7 @@ Comprehensive spectator and presentation studio designed for pure diorama admira
   * `☀️ Day`: Transitions diorama to daylight courtyard lighting.
   * `▶ Play`: Starts continuous 60 FPS animation loop for trees, particle effects, and continuous night fireworks.
   * `⏸ Pause`: Freezes all wind sway and particle motion; returns canvas to on-demand rendering.
-  * `📷 Screenshot`: Hides all HUD chrome, captures the full-resolution WebGL canvas buffer to PNG, triggers direct browser download (`killa-diorama-<timestamp>.png`), and restores the HUD.
+  * `📷 Screenshot`: Captures a clean headless 1920 × 1080 WebGL snapshot with diurnal sky gradient and physical scene lighting, dual-saving directly to user disk (`killa-diorama-<timestamp>.png`) and persisting to the local IndexedDB Screenshot Vault for instant reuse in the Poster Studio.
   * `🌙 Night`: Transitions to night mode, igniting all placed diyas and firing a celebratory simultaneous fireworks salvo.
 * **Decoupled Ambient Animation & Auto-Pause on Tool Switch:**
   * Foliage wind sway is decoupled from mouse movement; animation progression is strictly governed by the `isPlaying` state.
@@ -347,22 +347,56 @@ Comprehensive spectator and presentation studio designed for pure diorama admira
 ---
 
 ### Phase 9: Showcase, Multi-Angle Poster Studio & Sharing
-Once the user clicks **"Finish Killa"**, the tool transitions into the **Showcase & Poster Studio**:
+Once the user clicks **"Finish Killa"** (or selects `File -> Export Festive Poster`), the diorama transitions into the **Festive Killa Poster Studio** (`PosterStudioModal.tsx`):
 
-#### 1. Automated Multi-Angle Poster Generator
-Captures high-resolution snapshots of the user's finished killa from **4 cinematic angles** in $< 400\text{ms}$[cite: 1, 2]:
-* **Hero Bird's-Eye Overview:** Full isometric view showing the entire fort layout, lawns, and walls[cite: 1, 2].
-* **The *Maha Darwaza* & Bastion Low-Angle:** Looking up at the stone ramparts, cannons, and guards[cite: 1, 2].
-* **The *Balekilla* Throne & Buildings Close-Up:** Focusing on Chhatrapati Shivaji Maharaj, the saffron flag, and courtyard buildings[cite: 2].
-* **Golden-Hour / Diwali Night Diya View:** Warm festive lighting with glowing diyas along the battlements.
+#### 1. 4 Curated Historical Festival Themes
+* **Archway Citadel (कमान व तोफ):** Ornate stone gate archway with battlements, hanging brass lanterns, artillery cannon, and glowing terracotta diyas overlooking rolling Sahyadri valleys.
+* **Maratha Vanguard (मराठा सैन्यदल):** Maratha soldiers, cavalry commander, bugle herald, and cannon assembled before a sun-drenched hillfort escarpment with traditional geometric borders.
+* **Sahyadri Sunset (सह्याद्री सूर्यास्त):** Saffron flag flying high over bastion ramparts against a dramatic dusk sunset sky and glowing harvest moon.
+* **Fortress Bastion (गड बुरुज):** Saffron flag bearer standing proud on mountain crags with stone watchtowers standing guard along the ridge.
 
-#### 2. Custom Poster Composition & Typography
-* Consolidates the multi-angle views into a single, ready-to-share **Festive Collage Poster** (**9:16 Instagram Story / WhatsApp Status** and **4:5 Social Feed** aspect ratios)[cite: 2].
-* **Custom Calligraphic Header:** Custom fort name and builder name styled with Marathi decorative typography (`Yatra One`) and festive greeting (`Modak`): *"दिवाळीच्या हार्दिक शुभेच्छा"*[cite: 2].
+#### 2. 5-Layer Sandwich Compositor & Transparent Grid Framing
+* **Layer 1 (Base Vector Art):** High-resolution theme background SVG (`design_01` to `design_04`).
+* **Layer 2 (Multi-Angle Diorama Grid):** 1 to 4 images arranged in responsive layout grids:
+  * *4-Row Panoramic Strips (Default):* Widescreen strips matching the central archway opening.
+  * *2×2 Quad Grid:* 4 square views balancing topographical and close-up angles.
+  * *Hero Top + 3 Strips:* Large upper hero view with 3 panoramic context strips below.
+  * *3-Row, 2-Row, 2-Columns, & Single View:* Automatically tailored to the chosen image count (1 to 4).
+  * *Transparent Grid Gaps:* Completely borderless photo grid (`border: none`, transparent gaps) allowing the warm background artwork to shine through without dark container fills or heavy drop shadows.
+* **Layer 3 (Overlay 1):** Foreground architectural badges, sky fireworks, or mountain elements (`layer_02_...`).
+* **Layer 4 (Overlay 2):** Foreground figurines, cannon carriage, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
+* **Layer 5 (Typography & Royal Plaque):** Authentic Devanagari display typography (`Yatra One`) and custom branding watermarks.
 
-#### 3. Instant Sharing Options
-* **Download Festive Poster (PNG/JPG):** One-tap download for WhatsApp family groups, Instagram Stories, X, and LinkedIn.
-* **Share Interactive 3D Link:** Generates a permanent, zero-login view-only link for friends to inspect in 3D.
+#### 3. Standard Camera Perspectives & Diurnal Snapshot Pipeline
+* **4 Pre-Configured Perspectives:**
+  * *Isometric (45°):* Full fort overview showing perimeter ramparts, tableland, and courtyard bricks.
+  * *Bird's Eye (90° Top-Down):* Blueprint layout of mountain tiers and defensive walls.
+  * *Rampart Eye (15° Low Hero View):* Dramatic upward entrance view looking at the Maha Darwaza and bastions.
+  * *Bastion Hero (30° Citadel Corner):* Intimate angle focusing on Chhatrapati sinhasan, waving flags, and glowing diyas.
+  * *Live Camera & Gallery:* Ability to assign the current interactive viewport view or pick from locally saved screenshots.
+* **Diurnal Atmospheric Sky & Scene Lighting Overrides:**
+  * Snapshots are rendered offscreen via `THREE.WebGLRenderTarget` at fixed dimensions independent of client screen size.
+  * Automatically composites the diurnal sky background (Dawn peach-rose, Noon daylight blue, Golden Hour sunset amber, and Diwali Night deep indigo with twinkling stars).
+  * Overrides physical scene lights (sun, ambient, bounce, hemisphere, point lights, and fog) to match the chosen time-of-day before cleanly restoring viewport lights.
+* **4-Tile Time-of-Day Selector Per Slot:**
+  * Each slot provides a 4-tile time toggle (Dawn, Noon, Golden Hour, Night).
+  * Automatically assigns randomized diurnal defaults on initialization for diverse atmospheric variation across poster frames.
+* **Atomic Monotonic Request Tracking:**
+  * Monotonically incrementing request versions (`slotRequestVersions[slotIndex] = ++lastRequestId`) discard stale asynchronous renders, eliminating flickering or angle-reverting bugs.
+
+#### 4. Screenshot Vault & In-App Deletion Safety
+* Dedicated local IndexedDB gallery vault (`killa_screenshots_db`, store `screenshots`).
+* Quick-action screenshot button dual-saves: downloads directly to disk and stores a copy in the vault for immediate use in poster slots.
+* Custom in-app confirmation modal (`ConfirmDialog.tsx`) replaces invasive browser popups for deleting individual shots or clearing the entire vault.
+
+#### 5. Devanagari Typography, Royal Stone Plaque & Multi-Channel Sharing
+* **Royal Stone Plaque (*Shilalekh* / राजकीय शिलालेख):** Basalt stone cartouche (`#26201B` to `#151210`) with polished gold trim (`#D4AF37`), gold diamond accents (`✦`), and gold Devanagari typography (`#FDE68A`).
+* **Strict Multilingual Locale Isolation:** Top-bar language switcher (`EN` | `म` | `हि`) controls all presets and labels; English mode displays clean titles and greetings without bracketed Marathi text.
+* **Export & Sharing Options:**
+  * *Download Poster (PNG / JPG):* Crisp, lossless PNG (1080 × 1350) or compact JPG for messaging apps.
+  * *Native Web Share API:* One-tap mobile/desktop sheet sharing directly to Instagram Stories, WhatsApp, and social feeds.
+  * *Copy Image:* Direct clipboard copy for pasting into WhatsApp Web or Discord.
+  * *Social Web Intents:* Direct share links for WhatsApp and X (Twitter).
 
 ---
 

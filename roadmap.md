@@ -527,41 +527,40 @@ graph TD
 - **Blocked by**: `Ticket 12`
 - **Delivers**:
   - **SVG Multi-Layer Sandwich Compositor (1080 × 1350 px / 4:5 Portrait)**:
-    - Layer 1 (Base): High-fidelity vector festival backgrounds (`design_01` to `design_04`).
-    - Layer 2 (3D Views Grid): 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view).
-    - Layer 3 (Overlay 1): Foreground architectural badges, sky fireworks, or mountain elements (`layer_02_...`).
+    - Layer 1 (Base): High-fidelity vector festival backgrounds (`design_01` to `design_04`) across 4 curated historical themes (*Archway Citadel*, *Maratha Vanguard*, *Sahyadri Sunset*, and *Fortress Bastion*).
+    - Layer 2 (3D Views Grid): 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view). **Transparent photo grid gaps** (`border: none`, transparent spacing) allow the background artwork to shine through cleanly without heavy borders or dark box fills.
+    - Layer 3 (Overlay 1): Foreground architectural badges, sky fireworks, or mountain elements (`layer_02_...`). Unused cliff backgrounds pruned for crisp framing.
     - Layer 4 (Overlay 2): Foreground figures, artillery cannon, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
-    - Layer 5 (Typography & Stamp): Customizable fort titles, builder credits, festive greetings, and watermark banners in authentic Devanagari typography (`Yatra One`, `Modak`, `Inter`).
-  - **4 Standard Camera Perspectives**:
+    - Layer 5 (Typography & Royal Plaque): Authentic Devanagari display typography (`Yatra One`) with strict locale isolation (no Marathi text leakage in English mode). Supports **Royal Stone Plaque** (*Shilalekh* / राजकीय शिलालेख with dark basalt `#26201B` to `#151210` gradient, double gold trim `#D4AF37`, and gold diamond accents `✦`), Traditional Bottom Banner, Corner Stamp, and Pure Artwork.
+  - **4 Standard Camera Perspectives & Diurnal Snapshot Pipeline**:
     - **Isometric (45°)**: Complete fort overview, retaining bricks, water moat, and mountain tiers.
     - **Bird's Eye (Top-Down)**: Strategic topographical blueprint layout.
     - **Rampart Eye (15° Low Hero View)**: Dramatic upward entrance view of Maha Darwaza and bastions.
     - **Bastion Hero (30° Citadel Corner)**: Chhatrapati sinhasan, waving flags, and glowing diyas.
     - Live viewport angle support + one-click angle reassignment.
-  - **Headless Offscreen Snapshot Engine & Viewport Screenshot Rework**:
-    - Complete screen-size-independent 3D rendering via Three.js `WebGLRenderTarget` (zero DOM resolution distortion across mobile, tablet, 1080p, and 4K displays).
-    - Diorama quick bar screenshot button (`DioramaQuickBar.tsx`) reworked to capture headless 1920 × 1080 snapshots and save **two copies**:
-      1. Immediate direct browser download (`killa-diorama-<timestamp>.png`).
-      2. Persisted to local IndexedDB gallery for instant reuse in the Festive Poster Studio.
-  - **Local Screenshot Gallery Vault (`screenshotVault.ts`)**:
-    - Browser IndexedDB storage for diorama snapshots with thumbnail inspection, slot assignment, and single/batch deletion.
-  - **Rich Text & Watermark Customization Presets**:
-    - Fort title presets (*माझा किल्ला*, *किल्ले रायगड*, *किल्ले मुरुड जंजिरा*, *किल्ले सिंहगड*, *The Killa Playground*).
-    - Festive greeting presets (*दिवाळीच्या हार्दिक शुभेच्छा*, *शुभ दीपावली*, *Happy Diwali*, *हर हर महादेव*).
-    - Custom builder name credit (*निर्मिती: [Builder Name] • दिवाळी २०२६*).
-    - Stamp style presets (Traditional Bottom Banner, Minimal Calligraphic Stamp, Gold Crest Ribbon, Clean Vector Only).
+    - **Diurnal Atmospheric Sky & Scene Lighting Overrides**: Automatically composites diurnal sky gradient (Dawn peach-rose, Noon sky blue, Golden Hour fiery amber, Diwali Night deep indigo with twinkling stars) and physical scene lighting overrides matching the chosen time-of-day. Cleanly restores interactive scene lighting post-render.
+    - **4-Tile Time-of-Day Selector Per Slot**: Dawn, Noon, Golden Hour, and Night with randomized initial defaults.
+    - **Atomic Monotonic Request Versioning**: Monotonically incrementing IDs (`slotRequestVersions[slotIndex] = ++lastRequestId`) discard stale asynchronous renders, eliminating flickering and angle-reverting bugs.
+  - **Local Screenshot Gallery Vault (`screenshotVault.ts` & `ConfirmDialog.tsx`)**:
+    - Browser IndexedDB storage (`killa_screenshots_db`, store `screenshots`) for diorama snapshots with slot assignment, inline per-slot gallery picker, and single/batch deletion.
+    - Viewport screenshot button in `DioramaQuickBar.tsx` captures headless 1920 × 1080 snapshots and dual-saves: direct file download + local IndexedDB gallery.
+    - Custom in-app confirmation modal (`ConfirmDialog.tsx`) replaces native browser `window.confirm()` popups.
+  - **Foliage Texture Manager Lifecycle Hardening**:
+    - Moved texture load callback from `useMemo` into an event-driven `useEffect` subscription with `isMounted` checks and `queueMicrotask` dispatch, eliminating premature state update warnings.
   - **Instant Export & Multi-Channel Social Sharing (`posterShare.ts`)**:
     - Lossless PNG and compact JPG downloads with clean sanitized filenames.
     - Native Web Share API (`navigator.share`) on mobile/desktop for 1-tap sharing to WhatsApp, Instagram Stories, Facebook, Twitter, and AirDrop.
     - One-click image copy to system clipboard (`ClipboardItem`) for WhatsApp Web and Discord.
+    - Direct social share links for WhatsApp and X (Twitter).
 
 ### Acceptance Criteria
 - [x] "Finish Killa" and `File -> Export Festive Poster` open the Poster Studio Modal.
 - [x] Poster renders the 5-layer composite sandwich with Layer 2 and Layer 3 overlapping the 3D views.
-- [x] Users can select between 1 to 4 images and choose tailored grid layouts (including 4-stacked horizontal strips matching reference design).
+- [x] Users can select between 1 to 4 images and choose tailored grid layouts with transparent gaps.
+- [x] Headless snapshots capture atmospheric sky gradients and physical scene lighting matching slot diurnal time.
 - [x] Viewport screenshot button captures headless offscreen snapshots and saves 2 copies (browser download + local gallery).
-- [x] Local screenshots can be picked and assigned into poster slots and cleared from local storage.
-- [x] Presets for titles, greetings, builder names, banner styles, and fonts update live in the canvas preview.
+- [x] Local screenshots can be picked and assigned into poster slots and deleted via custom in-app confirmation popups.
+- [x] Presets for titles, greetings, builder names, banner styles, and fonts update live in the canvas preview with strict locale isolation.
 - [x] "Download Poster" produces a crisp, high-resolution PNG/JPG file.
 - [x] "Share" triggers Web Share API on supported devices, and "Copy Image" copies the PNG to clipboard.
 

@@ -513,6 +513,60 @@ Before authoring or modifying any HUD component or tool sidebar:
 - **Continuous Drag Cadence Throttling:**
   - High-frequency drag tools (foliage scatter, foliage erase, terrain sculpt) MUST throttle continuous updates to a calibrated 35ms / 0.05m movement cadence, preventing redundant geometry modifications, spatial queries, or GC spikes during rapid sweeps.
 
+### Rule 25: Festive Poster Studio Modal Anatomy (`PosterStudioModal.tsx`)
+- **Modal Container & Surfaces:**
+  - Backdrop: `fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm`.
+  - Outer Container: `bg-[#FAF8F5] border border-[#CDBCAB] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col`.
+  - Header: Clean, unified top banner with "Festive Killa Poster Studio" (`font-['Yatra_One'] text-xl text-[#2B1E16]`), language switcher pill (`EN` | `म` | `हि`) matching `AppMenuBar`, and `[✕]` close button. Header MUST NOT include decorative subtitles or technical pixel dimensions (e.g. `1080 x 1350 HD`).
+- **2-Column Split Studio Workspace:**
+  - **Left Studio Column (Preview Floor)**:
+    - Dedicated dark basalt viewing mat (`bg-[#1C1815] p-6 rounded-2xl flex items-center justify-center min-h-[500px]`).
+    - Displays full 4:5 aspect portrait poster canvas with 100% visible bounds (`max-h-[72vh] object-contain shadow-2xl rounded-lg`).
+  - **Right Studio Column (Tactile Parameter Controls)**:
+    - Scrolling controls panel (`bg-[#F3EBE0]/40 overflow-y-auto px-5 py-4 space-y-5`).
+- **Section 1: Theme Selection (Curated Historical Themes):**
+  - 4 authentic themes: *Archway Citadel* (कमान व तोफ), *Maratha Vanguard* (मराठा सैन्यदल), *Sahyadri Sunset* (सह्याद्री सूर्यास्त), and *Fortress Bastion* (गड बुरुज).
+  - Theme Cards: `bg-[#F3EBE0] border border-[#D9C9B4] rounded-xl p-2.5 transition-all hover:border-[#B85F45]`. Active card gets `#B85F45` ring and check badge.
+  - Thumbnails MUST display the complete uncropped poster layout (`object-contain`) rather than cropped centers.
+- **Section 2: Multi-Angle Photo Grid Framing:**
+  - Image count selector: 1 to 4 images.
+  - Layout Grid Pills: 4-Row Strips (Default), 2×2 Quad Grid, Hero Top + 3 Strips, 3-Row, 2-Row, 2-Columns, and Single View.
+  - **Transparent Grid Spacing Standard**: Diorama photo grids MUST use completely transparent gaps (`gap-1.5` or `gap-2`, `border: none`, zero drop shadow, zero dark box background), allowing the warm festive background art to frame the fort views naturally.
+- **Section 3: Slot Angles, Diurnal Sky & Screenshot Vault:**
+  - Slot Angles: 4 standard perspectives (Isometric 45°, Bird's Eye, Rampart Eye, Bastion Hero), Live Camera angle, and Screenshot Vault Gallery picker.
+  - **Inline Vault Gallery**: Selecting `Gallery` MUST open the screenshot browser immediately below the active slot, never at the end of the entire slot list.
+  - **4-Tile Time-of-Day Selector**: Sub-grid beneath angles provides 4 diurnal tiles: Dawn (पहाट), Noon (दुपार), Golden Hour (संध्याकाळ), and Diwali Night (दिवाळी रात्र). Slots initialize with randomized time-of-day assignments.
+  - **Atmospheric Sky & Lighting**: Headless snapshots automatically render matching atmospheric gradients (Dawn peach-rose, Noon sky blue, Golden Hour fiery amber, Night midnight indigo with twinkling stars) and physical scene lighting.
+- **Section 4: Text, Branding & Royal Stone Plaque:**
+  - Presets for Fort Title, Builder Credit, and Festive Wish.
+  - Strict Locale Isolation: When English (`EN`) is selected, labels and presets display pure English without transliterated Marathi in parentheses.
+  - Single Typography Standard: Default display headlines in `Yatra One`, technical body in `Inter`. No font selection dropdown.
+  - **Royal Stone Plaque (*Shilalekh* / राजकीय शिलालेख)**:
+    - Carved dark basalt gradient (`#26201B` to `#151210`) with subtle bevel highlights.
+    - Double gold border trim (`#D4AF37`, 2px outer, 1px inner).
+    - Gold diamond finial accents (`✦`) flanking fort title and builder credits.
+    - Gold Devanagari typography (`#FDE68A`) in `Yatra One`.
+- **Section 5: Dual Export & Multi-Platform Sharing:**
+  - Primary CTA: Full-width download button (`bg-[#E85D04] hover:bg-[#D45303] text-white font-medium py-3 rounded-xl shadow-md`).
+  - Secondary Actions: Share Poster (`navigator.share`), Copy Image (clipboard), WhatsApp intent, X (Twitter) intent.
+
+### Rule 26: In-App Confirmation Modal & Screenshot Vault Anatomy (`ConfirmDialog.tsx` & `screenshotVault.ts`)
+- **Tactile In-App Confirmation Modal (`ConfirmDialog.tsx`):**
+  - NEVER use native browser `window.confirm()` or alerts.
+  - Backdrop: `fixed inset-0 z-[60] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4`.
+  - Container: `bg-[#FAF8F5] border border-[#CDBCAB] rounded-2xl shadow-2xl max-w-sm w-full p-5 text-center`.
+  - Title: `font-['Yatra_One'] text-lg text-[#2B1E16]`.
+  - Body: `text-sm text-[#5C4638] my-3 leading-relaxed`.
+  - Action CTAs:
+    - Destructive Confirm CTA: `bg-[#DC2626] text-white hover:bg-[#B91C1C] rounded-xl px-4 py-2 text-sm font-medium shadow-xs`.
+    - Cancel CTA: `bg-[#F3EBE0] border border-[#D9C9B4] text-[#4B382C] hover:bg-[#EADECF] rounded-xl px-4 py-2 text-sm`.
+- **Dual-Save Screenshot Vault Protocol:**
+  - Viewport screenshot action in `DioramaQuickBar.tsx` captures headless 1920 × 1080 snapshots with diurnal sky and lighting.
+  - Dual-saves simultaneously:
+    1. Triggers direct browser file download (`killa-diorama-<timestamp>.png`).
+    2. Persists to browser IndexedDB Screenshot Vault (`killa_screenshots_db`, store `screenshots`).
+  - Supports individual screenshot deletion and batch clearing with in-app confirmation guards.
+
 ---
 
 ## 3D Textures & Material Tokens
@@ -573,6 +627,11 @@ The diorama's lighting dynamically grades across the 24-hour solar arc with 7 ma
 - **Check existing sibling panels (e.g. Spline tool) and `design.md` before authoring any new UI.**
 - **Use real sliding toggle switches with smooth sliding knobs for binary feature states (like water plane).**
 - **Prompt confirmation before destructive base terrain changes if existing structures are present.**
+- **Keep photo grid gaps completely transparent (`border: none`, transparent spacing) in the Poster Studio so the base vector artwork shines through cleanly.**
+- **Render Royal Stone Plaque (*Shilalekh*) with dark basalt stone gradient, double gold trim (`#D4AF37`), gold diamond accents (`✦`), and gold Devanagari typography.**
+- **Mount inline screenshot galleries immediately below the selected slot rather than at the bottom of all slots.**
+- **Use custom in-app confirmation modals (`ConfirmDialog.tsx`) instead of browser `window.confirm()`.**
+- **Isolate languages strictly based on active locale without leaking Marathi into English mode.**
 
 ### Don't
 - **Don't use cold corporate gray (`#F3F4F6`, `#E5E7EB`) or pure black (`#000000`).**
@@ -589,5 +648,8 @@ The diorama's lighting dynamically grades across the 24-hour solar arc with 7 ma
 - **Don't leave continuous animation playback running when switching between primary construction tools.**
 - **Don't use coarse ground proximity radius checks that hijack clicks near splines or walls.**
 - **Don't hardcode Marathi in parentheses in English labels.**
+- **Don't place solid borders, white containers, or drop shadows around diorama photos in the festive poster grid.**
+- **Don't use browser `window.confirm()` or native alerts.**
+- **Don't show redundant subtitles, font selection pickers, or pixel badges in the Poster Studio header.**
 - **Don't lose active object selection when transitioning from Select to Fortify or Transform.**
 - **Don't introduce mipmap blurring on retro textures.** Always configure `tex.minFilter = THREE.NearestFilter; tex.magFilter = THREE.NearestFilter`.

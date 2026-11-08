@@ -136,7 +136,7 @@ export const StartupModal: React.FC = () => {
 
       <div className="relative w-full max-w-4xl bg-[#F9F6F0] rounded-3xl border-2 border-[#D9C9B4] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         {/* Blender-Style Splash Header */}
-        <div className="relative bg-gradient-to-r from-[#4B382C] via-[#8F4938] to-[#B85F45] px-6 py-5 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-inner">
+        <div className="relative bg-[#4B382C] px-6 py-5 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-inner">
           <div className="flex items-center gap-4">
             <div className="relative w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg p-1 shrink-0 backdrop-blur-xs">
               <Image

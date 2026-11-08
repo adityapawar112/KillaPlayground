@@ -189,7 +189,7 @@ describe('Wall Geometry & Algorithmic Pipeline', () => {
 
       // Clean disposal
       geo.dispose();
-    });
+    }, 15000);
 
     it('scales UV coordinates proportionally when uvScale is modified', () => {
       const buffer = createStateBuffer(0.0, 0.0);

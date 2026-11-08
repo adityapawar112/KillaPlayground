@@ -192,7 +192,7 @@ export const TerrainStudioDrawer: React.FC = () => {
       aria-label="Historical Forts & Terrain Studio"
     >
       {/* Dropdown Header */}
-      <div className="p-4 sm:p-5 bg-gradient-to-r from-[#4B382C] via-[#634E40] to-[#8F4938] text-white flex items-center justify-between border-b border-[#D9C9B4]/40 rounded-t-2xl sm:rounded-t-3xl shadow-sm shrink-0">
+      <div className="p-4 sm:p-5 bg-[#4B382C] text-white flex items-center justify-between border-b border-[#D9C9B4]/40 rounded-t-2xl sm:rounded-t-3xl shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center">
             {terrainDrawerTab === 'historical' ? (
@@ -514,7 +514,7 @@ export const TerrainStudioDrawer: React.FC = () => {
         </div>
         <button
           onClick={() => setTerrainDrawerOpen(false)}
-          className="px-6 py-2 rounded-xl bg-gradient-to-r from-[#C25E00] to-[#E85D04] hover:from-[#A75000] hover:to-[#D45404] text-white font-bold text-xs sm:text-sm shadow-md transition-all cursor-pointer flex items-center gap-2 active:scale-95"
+          className="px-6 py-2 rounded-xl bg-[#E85D04] hover:bg-[#FF7722] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#E85D04]/30 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
         >
           <TbSparkles className="w-4 h-4" />
           <span>{t.modeModal.startBuilding}</span>

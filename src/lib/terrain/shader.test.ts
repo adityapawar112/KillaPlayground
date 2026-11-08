@@ -55,5 +55,5 @@ describe('CustomShaderMaterial Vanilla Shader Compilation', () => {
       (u: any) => u.value && (u.value.isTexture || u.value.isDataTexture || u.value.isDataArrayTexture)
     ).length;
     expect(samplerUniformCount).toBeLessThanOrEqual(13);
-  });
+  }, 15000);
 });

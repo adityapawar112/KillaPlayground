@@ -224,7 +224,7 @@ export const ProjectHubModal: React.FC = () => {
 
       <div className="relative w-full max-w-4xl bg-[#F9F6F0] rounded-3xl border-2 border-[#D9C9B4] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         {/* Banner Header */}
-        <div className="relative bg-gradient-to-r from-[#4B382C] via-[#634E40] to-[#8F4938] px-6 py-4 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-sm shrink-0">
+        <div className="relative bg-[#4B382C] px-6 py-4 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-sm shrink-0">
           <div className="flex items-center gap-3.5">
             <div className="relative w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-md p-1 shrink-0">
               <Image

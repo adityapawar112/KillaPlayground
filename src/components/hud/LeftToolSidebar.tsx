@@ -508,7 +508,7 @@ export const LeftToolSidebar: React.FC = () => {
   const selectedStair = stairs.find((s) => s.id === selectedStairId);
 
   const isModePanelOpen =
-    ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting'].includes(activeTool) && !isToolModeMinimized;
+    ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting', 'view'].includes(activeTool) && !isToolModeMinimized;
   const propertiesTabLeft = isModePanelOpen ? '76px' : '8px';
 
   return (

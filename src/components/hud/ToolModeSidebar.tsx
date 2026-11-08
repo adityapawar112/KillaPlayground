@@ -87,7 +87,7 @@ export const ToolModeSidebar: React.FC = () => {
       {isToolModeMinimized && (
         <div
           style={{
-            left: isMobileSidebarMinimized ? '114px' : `${leftSidebarWidth + 8}px`,
+            left: isMobileSidebarMinimized ? '138px' : `${leftSidebarWidth + 8}px`,
           }}
           className={`fixed z-30 pointer-events-auto transition-all duration-200 ${topOffsetClass}`}
         >

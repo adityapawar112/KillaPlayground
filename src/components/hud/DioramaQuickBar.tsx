@@ -9,6 +9,9 @@ import {
   TbCamera,
 } from 'react-icons/tb';
 import { useEditorStore } from '@/lib/state/useEditorStore';
+import { captureHeadlessDioramaSnapshot } from '@/lib/poster/posterSnapshotEngine';
+import { saveLocalScreenshot } from '@/lib/persistence/screenshotVault';
+import { downloadPosterBlob } from '@/lib/poster/posterShare';
 
 export const DioramaQuickBar: React.FC = () => {
   const {
@@ -38,23 +41,47 @@ export const DioramaQuickBar: React.FC = () => {
     await new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 75)));
 
     try {
-      const canvas = document.querySelector('canvas') as HTMLCanvasElement;
-      if (!canvas) throw new Error('Canvas not found');
-
       if (typeof window !== 'undefined' && (window as any).__killa_invalidate) {
         (window as any).__killa_invalidate();
       }
 
-      const dataUrl = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-      a.download = `killa-diorama-${timestamp}.png`;
-      a.href = dataUrl;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const filename = `killa-diorama-${timestamp}.png`;
 
-      setToastMessage('High-resolution diorama screenshot saved!');
+      // 1. Capture headless 1920x1080 offscreen snapshot (independent of screen size)
+      let dataUrl: string;
+      try {
+        const shot = await captureHeadlessDioramaSnapshot(1920, 1080);
+        dataUrl = shot.dataUrl;
+
+        // Convert canvas to blob for download
+        shot.canvas.toBlob((blob) => {
+          if (blob) {
+            downloadPosterBlob(blob, filename);
+          }
+        }, 'image/png');
+      } catch (e) {
+        // Fallback to DOM canvas if headless capture encounters an issue
+        const canvas = document.querySelector('canvas') as HTMLCanvasElement;
+        if (!canvas) throw new Error('Canvas not found');
+        dataUrl = canvas.toDataURL('image/png');
+
+        const a = document.createElement('a');
+        a.download = filename;
+        a.href = dataUrl;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      // 2. Save Copy 2 to Local IndexedDB Gallery
+      try {
+        await saveLocalScreenshot(dataUrl, 1920, 1080);
+      } catch (vaultErr) {
+        console.warn('Failed to save to local screenshot vault:', vaultErr);
+      }
+
+      setToastMessage('Diorama snapshot downloaded & saved to your Poster Gallery!');
     } catch (err) {
       console.error('Screenshot capture failed', err);
       setToastMessage('Failed to capture screenshot');

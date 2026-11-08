@@ -101,13 +101,15 @@ const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
 
 // Global invalidate bridge for demand frame-loop rendering
 const InvalidateBridge: React.FC = () => {
-  const { invalidate, scene } = useThree();
+  const { invalidate, scene, gl, camera } = useThree();
   useEffect(() => {
     if (typeof window !== 'undefined') {
       (window as any).__killa_invalidate = invalidate;
       (window as any).__threeScene = scene;
+      (window as any).__threeGL = gl;
+      (window as any).__threeCamera = camera;
     }
-  }, [invalidate, scene]);
+  }, [invalidate, scene, gl, camera]);
   return null;
 };
 

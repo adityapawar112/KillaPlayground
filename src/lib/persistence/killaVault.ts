@@ -25,9 +25,10 @@ export interface VaultProjectRecord {
 export type VaultProjectMeta = Omit<VaultProjectRecord, 'packageBlob'>;
 
 const DB_NAME = 'killa_vault_db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_PROJECTS = 'projects';
 const STORE_SESSION = 'session';
+const STORE_SCREENSHOTS = 'screenshots';
 
 // In-memory fallback for SSR or environments without indexedDB (e.g. Node.js unit tests)
 const memoryProjects = new Map<string, VaultProjectRecord>();
@@ -55,6 +56,10 @@ function openVaultDB(): Promise<IDBDatabase | null> {
         }
         if (!db.objectStoreNames.contains(STORE_SESSION)) {
           db.createObjectStore(STORE_SESSION, { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains(STORE_SCREENSHOTS)) {
+          const store = db.createObjectStore(STORE_SCREENSHOTS, { keyPath: 'id' });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
         }
       };
 

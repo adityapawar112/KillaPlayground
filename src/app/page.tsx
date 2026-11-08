@@ -15,6 +15,7 @@ import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
 import { ProjectHubModal } from '@/components/modals/ProjectHubModal';
 import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
 import { TerrainChangeConfirmModal } from '@/components/modals/TerrainChangeConfirmModal';
+import { PosterStudioModal } from '@/components/modals/PosterStudioModal';
 import { AboutModal } from '@/components/modals/AboutModal';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -253,6 +254,9 @@ export default function HomePage() {
 
           {/* Terrain Change Confirmation Dialog (Ticket 12) */}
           <TerrainChangeConfirmModal />
+
+          {/* Festive Poster Studio Modal (Ticket 13) */}
+          <PosterStudioModal />
 
           {/* Helper Modals */}
           <ShortcutsModal />

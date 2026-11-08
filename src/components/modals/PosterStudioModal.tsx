@@ -16,6 +16,10 @@ import {
   TbPalette,
   TbBrandWhatsapp,
   TbBrandX,
+  TbSunrise,
+  TbSun,
+  TbSunset,
+  TbFlame,
 } from 'react-icons/tb';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -31,6 +35,7 @@ import {
   captureHeadlessSnapshot,
   CameraPerspectiveId,
   CAMERA_PERSPECTIVES,
+  TimePresetId,
 } from '@/lib/poster/posterSnapshotEngine';
 import {
   composeFestivePoster,
@@ -53,8 +58,20 @@ import {
 interface SlotSourceConfig {
   type: 'perspective' | 'current' | 'gallery';
   perspectiveId?: CameraPerspectiveId;
+  timePreset: TimePresetId;
   galleryDataUrl?: string;
 }
+
+const TIME_PRESET_OPTIONS: TimePresetId[] = ['dawn', 'noon', 'sunset', 'night'];
+
+const getRandomizedTimePresets = (): TimePresetId[] => {
+  const array: TimePresetId[] = ['dawn', 'noon', 'sunset', 'night'];
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+};
 
 // Locale-specific presets
 const LOCALE_PRESETS = {
@@ -81,6 +98,12 @@ const LOCALE_PRESETS = {
       top: "Bird's Eye",
       rampart: 'Rampart Eye',
       bastion: 'Bastion Hero',
+    },
+    times: {
+      dawn: 'Dawn (06:00)',
+      noon: 'Noon (12:00)',
+      sunset: 'Golden Hour',
+      night: 'Diwali Night',
     },
     grids: {
       'single': '1 Frame',
@@ -125,6 +148,12 @@ const LOCALE_PRESETS = {
       rampart: 'तटबंदी देखावा',
       bastion: 'बुरुज देखावा',
     },
+    times: {
+      dawn: 'पहाट (०६:००)',
+      noon: 'दुपार (१२:००)',
+      sunset: 'गोधूलि (१७:३०)',
+      night: 'दिवाळी रात्र',
+    },
     grids: {
       'single': '१ चौकट',
       'stack-2': '२ पट्ट्या',
@@ -168,6 +197,12 @@ const LOCALE_PRESETS = {
       rampart: 'परकोटा दृश्य',
       bastion: 'बुर्ज दृश्य',
     },
+    times: {
+      dawn: 'उषाकाल (06:00)',
+      noon: 'दोपहर (12:00)',
+      sunset: 'गोधूलि (17:30)',
+      night: 'दिवाली रात',
+    },
     grids: {
       'single': '1 फ्रेम',
       'stack-2': '2 पंक्तियाँ',
@@ -201,13 +236,16 @@ export const PosterStudioModal: React.FC = () => {
   const [imageCount, setImageCount] = useState<ImageCount>(4);
   const [gridLayout, setGridLayout] = useState<GridLayoutType>('stack-4');
 
-  // 3. Slot source assignments (up to 4 slots)
-  const [slotSources, setSlotSources] = useState<SlotSourceConfig[]>([
-    { type: 'perspective', perspectiveId: 'isometric' },
-    { type: 'perspective', perspectiveId: 'rampart' },
-    { type: 'perspective', perspectiveId: 'bastion' },
-    { type: 'perspective', perspectiveId: 'top' },
-  ]);
+  // 3. Slot source assignments (up to 4 slots) with randomized diurnal time presets
+  const [slotSources, setSlotSources] = useState<SlotSourceConfig[]>(() => {
+    const randomTimes = getRandomizedTimePresets();
+    return [
+      { type: 'perspective', perspectiveId: 'isometric', timePreset: randomTimes[0] },
+      { type: 'perspective', perspectiveId: 'rampart', timePreset: randomTimes[1] },
+      { type: 'perspective', perspectiveId: 'bastion', timePreset: randomTimes[2] },
+      { type: 'perspective', perspectiveId: 'top', timePreset: randomTimes[3] },
+    ];
+  });
 
   // Which slot has its inline gallery open (null = closed)
   const [activeGallerySlotIndex, setActiveGallerySlotIndex] = useState<number | null>(null);
@@ -277,7 +315,7 @@ export const PosterStudioModal: React.FC = () => {
     }
   }, [imageCount, gridLayout]);
 
-  // Capture single slot canvas cleanly given its source
+  // Capture single slot canvas cleanly given its source with authentic diurnal lighting & sky
   const captureSingleSlotCanvas = useCallback(async (source: SlotSourceConfig): Promise<HTMLCanvasElement | null> => {
     if (source.type === 'gallery' && source.galleryDataUrl) {
       const img = new Image();
@@ -294,9 +332,12 @@ export const PosterStudioModal: React.FC = () => {
       return c;
     }
 
+    const timePreset = source.timePreset || 'noon';
+
     if (source.type === 'current') {
       return await captureHeadlessSnapshot({
         perspective: 'current',
+        timePreset,
         width: 1080,
         height: 340,
       });
@@ -305,6 +346,7 @@ export const PosterStudioModal: React.FC = () => {
     const pId = source.perspectiveId || 'isometric';
     return await captureHeadlessSnapshot({
       perspective: pId,
+      timePreset,
       width: 1080,
       height: 340,
     });
@@ -349,7 +391,7 @@ export const PosterStudioModal: React.FC = () => {
         Array.from({ length: 4 }).map(async (_, idx) => {
           const version = ++slotRequestVersions.current[idx];
           if (idx >= imageCount) return { idx, version, canvas: null };
-          const src = slotSources[idx] || { type: 'perspective', perspectiveId: 'isometric' };
+          const src = slotSources[idx] || { type: 'perspective', perspectiveId: 'isometric', timePreset: 'noon' };
           const c = await captureSingleSlotCanvas(src);
           return { idx, version, canvas: c };
         })
@@ -389,7 +431,7 @@ export const PosterStudioModal: React.FC = () => {
     if (!isPosterModalOpen) return;
     for (let i = 0; i < imageCount; i++) {
       if (!slotCanvases[i]) {
-        updateSlot(i, slotSources[i] || { type: 'perspective', perspectiveId: 'isometric' });
+        updateSlot(i, slotSources[i] || { type: 'perspective', perspectiveId: 'isometric', timePreset: 'noon' });
       }
     }
   }, [imageCount, isPosterModalOpen, slotCanvases, slotSources, updateSlot]);
@@ -463,17 +505,30 @@ export const PosterStudioModal: React.FC = () => {
 
   // Assign a perspective to a slot
   const handleAssignPerspective = (slotIdx: number, pId: CameraPerspectiveId) => {
+    const curTime = slotSources[slotIdx]?.timePreset || 'noon';
     updateSlot(slotIdx, {
       type: pId === 'current' ? 'current' : 'perspective',
       perspectiveId: pId,
+      timePreset: curTime,
+    });
+  };
+
+  // Assign a time-of-day preset to a slot
+  const handleAssignTimePreset = (slotIdx: number, timePreset: TimePresetId) => {
+    const cur = slotSources[slotIdx] || { type: 'perspective', perspectiveId: 'isometric', timePreset: 'noon' };
+    updateSlot(slotIdx, {
+      ...cur,
+      timePreset,
     });
   };
 
   // Assign a gallery screenshot to a specific slot
   const handleAssignGalleryShot = (slotIdx: number, dataUrl: string) => {
+    const curTime = slotSources[slotIdx]?.timePreset || 'noon';
     updateSlot(slotIdx, {
       type: 'gallery',
       galleryDataUrl: dataUrl,
+      timePreset: curTime,
     });
     setActiveGallerySlotIndex(null);
     setToastMessage(`Assigned snapshot to Slot ${slotIdx + 1}`);
@@ -831,6 +886,65 @@ export const PosterStudioModal: React.FC = () => {
                             </button>
                           );
                         })}
+                      </div>
+
+                      {/* 4-Tile Diurnal Time of Day Toggle */}
+                      <div className="mt-2 pt-1.5 border-t border-[#D9C9B4]/60">
+                        <div className="text-[10px] font-bold text-[#634E40] mb-1 flex items-center justify-between">
+                          <span>{locale === 'mr' ? 'वेळ व प्रकाश' : locale === 'hi' ? 'समय व प्रकाश' : 'Time of Day'}</span>
+                          <span className="text-[9px] font-normal text-[#8D7666]">
+                            {presets.times[source.timePreset || 'noon']}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-1">
+                          {TIME_PRESET_OPTIONS.map((tKey) => {
+                            const isTimeActive = source.timePreset === tKey;
+                            const tLabel = presets.times[tKey];
+                            const Icon =
+                              tKey === 'dawn'
+                                ? TbSunrise
+                                : tKey === 'noon'
+                                ? TbSun
+                                : tKey === 'sunset'
+                                ? TbSunset
+                                : TbFlame;
+
+                            return (
+                              <button
+                                key={tKey}
+                                type="button"
+                                onClick={() => handleAssignTimePreset(idx, tKey)}
+                                className={`py-1 px-0.5 rounded-md text-[9px] font-semibold border flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                                  isTimeActive
+                                    ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
+                                    : 'bg-[#F9F6F0] border-[#D9C9B4] text-[#634E40] hover:bg-[#EAE0D3]'
+                                }`}
+                                title={tLabel}
+                              >
+                                <Icon
+                                  className={`w-3.5 h-3.5 ${
+                                    tKey === 'dawn'
+                                      ? 'text-[#EA580C]'
+                                      : tKey === 'noon'
+                                      ? 'text-[#F59E0B]'
+                                      : tKey === 'sunset'
+                                      ? 'text-[#D97706]'
+                                      : 'text-[#B85F45]'
+                                  }`}
+                                />
+                                <span className="truncate max-w-full text-[8.5px]">
+                                  {tKey === 'dawn'
+                                    ? (locale === 'mr' ? 'पहाट' : locale === 'hi' ? 'उषा' : 'Dawn')
+                                    : tKey === 'noon'
+                                    ? (locale === 'mr' ? 'दुपार' : locale === 'hi' ? 'दोपहर' : 'Noon')
+                                    : tKey === 'sunset'
+                                    ? (locale === 'mr' ? 'गोधूलि' : locale === 'hi' ? 'गोधूलि' : 'Golden')
+                                    : (locale === 'mr' ? 'रात्र' : locale === 'hi' ? 'रात' : 'Night')}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {/* INLINE GALLERY DRAWER: Opens DIRECTLY below the slot whose gallery was clicked */}

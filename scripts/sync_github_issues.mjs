@@ -489,72 +489,436 @@ Centered floating Quick-Action Bar mounted above the bottom status bar (Day, Pla
   {
     ticketNumber: 12,
     title: 'Ticket 12: State Serialization, Local Persistence Adapter & Project Hub',
-    labels: ['tracer-bullet', 'enhancement'],
-    state: 'open',
+    labels: ['tracer-bullet', 'enhancement', 'verified'],
+    state: 'closed',
     body: `## Overview
-Complete project state serialization to compact \`.killa\` binary format (< 35 KB), 15-slot circular undo/redo buffer, local storage persistence vault, and desktop import/export supporting foundations, stairs, and pyrotechnics.
+Complete project state serialization to compact \`.killa\` binary format (< 35 KB), 15-slot circular undo/redo buffer, local storage persistence vault, interactive terrain drawer, and desktop import/export supporting foundations, stairs, and pyrotechnics.
 
-- **Status**: \`ready-for-agent\`
+- **Status**: \`completed\`
 - **Blocked by**: #6, #9, #10, #11
 
 ## Delivers
 - **Undo / Redo Buffer**:
   - 15-slot in-memory circular buffer tracking terrain edits, building structures (walls, bastions, foundations, stairs), texture paint, foliage instances, figurines, and placed lights/fireworks.
-- **Binary Serialization (\`.killa\` format)**:
-  - Quantize terrain heightmap and paint weight buffers to \`Uint8Array\`.
+  - Decoupled \`historyVersion\` from continuous stroke \`lastUpdated\` timestamp, preventing React tree re-renders during high-frequency mouse dragging.
+- **Viewport & Tool Performance Optimizations**:
+  - Direct TypedArray vertex manipulation with zero initial drag jitter.
+  - Material singleton lifecycle for \`CustomShaderMaterial\` with in-place uniform updates (\`uTexturePaint.value = currentTexture\`), eliminating 1-2s stroke compilation freezes.
+  - Fortifications & magnetic snap camera orbit/pan bypass (\`e.buttons !== 0\`), sub-centimeter position deduplication guard (\`Math.abs(delta) < 0.005\`), 60ms click debounce, and static shared wireframe geometries.
+  - Sub-0.2ms BVH raycasting against targeted pickable root containers with static shared markers.
+  - Foliage scatter & erase cadence throttling (35ms / 0.05m), 512 minimum \`InstancedMesh\` capacity, \`frustumCulled={false}\`, and module-level temporary objects.
+  - Instantaneous shadow reticle synchronization on vault item switch and instantaneous placement without click queuing.
+  - Auto-stop playback on primary tool switch, returning viewport to \`<Canvas frameloop="demand">\` for maximum responsiveness.
+- **Binary Serialization (\`.killa\` format v1.2.0)**:
+  - Quantize terrain heightmap via 2D spatial prediction into delta-encoded 16-bit integers and perceptual channels into compact \`Uint8Array\` buffers.
   - Package terrain, building foundations, stairs, walls, fortifications, foliage, figurines, and fireworks with \`fflate.zipSync\` into a compact \`< 35 KB\` binary package.
 - **Persistence Adapter & Local Vault**:
-  - Local storage / IndexedDB implementation (\`killa_saved_projects_v1\`) persisting named projects with timestamp (\`updatedAt\`), template type, and diorama payload.
-  - Startup modal hub displaying recent locally saved projects with relative time elapsed and one-click loading.
+  - IndexedDB implementation (\`killaVault.ts\`) persisting named projects with timestamp (\`updatedAt\`), template type, diorama statistics, and binary package payload.
+  - Two-tab Project Hub Modal (\`ProjectHubModal.tsx\`) displaying historical fort blueprints, procedural generator, and saved projects with relative time elapsed, one-click loading, and project deletion.
+- **Interactive Terrain Studio Drawer**:
+  - Non-blocking top-sliding drawer (\`TerrainStudioDrawer.tsx\`) allowing real-time inspection of terrain alterations behind controls.
+  - Real sliding toggle switch for base water plane (moat / sea).
+  - "Roll New Terrain" seed randomizer dice button with instant regeneration.
+  - "Stepped Mountain Tiers" slider (1 to 3 tiers) with smooth, tear-free Sahyadri stepped terraces (Balekilla and Machi).
+  - Destructive terrain change confirmation popup (\`TerrainChangeConfirmModal.tsx\`) with itemized object counters protecting placed structures.
+- **Pyrotechnic Pause Timer**:
+  - 5-second countdown timer for fireworks in the paused state: keeps particles frozen for 5 seconds for visual admiration, then cleans them up so they do not obstruct building. Normal playback remains unaffected.
 - **Project File Import & Export**:
-  - Desktop file download of \`.killa\` diorama packages.
-  - Native file picker upload to import and restore \`.killa\` files directly into the 3D canvas.
+  - Desktop file download of \`.killa\` diorama packages and backward-compatible JSON payloads.
+  - Native file picker upload to import and restore \`.killa\` files directly into the 3D canvas with full terrain and texture reproduction.
 - **Defensive Zod Schema**:
   - Validates inbound project payloads, sanitizing coordinates and rejecting malformed files.
 
 ## Acceptance Criteria
-- [ ] Undo and redo reliably revert and restore sculpting, foundations, stairs, walls, painting, and firework placements.
-- [ ] \`serializeKilla()\` packages complete killa state into <= 35 KB in < 15ms.
-- [ ] Projects save to local storage and appear in the startup hub with last-saved timestamps.
-- [ ] \`.killa\` files can be exported and re-imported cleanly with identical visual reproduction.
-- [ ] Inbound payload schema validates types and rejects corrupted payloads.`,
+- [x] Undo and redo reliably revert and restore sculpting, foundations, stairs, walls, painting, and firework placements.
+- [x] \`serializeKilla()\` packages complete killa state into <= 35 KB in < 15ms.
+- [x] Projects save to local storage and appear in the startup hub with last-saved timestamps.
+- [x] \`.killa\` files can be exported and re-imported cleanly with identical visual reproduction.
+- [x] Inbound payload schema validates types and rejects corrupted payloads.
+- [x] Sculpting, texture painting, and foliage brushing maintain 60 FPS without initial stroke drag hesitation.
+- [x] Fortify mode camera orbiting runs at 60 FPS without magnetic snap calculation stalls.
+- [x] Primary tool switching automatically returns canvas to demand rendering.`,
   },
   {
     ticketNumber: 13,
     title: 'Ticket 13: Showcase, Multi-Angle Festive Poster Studio & Share',
-    labels: ['tracer-bullet', 'enhancement'],
-    state: 'open',
+    labels: ['tracer-bullet', 'enhancement', 'verified'],
+    state: 'closed',
     body: `## Overview
-Multi-angle festive poster generation (1080x1920) in < 400ms with Marathi typography, historical templates (Raigad, Murud-Janjira, Sinhagad), and read-only 3D diorama viewer.
+Multi-layer SVG sandwich poster generator (1080x1350 / 4:5 portrait) with 4-perspective diurnal snapshot engine, local IndexedDB screenshot vault, and multi-channel social sharing.
 
-- **Status**: \`ready-for-agent\`
+- **Status**: \`completed\`
 - **Blocked by**: #12
 
 ## Delivers
-- **Historical Blueprint Presets & Random Terrain**:
-  - Raigad, Murud-Janjira, and Sinhagad pre-molded terrains with faint chalk outlines, plus "Roll New Terrain".
-- **Automated 4-Angle Poster Generator**:
-  - Client-side \`OffscreenCanvas(1080, 1920)\` rendering 4 cinematic camera angles in < 400ms:
-    1. *Hero Bird's-Eye Overview*.
-    2. *Maha Darwaza & Bastion Low-Angle*.
-    3. *Balekilla Throne & Buildings Close-Up*.
-    4. *Golden-Hour / Diwali Night Diya Angle*.
-  - Traditional Marathi calligraphic header (\`Yatra One\`) and festive greeting (\`Modak\`): *"दिवाळीच्या हार्दिक शुभेच्छा"*.
-  - Builder name and fort title customization.
-  - Instant high-res PNG/JPG download + \`navigator.share()\` / clipboard link integration.
-- **Shared 3D Viewer Route**:
-  - Read-only diorama viewer at \`/killa/[id]\`.
+- **SVG Multi-Layer Sandwich Compositor (1080 x 1350 px / 4:5 Portrait)**:
+  - Layer 1 (Base): High-fidelity vector festival backgrounds (\`design_01\` to \`design_04\`) across 4 curated historical themes (*Archway Citadel*, *Maratha Vanguard*, *Sahyadri Sunset*, and *Fortress Bastion*).
+  - Layer 2 (3D Views Grid): 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2x2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view). Transparent photo grid gaps allow the background artwork to shine through cleanly without heavy borders or dark box fills.
+  - Layer 3 (Overlay 1): Foreground architectural badges, sky fireworks, or mountain elements (\`layer_02_...\`). Unused cliff backgrounds pruned for crisp framing.
+  - Layer 4 (Overlay 2): Foreground figures, artillery cannon, and terrain base (\`layer_03_...\`), producing a rich 3D layered parallax depth effect.
+  - Layer 5 (Typography & Royal Plaque): Authentic Devanagari display typography (\`Yatra One\`) with strict locale isolation (no Marathi text leakage in English mode). Supports Royal Stone Plaque (*Shilalekh* / राजकीय शिलालेख with dark basalt gradient, double gold trim, and gold diamond accents), Traditional Bottom Banner, Corner Stamp, and Pure Artwork.
+- **4 Standard Camera Perspectives & Diurnal Snapshot Pipeline**:
+  - Isometric (45°), Bird's Eye (Top-Down), Rampart Eye (15° Low Hero View), and Bastion Hero (30° Citadel Corner).
+  - Live viewport angle support + one-click angle reassignment.
+  - Diurnal Atmospheric Sky & Scene Lighting Overrides: Automatically composites diurnal sky gradient (Dawn peach-rose, Noon sky blue, Golden Hour fiery amber, Diwali Night deep indigo with twinkling stars) and physical scene lighting overrides matching the chosen time-of-day. Cleanly restores interactive scene lighting post-render.
+  - 4-Tile Time-of-Day Selector Per Slot: Dawn, Noon, Golden Hour, and Night with randomized initial defaults.
+  - Atomic Monotonic Request Versioning: Discards stale asynchronous renders, eliminating flickering and angle-reverting bugs.
+- **Local Screenshot Gallery Vault (\`screenshotVault.ts\` & \`ConfirmDialog.tsx\`)**:
+  - Browser IndexedDB storage (\`killa_screenshots_db\`, store \`screenshots\`) for diorama snapshots with slot assignment, inline per-slot gallery picker, and single/batch deletion.
+  - Viewport screenshot button in \`DioramaQuickBar.tsx\` captures headless 1920 x 1080 snapshots and dual-saves: direct file download + local IndexedDB gallery.
+  - Custom in-app confirmation modal (\`ConfirmDialog.tsx\`) replaces native browser \`window.confirm()\` popups.
+- **Foliage Texture Manager Lifecycle Hardening**:
+  - Event-driven texture subscription with mount guards eliminating state update warnings.
+- **Instant Export & Multi-Channel Social Sharing (\`posterShare.ts\`)**:
+  - Lossless PNG and compact JPG downloads with clean sanitized filenames.
+  - Native Web Share API (\`navigator.share\`) on mobile/desktop for 1-tap sharing to WhatsApp, Instagram Stories, Facebook, Twitter, and AirDrop.
+  - One-click image copy to system clipboard (\`ClipboardItem\`) for WhatsApp Web and Discord.
+  - Direct social share links for WhatsApp and X (Twitter).
 
 ## Acceptance Criteria
-- [ ] "Finish Killa" opens the Poster Studio Modal and generates the 4-angle festive collage.
-- [ ] Poster includes placed foundations, stairs, buildings, and glowing diyas.
-- [ ] User can customize fort title and builder name in Devanagari or English.
-- [ ] "Download Poster" produces a crisp, high-resolution PNG file.
-- [ ] Shared link route \`/killa/[id]\` renders the 3D diorama in read-only orbit mode.`,
+- [x] "Finish Killa" and \`File -> Export Festive Poster\` open the Poster Studio Modal.
+- [x] Poster renders the 5-layer composite sandwich with Layer 2 and Layer 3 overlapping the 3D views.
+- [x] Users can select between 1 to 4 images and choose tailored grid layouts with transparent gaps.
+- [x] Headless snapshots capture atmospheric sky gradients and physical scene lighting matching slot diurnal time.
+- [x] Viewport screenshot button captures headless offscreen snapshots and saves 2 copies (browser download + local gallery).
+- [x] Local screenshots can be picked and assigned into poster slots and deleted via custom in-app confirmation popups.
+- [x] Presets for titles, greetings, builder names, banner styles, and fonts update live in the canvas preview with strict locale isolation.
+- [x] "Download Poster" produces a crisp, high-resolution PNG/JPG file.
+- [x] "Share" triggers Web Share API on supported devices, and "Copy Image" copies the PNG to clipboard.`,
   },
   {
     ticketNumber: 14,
-    title: 'Ticket 14: Tactile Soil & Mud Crafting Pipeline (Deferred / Advanced Phase)',
+    title: 'Ticket 14: Studio Design System Tokens, Surface Hierarchy & Iconography',
+    labels: ['tracer-bullet', 'enhancement', 'ready-for-agent'],
+    state: 'open',
+    body: `## Overview
+Establish the visual foundation of "The Digital Killa Workshop": 3-tier neutral stone surface hierarchy, burnt terracotta accent restraint, Inter typography scale with tabular numerals, 16-18px Lucide icon standardization, and normalized 8px/12px/16px border radius system.
+
+- **Status**: \`ready-for-agent\`
+- **Blocked by**: #13
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> The initial UI/UX review was based on a selective set of 9 static screenshots and did not capture all in-app panels, subtool modes, dialog states, or responsive edge cases.
+> Before writing code, the executing agent must:
+> 1. Spin up the local development server and capture comprehensive Playwright/browser screenshots of **all** toolbars, panels, docks, dropdowns, and modals in both default and active states across desktop, tablet, and mobile breakpoints.
+> 2. Audit the captures against this ticket's deliverables, identify any uncaptured sub-states, color conflicts, or missing tokens, and update \`roadmap.md\` with refined acceptance criteria before authoring changes.
+> 3. Capture post-execution comparison screenshots documenting every modified surface and token.
+
+## Delivers (Review Items 1, 2, 3, 4, 5)
+- **3-Tier Surface Hierarchy (De-beiging Overhaul - Review Item 1)**:
+  - Eliminate the uniform beige wash across panels, docks, and modals.
+  - Establish 3 clear visual surface tiers:
+    - *Level 1 (Base Viewport Canvas & Floor):* Neutral warm stone foundation (\`#F4F1EA\`).
+    - *Level 2 (Raised Panels & Dock Shells):* Warm grey/stone (\`#EBE6DC\`) with 1px hairline dividers (\`#D8D1C5\`).
+    - *Level 3 (Dark Active & Selected Surfaces):* Basalt dark stone (\`#2B2621\`) for high-contrast active items, with crisp off-white labels (\`#FAF8F5\`).
+  - Keep terracotta (\`#B85F45\`) strictly reserved for meaningful actions and active selections; remove competing brown/orange washes.
+- **Typography System & Micro-Copy Standardization (Review Item 2)**:
+  - Standardize interface font entirely on \`Inter\` with tabular numerals (\`tabular-nums\`) for numeric measurements, degrees, coordinates, and scale readouts.
+  - Strict 5-tier type scale:
+    - *Panel Titles:* 14px Semi-Bold (\`font-semibold\`).
+    - *Section Headers:* 12px Medium (\`font-medium\`) in sentence case.
+    - *Control Labels:* 11px Regular/Medium (\`font-normal\` / \`font-medium\`).
+    - *Readout Values:* 11px Tabular Numbers (\`tabular-nums font-mono\` or \`font-sans\`).
+    - *Helper Text:* 10px Muted (\`text-[#7C7267]\`).
+  - Reserve display typeface \`Yatra One\` strictly for brand display voice, fort title plaques, and poster typography.
+- **Lucide Icon Standardization (Review Item 3)**:
+  - Replace inconsistent, ad-hoc icon sizes and mixed stroke weights across all toolbars, panels, and modals with unified **Lucide** icons.
+  - Standardize bounding boxes to 16–18px with consistent 1.5px/1.75px stroke width.
+  - All icons inherit parent label text color (\`currentColor\`) by default; reserve colored status icons strictly for semantic states (success, warning, error), never decoration.
+- **Normalized Border Radius & Hairline Divider System (Review Item 4)**:
+  - Establish strict 3-tier radius system:
+    - \`8px\` (\`rounded-md\`): Buttons, inputs, sliders, and segmented pills.
+    - \`12px\` (\`rounded-lg\`): Asset cards, preset tiles, and contextual popovers.
+    - \`16px\` (\`rounded-xl\`): Major sidebars, docks, and modal shells.
+  - Replace nested card-inside-card boxes with clean structural whitespace and subtle 1px dividers (\`border-[#D8D1C5]\`).
+- **Quieter Interface Restraint (Review Item 5)**:
+  - Unify interaction colors around a single primary accent: Burnt Terracotta (\`#B85F45\`).
+  - Remove conflicting dark brown active buttons, bright orange highlights, and neon green selection rings.
+  - Clear semantic colors reserved strictly for: Success (\`#15803D\`), Warning (\`#D97706\`), and Error/Destructive (\`#DC2626\`).
+
+## Acceptance Criteria
+- [ ] Live UI visual audit completed and documented with screenshots before code modifications begin.
+- [ ] Ticket 14 deliverables updated in \`roadmap.md\` if the audit discovers uncaptured components or tokens.
+- [ ] 3-tier surface hierarchy applied across all toolbars, sidebars, and modals without flat beige wash.
+- [ ] Typography scale implemented with \`Inter\`, sentence case headings, and tabular numerals on all numeric readouts.
+- [ ] Lucide icons standardized to 16-18px with uniform stroke and color inheritance.
+- [ ] Border radius normalized to 8px / 12px / 16px, eliminating nested-card syndrome.
+- [ ] Accent color unified to burnt terracotta with reserved semantic states.`,
+  },
+  {
+    ticketNumber: 15,
+    title: 'Ticket 15: Two-Row Studio Header, Compact Tool Rail & Contextual Panels',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Streamline navigation into a professional two-row creative studio header (Row 1 global/menus, Row 2 workspace tabs), build a compact vertical tool rail with shortcuts, reorganize left tool properties into contextual groups with collapsible advanced accordions, and align right panel shell layout.
+
+- **Status**: \`pending\`
+- **Blocked by**: #14
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> Before writing code:
+> 1. Capture screenshots of the top navigation bar (\`AppMenuBar.tsx\`, \`TopToolBar.tsx\`), vertical mode rail (\`ToolModeSidebar.tsx\`), left properties sidebar (\`LeftToolSidebar.tsx\`), and right outliner (\`RightToolSidebar.tsx\`) across all 10 tools and their individual sub-modes.
+> 2. Verify every tool property layout and outliner pane; document any hidden sliders, mode-specific controls, or layout collisions before touching code.
+> 3. Refine and update \`roadmap.md\` with any newly identified criteria before implementation.
+> 4. Capture before/after layout screenshots verifying vertical space savings and clean two-row alignment.
+
+## Delivers (Review Items 6, 8, 9 & Right Panel Alignment)
+- **Two-Row Studio Navigation Hierarchy (Review Item 6)**:
+  - Consolidate multi-layer horizontal bars into a streamlined two-row creative studio header:
+    - *Row 1 (Global Brand & Document Bar):* Killa Playground shield logo, project title, document state (unsaved dot), undo/redo, global actions (New, Open, Save, Export Poster), and clean dropdown menus (\`File\`, \`Edit\`, \`View\`, \`Settings\`, \`Help\`).
+    - *Row 2 (Workspace Tool Tabs):* Dedicated horizontal tab strip organizing tools into logical studio workspaces (*Terrain*, *Walls*, *Spline*, *Texture*, *Foliage*, *Architecture*, *Lighting/View*).
+  - Relocate secondary actions (Language switch, Help guide, Debug toggles) into Row 1 dropdown menus to eliminate top-bar clutter.
+  - Remove repeated decorative badges, redundant separators, and filler text.
+- **Compact Vertical Tool Rail (Review Item 8)**:
+  - Redesign \`ToolModeSidebar.tsx\` into a high-density, professional tool rail docked to the canvas edge.
+  - Group tools logically: *Sculpt* (Elevate, Plateau, Smooth, Basin), *Build* (Walls, Towers, Stairs, Foundations), *Paint* (Textures, Surface Mud), and *Place* (Foliage, Figurines, Fireworks).
+  - Distinct burnt terracotta active indicator badge with high-contrast icon.
+  - Hover tooltips displaying tool name and keyboard shortcuts (\`1\`–\`8\`, \`B\`, \`E\`, \`R\`).
+  - Icon-only compact mode toggle with smooth expand/collapse.
+- **Contextual Left Properties Panel (Review Item 9)**:
+  - Reorganize continuous unorganized slider lists in \`LeftToolSidebar.tsx\` into standardized contextual groupings: \`Geometry\`, \`Placement\`, \`Appearance\`, and \`Behavior\`.
+  - Frequently used controls mounted at the top directly on the panel background (\`bg-[#EBE6DC]\`) without enclosing cards.
+  - Collapsible \`Advanced Settings\` accordion for secondary parameters, preventing vertical scrolling fatigue.
+- **Right Panel Shell Alignment & Coordination (Review & User Feedback)**:
+  - Align \`RightToolSidebar.tsx\` with the two-row header and Level 2 surface styling.
+  - Dual-pane layout: upper *Scene Outliner* (tree view) and lower *Element Inspector* (selected object transforms/properties) with collapsible headers and hairline dividers.
+  - Symmetrical minimized toggle tabs (\`[🏰 Outliner ▾]\`) coordinated with the left properties panel.
+
+## Acceptance Criteria
+- [ ] Pre-execution screenshot audit completed across all 10 tools, left panel states, and right outliner.
+- [ ] Top navigation consolidated into two clean rows: Row 1 global/menus, Row 2 workspace tabs.
+- [ ] Vertical tool rail features grouped tools, keyboard shortcuts, tooltips, and compact icon-only mode.
+- [ ] Left property panels organized into \`Geometry\`, \`Placement\`, \`Appearance\`, and \`Behavior\` with collapsible advanced accordions.
+- [ ] Right sidebar aligned to studio shell with dual-pane outliner and inspector.
+- [ ] All sliders mount directly on panel background without white container cards.`,
+  },
+  {
+    ticketNumber: 16,
+    title: 'Ticket 16: Viewport Ergonomics, Celestial Lighting & Presentation Mode',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Unify viewport controls into a single floating bottom toolbar, add subtle toggleable guides and cleaner brush reticles, create a 1-click distraction-free Diorama Presentation Mode, promote 4 celestial lighting presets first, and display contextual shortcut feedback.
+
+- **Status**: \`pending\`
+- **Blocked by**: #15
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> Before writing code:
+> 1. Capture screenshots of \`DioramaQuickBar.tsx\`, bottom status bar, viewport axes, grid overlays, brush reticles, and the lighting tool panel during Day, Golden Hour, Dusk, and Night modes.
+> 2. Document existing button hit-boxes, tooltips, and overlay opacity values; update ticket criteria with exact coordinates and responsive rules before starting implementation.
+> 3. Capture side-by-side screenshots demonstrating uncluttered viewport and presentation mode.
+
+## Delivers (Review Items 11, 12, 13, 14, 15)
+- **Unified Bottom Viewport Toolbar (Review Item 11)**:
+  - Consolidate floating Day/Play/Screenshot/Night pill and floating navigation instruction pill into a single, cohesive, floating viewport toolbar anchored at bottom-center.
+  - Decouple camera viewpoint controls (Isometric 45°, Rampart Eye, Bird's Eye, Home) from environmental controls (Play/Pause, Day/Night toggle, Headless Snapshot).
+  - Clear icon labels with micro-tooltips showing keyboard shortcuts (\`Space\` for Play/Pause, \`N\` for Day/Night, \`F12\` for Snapshot).
+- **Subtle & Toggleable Viewport Guides (Review Item 12)**:
+  - Reduce opacity of red/green world axes and ground perimeter guides by 50% for a cleaner diorama focus.
+  - Provide View menu toggles (\`View -> Show Guides\`, \`View -> Show Wireframe\`, \`View -> Show Brick Retaining Ring\`) allowing builders to customize viewport visibility.
+  - Refine 3D brush hover reticle: replace thick bright orange rings with subtle anti-aliased terracotta rings that scale cleanly with brush radius.
+- **Dedicated Diorama Presentation Mode (Review Item 13)**:
+  - 1-click exhibition presentation mode (Key \`P\` or View menu):
+    - Smoothly collapses left properties, vertical mode rail, right outliner, and top workspace tabs.
+    - Hides all 3D editing guides, brush reticles, wireframes, and coordinate axes.
+    - Retains only a minimalist translucent glass bar: Camera Presets + Turntable, Day/Night toggle, Screenshot button, and an Exit Presentation button (\`Esc\`).
+  - Allows builders to admire and showcase their finished Killa with zero software distractions.
+- **Preset-First Celestial Lighting Studio (Review Item 14)**:
+  - Reorganize Lighting tool panel to lead with 4 prominent celestial presets:
+    - 🌅 *Dawn*: Soft rose-gold morning light, long mountain shadows.
+    - ☀️ *Noon*: Crisp high-angle sun, vibrant earthen textures.
+    - 🌇 *Golden Hour*: Warm amber sunset, blazing bastion silhouettes.
+    - 🌙 *Diwali Night*: Deep star-lit indigo sky, glowing diyas, and celebratory fireworks.
+  - Move granular sliders (Sun Azimuth, Elevation, Moon Azimuth, Light Bounce, Diya Radius) into an expandable \`Advanced Lighting & Atmosphere\` accordion.
+  - Add a 1-click "Reset to Preset Defaults" action and clear numeric degree/lux readouts.
+- **Contextual In-Canvas Tool Instructions (Review Item 15)**:
+  - Replace the permanent static bottom instruction bar with contextual, transient floating keycap badges that adapt dynamically to the active tool:
+    - *Rampart Drafting:* \`[Click] Add Node\` • \`[Enter] Finish Wall\` • \`[Esc] Cancel\`
+    - *Foliage Scatter:* \`[Drag] Scatter\` • \`[Alt + Drag] Erase\` • \`[Shift + Scroll] Radius\`
+    - *Sculpting:* \`[Drag] Elevate\` • \`[Ctrl + Drag] Lower\` • \`[Shift + Scroll] Radius\`
+
+## Acceptance Criteria
+- [ ] Pre-execution screenshot audit completed for viewport overlays, quick-action bar, and lighting controls.
+- [ ] Single consolidated bottom viewport toolbar replaces multiple floating control pills.
+- [ ] Viewport guides feature reduced opacity and are individually toggleable via the View menu.
+- [ ] Presentation mode hides all sidebars, rails, and guides with 1-click entry and \`Esc\` exit.
+- [ ] Lighting panel promotes 4 celestial presets first, housing granular sliders in an advanced accordion.
+- [ ] Contextual keycaps and instructions dynamically reflect active tool state.`,
+  },
+  {
+    ticketNumber: 17,
+    title: 'Ticket 17: Tactile Asset Browser & Fort Blueprints Studio',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Transform the right sidebar into a Substance/Unreal-grade tactile 3D asset browser with categories, search, grid/list toggle, dual-preview material spheres, and overhaul the Fort Blueprints dialog with authentic 3D terrain profile silhouettes and click-anywhere cards.
+
+- **Status**: \`pending\`
+- **Blocked by**: #15
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> Before writing code:
+> 1. Capture screenshots of the texture picker, foliage library, figurine catalog, lighting props, and \`StartupModal\` / \`ProjectHubModal\` fort blueprint cards.
+> 2. Document existing asset thumbnail resolutions, missing descriptions, and card selection states; update ticket criteria before implementing asset browser components.
+> 3. Capture screenshots demonstrating tactile material sphere previews, foliage thumbnails, and blueprint terrain silhouettes.
+
+## Delivers (Review Items 10 & 18)
+- **Tactile 3D Asset Browser (Review Items 10 & 18)**:
+  - Upgrade \`RightToolSidebar.tsx\` into a studio-grade asset browser inspired by Substance 3D and Unreal Bridge.
+  - Categorized filter tabs with live text search: *All*, *Stone & Basalt*, *Earth & Mud*, *Foliage*, *Architecture*, *Figurines*, *Lanterns*.
+  - View mode toggle: Rich Visual Grid vs Compact List View.
+  - Standardized asset card previews:
+    - *Textures:* Dual-preview featuring flat procedural tile swatch alongside lit 3D material sphere showing surface roughness.
+    - *Foliage & Figurines:* Clean renders of actual 3D models against neutral studio backgrounds at normalized comparative scale.
+  - Clean selection state: terracotta border ring and subtle dark stone elevation, eliminating heavy neon green outlines.
+  - Hover inspector badge displaying asset technical metadata (source texture, polygon budget, historical cultural lore).
+- **Fort Blueprints Selection Studio Redesign (Review Item 16)**:
+  - Overhaul \`StartupModal.tsx\` and \`ProjectHubModal.tsx\` fort selection cards:
+    - Replace generic icons with recognizable miniature 3D terrain profile silhouettes for iconic forts (*Raigad*, *Pratapgad*, *Sinhagad*, *Murud-Janjira*, *Sindhudurg*).
+    - Punchy, concise architectural summaries replacing long text paragraphs.
+    - Distinct architectural attribute badges: Elevation (High/Sea-Level), Rampart Type (Giri Durg / Jala Durg), Water Source (Moat / Cistern).
+    - Entire card surface is clickable with instant visual focus and selected indicator.
+
+## Acceptance Criteria
+- [ ] Pre-execution screenshot audit completed for all asset catalogs and blueprint modal cards.
+- [ ] Right sidebar functions as a full tactile asset browser with categories, search, and grid/list view toggle.
+- [ ] Texture cards display dual preview (tile swatch + lit material sphere); foliage/figurines display normalized previews.
+- [ ] Asset selection uses refined terracotta framing without heavy green borders.
+- [ ] Fort blueprint dialog cards display recognizable terrain silhouettes, concise attribute badges, and full-card clickability.`,
+  },
+  {
+    ticketNumber: 18,
+    title: 'Ticket 18: Festive Fort Poster Studio Streamlining',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Streamline the Festive Fort Poster Studio into a dedicated, responsive poster workstation featuring a compact 4-slot visual navigator, synchronized selection indicators, categorized settings accordions, and a pinned 4:5 preview canvas and export dock.
+
+- **Status**: \`pending\`
+- **Blocked by**: #14, #16
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> Before writing code:
+> 1. Open the Poster Studio modal (\`PosterStudioModal.tsx\`) and capture screenshots of all 4 photo slot configurations, background theme selection, plaque text inputs, and export dropdowns.
+> 2. Document repetitive slot parameters, scrolling behavior, and live preview latency; update ticket criteria before restructuring the modal layout.
+> 3. Capture screenshots verifying compact slot navigator, live synchronized selection, and pinned action dock.
+
+## Delivers (Review Item 17)
+- **Compact 4-Slot Navigator (Review Item 17)**:
+  - Replace the long, repetitive vertical scrolling list for Slots 1–4 with a clean, horizontal slot navigator strip (\`Slot 1\` • \`Slot 2\` • \`Slot 3\` • \`Slot 4\`).
+  - Clicking a slot activates its settings in a focused slot inspector, displaying its current camera perspective, time of day, and image source.
+- **Synchronized Slot Selection Feedback**:
+  - The active slot is visually emphasized in both the 4:5 poster preview canvas (subtle corner bracket highlight) and the slot navigator strip.
+- **Logical Parameter Grouping & Sticky Dock**:
+  - Slot parameters organized into clean collapsible accordions:
+    - *Image Source:* Live Viewport vs Local Screenshot Vault thumbnail picker.
+    - *Camera Perspective:* Isometric (45°), Rampart Eye (15°), Bird's Eye (90°), Bastion Hero (30°).
+    - *Diurnal Lighting:* Dawn, Noon, Golden Hour, Diwali Night.
+  - Global poster parameters (Royal Shilalekh Plaque text, typography, festival theme) separated into a dedicated *Poster Style* tab.
+  - Sticky layout: the live 1080x1350 poster preview and export action dock (\`Download PNG\`, \`Download JPG\`, \`Share\`, \`Copy Image\`) remain pinned and accessible while scrolling through slot settings.
+
+## Acceptance Criteria
+- [ ] Pre-execution screenshot audit completed across all poster modal tabs and slot settings.
+- [ ] Compact 4-slot navigator replaces repetitive vertical scrolling lists.
+- [ ] Active slot visually syncs between canvas preview highlight and inspector controls.
+- [ ] Global styling and per-slot controls cleanly separated into tabs.
+- [ ] Live preview and export action dock remain sticky and fully accessible during editing.`,
+  },
+  {
+    ticketNumber: 19,
+    title: 'Ticket 19: Universal Interaction States, Responsive Drawers & Workspaces',
+    labels: ['tracer-bullet', 'enhancement'],
+    state: 'open',
+    body: `## Overview
+Implement 3 persistent workspace layouts (Standard, Focus, Presentation), standardize universal interaction states with high-contrast accessible keyboard focus rings across all UI components, and transition sidebars into touch-friendly slide-over drawers on tablet and mobile viewports.
+
+- **Status**: \`pending\`
+- **Blocked by**: #15, #16, #17, #18
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> Before writing code:
+> 1. Capture screenshots across mobile (375px/390px), tablet (820px/1032px), and desktop (1440px+) viewports; capture focus states, keyboard navigation, and destructive confirmation modals.
+> 2. Document keyboard focus gaps, touch target clipping, and drawer transitions; update ticket criteria before implementing layout engines.
+> 3. Capture multi-viewport screenshots demonstrating responsive drawer collapse and keyboard focus rings.
+
+## Delivers (Review Items 7, 19, 20)
+- **3 Persistent Workspace Layout Configurations (Review Item 7)**:
+  - *Standard Studio:* Left Properties + 3D Viewport + Right Asset Browser.
+  - *Focus Crafting:* Maximized Viewport + single contextual panel (Left or Right).
+  - *Presentation Exhibition:* Full-canvas diorama with floating minimal controls.
+  - Workspace layout switcher integrated into the View menu and top global bar; user's preferred layout and custom sidebar widths persist in \`localStorage\`.
+- **Universal Interaction State Engine (Review Item 19)**:
+  - Standardize interaction states across every button, card, tab, slider, list item, and modal button:
+    - \`Default\`: Restrained stone surface with subtle contrast.
+    - \`Hover\`: Gentle surface elevation (\`#E0D9CE\`) with 150ms transition.
+    - \`Selected\`: Basalt dark stone surface (\`#2B2621\`) or crisp terracotta border (\`#B85F45\`).
+    - \`Focused\`: High-visibility accessible keyboard focus ring (\`focus-visible:ring-2 focus-visible:ring-[#B85F45] focus-visible:outline-none\`).
+    - \`Disabled\`: 40% opacity with cursor not-allowed.
+    - \`Loading\`: Subtle spinning loader preserving layout dimensions.
+  - Standardize destructive action confirmations (Reset Terrain, Delete Object, Clear Diorama) using consistent modal styling.
+- **Responsive Slide-Over Drawers & Touch Targets (Review Item 20)**:
+  - On tablets and mobile screens (\`< 1024px\`), docked sidebars automatically convert to slide-over bottom/side drawers with tactile grab handles.
+  - Minimum 44x44px touch hit targets on mobile controls.
+  - Sliders and numeric steppers remain fully operable on touch devices without accidental canvas orbiting.
+
+## Acceptance Criteria
+- [ ] Pre-execution screenshot audit completed across mobile, tablet, and desktop breakpoints.
+- [ ] 3 workspace layouts (Standard, Focus, Presentation) switch seamlessly and persist in \`localStorage\`.
+- [ ] Universal interaction states (Default, Hover, Selected, Focused, Disabled) verified across all components.
+- [ ] Accessible keyboard navigation with visible focus rings verified on all controls.
+- [ ] Mobile and tablet layouts transition sidebars into touch-friendly slide-over drawers.`,
+  },
+  {
+    ticketNumber: 20,
+    title: 'Ticket 20: Verification Judges, Visual Regression & Production Readiness',
+    labels: ['tracer-bullet', 'enhancement', 'ready-for-agent'],
+    state: 'open',
+    body: `## Overview
+Final verification gate for the complete digital fort crafting diorama studio: full Vitest suites, Playwright visual regression across breakpoints, GPU memory disposal audit, 60 FPS performance benchmark, and deployment documentation.
+
+- **Status**: \`ready-for-agent\`
+- **Blocked by**: #19
+
+## Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol
+> [!IMPORTANT]
+> Run headless test passes and capture full automated screenshots of all primary workflows (Blueprints -> Sculpting -> Walls -> Spline -> Texture -> Foliage -> Poster Studio) prior to final sign-off.
+
+## Delivers (Updated from former Ticket 15)
+- **Vitest Unit & Integration Suites**:
+  - Serialization/deserialization byte-size check (<= 35 KB).
+  - Zod schema defensive boundaries (NaN rejection, prop limit <= 250).
+  - Building foundation geometry bounds and stairs path extrusion tests.
+  - Lighting manifest integrity and pyrotechnic variation checks.
+  - Poster SVG multi-layer sandwich compositing and diurnal snapshot tests.
+- **GPU Resource Disposal Audit**:
+  - Verify clean \`.dispose()\` on all textures, materials, and geometries on unmount and tool switching.
+  - Zero WebGL memory leaks during repeated terrain regeneration, preset switching, or presentation mode toggles.
+- **Performance & Frame Rate Benchmarks**:
+  - 60 FPS maintained under 1,000 foliage instances, 50 props/fireworks, 20 foundations, and 100 wall segments.
+  - Lighthouse performance score >= 90 with zero layout shift (CLS <= 0.05).
+- **Documentation & Deployment**:
+  - \`README.md\` updated with comprehensive setup, build, and architecture documentation.
+  - Complete asset manifest for retro textures, models, pyrotechnics, and audio.
+
+## Acceptance Criteria
+- [ ] \`npm run test\` executes all Vitest suites with 100% pass rate.
+- [ ] Playwright visual regression tests pass across desktop, tablet, and mobile viewports.
+- [ ] Zero GPU memory leaks on repeated terrain regeneration or scene resets.
+- [ ] 60 FPS frame rate maintained under heavy diorama load.
+- [ ] \`npm run build\` succeeds without TypeScript or bundling errors.
+- [ ] Setup instructions for deployment documented in \`README.md\`.`,
+  },
+  {
+    ticketNumber: 21,
+    title: 'Ticket 21: Tactile Soil & Mud Crafting Pipeline (Deferred / Advanced Phase)',
     labels: ['tracer-bullet', 'enhancement', 'deferred'],
     state: 'open',
     body: `## Overview
@@ -563,7 +927,7 @@ Deferred advanced organic soil simulation pipeline: loose soil dumping, water sa
 - **Status**: \`deferred\`
 - **Blocked by**: #3
 
-## Delivers
+## Delivers (Updated from former Ticket 14)
 - **Organic Soil Simulation Layer**:
   - **Tool 1: Dump Dry Soil**: Adds Gaussian elevation mound with simplex noise roughness; wetness set to 0.0.
   - **Tool 2: Pour Water**: Smooths height noise with 3x3 box blur, darkens soil, and increases wetness (+0.15), reducing material roughness from 0.95 to 0.2 (\`cracked_red_ground_1k\`).
@@ -579,56 +943,6 @@ Deferred advanced organic soil simulation pipeline: loose soil dumping, water sa
 - [ ] Hand shaper tools mold wet mud into plateaus and vertical wall faces.
 - [ ] Drying tool locks mud to prevent unwanted brush deformation.
 - [ ] Freehand paint applies mortar lines with steady-hand stabilization.`,
-  },
-  {
-    ticketNumber: 15,
-    title: 'Ticket 15: Verification Judges, Testing & Deployment Readiness',
-    labels: ['tracer-bullet', 'enhancement'],
-    state: 'open',
-    body: `## Overview
-Verification test harness, Vitest test suites, GPU resource leak audit, 60 FPS performance benchmarks, and deployment documentation.
-
-- **Status**: \`ready-for-agent\`
-- **Blocked by**: #13
-
-## Delivers
-- **Vitest Unit Tests**:
-  - Serialization/deserialization byte-size check (<= 35 KB).
-  - Zod schema defensive boundaries (NaN rejection, prop limit <= 250).
-  - Building foundation geometry bounds and stairs path extrusion tests.
-  - Lighting manifest integrity and pyrotechnic variation checks.
-- **GPU Resource Disposal Audit**:
-  - Verify clean \`.dispose()\` on all textures, materials, and geometries on unmount.
-- **Performance Benchmarks**:
-  - 60 FPS maintained under 1,000 foliage instances, 50 props/fireworks, 20 foundations, and 100 wall segments.
-- **Documentation**:
-  - \`README.md\` with setup and build instructions.
-  - Complete asset manifest for textures, models, pyrotechnics, and audio.
-
-## Acceptance Criteria
-- [ ] \`npm run test\` executes all Vitest suites with 100% pass rate.
-- [ ] Zero GPU memory leaks on repeated terrain regeneration or scene resets.
-- [ ] \`npm run build\` succeeds without TypeScript or bundling errors.
-- [ ] Setup instructions for deployment documented in \`README.md\`.`,
-  },
-  {
-    ticketNumber: 16,
-    title: '[Retired] Ticket 16: Free-Fly Spectator Scope Merged into Ticket 11',
-    labels: ['tracer-bullet'],
-    state: 'closed',
-    body: `## Notice: Scope Consolidated into Ticket 11
-The standalone Free-Fly Spectator & Diorama Viewing Studio ticket has been retired and consolidated into **Ticket 11: Time-of-Day, Play/Pause Animation Engine & Quick-Action Diorama Bar** (Diorama & Sun View Tool).
-
-Implemented viewing features include:
-- Dedicated View Tool (\`view\`, Key 7) with zero-modification viewport guard.
-- Free Orbit Spectator mode and continuous 360° Turntable Exhibition mode.
-- Camera Perspective Presets (Isometric 45°, Bird's Eye, Rampart Eye, Bastion Hero, Home Reset).
-- Camera Lens FOV Slider (20° to 80°).
-- Centered Quick-Action Diorama Bar (Day, Play, Pause, Screenshot, Night).
-- Celebratory 5-second fireworks salvo test action.
-- Infinite white grid removal across all tools.
-
-All subsequent tracer-bullet tickets have been shifted down by one number, concluding the project dependency graph at 15 tickets.`,
   },
 ];
 

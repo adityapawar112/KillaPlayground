@@ -35,6 +35,7 @@ export interface PosterTemplateConfig {
   id: PosterTemplateId;
   name: string;
   marathiName: string;
+  hindiName: string;
   description: string;
   previewUrl: string;
   baseSvg: string;
@@ -56,6 +57,7 @@ export const POSTER_TEMPLATES: Record<PosterTemplateId, PosterTemplateConfig> = 
     id: 'archway_cannon',
     name: 'Citadel Archway',
     marathiName: 'किल्ला महाद्वार',
+    hindiName: 'किला मुख्य द्वार',
     description: 'Stone bastion archway with decorative lanterns, cannon foreground, and celebratory diyas.',
     previewUrl: '/posters/archway_cannon.png',
     baseSvg: '/posters/archway_cannon/design_01_archway_cannon.svg',
@@ -79,6 +81,7 @@ export const POSTER_TEMPLATES: Record<PosterTemplateId, PosterTemplateConfig> = 
     id: 'cream_maratha_ensemble',
     name: 'Royal Courtyard',
     marathiName: 'राजदरबार उत्सव',
+    hindiName: 'राजदरबार उत्सव',
     description: 'Traditional courtyard celebration with fanfare horn and festive diorama assembly.',
     previewUrl: '/posters/cream_maratha_ensemble.png',
     baseSvg: '/posters/cream_maratha_ensemble/design_04_cream_maratha_ensemble.svg',
@@ -101,6 +104,7 @@ export const POSTER_TEMPLATES: Record<PosterTemplateId, PosterTemplateConfig> = 
     id: 'maroon_horseback',
     name: 'Moonlit Fortress',
     marathiName: 'चंद्रप्रकाशित किल्ला',
+    hindiName: 'चंद्रप्रकाशित किला',
     description: 'Twilight mountain fortress under a radiant full moon and Diwali night fireworks.',
     previewUrl: '/posters/maroon_horseback.png',
     baseSvg: '/posters/maroon_horseback/design_02_maroon_horseback.svg',
@@ -124,6 +128,7 @@ export const POSTER_TEMPLATES: Record<PosterTemplateId, PosterTemplateConfig> = 
     id: 'saffron_flag_bearer',
     name: 'Sahyadri Sunrise',
     marathiName: 'सह्याद्री सूर्योदय',
+    hindiName: 'सह्याद्रि सूर्योदय',
     description: 'Golden sunrise dawn overlooking misty Sahyadri fortress ramparts.',
     previewUrl: '/posters/saffron_flag_bearer.png',
     baseSvg: '/posters/saffron_flag_bearer/design_03_saffron_flag_bearer.svg',

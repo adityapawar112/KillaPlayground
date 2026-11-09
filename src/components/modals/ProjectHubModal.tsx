@@ -23,14 +23,28 @@ import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
 import { killaVault } from '@/lib/persistence/killaVault';
 
-function formatTimeAgo(timestamp: number): string {
+function formatTimeAgo(timestamp: number, locale: Locale): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
-  if (diffSec < 45) return 'Just now';
+  if (diffSec < 45) {
+    if (locale === 'mr') return 'आत्ताच';
+    if (locale === 'hi') return 'अभी';
+    return 'Just now';
+  }
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min${diffMin > 1 ? 's' : ''} ago`;
+  if (diffMin < 60) {
+    if (locale === 'mr') return `${diffMin} मिनिटांपूर्वी`;
+    if (locale === 'hi') return `${diffMin} मिनट पहले`;
+    return `${diffMin} min${diffMin > 1 ? 's' : ''} ago`;
+  }
   const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+  if (diffHours < 24) {
+    if (locale === 'mr') return `${diffHours} तासांपूर्वी`;
+    if (locale === 'hi') return `${diffHours} घंटे पहले`;
+    return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+  }
   const diffDays = Math.floor(diffHours / 24);
+  if (locale === 'mr') return `${diffDays} दिवसांपूर्वी`;
+  if (locale === 'hi') return `${diffDays} दिन पहले`;
   return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
@@ -376,7 +390,7 @@ export const ProjectHubModal: React.FC = () => {
                             <Icon className="w-6 h-6" />
                           </div>
                           <div>
-                            <h3 className="font-yatra text-base sm:text-lg text-[#2B1E16] tracking-wide leading-tight">
+                            <h3 className="font-sans font-bold text-base sm:text-lg text-[#2B1E16] tracking-wide leading-tight">
                               {name}
                             </h3>
                             <span className="text-[11px] text-[#8D7666] font-sans mt-0.5 block">
@@ -388,11 +402,11 @@ export const ProjectHubModal: React.FC = () => {
                         {isSelected ? (
                           <span className="flex items-center gap-1 text-[11px] font-bold text-[#4B382C] bg-[#DFCDBD] px-2.5 py-1 rounded-full shadow-xs">
                             <TbCheck className="w-3.5 h-3.5" />
-                            Active
+                            {t.common.active}
                           </span>
                         ) : (
                           <span className="text-xs text-[#8D7666] group-hover:text-[#4B382C] flex items-center gap-1 font-bold">
-                            Embark <TbArrowRight className="w-3.5 h-3.5" />
+                            {t.common.select} <TbArrowRight className="w-3.5 h-3.5" />
                           </span>
                         )}
                       </div>
@@ -402,8 +416,8 @@ export const ProjectHubModal: React.FC = () => {
                       </p>
 
                       <div className="pt-2 border-t border-[#D9C9B4]/50 flex items-center justify-between text-[11px] text-[#8D7666]">
-                        <span>Water Level: <strong>{(fort.waterLevel * 100).toFixed(0)}cm</strong></span>
-                        <span className="font-bold text-[#4B382C] text-[10px] uppercase">Ready to Craft</span>
+                        <span>{t.terrainStudio.waterLevel}: <strong>{(fort.waterLevel * 100).toFixed(0)}{t.terrainStudio.cm}</strong></span>
+                        <span className="font-bold text-[#4B382C] text-[10px] uppercase">{t.terrainStudio.readyToCraft}</span>
                       </div>
                     </div>
                   );
@@ -414,15 +428,15 @@ export const ProjectHubModal: React.FC = () => {
 
           {/* TAB 2: PROCEDURAL TERRAIN GENERATOR */}
           {projectHubTab === 'procedural' && (
-            <div className="max-w-2xl mx-auto space-y-6">
+            <div className="max-w-2xl mx-auto space-y-6 font-sans">
               {/* Seed Randomizer Header Banner */}
               <div className="p-4 rounded-2xl bg-[#EADECF]/80 border border-[#D9C9B4] flex items-center justify-between">
                 <div>
-                  <span className="font-bold text-sm text-[#2B1E16] block font-yatra">
-                    Randomize Mountain Seed
+                  <span className="font-bold text-sm text-[#2B1E16] block font-sans">
+                    {t.terrainStudio.randomSeedTitle}
                   </span>
                   <span className="text-xs text-[#634E40] block mt-0.5 font-mono">
-                    Active Seed: #{safeFreeform.seed}
+                    {t.terrainStudio.activeSeed}: #{safeFreeform.seed}
                   </span>
                 </div>
                 <button
@@ -430,21 +444,21 @@ export const ProjectHubModal: React.FC = () => {
                   className="px-4 py-2 rounded-xl bg-[#4B382C] text-white hover:bg-[#38281E] font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
                 >
                   <TbDice5 className="w-4 h-4" />
-                  <span>Roll New Seed</span>
+                  <span>{t.terrainStudio.rollSeedBtn}</span>
                 </button>
               </div>
 
               {/* Sliders: Mounted Directly on Panel Surface (No Nested Cards per ui-ux-design-consistency.md) */}
               <div className="space-y-4">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#8F4938] block font-sans">
-                  Topography & Plateau Dimensions
+                  {t.terrainStudio.topographyTitle}
                 </span>
 
                 {/* Tableland Width */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                    <span>Tableland Width</span>
-                    <span className="text-[#8D7666]">{(safeFreeform.tablelandWidth * 2).toFixed(1)} meters</span>
+                    <span>{t.terrainStudio.summitWidth}</span>
+                    <span className="text-[#8D7666]">{(safeFreeform.tablelandWidth * 2).toFixed(1)} {t.terrainStudio.meters}</span>
                   </div>
                   <input
                     type="range"
@@ -456,15 +470,15 @@ export const ProjectHubModal: React.FC = () => {
                     className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                   />
                   <span className="text-[10px] text-[#8D7666]">
-                    Broad flat summit plateau where ramparts and figurines are erected.
+                    {t.terrainStudio.summitWidthDesc}
                   </span>
                 </div>
 
                 {/* Elevation */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                    <span>Peak Elevation</span>
-                    <span className="text-[#8D7666]">{safeFreeform.elevation.toFixed(2)} meters</span>
+                    <span>{t.terrainStudio.peakElevation}</span>
+                    <span className="text-[#8D7666]">{safeFreeform.elevation.toFixed(2)} {t.terrainStudio.meters}</span>
                   </div>
                   <input
                     type="range"
@@ -480,13 +494,13 @@ export const ProjectHubModal: React.FC = () => {
                 {/* Stepped Mountain Tiers */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                    <span>Stepped Mountain Tiers</span>
+                    <span>{t.terrainStudio.tiersTitle}</span>
                     <span className="text-[#8D7666]">
                       {safeFreeform.tiers === 1
-                        ? '1 Tier (Single Peak)'
+                        ? t.terrainStudio.tier1
                         : safeFreeform.tiers === 2
-                        ? '2 Tiers (Balekilla + Machi)'
-                        : '3 Tiers (Multi-Terraced)'}
+                        ? t.terrainStudio.tier2
+                        : t.terrainStudio.tier3}
                     </span>
                   </div>
                   <input
@@ -499,15 +513,15 @@ export const ProjectHubModal: React.FC = () => {
                     className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                   />
                   <span className="text-[10px] text-[#8D7666]">
-                    Stepped defensive terraces (Machi) for authentic Sahyadri hill fortress architecture.
+                    {t.terrainStudio.tiersDesc}
                   </span>
                 </div>
 
                 {/* Cliff Face Steepness */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                    <span>Cliff Face Steepness</span>
-                    <span className="text-[#8D7666]">{safeFreeform.cliffSteepness >= 6 ? 'Sheer Cliff' : 'Gentle Slopes'}</span>
+                    <span>{t.terrainStudio.cliffSteepness}</span>
+                    <span className="text-[#8D7666]">{safeFreeform.cliffSteepness >= 6 ? t.terrainStudio.cliffSheer : t.terrainStudio.cliffGentle}</span>
                   </div>
                   <input
                     type="range"
@@ -523,7 +537,7 @@ export const ProjectHubModal: React.FC = () => {
                 {/* Crags Roughness */}
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                    <span>Crags & Roughness</span>
+                    <span>{t.terrainStudio.cragsRoughness}</span>
                     <span className="text-[#8D7666]">{(safeFreeform.roughness * 100).toFixed(0)}%</span>
                   </div>
                   <input
@@ -545,9 +559,9 @@ export const ProjectHubModal: React.FC = () => {
                         <TbRipple className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="font-bold text-xs text-[#2B1E16] block">Base Water Plane (Moat / Sea)</span>
+                        <span className="font-bold text-xs text-[#2B1E16] block">{t.terrainStudio.waterPlaneTitle}</span>
                         <span className="text-[10px] text-[#8D7666] block">
-                          {waterLevelActive ? 'Water plane active at specified level' : 'Water plane turned off (Dry terrain)'}
+                          {waterLevelActive ? t.terrainStudio.waterPlaneActive : t.terrainStudio.waterPlaneInactive}
                         </span>
                       </div>
                     </div>
@@ -560,7 +574,7 @@ export const ProjectHubModal: React.FC = () => {
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
                         waterLevelActive ? 'bg-cyan-700' : 'bg-[#D9C9B4]'
                       }`}
-                      title={waterLevelActive ? 'Turn off water plane' : 'Turn on water plane'}
+                      title={waterLevelActive ? t.terrainStudio.waterPlaneActive : t.terrainStudio.waterPlaneInactive}
                     >
                       <span
                         aria-hidden="true"
@@ -574,8 +588,8 @@ export const ProjectHubModal: React.FC = () => {
                   {waterLevelActive && (
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
-                        <span>Water Elevation</span>
-                        <span className="text-[#8D7666]">{(waterLevel * 100).toFixed(0)} cm</span>
+                        <span>{t.terrainStudio.waterElevation}</span>
+                        <span className="text-[#8D7666]">{(waterLevel * 100).toFixed(0)} {t.terrainStudio.cm}</span>
                       </div>
                       <input
                         type="range"
@@ -598,7 +612,7 @@ export const ProjectHubModal: React.FC = () => {
                   className="w-full py-3 rounded-2xl bg-[#E85D04] hover:bg-[#FF7722] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-98"
                 >
                   <TbSparkles className="w-4 h-4" />
-                  <span>Generate & Craft Procedural Fort</span>
+                  <span>{t.modeModal.startBuilding}</span>
                 </button>
               </div>
             </div>
@@ -642,7 +656,7 @@ export const ProjectHubModal: React.FC = () => {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <h4 className="font-bold text-base text-[#2B1E16] font-yatra truncate">
+                            <h4 className="font-bold text-base text-[#2B1E16] font-sans truncate">
                               {project.name}
                             </h4>
                             <span className="text-[10px] uppercase font-bold text-[#8D7666] bg-[#EADECF] px-1.5 py-0.5 rounded">
@@ -651,7 +665,7 @@ export const ProjectHubModal: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-1 text-[11px] text-[#8D7666] mt-1">
                             <TbClock className="w-3.5 h-3.5 text-[#B58B63]" />
-                            <span>{formatTimeAgo(project.updatedAt)}</span>
+                            <span>{formatTimeAgo(project.updatedAt, locale)}</span>
                           </div>
                         </div>
 
@@ -659,7 +673,7 @@ export const ProjectHubModal: React.FC = () => {
                           <button
                             onClick={() => deleteProjectLocally(project.id)}
                             className="p-1.5 rounded-xl text-[#8D7666] hover:text-[#B85F45] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
-                            title="Delete"
+                            title={t.common.delete}
                           >
                             <TbTrash className="w-4 h-4" />
                           </button>
@@ -669,11 +683,11 @@ export const ProjectHubModal: React.FC = () => {
                       {/* Stats Breakdown */}
                       {project.stats && (
                         <div className="flex items-center gap-2 text-[10px] text-[#8D7666] bg-[#EADECF]/60 px-2.5 py-1 rounded-xl">
-                          <span>{project.stats.wallsCount} walls</span>
+                          <span>{project.stats.wallsCount} {t.terrainConfirmModal.walls}</span>
                           <span>•</span>
-                          <span>{project.stats.propsCount} figurines</span>
+                          <span>{project.stats.propsCount} {t.terrainConfirmModal.figurines}</span>
                           <span>•</span>
-                          <span>{project.stats.lightsCount} diyas</span>
+                          <span>{project.stats.lightsCount} {t.terrainConfirmModal.diyasLights}</span>
                         </div>
                       )}
 

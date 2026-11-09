@@ -19,14 +19,28 @@ import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
 
-function formatTimeAgo(timestamp: number): string {
+function formatTimeAgo(timestamp: number, locale: Locale): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
-  if (diffSec < 45) return 'Just now';
+  if (diffSec < 45) {
+    if (locale === 'mr') return 'आत्ताच';
+    if (locale === 'hi') return 'अभी';
+    return 'Just now';
+  }
   const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin} min${diffMin > 1 ? 's' : ''} ago`;
+  if (diffMin < 60) {
+    if (locale === 'mr') return `${diffMin} मिनिटांपूर्वी`;
+    if (locale === 'hi') return `${diffMin} मिनट पहले`;
+    return `${diffMin} min${diffMin > 1 ? 's' : ''} ago`;
+  }
   const diffHours = Math.floor(diffMin / 60);
-  if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+  if (diffHours < 24) {
+    if (locale === 'mr') return `${diffHours} तासांपूर्वी`;
+    if (locale === 'hi') return `${diffHours} घंटे पहले`;
+    return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
+  }
   const diffDays = Math.floor(diffHours / 24);
+  if (locale === 'mr') return `${diffDays} दिवसांपूर्वी`;
+  if (locale === 'hi') return `${diffDays} दिन पहले`;
   return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 }
 
@@ -175,10 +189,10 @@ export const StartupModal: React.FC = () => {
         {/* Two-Column Body */}
         <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-[#D9C9B4] flex-1 overflow-y-auto">
           {/* LEFT COLUMN: Single Buttons for Blueprints & From Scratch */}
-          <div className="p-5 sm:p-6 space-y-4 flex flex-col justify-between">
+          <div className="p-5 sm:p-6 space-y-4 flex flex-col justify-between font-sans">
             <div className="space-y-3">
               <span className="text-xs font-bold uppercase tracking-wider text-[#B85F45] block font-sans">
-                Choose Fort Architecture
+                {t.startupModal.chooseArchitecture}
               </span>
 
               {/* Single Button 1: Historical Fort Blueprints */}
@@ -194,15 +208,15 @@ export const StartupModal: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-base text-[#2B1E16] font-yatra tracking-wide">
+                    <h3 className="font-bold text-base text-[#2B1E16] font-sans tracking-wide">
                       {t.startupModal.blueprints}
                     </h3>
                     <span className="text-[10px] font-bold text-[#4B382C] bg-[#DFCDBD] px-2 py-0.5 rounded-full uppercase">
-                      5 Forts
+                      {t.startupModal.blueprintsCount}
                     </span>
                   </div>
                   <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
-                    Choose an authentic Sahyadri fortress blueprint to build upon.
+                    {t.startupModal.blueprintsDesc}
                   </p>
                 </div>
               </button>
@@ -220,15 +234,15 @@ export const StartupModal: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-base text-[#2B1E16] font-yatra tracking-wide">
+                    <h3 className="font-bold text-base text-[#2B1E16] font-sans tracking-wide">
                       {t.startupModal.fromScratch}
                     </h3>
                     <span className="text-[10px] font-bold text-[#8F4938] bg-orange-100 px-2 py-0.5 rounded-full uppercase">
-                      Custom
+                      {t.startupModal.customBadge}
                     </span>
                   </div>
                   <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
-                    Custom terrain generator with adjustable summit width, elevation, and cliffs.
+                    {t.startupModal.fromScratchDesc}
                   </p>
                 </div>
               </button>
@@ -240,7 +254,7 @@ export const StartupModal: React.FC = () => {
               >
                 <div className="flex items-center gap-2.5">
                   <TbFolderOpen className="w-5 h-5 text-[#0284C7]" />
-                  <span className="font-bold text-xs text-[#2B1E16] font-yatra">
+                  <span className="font-bold text-xs text-[#2B1E16] font-sans">
                     {t.startupModal.importFile}
                   </span>
                 </div>
@@ -253,7 +267,7 @@ export const StartupModal: React.FC = () => {
             {/* Quick Preferences */}
             <div className="pt-2 border-t border-[#D9C9B4]/60 flex items-center justify-between">
               <div className="flex items-center gap-1">
-                <span className="text-xs font-semibold text-[#8D7666] mr-1">Language:</span>
+                <span className="text-xs font-semibold text-[#8D7666] mr-1">{t.language}:</span>
                 {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
                   <button
                     key={lang}
@@ -278,20 +292,20 @@ export const StartupModal: React.FC = () => {
                 }`}
               >
                 <TbFlame className={`w-4 h-4 ${nightMode ? 'text-[#F59E0B]' : 'text-[#8D7666]'}`} />
-                <span>{nightMode ? 'Night Diya' : 'Daylight'}</span>
+                <span>{nightMode ? t.common.night : t.common.day}</span>
               </button>
             </div>
           </div>
 
           {/* RIGHT COLUMN: Locally Saved Projects */}
-          <div className="p-5 sm:p-6 flex flex-col">
+          <div className="p-5 sm:p-6 flex flex-col font-sans">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85F45] flex items-center gap-1.5 font-sans">
                 <TbClock className="w-4 h-4" />
                 {t.startupModal.recentProjects}
               </h3>
               <span className="text-[11px] font-semibold text-[#8D7666]">
-                {savedProjects.length} saved
+                {savedProjects.length} {t.common.saved}
               </span>
             </div>
 
@@ -317,7 +331,7 @@ export const StartupModal: React.FC = () => {
                   >
                     <div className="flex-1 min-w-0 pr-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-[#2B1E16] font-yatra truncate">
+                        <span className="font-bold text-sm text-[#2B1E16] font-sans truncate">
                           {project.name}
                         </span>
                         <span className="text-[10px] uppercase font-bold text-[#8D7666] bg-[#EADECF] px-1.5 py-0.5 rounded">
@@ -327,7 +341,7 @@ export const StartupModal: React.FC = () => {
                       <div className="flex items-center gap-1 text-[11px] text-[#8D7666] mt-1">
                         <TbClock className="w-3.5 h-3.5 text-[#B58B63]" />
                         <span>
-                          {t.startupModal.lastSaved}: {formatTimeAgo(project.updatedAt)}
+                          {t.startupModal.lastSaved}: {formatTimeAgo(project.updatedAt, locale)}
                         </span>
                       </div>
                     </div>
@@ -368,7 +382,7 @@ export const StartupModal: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <span className="hidden sm:inline text-[11px] text-[#8D7666]">
-              Press <kbd className="px-1.5 py-0.5 rounded bg-[#EADECF] font-mono font-semibold">Esc</kbd> to close
+              {t.common.pressEscToClose}
             </span>
             <button
               onClick={() => setStartupModalOpen(false)}

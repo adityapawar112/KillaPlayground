@@ -107,7 +107,7 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
                   ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm'
                   : 'text-[#8D7666] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
               }`}
-              title={lang === 'en' ? 'English (Default)' : lang === 'mr' ? 'मराठी' : 'हिन्दी'}
+              title={lang === 'en' ? 'English' : lang === 'mr' ? 'मराठी' : 'हिन्दी'}
             >
               {lang === 'en' ? 'EN' : lang === 'mr' ? 'म' : 'हि'}
             </button>

@@ -15,7 +15,7 @@ export default function NotFound() {
         />
       </div>
       <h2 className="font-yatra text-2xl sm:text-3xl font-bold mb-2 text-[#4B382C]">
-        किल्ला सापडला नाही • Page Not Found
+        Page Not Found
       </h2>
       <p className="text-xs sm:text-sm text-[#634E40] max-w-md mb-6 leading-relaxed">
         The fort diorama or secret tunnel you are looking for has been moved or does not exist in this courtyard.

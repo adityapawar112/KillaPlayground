@@ -31,8 +31,8 @@ export const ShortcutsModal: React.FC = () => {
               <h2 className="text-lg font-bold text-[#2B1E16] font-yatra tracking-wide">
                 {t.shortcutsModal.title}
               </h2>
-              <p className="text-xs text-[#8D7666]">
-                Tactile 3D diorama navigation & sculpting keys
+              <p className="text-xs text-[#8D7666] font-sans">
+                {t.shortcutsModal.subtitle}
               </p>
             </div>
           </div>
@@ -40,6 +40,7 @@ export const ShortcutsModal: React.FC = () => {
           <button
             onClick={() => setShortcutsModalOpen(false)}
             className="w-8 h-8 rounded-full flex items-center justify-center text-[#8D7666] hover:bg-[#DFCDBD] hover:text-[#2B1E16] transition-colors cursor-pointer"
+            title={t.common.close}
           >
             <TbX className="w-5 h-5" />
           </button>

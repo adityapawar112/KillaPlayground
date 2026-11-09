@@ -38,6 +38,7 @@ import {
 } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { getTextureById } from '@/lib/textures/textureManifest';
+import { useTranslation } from '@/lib/i18n/useTranslation';
 
 export const ToolModeSidebar: React.FC = () => {
   const {
@@ -67,6 +68,7 @@ export const ToolModeSidebar: React.FC = () => {
     showContextualDock,
     isMobileTopBarMinimized,
   } = useEditorStore();
+  const { t } = useTranslation();
 
   // Only render when the active tool has distinct operational modes
   if (!['building', 'walls', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting', 'view'].includes(activeTool)) {
@@ -89,15 +91,15 @@ export const ToolModeSidebar: React.FC = () => {
           style={{
             left: isMobileSidebarMinimized ? '138px' : `${leftSidebarWidth + 8}px`,
           }}
-          className={`fixed z-30 pointer-events-auto transition-all duration-200 ${topOffsetClass}`}
+          className={`fixed z-30 pointer-events-auto transition-all duration-200 font-sans ${topOffsetClass}`}
         >
           <button
             onClick={toggleToolMode}
             className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
-            title="Open Tool Modes"
+            title={t.toolModeSidebar.openModes}
           >
             <TbPointer className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="text-[11px] font-bold">Modes</span>
+            <span className="text-[11px] font-bold">{t.toolModeSidebar.mode}</span>
             <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
@@ -110,17 +112,17 @@ export const ToolModeSidebar: React.FC = () => {
         <aside
           aria-label="Tool Modes Strip"
           style={{ left: `${attachedLeft}px` }}
-          className={`fixed bottom-0 z-20 flex flex-col w-[68px] bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-md select-none pointer-events-auto transition-all duration-200 ${topOffsetClass}`}
+          className={`fixed bottom-0 z-20 flex flex-col w-[68px] bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-md select-none pointer-events-auto transition-all duration-200 font-sans ${topOffsetClass}`}
         >
           {/* Header with Title and Minimize Button */}
           <div className="flex items-center justify-between p-2 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
             <span className="text-[9px] font-bold text-[#8D7666] uppercase tracking-wider">
-              Mode
+              {t.toolModeSidebar.mode}
             </span>
             <button
               onClick={toggleToolMode}
               className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
-              title="Minimize Modes Panel"
+              title={t.toolModeSidebar.minimizeModes}
             >
               <TbChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -132,11 +134,11 @@ export const ToolModeSidebar: React.FC = () => {
             {(activeTool === 'building' || activeTool === 'walls') && (
               <>
                 {[
-                  { id: 'select' as BuildingMode, label: 'Select', icon: TbPointer, title: 'Select fort walls, bastions, foundations, and stairs' },
-                  { id: 'walls' as BuildingMode, label: 'Walls', icon: TbPencil, title: 'Click on terrain to draft perimeter wall circuit' },
-                  { id: 'foundation' as BuildingMode, label: 'Foundation', icon: TbBox, title: 'Click and drag across terrain to build stone foundation slabs' },
-                  { id: 'stairs' as BuildingMode, label: 'Stairs', icon: TbStairs, title: 'Click along slopes to build stone staircases' },
-                  { id: 'fortifications' as BuildingMode, label: 'Fortify', icon: TbTower, title: 'Place towers, bastions, and arched gateways along walls' },
+                  { id: 'select' as BuildingMode, label: t.toolModeSidebar.buildingModes.select, icon: TbPointer, title: t.toolModeSidebar.buildingTitles.select },
+                  { id: 'walls' as BuildingMode, label: t.toolModeSidebar.buildingModes.walls, icon: TbPencil, title: t.toolModeSidebar.buildingTitles.walls },
+                  { id: 'foundation' as BuildingMode, label: t.toolModeSidebar.buildingModes.foundation, icon: TbBox, title: t.toolModeSidebar.buildingTitles.foundation },
+                  { id: 'stairs' as BuildingMode, label: t.toolModeSidebar.buildingModes.stairs, icon: TbStairs, title: t.toolModeSidebar.buildingTitles.stairs },
+                  { id: 'fortifications' as BuildingMode, label: t.toolModeSidebar.buildingModes.fortifications, icon: TbTower, title: t.toolModeSidebar.buildingTitles.fortifications },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = (buildingMode || 'walls') === m.id;
@@ -153,7 +155,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-5 h-5 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[10px] mt-1 leading-tight">
+                      <span className="font-bold text-[10px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>
@@ -166,14 +168,14 @@ export const ToolModeSidebar: React.FC = () => {
             {activeTool === 'terrain' && (
               <>
                 {[
-                  { id: 'elevate' as TerrainSubTool, label: 'Peak', icon: TbMountain, title: 'Elevate mountain peaks' },
-                  { id: 'plateau' as TerrainSubTool, label: 'Plateau', icon: TbMinus, title: 'Flatten level tableland' },
-                  { id: 'slope' as TerrainSubTool, label: 'Ramp', icon: TbArrowUpRight, title: 'Carve linear slopes' },
-                  { id: 'lower' as TerrainSubTool, label: 'Gorge', icon: TbTrendingDown, title: 'Excavate valleys and ravines' },
-                  { id: 'trench' as TerrainSubTool, label: 'Trench', icon: TbWaveSine, title: 'Cut narrow defensive moats' },
-                  { id: 'smooth' as TerrainSubTool, label: 'Smooth', icon: TbRipple, title: 'Smooth rough jagged terrain' },
-                  { id: 'pond' as TerrainSubTool, label: 'Pond', icon: TbDropletHalf2, title: 'Dig cisterns and water bodies' },
-                  { id: 'retexture' as TerrainSubTool, label: 'Retexture', icon: TbBrush, title: 'Paint natural soil and rock surface' },
+                  { id: 'elevate' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.elevate, icon: TbMountain, title: t.toolModeSidebar.terrainTitles.elevate },
+                  { id: 'plateau' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.plateau, icon: TbMinus, title: t.toolModeSidebar.terrainTitles.plateau },
+                  { id: 'slope' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.slope, icon: TbArrowUpRight, title: t.toolModeSidebar.terrainTitles.slope },
+                  { id: 'lower' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.lower, icon: TbTrendingDown, title: t.toolModeSidebar.terrainTitles.lower },
+                  { id: 'trench' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.trench, icon: TbWaveSine, title: t.toolModeSidebar.terrainTitles.trench },
+                  { id: 'smooth' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.smooth, icon: TbRipple, title: t.toolModeSidebar.terrainTitles.smooth },
+                  { id: 'pond' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.pond, icon: TbDropletHalf2, title: t.toolModeSidebar.terrainTitles.pond },
+                  { id: 'retexture' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.retexture, icon: TbBrush, title: t.toolModeSidebar.terrainTitles.retexture },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive =
@@ -192,7 +194,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                      <span className="font-bold text-[9px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>
@@ -205,9 +207,9 @@ export const ToolModeSidebar: React.FC = () => {
             {(activeTool === 'texture' || activeTool === 'paint') && (
               <>
                 {[
-                  { id: 'paint' as const, label: 'Paint', icon: TbBrush, title: 'Paint selected texture onto terrain' },
-                  { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Restore base laterite soil' },
-                  { id: 'fill' as const, label: 'Fill', icon: TbSparkles, title: 'Flood fill diorama base with selected texture' },
+                  { id: 'paint' as const, label: t.toolModeSidebar.textureModes.paint, icon: TbBrush, title: t.toolModeSidebar.textureTitles.paint },
+                  { id: 'erase' as const, label: t.toolModeSidebar.textureModes.erase, icon: TbEraser, title: t.toolModeSidebar.textureTitles.erase },
+                  { id: 'fill' as const, label: t.toolModeSidebar.textureModes.fill, icon: TbSparkles, title: t.toolModeSidebar.textureTitles.fill },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = paintSubTool === m.id;
@@ -221,7 +223,7 @@ export const ToolModeSidebar: React.FC = () => {
                           const meta = getTextureById(sel);
                           const layerIdx = meta ? meta.layerIndex : 0;
                           useTerrainStore.getState().fillPaintTerrain(layerIdx);
-                          useEditorStore.getState().setToastMessage('Base terrain filled with texture.');
+                          useEditorStore.getState().setToastMessage(t.toolModeSidebar.textureTitles.fill);
                         } else {
                           setPaintSubTool(m.id as 'paint' | 'erase');
                         }
@@ -234,7 +236,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                      <span className="font-bold text-[9px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>
@@ -247,9 +249,9 @@ export const ToolModeSidebar: React.FC = () => {
             {activeTool === 'foliage' && (
               <>
                 {[
-                  { id: 'scatter' as const, label: 'Scatter', icon: TbTrees, title: 'Scatter brush - drag to paint nature flora' },
-                  { id: 'single' as const, label: 'Single', icon: TbFocus2, title: 'Single plant - click to place hero specimen' },
-                  { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Prune / Erase - drag to remove foliage' },
+                  { id: 'scatter' as const, label: t.toolModeSidebar.foliageModes.scatter, icon: TbTrees, title: t.toolModeSidebar.foliageTitles.scatter },
+                  { id: 'single' as const, label: t.toolModeSidebar.foliageModes.single, icon: TbFocus2, title: t.toolModeSidebar.foliageTitles.single },
+                  { id: 'erase' as const, label: t.toolModeSidebar.foliageModes.erase, icon: TbEraser, title: t.toolModeSidebar.foliageTitles.erase },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = foliageSubTool === m.id;
@@ -266,7 +268,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                      <span className="font-bold text-[9px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>
@@ -279,10 +281,10 @@ export const ToolModeSidebar: React.FC = () => {
             {activeTool === 'prop' && (
               <>
                 {[
-                  { id: 'place' as const, label: 'Place', icon: TbPencil, title: 'Click on terrain or fort walls to place figurines' },
-                  { id: 'select' as const, label: 'Select', icon: TbPointer, title: 'Click placed figurines to inspect, duplicate, or delete' },
-                  { id: 'transform' as const, label: 'Transform', icon: TbArrowsMove, title: 'Nudge, rotate, and scale selected figurine' },
-                  { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Click placed figurines to remove them from diorama' },
+                  { id: 'place' as const, label: t.toolModeSidebar.propModes.place, icon: TbPencil, title: t.toolModeSidebar.propTitles.place },
+                  { id: 'select' as const, label: t.toolModeSidebar.propModes.select, icon: TbPointer, title: t.toolModeSidebar.propTitles.select },
+                  { id: 'transform' as const, label: t.toolModeSidebar.propModes.transform, icon: TbArrowsMove, title: t.toolModeSidebar.propTitles.transform },
+                  { id: 'erase' as const, label: t.toolModeSidebar.propModes.erase, icon: TbEraser, title: t.toolModeSidebar.propTitles.erase },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = propSubTool === m.id;
@@ -299,7 +301,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                      <span className="font-bold text-[9px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>
@@ -312,10 +314,10 @@ export const ToolModeSidebar: React.FC = () => {
             {activeTool === 'lighting' && (
               <>
                 {[
-                  { id: 'place' as const, label: 'Place', icon: TbPencil, title: 'Click on terrain or parapets to place diyas & fireworks' },
-                  { id: 'select' as const, label: 'Select', icon: TbPointer, title: 'Select placed diyas & fireworks to inspect, test, or duplicate' },
-                  { id: 'transform' as const, label: 'Transform', icon: TbArrowsMove, title: 'Nudge, rotate, and elevate selected light' },
-                  { id: 'erase' as const, label: 'Erase', icon: TbEraser, title: 'Click or drag to remove diyas & fireworks' },
+                  { id: 'place' as const, label: t.toolModeSidebar.lightingModes.place, icon: TbPencil, title: t.toolModeSidebar.lightingTitles.place },
+                  { id: 'select' as const, label: t.toolModeSidebar.lightingModes.select, icon: TbPointer, title: t.toolModeSidebar.lightingTitles.select },
+                  { id: 'transform' as const, label: t.toolModeSidebar.lightingModes.transform, icon: TbArrowsMove, title: t.toolModeSidebar.lightingTitles.transform },
+                  { id: 'erase' as const, label: t.toolModeSidebar.lightingModes.erase, icon: TbEraser, title: t.toolModeSidebar.lightingTitles.erase },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = lightingSubTool === m.id;
@@ -332,7 +334,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                      <span className="font-bold text-[9px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>
@@ -345,8 +347,8 @@ export const ToolModeSidebar: React.FC = () => {
             {activeTool === 'view' && (
               <>
                 {[
-                  { id: 'orbit' as ViewMode, label: 'Orbit', icon: TbRotateClockwise2, title: 'Free 360° diorama orbit & spectator inspection' },
-                  { id: 'turntable' as ViewMode, label: 'Spin', icon: TbRefresh, title: 'Continuous 360° diorama exhibition spin' },
+                  { id: 'orbit' as ViewMode, label: t.toolModeSidebar.viewModes.orbit, icon: TbRotateClockwise2, title: t.toolModeSidebar.viewTitles.orbit },
+                  { id: 'turntable' as ViewMode, label: t.toolModeSidebar.viewModes.turntable, icon: TbRefresh, title: t.toolModeSidebar.viewTitles.turntable },
                 ].map((m) => {
                   const Icon = m.icon;
                   const isActive = viewMode === m.id;
@@ -363,7 +365,7 @@ export const ToolModeSidebar: React.FC = () => {
                       }`}
                     >
                       <Icon className={`w-4 h-4 ${isActive ? 'text-[#F59E0B]' : 'text-[#8F4938]'}`} />
-                      <span className="font-bold text-[9px] mt-1 leading-tight">
+                      <span className="font-bold text-[9px] mt-1 leading-tight text-center">
                         {m.label}
                       </span>
                     </button>

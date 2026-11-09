@@ -70,6 +70,6 @@
 .font-modak {
   font-family: var(--font-modak), 'Modak', cursive !important;
 }
-.font-sans, body, button, input, select {
-  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif;
+.font-inter, .font-sans, body, button, input, select, textarea {
+  font-family: var(--font-inter), 'Inter', system-ui, -apple-system, sans-serif !important;
 }

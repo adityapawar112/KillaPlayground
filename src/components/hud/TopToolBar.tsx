@@ -168,15 +168,15 @@ export const TopToolBar: React.FC = () => {
       {isMobileTopBarMinimized && (
         <div
           style={{ right: toolsAndViewsRight }}
-          className="fixed top-[41px] z-30 pointer-events-auto transition-all duration-200"
+          className="fixed top-[41px] z-30 pointer-events-auto transition-all duration-200 font-sans"
         >
           <button
             onClick={toggleMobileTopBar}
             className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
-            title="Show Tools & Camera"
+            title={t.topToolBar.showToolsCamera}
           >
             <TbMountain className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="text-[11px] font-bold">Tools & Views</span>
+            <span className="text-[11px] font-bold">{t.topToolBar.toolsAndViews}</span>
             <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
@@ -185,7 +185,7 @@ export const TopToolBar: React.FC = () => {
       {/* Main Secondary Bar */}
       <nav
         aria-label="Top Tool Modes"
-        className={`fixed top-[41px] left-0 right-0 z-30 bg-[#E4D8CB] border-b border-[#CDBCAB] shadow-xs select-none pointer-events-auto transition-transform duration-200 ${
+        className={`fixed top-[41px] left-0 right-0 z-30 bg-[#E4D8CB] border-b border-[#CDBCAB] shadow-xs select-none pointer-events-auto transition-transform duration-200 font-sans ${
           isMobileTopBarMinimized ? 'hidden' : 'flex flex-col xl:flex-row'
         }`}
       >
@@ -203,7 +203,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={toggleMobileTopBar}
               className="p-1 rounded-md bg-[#DCCEC0] hover:bg-[#D0BFB0] text-[#4B382C] shrink-0 ml-1 cursor-pointer"
-              title="Minimize Top Bar"
+              title={t.topToolBar.minimizeTopBar}
             >
               <TbChevronUp className="w-3.5 h-3.5" />
             </button>
@@ -219,7 +219,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={() => setCameraViewPreset('top')}
               className="w-6 h-6 rounded-md bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-              title="Top View (Z / 7)"
+              title={`${t.topToolBar.top} (Z / 7)`}
             >
               <span className="w-3.5 h-3.5 rounded-full bg-[#0284C7] text-white flex items-center justify-center text-[9px] font-black">
                 Z
@@ -230,7 +230,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={() => setCameraViewPreset('front')}
               className="w-6 h-6 rounded-md bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-              title="Front View (Y / 1)"
+              title={`${t.topToolBar.front} (Y / 1)`}
             >
               <span className="w-3.5 h-3.5 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[9px] font-black">
                 Y
@@ -241,7 +241,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={() => setCameraViewPreset('side')}
               className="w-6 h-6 rounded-md bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-              title="Side View (X / 3)"
+              title={`${t.topToolBar.side} (X / 3)`}
             >
               <span className="w-3.5 h-3.5 rounded-full bg-[#DC2626] text-white flex items-center justify-center text-[9px] font-black">
                 X
@@ -252,7 +252,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={() => setCameraViewPreset('reset')}
               className="w-6 h-6 rounded-md bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-              title="Center View (Home / F)"
+              title={`${t.topToolBar.center} (Home / F)`}
             >
               <TbFocus2 className="w-3.5 h-3.5 text-[#B85F45]" />
             </button>
@@ -263,7 +263,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={() => setCameraViewPreset('zoom_in')}
               className="w-6 h-6 rounded-md bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-              title="Zoom In (+ / Q)"
+              title={`${t.topToolBar.zoomIn} (+ / Q)`}
             >
               <TbZoomIn className="w-3.5 h-3.5 text-[#4B382C]" />
             </button>
@@ -272,7 +272,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={() => setCameraViewPreset('zoom_out')}
               className="w-6 h-6 rounded-md bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] flex items-center justify-center shrink-0 cursor-pointer active:scale-95"
-              title="Zoom Out (- / E)"
+              title={`${t.topToolBar.zoomOut} (- / E)`}
             >
               <TbZoomOut className="w-3.5 h-3.5 text-[#4B382C]" />
             </button>
@@ -282,7 +282,7 @@ export const TopToolBar: React.FC = () => {
         {/* ======================================================== */}
         {/* B. DESKTOP VIEW: SINGLE ROW WITH LABELS & CAMERA (>= xl) */}
         {/* ======================================================== */}
-        <div className="hidden xl:flex h-10 px-3 w-full items-center justify-between gap-2 overflow-x-auto">
+        <div className="hidden xl:flex h-10 px-3 w-full items-center justify-between gap-2 overflow-x-auto font-sans">
           {/* Left: Tools */}
           <div className="flex items-center gap-1 shrink-0">
             {PRIMARY_KILLA_TOOLS.map(renderDesktopToolButton)}
@@ -297,46 +297,46 @@ export const TopToolBar: React.FC = () => {
               <button
                 onClick={() => setCameraViewPreset('top')}
                 className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#DFCDBD] text-xs font-semibold text-[#2B1E16] transition-colors cursor-pointer"
-                title="Top View (Z / Numpad 7)"
+                title={`${t.topToolBar.top} (Z / Numpad 7)`}
               >
                 <span className="w-3.5 h-3.5 rounded-full bg-[#0284C7] text-white flex items-center justify-center text-[9px] font-black">
                   Z
                 </span>
-                <span className="text-[11px]">Top</span>
+                <span className="text-[11px]">{t.topToolBar.top}</span>
               </button>
 
               {/* Front View (Y) */}
               <button
                 onClick={() => setCameraViewPreset('front')}
                 className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#DFCDBD] text-xs font-semibold text-[#2B1E16] transition-colors cursor-pointer"
-                title="Front View (Y / Numpad 1)"
+                title={`${t.topToolBar.front} (Y / Numpad 1)`}
               >
                 <span className="w-3.5 h-3.5 rounded-full bg-[#16A34A] text-white flex items-center justify-center text-[9px] font-black">
                   Y
                 </span>
-                <span className="text-[11px]">Front</span>
+                <span className="text-[11px]">{t.topToolBar.front}</span>
               </button>
 
               {/* Side View (X) */}
               <button
                 onClick={() => setCameraViewPreset('side')}
                 className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#DFCDBD] text-xs font-semibold text-[#2B1E16] transition-colors cursor-pointer"
-                title="Side View (X / Numpad 3)"
+                title={`${t.topToolBar.side} (X / Numpad 3)`}
               >
                 <span className="w-3.5 h-3.5 rounded-full bg-[#DC2626] text-white flex items-center justify-center text-[9px] font-black">
                   X
                 </span>
-                <span className="text-[11px]">Side</span>
+                <span className="text-[11px]">{t.topToolBar.side}</span>
               </button>
 
               {/* Center / Focus */}
               <button
                 onClick={() => setCameraViewPreset('reset')}
                 className="flex items-center gap-1 px-2 py-1 rounded hover:bg-[#DFCDBD] text-xs font-semibold text-[#2B1E16] transition-colors cursor-pointer"
-                title="Center / Focus (Home / F)"
+                title={`${t.topToolBar.center} (Home / F)`}
               >
                 <TbFocus2 className="w-3.5 h-3.5 text-[#B85F45]" />
-                <span className="text-[11px]">Center</span>
+                <span className="text-[11px]">{t.topToolBar.center}</span>
               </button>
             </div>
 
@@ -345,14 +345,14 @@ export const TopToolBar: React.FC = () => {
               <button
                 onClick={() => setCameraViewPreset('zoom_in')}
                 className="p-1 rounded hover:bg-[#DFCDBD] text-[#4B382C] transition-colors cursor-pointer"
-                title="Zoom In (+ / Q)"
+                title={`${t.topToolBar.zoomIn} (+ / Q)`}
               >
                 <TbZoomIn className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => setCameraViewPreset('zoom_out')}
                 className="p-1 rounded hover:bg-[#DFCDBD] text-[#4B382C] transition-colors cursor-pointer"
-                title="Zoom Out (- / E)"
+                title={`${t.topToolBar.zoomOut} (- / E)`}
               >
                 <TbZoomOut className="w-3.5 h-3.5" />
               </button>
@@ -363,7 +363,7 @@ export const TopToolBar: React.FC = () => {
             <button
               onClick={toggleMobileTopBar}
               className="p-1 rounded hover:bg-[#DFCDBD] text-[#4B382C] transition-colors cursor-pointer"
-              title="Minimize Secondary Top Bar"
+              title={t.topToolBar.minimizeTopBar}
             >
               <TbChevronUp className="w-3.5 h-3.5" />
             </button>

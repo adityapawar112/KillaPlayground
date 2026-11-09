@@ -224,16 +224,16 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               </div>
               <div className="flex flex-col">
                 <span className="font-yatra text-base text-[#2B1E16] leading-tight">
-                  The Killa Playground
+                  {t.appName}
                 </span>
                 <span className="text-[10px] text-[#8D7666] font-sans font-medium">
-                  किल्ला प्लेग्राउंड • 3D Diorama
+                  {t.appSubtitle}
                 </span>
               </div>
             </div>
 
             {/* Active Fort Selector Header in Drawer */}
-            <div className="p-3 border-b border-[#D8C7B5] bg-[#ECE2D5]/70">
+            <div className="p-3 border-b border-[#D8C7B5] bg-[#ECE2D5]/70 font-sans">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -246,7 +246,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   <span className="font-sans uppercase">{displayFortTitle}</span>
                 </div>
                 <span className="text-[10px] text-[#8D7666] uppercase bg-black/10 px-2 py-0.5 rounded">
-                  Change
+                  {t.common.change}
                 </span>
               </button>
             </div>
@@ -602,7 +602,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
                   >
                     <TbFolderOpen className="w-4 h-4 text-[#0284C7]" />
-                    <span>Saved Dioramas (Vault)...</span>
+                    <span>{t.startupModal.tabVault}...</span>
                   </button>
                   <div className="my-1 border-t border-[#D9C9B4]" />
                   <button

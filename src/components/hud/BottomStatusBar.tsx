@@ -22,59 +22,60 @@ export const BottomStatusBar: React.FC = () => {
   const { t } = useTranslation();
 
   const getLeftClickAction = () => {
+    const act = t.bottomStatusBar.actions;
     switch (activeTool) {
       case 'terrain':
         switch (terrainSubTool) {
           case 'elevate':
-            return 'Sculpt Peak';
+            return act.sculptPeak;
           case 'plateau':
-            return 'Flatten Plateau';
+            return act.flattenPlateau;
           case 'slope':
-            return 'Carve Ramp';
+            return act.carveRamp;
           case 'lower':
-            return 'Excavate Gorge';
+            return act.excavateGorge;
           case 'trench':
-            return 'Dig Moat Trench';
+            return act.digMoatTrench;
           case 'smooth':
-            return 'Smooth Terrain';
+            return act.smoothTerrain;
           case 'pond':
-            return 'Dig Cistern Pond';
+            return act.digCisternPond;
           case 'retexture':
           case 'soil':
-            return 'Retexture Soil';
+            return act.retextureSoil;
           default:
-            return 'Sculpt Terrain';
+            return act.sculptTerrain;
         }
       case 'building':
       case 'walls':
-        if (buildingMode === 'select') return 'Select Structure';
-        if (buildingMode === 'foundation') return 'Drag to Build Foundation';
-        if (buildingMode === 'stairs') return 'Draft Stone Stairs';
-        if (buildingMode === 'fortifications') return 'Place Bastion / Tower';
-        return 'Draft Wall Node';
+        if (buildingMode === 'select') return act.selectStructure;
+        if (buildingMode === 'foundation') return act.dragToBuildFoundation;
+        if (buildingMode === 'stairs') return act.draftStoneStairs;
+        if (buildingMode === 'fortifications') return act.placeBastionTower;
+        return act.draftWallNode;
       case 'spline':
-        if (splineMode === 'select') return 'Select Structure Path';
-        if (splineMode === 'transform') return 'Transform Path';
-        return 'Draft Structure Node';
+        if (splineMode === 'select') return act.selectStructurePath;
+        if (splineMode === 'transform') return act.transformPath;
+        return act.draftStructureNode;
       case 'texture':
       case 'paint':
-        return paintSubTool === 'erase' ? 'Erase to Raw Soil' : 'Paint Surface Texture';
+        return paintSubTool === 'erase' ? act.eraseToRawSoil : act.paintSurfaceTexture;
       case 'foliage':
-        if (foliageSubTool === 'single') return 'Plant Hero Specimen';
-        if (foliageSubTool === 'erase') return 'Prune / Erase Flora';
-        return 'Scatter Nature Flora';
+        if (foliageSubTool === 'single') return act.plantHeroSpecimen;
+        if (foliageSubTool === 'erase') return act.pruneEraseFlora;
+        return act.scatterNatureFlora;
       case 'prop':
-        if (propSubTool === 'erase') return 'Erase Figurine';
-        if (propSubTool === 'select') return 'Select Figurine';
-        if (propSubTool === 'transform') return 'Transform Figurine';
-        return 'Place Figurine';
+        if (propSubTool === 'erase') return act.eraseFigurine;
+        if (propSubTool === 'select') return act.selectFigurine;
+        if (propSubTool === 'transform') return act.transformFigurine;
+        return act.placeFigurine;
       case 'lighting':
-        if (lightingSubTool === 'erase') return 'Erase Diya / Firework';
-        if (lightingSubTool === 'select') return 'Select Light';
-        if (lightingSubTool === 'transform') return 'Transform Light';
-        return 'Place Diya / Firework';
+        if (lightingSubTool === 'erase') return act.eraseDiyaFirework;
+        if (lightingSubTool === 'select') return act.selectLight;
+        if (lightingSubTool === 'transform') return act.transformLight;
+        return act.placeDiyaFirework;
       default:
-        return 'Apply Tool';
+        return act.applyTool;
     }
   };
 
@@ -82,14 +83,14 @@ export const BottomStatusBar: React.FC = () => {
     <>
       {/* Minimized Guide Tab (Pinned to bottom center) */}
       {!showBottomStatusBar && (
-        <div className="hidden md:flex fixed bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none">
+        <div className="hidden md:flex fixed bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none font-sans">
           <button
             onClick={toggleBottomStatusBar}
             className="flex items-center gap-1.5 px-3 py-0.5 bg-[#E4D8CB] border-x border-t border-[#CDBCAB] rounded-t-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
-            title="Show Controls & Tips"
+            title={t.bottomStatusBar.controlsAndTips}
           >
             <TbInfoCircle className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="text-[11px] font-bold">Controls & Tips</span>
+            <span className="text-[11px] font-bold">{t.bottomStatusBar.controlsAndTips}</span>
             <TbChevronUp className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
@@ -99,31 +100,25 @@ export const BottomStatusBar: React.FC = () => {
       {showBottomStatusBar && (
         <footer
           aria-label="Viewport Navigation Strip"
-          className="hidden md:flex fixed bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none items-center justify-center max-w-[95vw]"
+          className="hidden md:flex fixed bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none items-center justify-center max-w-[95vw] font-sans"
         >
-          <div className="flex items-center gap-2 sm:gap-3 px-3.5 py-1 rounded-full bg-[#F2EBE1]/95 border border-[#D9C9B4] text-[10px] sm:text-[11px] font-mono text-[#634E40] shadow-sm pointer-events-auto">
+          <div className="flex items-center gap-2 sm:gap-3 px-3.5 py-1 rounded-full bg-[#F2EBE1]/95 border border-[#D9C9B4] text-[10px] sm:text-[11px] text-[#634E40] shadow-sm pointer-events-auto">
             <span className="flex items-center gap-1">
-              <span className="font-semibold text-[#2B1E16]">Left Click:</span>{' '}
+              <span className="font-semibold text-[#2B1E16]">{t.bottomStatusBar.leftClick}</span>{' '}
               <span className="text-[#E85D04] font-bold">
                 {getLeftClickAction()}
               </span>
             </span>
             <span className="text-[#D9C9B4]">•</span>
-            <span className="flex items-center gap-1">
-              <span className="font-semibold text-[#2B1E16]">Right Drag:</span> Orbit
-            </span>
+            <span className="text-[#2B1E16] font-semibold">{t.bottomStatusBar.rightDrag}</span>
             <span className="text-[#D9C9B4]">•</span>
-            <span className="flex items-center gap-1">
-              <span className="font-semibold text-[#2B1E16]">Middle Drag:</span> Pan
-            </span>
+            <span className="text-[#2B1E16] font-semibold">{t.bottomStatusBar.middleDrag}</span>
             <span className="text-[#D9C9B4]">•</span>
-            <span className="flex items-center gap-1">
-              <span className="font-semibold text-[#2B1E16]">Scroll:</span> Zoom
-            </span>
+            <span className="text-[#2B1E16] font-semibold">{t.bottomStatusBar.scroll}</span>
             <span className="text-[#D9C9B4]">•</span>
             <button
               onClick={toggleBottomStatusBar}
-              title="Minimize Controls Strip"
+              title={t.bottomStatusBar.minimizeStrip}
               className="p-0.5 rounded hover:bg-[#D9C9B4] text-[#8D7666] hover:text-[#4B382C] transition-colors cursor-pointer"
             >
               <TbChevronDown className="w-3 h-3" />

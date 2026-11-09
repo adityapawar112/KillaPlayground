@@ -56,7 +56,7 @@ describe('Blast Radius Verification Suite', () => {
     const initialLastUpdated = store.lastUpdated;
 
     // Paint layer 3 onto terrain at center
-    store.applyPaintBrush(0, 0, 1.0, 0.8, 3, 0.5);
+    store.applyPaintBrush(0, 0, { operation: 'paint', targetLayer: 3, radius: 1.0, strength: 0.8, falloff: 0.5 });
 
     // Pointer-up fires
     useTerrainStore.setState({ lastUpdated: Date.now() });
@@ -184,7 +184,7 @@ describe('Blast Radius Verification Suite', () => {
 
     editor.setWallSnapPreview({
       snapped: true,
-      type: 'wall',
+      type: 'segment',
       position: [1.0, 0.5, 2.0],
       rotationY: 0.25,
     });
@@ -195,7 +195,7 @@ describe('Blast Radius Verification Suite', () => {
     // Set preview with sub-millimeter delta (e.g., 0.002m)
     editor.setWallSnapPreview({
       snapped: true,
-      type: 'wall',
+      type: 'segment',
       position: [1.002, 0.501, 2.001],
       rotationY: 0.25,
     });
@@ -207,7 +207,7 @@ describe('Blast Radius Verification Suite', () => {
     // Set preview with significant movement (> 0.01m)
     editor.setWallSnapPreview({
       snapped: true,
-      type: 'wall',
+      type: 'segment',
       position: [1.2, 0.5, 2.0],
       rotationY: 0.25,
     });

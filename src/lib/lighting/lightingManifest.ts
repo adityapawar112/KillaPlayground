@@ -28,7 +28,7 @@ export const LIGHTING_CATEGORIES: LightingCategoryInfo[] = [
     id: 'fireworks',
     name: 'Diwali Fireworks',
     devanagari: 'दिवाळी फटाके व दारूकाम',
-    description: 'Traditional Diwali pyrotechnics: sparkling cone fountains (Anaar) and sky shot aerial launchers.',
+    description: 'Traditional Diwali pyrotechnics: sparkling cone fountains and sky shot aerial launchers.',
     accentColor: '#E85D04',
   },
 ];

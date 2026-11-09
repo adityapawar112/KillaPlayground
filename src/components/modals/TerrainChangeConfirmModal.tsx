@@ -64,7 +64,7 @@ export const TerrainChangeConfirmModal: React.FC = () => {
                 {t.startupModal.terrainConfirmTitle}
               </h3>
               <span className="text-xs text-[#8D7666] font-sans">
-                Target: <strong className="text-[#4B382C] uppercase">{pendingTerrainChange.title}</strong>
+                {t.terrainConfirmModal.target} <strong className="text-[#4B382C] uppercase">{pendingTerrainChange.title}</strong>
               </span>
             </div>
           </div>
@@ -72,50 +72,50 @@ export const TerrainChangeConfirmModal: React.FC = () => {
           <button
             onClick={() => setTerrainConfirmOpen(false)}
             className="w-8 h-8 rounded-full flex items-center justify-center text-[#8D7666] hover:text-[#2B1E16] hover:bg-[#EADECF] transition-colors cursor-pointer"
-            title="Cancel"
+            title={t.common.cancel}
           >
             <TbX className="w-5 h-5" />
           </button>
         </div>
 
         {/* Warning Body */}
-        <p className="text-xs sm:text-sm text-[#634E40] leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#634E40] leading-relaxed font-sans">
           {t.startupModal.terrainConfirmDesc}
         </p>
 
         {/* Item Count Badges */}
-        <div className="p-3.5 rounded-2xl bg-[#F2EBE1] border border-[#D9C9B4] flex flex-wrap gap-2 text-xs">
+        <div className="p-3.5 rounded-2xl bg-[#F2EBE1] border border-[#D9C9B4] flex flex-wrap gap-2 text-xs font-sans">
           <div className="w-full text-[11px] font-bold text-[#8F4938] uppercase tracking-wider mb-0.5">
-            Objects to be cleared ({totalCount}):
+            {t.terrainConfirmModal.objectsToBeCleared} ({totalCount}):
           </div>
           {wallCount > 0 && (
             <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
-              {wallCount} Walls
+              {wallCount} {t.terrainConfirmModal.walls}
             </span>
           )}
           {foundationCount > 0 && (
             <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
-              {foundationCount} Foundations
+              {foundationCount} {t.terrainConfirmModal.foundations}
             </span>
           )}
           {stairCount > 0 && (
             <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
-              {stairCount} Stairs
+              {stairCount} {t.terrainConfirmModal.stairs}
             </span>
           )}
           {propCount > 0 && (
             <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
-              {propCount} Figurines
+              {propCount} {t.terrainConfirmModal.figurines}
             </span>
           )}
           {lightCount > 0 && (
             <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
-              {lightCount} Diyas & Lights
+              {lightCount} {t.terrainConfirmModal.diyasLights}
             </span>
           )}
           {foliageCount > 0 && (
             <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
-              {foliageCount} Foliage
+              {foliageCount} {t.terrainConfirmModal.foliage}
             </span>
           )}
         </div>

@@ -157,7 +157,7 @@ export const ContextualDock: React.FC = () => {
       {/* 3. SHAPING CONTROLS (Push Left, Push Right, Pat from Top) */}
       {(activeTool === 'shape' || activeTool === 'shape_side' || activeTool === 'shape_top') && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1 font-sans">
             <button
               onClick={() => setShapeSubTool('push_left')}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
@@ -167,7 +167,7 @@ export const ContextualDock: React.FC = () => {
               }`}
             >
               <TbArrowsLeft className="w-3.5 h-3.5" />
-              <span>Push Left</span>
+              <span>{t.tools.shape.pushLeft}</span>
             </button>
             <button
               onClick={() => setShapeSubTool('push_right')}
@@ -178,7 +178,7 @@ export const ContextualDock: React.FC = () => {
               }`}
             >
               <TbArrowsRight className="w-3.5 h-3.5" />
-              <span>Push Right</span>
+              <span>{t.tools.shape.pushRight}</span>
             </button>
             <button
               onClick={() => setShapeSubTool('pat_top')}
@@ -189,7 +189,7 @@ export const ContextualDock: React.FC = () => {
               }`}
             >
               <TbArrowDownBar className="w-3.5 h-3.5" />
-              <span>Pat Top</span>
+              <span>{t.tools.shape.topPat}</span>
             </button>
           </div>
 
@@ -304,7 +304,7 @@ export const ContextualDock: React.FC = () => {
       {/* 6. TERRAIN MANIPULATION CONTROLS */}
       {activeTool === 'terrain' && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1 font-sans">
             <button
               onClick={() => setTerrainSubTool('elevate')}
               className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
@@ -312,10 +312,10 @@ export const ContextualDock: React.FC = () => {
                   ? 'bg-[#E85D04] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
-              title="Elevate mountain mounds and ridges"
+              title={t.toolModeSidebar.terrainTitles.elevate}
             >
               <TbMountain className="w-3.5 h-3.5" />
-              <span>Elevate</span>
+              <span>{t.toolModeSidebar.terrainModes.elevate}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('lower')}
@@ -324,10 +324,10 @@ export const ContextualDock: React.FC = () => {
                   ? 'bg-[#8F4938] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
-              title="Carve trenches and valleys"
+              title={t.toolModeSidebar.terrainTitles.lower}
             >
               <TbTrendingDown className="w-3.5 h-3.5" />
-              <span>Lower</span>
+              <span>{t.toolModeSidebar.terrainModes.lower}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('plateau')}
@@ -336,10 +336,10 @@ export const ContextualDock: React.FC = () => {
                   ? 'bg-[#B58B63] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
-              title="Level peaks into flat fort building plateaus"
+              title={t.toolModeSidebar.terrainTitles.plateau}
             >
               <TbMinus className="w-3.5 h-3.5" />
-              <span>Plateau</span>
+              <span>{t.toolModeSidebar.terrainModes.plateau}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('smooth')}
@@ -348,10 +348,10 @@ export const ContextualDock: React.FC = () => {
                   ? 'bg-[#777A57] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
-              title="Soften sharp edges and jagged spikes"
+              title={t.toolModeSidebar.terrainTitles.smooth}
             >
               <TbWaveSine className="w-3.5 h-3.5" />
-              <span>Smooth</span>
+              <span>{t.toolModeSidebar.terrainModes.smooth}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('pond')}
@@ -360,10 +360,10 @@ export const ContextualDock: React.FC = () => {
                   ? 'bg-[#0284C7] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
-              title="Excavate water cisterns and ponds"
+              title={t.toolModeSidebar.terrainTitles.pond}
             >
               <TbRipple className="w-3.5 h-3.5" />
-              <span>Pond</span>
+              <span>{t.toolModeSidebar.terrainModes.pond}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('slope')}
@@ -372,10 +372,10 @@ export const ContextualDock: React.FC = () => {
                   ? 'bg-[#D97706] text-white shadow-sm'
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
-              title="Grade slopes and mountain pathways at calibrated angles"
+              title={t.toolModeSidebar.terrainTitles.slope}
             >
               <TbArrowUpRight className="w-3.5 h-3.5" />
-              <span>Slope</span>
+              <span>{t.toolModeSidebar.terrainModes.slope}</span>
             </button>
           </div>
 
@@ -418,11 +418,11 @@ export const ContextualDock: React.FC = () => {
           {terrainSubTool === 'plateau' && (
             <>
               <div className="w-[1px] h-5 bg-[#D9C9B4]" />
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-[#B58B63]">Height:</span>
+              <div className="flex items-center gap-1.5 font-sans">
+                <span className="text-xs font-semibold text-[#B58B63]">{t.tools.terrain.height}:</span>
                 <input
                   type="range"
-                  aria-label="Plateau Height"
+                  aria-label={t.tools.terrain.height}
                   min="0.1"
                   max="3.0"
                   step="0.1"
@@ -493,7 +493,7 @@ export const ContextualDock: React.FC = () => {
       {/* 7. FOLIAGE CONTROLS (Scatter | Single | Erase) */}
       {(activeTool === 'foliage' || activeTool === 'grass') && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1">
+          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1 font-sans">
             <button
               onClick={() => setFoliageSubTool('scatter')}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
@@ -503,7 +503,7 @@ export const ContextualDock: React.FC = () => {
               }`}
             >
               <TbTrees className="w-3.5 h-3.5" />
-              <span>Scatter</span>
+              <span>{t.toolModeSidebar.foliageModes.scatter}</span>
             </button>
             <button
               onClick={() => setFoliageSubTool('single')}
@@ -513,7 +513,7 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <span>Single</span>
+              <span>{t.toolModeSidebar.foliageModes.single}</span>
             </button>
             <button
               onClick={() => setFoliageSubTool('erase')}
@@ -523,7 +523,7 @@ export const ContextualDock: React.FC = () => {
                   : 'text-[#634E40] hover:text-[#2B1E16]'
               }`}
             >
-              <span>Erase</span>
+              <span>{t.toolModeSidebar.foliageModes.erase}</span>
             </button>
           </div>
 
@@ -531,11 +531,11 @@ export const ContextualDock: React.FC = () => {
             <>
               <div className="w-[1px] h-5 bg-[#D9C9B4]" />
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-[#4B382C]">Radius:</span>
+              <div className="flex items-center gap-2 font-sans">
+                <span className="text-xs font-semibold text-[#4B382C]">{t.tools.terrain.radius}:</span>
                 <input
                   type="range"
-                  aria-label="Foliage Radius"
+                  aria-label={t.tools.terrain.radius}
                   min="0.1"
                   max="2.0"
                   step="0.05"
@@ -561,19 +561,19 @@ export const ContextualDock: React.FC = () => {
                     disabled={activeStairDraft.length < 2}
                     className="px-3 py-1 bg-[#E85D04] hover:bg-[#D05303] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
                   >
-                    Finish Stairs ({activeStairDraft.length} pts)
+                    {t.tools.walls.finishStairs} ({activeStairDraft.length} {t.common.faces})
                   </button>
                   <button
                     onClick={cancelStairs}
                     className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                 </>
               )}
               {activeStairDraft.length === 0 && (
                 <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-                  Click points along mountain slopes to build stepped stone staircase
+                  {t.toolModeSidebar.buildingTitles.stairs}
                 </span>
               )}
             </>
@@ -588,27 +588,27 @@ export const ContextualDock: React.FC = () => {
                     disabled={activeWallDraft.length < 2}
                     className="px-3 py-1 bg-[#E85D04] hover:bg-[#D05303] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
                   >
-                    Finish Wall ({activeWallDraft.length} pts)
+                    {t.tools.walls.finishWall} ({activeWallDraft.length} {t.tools.walls.nodesCount})
                   </button>
                   <button
                     onClick={() => finishCurrentWall(true)}
                     disabled={activeWallDraft.length < 3}
-                    title="Connect end to start point to form a closed fort loop"
+                    title={t.tools.walls.closeHint}
                     className="px-3 py-1 bg-[#8C4A32] hover:bg-[#783E29] disabled:opacity-40 text-white rounded-lg text-xs font-bold transition-all shadow-sm cursor-pointer"
                   >
-                    Close Loop
+                    {t.tools.walls.closeLoop}
                   </button>
                   <button
                     onClick={cancelCurrentWall}
                     className="px-2.5 py-1 bg-[#FAF8F5] hover:bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA] rounded-lg text-xs font-semibold transition-all cursor-pointer"
                   >
-                    Cancel
+                    {t.common.cancel}
                   </button>
                 </>
               )}
               {activeWallDraft.length === 0 && (
                 <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-                  Click on terrain to lay fort perimeter ramparts
+                  {t.toolModeSidebar.buildingTitles.walls}
                 </span>
               )}
             </>
@@ -616,19 +616,19 @@ export const ContextualDock: React.FC = () => {
 
           {buildingMode === 'foundation' && (
             <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-              Click and drag diagonally to draw base, move mouse to adjust height, click to place
+              {t.toolModeSidebar.buildingTitles.foundation}
             </span>
           )}
 
           {buildingMode === 'fortifications' && (
             <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-              Hover near fort walls to magnetically place watchtowers, bastions, and gates
+              {t.toolModeSidebar.buildingTitles.fortifications}
             </span>
           )}
 
           {buildingMode === 'select' && (
             <span className="text-[11px] font-medium text-[#634E40] hidden sm:inline">
-              Click any wall, bastion, foundation, or stairs to inspect or remove
+              {t.toolModeSidebar.buildingTitles.select}
             </span>
           )}
         </div>
@@ -636,22 +636,22 @@ export const ContextualDock: React.FC = () => {
 
       {/* 9. FIGURINES TOOL HINT */}
       {activeTool === 'prop' && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 font-sans">
           <span className="text-xs font-semibold text-[#4B382C]">
-            Select figurine from right drawer and place on terrain or solid structures
+            {t.toolModeSidebar.propTitles.place}
           </span>
         </div>
       )}
 
       {/* 10. FESTIVE LIGHTING & FIREWORKS CONTROLS */}
       {activeTool === 'lighting' && (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 font-sans">
           {lightingSubTool === 'erase' ? (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[#4B382C]">Erase Radius:</span>
+              <span className="text-xs font-semibold text-[#4B382C]">{t.toolModeSidebar.lightingModes.erase} {t.tools.terrain.radius}:</span>
               <input
                 type="range"
-                aria-label="Lighting Erase Radius"
+                aria-label={`${t.toolModeSidebar.lightingModes.erase} ${t.tools.terrain.radius}`}
                 min="0.2"
                 max="2.5"
                 step="0.1"
@@ -664,10 +664,10 @@ export const ContextualDock: React.FC = () => {
           ) : (
             <span className="text-xs font-semibold text-[#4B382C]">
               {lightingSubTool === 'place'
-                ? 'Click on terrain or ramparts to place diya or firework'
+                ? t.toolModeSidebar.lightingTitles.place
                 : lightingSubTool === 'select'
-                ? 'Select a placed diya or firework to inspect or test'
-                : 'Transform or nudge selected diya or firework'}
+                ? t.toolModeSidebar.lightingTitles.select
+                : t.toolModeSidebar.lightingTitles.transform}
             </span>
           )}
         </div>

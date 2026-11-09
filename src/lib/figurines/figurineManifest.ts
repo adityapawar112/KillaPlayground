@@ -8,9 +8,9 @@ import { FigurineCategory, FigurineCategoryInfo, FigurineItem } from './figurine
 export const FIGURINE_CATEGORIES: FigurineCategoryInfo[] = [
   {
     id: 'royalty',
-    name: 'Royalty & Sinhasan',
+    name: 'Royalty & Court',
     devanagari: 'शाही दरबारी व सिंहासन',
-    description: 'Chhatrapati Shivaji Maharaj on the royal throne (Sinhasan), royal attendants, and commanders.',
+    description: 'Chhatrapati Shivaji Maharaj on the royal throne, royal attendants, and commanders.',
     accentColor: '#B85F45',
   },
   {
@@ -83,7 +83,7 @@ export const FIGURINE_MANIFEST: FigurineItem[] = [
     faceCount: 1050,
     defaultScale: 1.0,
     dimensions: { width: 0.65, height: 0.85, depth: 0.65 },
-    culturalLore: 'Chhatrapati Shivaji Maharaj seated upon the golden Sinhasan, centerpiece of the Raigad court.',
+    culturalLore: 'Chhatrapati Shivaji Maharaj seated upon the golden throne, centerpiece of the Raigad court.',
   },
   {
     id: 'horse_rider',
@@ -219,7 +219,7 @@ export const FIGURINE_MANIFEST: FigurineItem[] = [
     faceCount: 1042,
     defaultScale: 1.0,
     dimensions: { width: 0.15, height: 0.14, depth: 0.15 },
-    culturalLore: 'Women grinding wheat flour upon the traditional rotary stone quern (Jate) while singing Ovi verses.',
+    culturalLore: 'Women grinding wheat flour upon the traditional rotary stone quern while singing Ovi verses.',
   },
   {
     id: 'women_mortar_pestle',
@@ -231,7 +231,7 @@ export const FIGURINE_MANIFEST: FigurineItem[] = [
     faceCount: 1052,
     defaultScale: 1.0,
     dimensions: { width: 0.05, height: 0.15, depth: 0.08 },
-    culturalLore: 'Village woman rhythmically pounding grain and spices in the wooden stone mortar (Ukhal).',
+    culturalLore: 'Village woman rhythmically pounding grain and spices in the wooden stone mortar.',
   },
 
   // 4. Festive Musicians

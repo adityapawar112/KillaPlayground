@@ -84,7 +84,7 @@ const LOCALE_PRESETS = {
       'Our Diwali Fort',
     ],
     defaultTitle: 'The Killa Playground',
-    defaultBuilder: 'Mavala',
+    defaultBuilder: 'Builder',
     greetings: [
       'Happy Diwali & Prosperous New Year',
       'Happy Diwali',
@@ -94,14 +94,14 @@ const LOCALE_PRESETS = {
     defaultGreeting: 'Happy Diwali & Prosperous New Year',
     creditLine: (name: string) => `Created by: ${name} • Diwali 2026`,
     perspectives: {
-      isometric: 'Isometric (45°)',
+      isometric: 'Isometric',
       top: "Bird's Eye",
       rampart: 'Rampart Eye',
       bastion: 'Bastion Hero',
     },
     times: {
-      dawn: 'Dawn (06:00)',
-      noon: 'Noon (12:00)',
+      dawn: 'Dawn',
+      noon: 'Noon',
       sunset: 'Golden Hour',
       night: 'Diwali Night',
     },
@@ -112,7 +112,7 @@ const LOCALE_PRESETS = {
       'stack-3': '3 Rows',
       'hero-top-2-bottom': '1 Hero + 2 Split',
       'hero-bottom-2-top': '2 Split + 1 Hero',
-      'stack-4': '4 Rows (Default)',
+      'stack-4': '4 Rows',
       'quad-4': '2×2 Quad Grid',
       'hero-top-3-stack': '1 Hero + 3 Rows',
     },
@@ -122,7 +122,7 @@ const LOCALE_PRESETS = {
       'royal-plaque': 'Royal Plaque',
       'none': 'Pure Artwork',
     },
-    cleanNone: 'None (Clean)',
+    cleanNone: 'None',
   },
   mr: {
     titles: [
@@ -143,15 +143,15 @@ const LOCALE_PRESETS = {
     defaultGreeting: 'दिवाळीच्या हार्दिक शुभेच्छा',
     creditLine: (name: string) => `निर्मिती: ${name} • दिवाळी २०२६`,
     perspectives: {
-      isometric: 'त्रिमितीय देखावा (४५°)',
+      isometric: 'त्रिमितीय देखावा',
       top: 'विहंगम देखावा',
       rampart: 'तटबंदी देखावा',
       bastion: 'बुरुज देखावा',
     },
     times: {
-      dawn: 'पहाट (०६:००)',
-      noon: 'दुपार (१२:००)',
-      sunset: 'गोधूलि (१७:३०)',
+      dawn: 'पहाट',
+      noon: 'दुपार',
+      sunset: 'गोधूलि',
       night: 'दिवाळी रात्र',
     },
     grids: {
@@ -161,7 +161,7 @@ const LOCALE_PRESETS = {
       'stack-3': '३ पट्ट्या',
       'hero-top-2-bottom': '१ मुख्य + २ पट्ट्या',
       'hero-bottom-2-top': '२ पट्ट्या + १ मुख्य',
-      'stack-4': '४ पट्ट्या (मूळ)',
+      'stack-4': '४ पट्ट्या',
       'quad-4': '२×२ चौकोन',
       'hero-top-3-stack': '१ मुख्य + ३ पट्ट्या',
     },
@@ -171,7 +171,7 @@ const LOCALE_PRESETS = {
       'royal-plaque': 'राजकीय शिलालेख',
       'none': 'केवळ कलाकृती',
     },
-    cleanNone: 'काही नाही (स्वच्छ)',
+    cleanNone: 'काही नाही',
   },
   hi: {
     titles: [
@@ -192,15 +192,15 @@ const LOCALE_PRESETS = {
     defaultGreeting: 'शुभ दीपावली',
     creditLine: (name: string) => `रचना: ${name} • दिवाली २०२६`,
     perspectives: {
-      isometric: 'त्रिविमीय दृश्य (४५°)',
+      isometric: 'त्रिविमीय दृश्य',
       top: 'विहंगम दृश्य',
       rampart: 'परकोटा दृश्य',
       bastion: 'बुर्ज दृश्य',
     },
     times: {
-      dawn: 'उषाकाल (06:00)',
-      noon: 'दोपहर (12:00)',
-      sunset: 'गोधूलि (17:30)',
+      dawn: 'उषाकाल',
+      noon: 'दोपहर',
+      sunset: 'गोधूलि',
       night: 'दिवाली रात',
     },
     grids: {
@@ -210,7 +210,7 @@ const LOCALE_PRESETS = {
       'stack-3': '3 पंक्तियाँ',
       'hero-top-2-bottom': '1 मुख्य + 2 पंक्तियाँ',
       'hero-bottom-2-top': '2 पंक्तियाँ + 1 मुख्य',
-      'stack-4': '4 पंक्तियाँ (मूल)',
+      'stack-4': '4 पंक्तियाँ',
       'quad-4': '2×2 चौकोर',
       'hero-top-3-stack': '1 मुख्य + 3 पंक्तियाँ',
     },
@@ -220,7 +220,7 @@ const LOCALE_PRESETS = {
       'royal-plaque': 'राजकीय शिलालेख',
       'none': 'केवल कलाकृति',
     },
-    cleanNone: 'कोई नहीं (खाली)',
+    cleanNone: 'कोई नहीं',
   },
 };
 

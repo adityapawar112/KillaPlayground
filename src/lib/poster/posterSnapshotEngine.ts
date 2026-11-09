@@ -19,6 +19,7 @@ export interface CameraPerspectiveDef {
   id: CameraPerspectiveId;
   name: string;
   marathiName: string;
+  hindiName: string;
   position: [number, number, number];
   target: [number, number, number];
   fov: number;
@@ -27,32 +28,36 @@ export interface CameraPerspectiveDef {
 export const CAMERA_PERSPECTIVES: Record<Exclude<CameraPerspectiveId, 'current'>, CameraPerspectiveDef> = {
   isometric: {
     id: 'isometric',
-    name: 'Isometric (45°)',
-    marathiName: 'त्रिमितीय देखावा (४५°)',
+    name: 'Isometric',
+    marathiName: 'त्रिमितीय देखावा',
+    hindiName: 'त्रिविमीय दृश्य',
     position: [7, 7, 7],
     target: [0, 0.5, 0],
     fov: 45,
   },
   top: {
     id: 'top',
-    name: "Bird's Eye (Top-Down)",
-    marathiName: 'विहंगम देखावा (वरतून)',
+    name: "Bird's Eye",
+    marathiName: 'विहंगम देखावा',
+    hindiName: 'विहंगम दृश्य',
     position: [0, 14, 0.001],
     target: [0, 0, 0],
     fov: 42,
   },
   rampart: {
     id: 'rampart',
-    name: 'Rampart Eye (15° Low)',
-    marathiName: 'तटबंदी देखावा (१५°)',
+    name: 'Ramparts',
+    marathiName: 'तटबंदी देखावा',
+    hindiName: 'परकोटा दृश्य',
     position: [3, 1.2, 4.5],
     target: [0, 0.8, 0],
     fov: 48,
   },
   bastion: {
     id: 'bastion',
-    name: 'Bastion Hero (30° Citadel)',
-    marathiName: 'बुरुज व बालेकिल्ला (३०°)',
+    name: 'Bastion Hero',
+    marathiName: 'बुरुज देखावा',
+    hindiName: 'बुर्ज दृश्य',
     position: [-4.5, 2.5, 4.5],
     target: [0, 1.0, 0],
     fov: 40,

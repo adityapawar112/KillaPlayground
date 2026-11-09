@@ -2,42 +2,42 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  TbBuildingFortress,
-  TbTower,
-  TbDoorEnter,
-  TbChevronRight,
-  TbChevronDown,
-  TbTrash,
-  TbFocus2,
-  TbBox,
-  TbStairs,
-  TbFlag,
-  TbFlame,
-  TbChevronLeft,
-  TbPointer,
-  TbPencil,
-  TbArrowsMove,
-  TbMountain,
-  TbMinus,
-  TbArrowUpRight,
-  TbTrendingDown,
-  TbWaveSine,
-  TbRipple,
-  TbDropletHalf2,
-  TbBrush,
-  TbAdjustmentsHorizontal,
-  TbDice5,
-  TbX,
-  TbCheck,
-  TbSearch,
-  TbPalette,
-  TbTrees,
-  TbUsersGroup,
-  TbCopy,
-  TbAnchor,
-  TbCircleHalf2,
-  TbSparkles,
-} from 'react-icons/tb';
+  Castle,
+  TowerControl,
+  DoorOpen,
+  ChevronRight,
+  ChevronDown,
+  Trash2,
+  Focus,
+  Box,
+  Footprints,
+  Flag,
+  Flame,
+  ChevronLeft,
+  MousePointer,
+  Pencil,
+  Move,
+  Mountain,
+  Minus,
+  ArrowUpRight,
+  TrendingDown,
+  Activity,
+  Waves,
+  Droplets,
+  Paintbrush,
+  SlidersHorizontal,
+  Dices,
+  X,
+  Check,
+  Search,
+  Palette,
+  Trees,
+  Users,
+  Copy,
+  Anchor,
+  CircleDot,
+  Sparkles,
+} from 'lucide-react';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { WallMode } from '@/lib/walls/wallTypes';
 import { SplineMode, SplineConversionType } from '@/lib/spline/splineTypes';
@@ -310,7 +310,7 @@ export const RightToolSidebar: React.FC = () => {
         >
           <button
             onClick={toggleRightSidebar}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#D8D1C5] rounded-b-lg shadow-sm text-xs font-semibold text-[#2B2621] active:scale-95 transition-transform cursor-pointer"
             title={
               activeTool === 'foliage'
                 ? t.sidebars.right.openFoliage
@@ -324,15 +324,15 @@ export const RightToolSidebar: React.FC = () => {
             }
           >
             {activeTool === 'foliage' ? (
-              <TbTrees className="w-3.5 h-3.5 text-[#15803D]" />
+              <Trees className="w-3.5 h-3.5 text-[#15803D]" />
             ) : activeTool === 'texture' || activeTool === 'paint' ? (
-              <TbPalette className="w-3.5 h-3.5 text-[#8F4938]" />
+              <Palette className="w-3.5 h-3.5 text-[#8F4938]" />
             ) : activeTool === 'prop' ? (
-              <TbUsersGroup className="w-3.5 h-3.5 text-[#B85F45]" />
+              <Users className="w-3.5 h-3.5 text-[#B85F45]" />
             ) : activeTool === 'lighting' ? (
-              <TbFlame className="w-3.5 h-3.5 text-[#F59E0B]" />
+              <Flame className="w-3.5 h-3.5 text-[#F59E0B]" />
             ) : (
-              <TbBuildingFortress className="w-3.5 h-3.5 text-[#8F4938]" />
+              <Castle className="w-3.5 h-3.5 text-[#8F4938]" />
             )}
             <span className="text-[11px] font-bold">
               {activeTool === 'foliage'
@@ -345,7 +345,7 @@ export const RightToolSidebar: React.FC = () => {
                 ? t.sidebars.right.lighting
                 : t.sidebars.right.outliner}
             </span>
-            <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
       )}
@@ -354,7 +354,7 @@ export const RightToolSidebar: React.FC = () => {
       <aside
         aria-label="Right Tools Sidebar"
         style={{ width: `${sidebarWidth}px` }}
-        className={`fixed right-0 bottom-0 z-20 flex flex-col bg-[#F3EBE0] border-l border-[#CDBCAB] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
+        className={`fixed right-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-l border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
           isRightSidebarMinimized ? 'translate-x-full' : 'translate-x-0'
         } ${
           !showContextualDock
@@ -382,18 +382,18 @@ export const RightToolSidebar: React.FC = () => {
         </div>
 
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-3 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
-          <div className="flex items-center gap-1.5 text-[#4B382C]">
+        <div className="flex items-center justify-between p-3 border-b border-[#D8D1C5] shrink-0 bg-[#ECE2D5]/70">
+          <div className="flex items-center gap-1.5 text-[#2B2621]">
             {activeTool === 'foliage' ? (
-              <TbTrees className="w-4 h-4 text-[#15803D]" />
+              <Trees className="w-4 h-4 text-[#15803D]" />
             ) : activeTool === 'texture' || activeTool === 'paint' ? (
-              <TbPalette className="w-4 h-4 text-[#8F4938]" />
+              <Palette className="w-4 h-4 text-[#8F4938]" />
             ) : activeTool === 'prop' ? (
-              <TbUsersGroup className="w-4 h-4 text-[#B85F45]" />
+              <Users className="w-4 h-4 text-[#B85F45]" />
             ) : activeTool === 'lighting' ? (
-              <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+              <Flame className="w-4 h-4 text-[#F59E0B]" />
             ) : (
-              <TbBuildingFortress className="w-4 h-4 text-[#8F4938]" />
+              <Castle className="w-4 h-4 text-[#8F4938]" />
             )}
             <span className="text-xs font-bold uppercase tracking-wider">
               {activeTool === 'building' || activeTool === 'walls'
@@ -411,22 +411,22 @@ export const RightToolSidebar: React.FC = () => {
                 : t.sidebars.right.propsOutliner}
             </span>
             {(activeTool === 'texture' || activeTool === 'paint') && (
-              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 52
               </span>
             )}
             {activeTool === 'foliage' && (
-              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 {FOLIAGE_MANIFEST.length}
               </span>
             )}
             {activeTool === 'prop' && propSubTool === 'place' && (
-              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 {FIGURINE_MANIFEST.length}
               </span>
             )}
             {activeTool === 'lighting' && lightingSubTool === 'place' && (
-              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
                 {LIGHTING_MANIFEST.length}
               </span>
             )}
@@ -438,13 +438,13 @@ export const RightToolSidebar: React.FC = () => {
               title={t.sidebars.right.minimizeOutliner}
               className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
             >
-              <TbChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Scrollable Container */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3.5 text-xs text-[#4B382C]">
+        <div className="flex-1 overflow-y-auto p-3 space-y-3.5 text-xs text-[#2B2621]">
           {/* ======================================================== */}
           {/* A. TEXTURE ASSET BROWSER (Ticket 06 - Texture Active)     */}
           {/* ======================================================== */}
@@ -452,20 +452,20 @@ export const RightToolSidebar: React.FC = () => {
             <div className="space-y-3.5">
               {/* Search Bar */}
               <div className="relative">
-                <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7C7267]" />
                 <input
                   type="text"
                   value={paintSearchQuery}
                   onChange={(e) => setPaintSearchQuery(e.target.value)}
                   placeholder={t.sidebars.right.searchTextures}
-                  className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                  className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] rounded-xl text-xs text-[#2B2621] placeholder-[#8D7666] focus:outline-none focus:border-[#B85F45] focus:ring-1 focus:ring-[#BFA892]"
                 />
                 {paintSearchQuery && (
                   <button
                     onClick={() => setPaintSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#7C7267] hover:text-[#2B2621] cursor-pointer"
                   >
-                    <TbX className="w-3.5 h-3.5" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -476,8 +476,8 @@ export const RightToolSidebar: React.FC = () => {
                   onClick={() => setPaintCategoryFilter('all')}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                     paintCategoryFilter === 'all'
-                      ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                      : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                      : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                   }`}
                 >
                   {t.common.all} (52)
@@ -492,8 +492,8 @@ export const RightToolSidebar: React.FC = () => {
                       onClick={() => setPaintCategoryFilter(cat.id)}
                       className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                       }`}
                     >
                       <span
@@ -509,7 +509,7 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* Categorized Texture Groups with Dividers */}
               {filteredCategories.length === 0 ? (
-                <div className="text-center py-8 text-[#8D7666] italic text-xs">
+                <div className="text-center py-8 text-[#7C7267] italic text-xs">
                   {t.sidebars.right.noTexturesFound} "{paintSearchQuery}"
                 </div>
               ) : (
@@ -521,15 +521,15 @@ export const RightToolSidebar: React.FC = () => {
                   return (
                     <div key={cat.id} className="space-y-2">
                       {/* Section Divider & Header */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-2 border-t border-[#D8D1C5]">
                         <span
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: cat.accentColor }}
                         />
-                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                           {catName}
                         </span>
-                        <span className="text-[9px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
+                        <span className="text-[9px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
                           {items.length}
                         </span>
                       </div>
@@ -552,7 +552,7 @@ export const RightToolSidebar: React.FC = () => {
                               className={`p-1.5 rounded-xl border text-left transition-all cursor-pointer relative group flex flex-col ${
                                 isSelected
                                   ? 'border-[#E85D04] ring-2 ring-[#E85D04] bg-[#FFFBF7] shadow-sm scale-[1.01]'
-                                  : 'border-[#D9C9B4] bg-[#FAF8F5] hover:bg-[#EADECF] hover:border-[#BFA892]'
+                                  : 'border-[#D8D1C5] bg-[#FAF8F5] hover:bg-[#D8D1C5] hover:border-[#B85F45]'
                               }`}
                             >
                               {/* Thumbnail Image */}
@@ -567,7 +567,7 @@ export const RightToolSidebar: React.FC = () => {
                                 {/* Selected Checkmark Badge */}
                                 {isSelected && (
                                   <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#E85D04] text-white flex items-center justify-center shadow-xs">
-                                    <TbCheck className="w-3 h-3 stroke-[3]" />
+                                    <Check className="w-3 h-3 stroke-[3]" />
                                   </div>
                                 )}
 
@@ -579,10 +579,10 @@ export const RightToolSidebar: React.FC = () => {
 
                               {/* Label & Culture Subtitle */}
                               <div className="mt-1.5 min-w-0">
-                                <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                <div className="text-[11px] font-bold text-[#2B2621] truncate leading-snug">
                                   {item.name}
                                 </div>
-                                <div className="text-[9px] text-[#8D7666] truncate leading-tight">
+                                <div className="text-[9px] text-[#7C7267] truncate leading-tight">
                                   {item.culturalLore || item.category}
                                 </div>
                               </div>
@@ -599,20 +599,20 @@ export const RightToolSidebar: React.FC = () => {
             <div className="space-y-3.5">
               {/* Search Bar */}
               <div className="relative">
-                <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7C7267]" />
                 <input
                   type="text"
                   value={foliageSearchQuery}
                   onChange={(e) => setFoliageSearchQuery(e.target.value)}
                   placeholder={t.sidebars.right.searchFoliage}
-                  className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                  className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] rounded-xl text-xs text-[#2B2621] placeholder-[#8D7666] focus:outline-none focus:border-[#B85F45] focus:ring-1 focus:ring-[#BFA892]"
                 />
                 {foliageSearchQuery && (
                   <button
                     onClick={() => setFoliageSearchQuery('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#7C7267] hover:text-[#2B2621] cursor-pointer"
                   >
-                    <TbX className="w-3.5 h-3.5" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -623,8 +623,8 @@ export const RightToolSidebar: React.FC = () => {
                   onClick={() => setFoliageCategoryFilter('all')}
                   className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                     foliageCategoryFilter === 'all'
-                      ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                      : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                      ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                      : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                   }`}
                 >
                   {t.common.all} ({FOLIAGE_MANIFEST.length})
@@ -639,8 +639,8 @@ export const RightToolSidebar: React.FC = () => {
                       onClick={() => setFoliageCategoryFilter(cat.id)}
                       className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                         isActive
-                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                       }`}
                     >
                       <span
@@ -656,7 +656,7 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* Categorized Foliage Groups with Dividers */}
               {filteredFoliageCategories.length === 0 ? (
-                <div className="text-center py-8 text-[#8D7666] italic text-xs">
+                <div className="text-center py-8 text-[#7C7267] italic text-xs">
                   {t.sidebars.right.noFoliageFound} "{foliageSearchQuery}"
                 </div>
               ) : (
@@ -668,15 +668,15 @@ export const RightToolSidebar: React.FC = () => {
                   return (
                     <div key={cat.id} className="space-y-2">
                       {/* Section Divider & Header */}
-                      <div className="flex items-center gap-2 pt-2 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-2 border-t border-[#D8D1C5]">
                         <span
                           className="w-2 h-2 rounded-full shrink-0"
                           style={{ backgroundColor: cat.accentColor }}
                         />
-                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                           {catName}
                         </span>
-                        <span className="text-[9px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
+                        <span className="text-[9px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
                           {items.length}
                         </span>
                       </div>
@@ -709,7 +709,7 @@ export const RightToolSidebar: React.FC = () => {
                               className={`p-1.5 rounded-xl border text-left transition-all cursor-pointer relative group flex flex-col ${
                                 isSelected
                                   ? 'border-[#15803D] ring-2 ring-[#15803D] bg-[#F4F9F5] shadow-sm scale-[1.01]'
-                                  : 'border-[#D9C9B4] bg-[#FAF8F5] hover:bg-[#EADECF] hover:border-[#BFA892]'
+                                  : 'border-[#D8D1C5] bg-[#FAF8F5] hover:bg-[#D8D1C5] hover:border-[#B85F45]'
                               }`}
                             >
                               {/* Thumbnail Image */}
@@ -724,7 +724,7 @@ export const RightToolSidebar: React.FC = () => {
                                 {/* Selected Checkmark Badge */}
                                 {isSelected && (
                                   <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#15803D] text-white flex items-center justify-center shadow-xs">
-                                    <TbCheck className="w-3 h-3 stroke-[3]" />
+                                    <Check className="w-3 h-3 stroke-[3]" />
                                   </div>
                                 )}
 
@@ -736,10 +736,10 @@ export const RightToolSidebar: React.FC = () => {
 
                               {/* Label & Culture Subtitle */}
                               <div className="mt-1.5 min-w-0">
-                                <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                <div className="text-[11px] font-bold text-[#2B2621] truncate leading-snug">
                                   {item.name}
                                 </div>
-                                <div className="text-[9px] text-[#8D7666] truncate leading-tight">
+                                <div className="text-[9px] text-[#7C7267] truncate leading-tight">
                                   {item.culturalLore || item.category}
                                 </div>
                               </div>
@@ -757,13 +757,13 @@ export const RightToolSidebar: React.FC = () => {
               {/* ======================================================== */}
               {/* 1. PLACED FIGURINES OUTLINER                             */}
               {/* ======================================================== */}
-              <div className="space-y-1.5 pb-3 border-b border-[#D9C9B4]">
+              <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       {t.sidebars.right.placedFigurines}
                     </span>
-                    <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
                       {placedProps.length} / 250
                     </span>
                   </div>
@@ -779,7 +779,7 @@ export const RightToolSidebar: React.FC = () => {
 
                 <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
                   {placedProps.length === 0 ? (
-                    <div className="text-center py-4 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                    <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
                       {t.sidebars.right.noFigurines}
                     </div>
                   ) : (
@@ -808,8 +808,8 @@ export const RightToolSidebar: React.FC = () => {
                             isSelected
                               ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
                               : isHovered
-                              ? 'bg-[#EADECF] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#4B382C]'
-                              : 'bg-[#FAF8F5] hover:bg-[#EADECF] border-[#D9C9B4] text-[#4B382C]'
+                              ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
+                              : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -826,7 +826,7 @@ export const RightToolSidebar: React.FC = () => {
                             <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
                             <span
                               className={`text-[9px] font-mono shrink-0 ${
-                                isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
                               }`}
                             >
                               ({prop.position[0].toFixed(1)}, {prop.position[2].toFixed(1)})
@@ -843,7 +843,7 @@ export const RightToolSidebar: React.FC = () => {
                               title={t.sidebars.right.focusCamera}
                               className="p-1 rounded hover:bg-black/10 cursor-pointer"
                             >
-                              <TbFocus2 className="w-3.5 h-3.5" />
+                              <Focus className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -853,7 +853,7 @@ export const RightToolSidebar: React.FC = () => {
                               title={t.sidebars.right.deleteElement}
                               className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                             >
-                              <TbTrash className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -869,30 +869,30 @@ export const RightToolSidebar: React.FC = () => {
               {propSubTool === 'place' ? (
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       {t.sidebars.right.figurineVault}
                     </span>
-                    <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
                       {FIGURINE_MANIFEST.length} {t.sidebars.right.models}
                     </span>
                   </div>
 
                   {/* Search Bar */}
                   <div className="relative">
-                    <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7C7267]" />
                     <input
                       type="text"
                       value={propSearchQuery}
                       onChange={(e) => setPropSearchQuery(e.target.value)}
                       placeholder={t.sidebars.right.searchFigurines}
-                      className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                      className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] rounded-xl text-xs text-[#2B2621] placeholder-[#8D7666] focus:outline-none focus:border-[#B85F45] focus:ring-1 focus:ring-[#BFA892]"
                     />
                     {propSearchQuery && (
                       <button
                         onClick={() => setPropSearchQuery('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#7C7267] hover:text-[#2B2621] cursor-pointer"
                       >
-                        <TbX className="w-3.5 h-3.5" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -903,8 +903,8 @@ export const RightToolSidebar: React.FC = () => {
                       onClick={() => setPropCategoryFilter('all')}
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                         propCategoryFilter === 'all'
-                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                       }`}
                     >
                       {t.common.all} ({FIGURINE_MANIFEST.length})
@@ -919,8 +919,8 @@ export const RightToolSidebar: React.FC = () => {
                           onClick={() => setPropCategoryFilter(cat.id)}
                           className={`flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                             isActive
-                              ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                              : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                              ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                              : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                           }`}
                         >
                           <span
@@ -936,7 +936,7 @@ export const RightToolSidebar: React.FC = () => {
 
                   {/* Categorized Figurine Groups with Dividers */}
                   {filteredFigurineCategories.length === 0 ? (
-                    <div className="text-center py-8 text-[#8D7666] italic text-xs">
+                    <div className="text-center py-8 text-[#7C7267] italic text-xs">
                       {t.sidebars.right.noFigurinesFound} "{propSearchQuery}"
                     </div>
                   ) : (
@@ -948,15 +948,15 @@ export const RightToolSidebar: React.FC = () => {
                       return (
                         <div key={cat.id} className="space-y-2">
                           {/* Section Divider & Header */}
-                          <div className="flex items-center gap-2 pt-2 border-t border-[#D9C9B4]">
+                          <div className="flex items-center gap-2 pt-2 border-t border-[#D8D1C5]">
                             <span
                               className="w-2 h-2 rounded-full shrink-0"
                               style={{ backgroundColor: cat.accentColor }}
                             />
-                            <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                            <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                               {catName}
                             </span>
-                            <span className="text-[9px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
+                            <span className="text-[9px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.2 rounded-full ml-auto">
                               {items.length}
                             </span>
                           </div>
@@ -975,8 +975,8 @@ export const RightToolSidebar: React.FC = () => {
                                   }}
                                   className={`group relative flex flex-col text-left p-2 rounded-xl transition-all cursor-pointer ${
                                     isSelected
-                                      ? 'bg-[#EADECF] ring-2 ring-[#B85F45] shadow-sm'
-                                      : 'bg-[#FAF8F5] border border-[#D9C9B4] hover:border-[#BFA892] hover:bg-[#F2EBE1]'
+                                      ? 'bg-[#FAF8F5] ring-2 ring-[#B85F45] shadow-sm'
+                                      : 'bg-[#FAF8F5] border border-[#D8D1C5] hover:border-[#B85F45] hover:bg-[#FAF8F5]'
                                   }`}
                                 >
                                   {/* 128x128 Aspect Square Container */}
@@ -992,15 +992,15 @@ export const RightToolSidebar: React.FC = () => {
                                         if (fb) (fb as HTMLElement).style.display = 'flex';
                                       }}
                                     />
-                                    <div className="fallback-icon hidden flex-col items-center justify-center text-[#8D7666] group-hover:scale-105 transition-transform duration-200">
-                                      <TbUsersGroup className="w-10 h-10 text-[#8F4938]/70" />
-                                      <span className="text-[8px] font-bold text-[#8D7666] mt-1">3D SOLID</span>
+                                    <div className="fallback-icon hidden flex-col items-center justify-center text-[#7C7267] group-hover:scale-105 transition-transform duration-200">
+                                      <Users className="w-10 h-10 text-[#8F4938]/70" />
+                                      <span className="text-[8px] font-bold text-[#7C7267] mt-1">3D SOLID</span>
                                     </div>
 
                                     {/* Selected Checkmark Badge */}
                                     {isSelected && (
                                       <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#15803D] text-white flex items-center justify-center shadow-xs">
-                                        <TbCheck className="w-3 h-3 stroke-[3]" />
+                                        <Check className="w-3 h-3 stroke-[3]" />
                                       </div>
                                     )}
 
@@ -1012,7 +1012,7 @@ export const RightToolSidebar: React.FC = () => {
 
                                   {/* Label */}
                                   <div className="mt-1.5 min-w-0">
-                                    <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                    <div className="text-[11px] font-bold text-[#2B2621] truncate leading-snug">
                                       {itemName}
                                     </div>
                                   </div>
@@ -1029,7 +1029,7 @@ export const RightToolSidebar: React.FC = () => {
                 /* ELEMENT PROPERTIES INSPECTOR */
                 <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       {t.sidebars.right.elementProperties}
                     </span>
                     {selectedProp && (
@@ -1051,32 +1051,32 @@ export const RightToolSidebar: React.FC = () => {
                       );
 
                       return (
-                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                          <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                            <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                              <TbUsersGroup className="w-4 h-4 text-[#B85F45]" />
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                          <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                            <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                              <Users className="w-4 h-4 text-[#B85F45]" />
                               <span>{t.sidebars.right.figurineSpecs}</span>
                             </div>
                           </div>
 
                           {/* Name Input */}
                           <div>
-                            <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                            <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                             <div className="flex items-center gap-1 mt-0.5">
                               <input
                                 type="text"
                                 readOnly
                                 value={(locale === 'mr' || locale === 'hi') && meta?.devanagariName ? meta.devanagariName : (meta?.name || t.sidebars.right.figurines)}
-                                className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                                className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                               />
                             </div>
                           </div>
 
                           {/* Scale Slider */}
                           <div>
-                            <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                               <span>{t.sidebars.left.scaleMultiplier}</span>
-                              <span className="text-[#8D7666]">{currentScale.toFixed(2)}x</span>
+                              <span className="text-[#7C7267]">{currentScale.toFixed(2)}x</span>
                             </div>
                             <input
                               type="range"
@@ -1094,9 +1094,9 @@ export const RightToolSidebar: React.FC = () => {
 
                           {/* Heading Rotation Slider */}
                           <div>
-                            <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                               <span>{t.sidebars.left.headingRotation}</span>
-                              <span className="text-[#8D7666]">{currentHeadingDeg}°</span>
+                              <span className="text-[#7C7267]">{currentHeadingDeg}°</span>
                             </div>
                             <input
                               type="range"
@@ -1119,23 +1119,23 @@ export const RightToolSidebar: React.FC = () => {
                           <div className="grid grid-cols-2 gap-2 pt-0.5">
                             <button
                               onClick={() => duplicateProp(selectedProp.id)}
-                              className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                              className="py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                             >
                               {t.sidebars.left.duplicate}
                             </button>
                             <button
                               onClick={() => snapPropToSurface(selectedProp.id)}
-                              className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                              className="py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                             >
                               {t.sidebars.left.snapToSurface}
                             </button>
                           </div>
 
                           {/* Focus and Delete Row (Matching Walls & Splines) */}
-                          <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                          <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                             <button
                               onClick={focusCamera}
-                              className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                              className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                             >
                               {t.common.focus}
                             </button>
@@ -1153,7 +1153,7 @@ export const RightToolSidebar: React.FC = () => {
                       );
                     })()
                   ) : (
-                    <div className="text-center py-6 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                    <div className="text-center py-6 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
                       Select a figurine from the list above or diorama to edit properties.
                     </div>
                   )}
@@ -1168,30 +1168,30 @@ export const RightToolSidebar: React.FC = () => {
                 /* ======================================================== */
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       {t.sidebars.right.lightingVault}
                     </span>
-                    <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
                       {LIGHTING_MANIFEST.length} {t.sidebars.right.items}
                     </span>
                   </div>
 
                   {/* Search Bar */}
                   <div className="relative">
-                    <TbSearch className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#8D7666]" />
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#7C7267]" />
                     <input
                       type="text"
                       value={lightingSearchQuery}
                       onChange={(e) => setLightingSearchQuery(e.target.value)}
                       placeholder={t.sidebars.right.searchLighting}
-                      className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] rounded-xl text-xs text-[#4B382C] placeholder-[#8D7666] focus:outline-none focus:border-[#BFA892] focus:ring-1 focus:ring-[#BFA892]"
+                      className="w-full pl-8 pr-7 py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] rounded-xl text-xs text-[#2B2621] placeholder-[#8D7666] focus:outline-none focus:border-[#B85F45] focus:ring-1 focus:ring-[#BFA892]"
                     />
                     {lightingSearchQuery && (
                       <button
                         onClick={() => setLightingSearchQuery('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-[#7C7267] hover:text-[#2B2621] cursor-pointer"
                       >
-                        <TbX className="w-3.5 h-3.5" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </div>
@@ -1202,8 +1202,8 @@ export const RightToolSidebar: React.FC = () => {
                       onClick={() => setLightingCategoryFilter('all')}
                       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                         lightingCategoryFilter === 'all'
-                          ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                          : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                       }`}
                     >
                       {t.common.all} ({LIGHTING_MANIFEST.length})
@@ -1218,8 +1218,8 @@ export const RightToolSidebar: React.FC = () => {
                           onClick={() => setLightingCategoryFilter(cat.id)}
                           className={`px-2.5 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all cursor-pointer ${
                             isActive
-                              ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                              : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D9C9B4] hover:bg-[#EADECF]'
+                              ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs'
+                              : 'bg-[#FAF8F5] text-[#5C4638] border border-[#D8D1C5] hover:bg-[#D8D1C5]'
                           }`}
                         >
                           {catName} ({count})
@@ -1231,7 +1231,7 @@ export const RightToolSidebar: React.FC = () => {
                   {/* Categories & 2-Column Cards Grid */}
                   <div className="space-y-4 max-h-[calc(100vh-290px)] overflow-y-auto pr-0.5">
                     {filteredLightingCategories.length === 0 ? (
-                      <div className="text-center py-8 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                      <div className="text-center py-8 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
                         {t.sidebars.right.noLightingFound} &ldquo;{lightingSearchQuery}&rdquo;
                       </div>
                     ) : (
@@ -1246,7 +1246,7 @@ export const RightToolSidebar: React.FC = () => {
 
                         return (
                           <div key={cat.id} className="space-y-1.5">
-                            <div className="flex items-center justify-between text-[10px] font-bold text-[#8D7666] uppercase tracking-wider px-1">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-[#7C7267] uppercase tracking-wider px-1">
                               <span>{catName}</span>
                               <span>{items.length}</span>
                             </div>
@@ -1263,11 +1263,11 @@ export const RightToolSidebar: React.FC = () => {
                                     className={`group relative text-left p-2 rounded-xl border transition-all cursor-pointer ${
                                       isSelected
                                         ? 'bg-[#FAF8F5] border-[#B85F45] ring-2 ring-[#B85F45] shadow-sm'
-                                        : 'bg-[#FAF8F5] border-[#D9C9B4] hover:border-[#B85F45]/60 hover:bg-[#FAF8F5]/90 hover:shadow-xs'
+                                        : 'bg-[#FAF8F5] border-[#D8D1C5] hover:border-[#B85F45]/60 hover:bg-[#FAF8F5]/90 hover:shadow-xs'
                                     }`}
                                   >
                                     {/* Image preview / procedural fallback */}
-                                    <div className="relative aspect-4/3 rounded-lg bg-[#EADECF]/50 border border-[#D9C9B4]/60 overflow-hidden flex items-center justify-center">
+                                    <div className="relative aspect-4/3 rounded-lg bg-[#FAF8F5]/50 border border-[#D8D1C5]/60 overflow-hidden flex items-center justify-center">
                                       <img
                                         src={item.previewPath}
                                         alt={itemName}
@@ -1278,13 +1278,13 @@ export const RightToolSidebar: React.FC = () => {
                                           if (fb) (fb as HTMLElement).style.display = 'flex';
                                         }}
                                       />
-                                      <div className="fallback-icon hidden flex-col items-center justify-center text-[#8D7666] group-hover:scale-105 transition-transform duration-200">
+                                      <div className="fallback-icon hidden flex-col items-center justify-center text-[#7C7267] group-hover:scale-105 transition-transform duration-200">
                                         {item.category === 'fireworks' ? (
-                                          <TbSparkles className="w-8 h-8 text-[#F59E0B]" />
+                                          <Sparkles className="w-8 h-8 text-[#F59E0B]" />
                                         ) : (
-                                          <TbFlame className="w-8 h-8 text-[#F59E0B]" />
+                                          <Flame className="w-8 h-8 text-[#F59E0B]" />
                                         )}
-                                        <span className="text-[7.5px] font-bold text-[#8D7666] mt-0.5 uppercase">
+                                        <span className="text-[7.5px] font-bold text-[#7C7267] mt-0.5 uppercase">
                                           {item.category === 'fireworks' ? (item.fireworkType === 'anaar' ? 'Fountain' : 'Sky Shot') : 'Diya'}
                                         </span>
                                       </div>
@@ -1292,7 +1292,7 @@ export const RightToolSidebar: React.FC = () => {
                                       {/* Selected Checkmark Badge */}
                                       {isSelected && (
                                         <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-[#15803D] text-white flex items-center justify-center shadow-xs">
-                                          <TbCheck className="w-3 h-3 stroke-[3]" />
+                                          <Check className="w-3 h-3 stroke-[3]" />
                                         </div>
                                       )}
 
@@ -1308,10 +1308,10 @@ export const RightToolSidebar: React.FC = () => {
 
                                     {/* Label */}
                                     <div className="mt-1.5 min-w-0">
-                                      <div className="text-[11px] font-bold text-[#4B382C] truncate leading-snug">
+                                      <div className="text-[11px] font-bold text-[#2B2621] truncate leading-snug">
                                         {itemName}
                                       </div>
-                                      <div className="text-[9px] text-[#8D7666] truncate">
+                                      <div className="text-[9px] text-[#7C7267] truncate">
                                         {item.culturalLore || item.category}
                                       </div>
                                     </div>
@@ -1331,13 +1331,13 @@ export const RightToolSidebar: React.FC = () => {
                 /* ======================================================== */
                 <div className="space-y-4">
                   {/* 1. PLACED LIGHTS OUTLINER */}
-                  <div className="space-y-1.5 pb-3 border-b border-[#D9C9B4]">
+                  <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                           {t.sidebars.right.placedLighting}
                         </span>
-                        <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                        <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
                           {placedLights.length} / 250
                         </span>
                       </div>
@@ -1353,7 +1353,7 @@ export const RightToolSidebar: React.FC = () => {
 
                     <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
                       {placedLights.length === 0 ? (
-                        <div className="text-center py-4 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                        <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
                           {t.sidebars.right.noLighting}
                         </div>
                       ) : (
@@ -1382,8 +1382,8 @@ export const RightToolSidebar: React.FC = () => {
                                 isSelected
                                   ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
                                   : isHovered
-                                  ? 'bg-[#EADECF] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#4B382C]'
-                                  : 'bg-[#FAF8F5] hover:bg-[#EADECF] border-[#D9C9B4] text-[#4B382C]'
+                                  ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
+                                  : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
                               }`}
                             >
                               <div className="flex items-center gap-2 min-w-0">
@@ -1400,7 +1400,7 @@ export const RightToolSidebar: React.FC = () => {
                                 <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
                                 <span
                                   className={`text-[9px] font-mono shrink-0 ${
-                                    isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                    isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
                                   }`}
                                 >
                                   ({light.position[0].toFixed(1)}, {light.position[2].toFixed(1)})
@@ -1417,7 +1417,7 @@ export const RightToolSidebar: React.FC = () => {
                                   title={t.sidebars.right.focusCamera}
                                   className="p-1 rounded hover:bg-black/10 cursor-pointer"
                                 >
-                                  <TbFocus2 className="w-3.5 h-3.5" />
+                                  <Focus className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -1427,7 +1427,7 @@ export const RightToolSidebar: React.FC = () => {
                                   title={t.sidebars.right.deleteElement}
                                   className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                 >
-                                  <TbTrash className="w-3.5 h-3.5" />
+                                  <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               </div>
                             </div>
@@ -1440,7 +1440,7 @@ export const RightToolSidebar: React.FC = () => {
                   {/* 2. ELEMENT PROPERTIES INSPECTOR */}
                   <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                         Element Properties
                       </span>
                       {selectedLight && (
@@ -1462,32 +1462,32 @@ export const RightToolSidebar: React.FC = () => {
                         );
 
                         return (
-                          <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                            <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                              <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                                <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                          <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                              <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                                <Flame className="w-4 h-4 text-[#F59E0B]" />
                                 <span>{t.sidebars.right.lightSpecs}</span>
                               </div>
                             </div>
 
                             {/* Name Input */}
                             <div>
-                              <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                              <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                               <div className="flex items-center gap-1 mt-0.5">
                                 <input
                                   type="text"
                                   readOnly
                                   value={(locale === 'mr' || locale === 'hi') && meta?.devanagariName ? meta.devanagariName : (meta?.name || t.sidebars.right.lighting)}
-                                  className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                                  className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                                 />
                               </div>
                             </div>
 
                             {/* Scale Slider */}
                             <div>
-                              <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                              <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                                 <span>{t.sidebars.left.scaleMultiplier}</span>
-                                <span className="text-[#8D7666]">{currentScale.toFixed(2)}x</span>
+                                <span className="text-[#7C7267]">{currentScale.toFixed(2)}x</span>
                               </div>
                               <input
                                 type="range"
@@ -1505,9 +1505,9 @@ export const RightToolSidebar: React.FC = () => {
 
                             {/* Heading Rotation Slider */}
                             <div>
-                              <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                              <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                                 <span>{t.sidebars.left.headingRotation}</span>
-                                <span className="text-[#8D7666]">{currentHeadingDeg}°</span>
+                                <span className="text-[#7C7267]">{currentHeadingDeg}°</span>
                               </div>
                               <input
                                 type="range"
@@ -1529,9 +1529,9 @@ export const RightToolSidebar: React.FC = () => {
                             {/* Burst Height Slider (Fireworks only) */}
                             {selectedLight.category === 'fireworks' && (
                               <div>
-                                <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                                <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                                   <span>{t.sidebars.left.burstHeight}</span>
-                                  <span className="text-[#8D7666]">
+                                  <span className="text-[#7C7267]">
                                     {(((selectedLight.burstHeight ?? (meta.burstAltitude ?? 1.0))) * 100).toFixed(0)}cm
                                   </span>
                                 </div>
@@ -1555,7 +1555,7 @@ export const RightToolSidebar: React.FC = () => {
                                 onClick={() => triggerTestFirework(selectedLight.id)}
                                 className="w-full py-1.5 bg-[#F59E0B] text-[#2B1E16] hover:bg-[#D97706] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                               >
-                                <TbSparkles className="w-3.5 h-3.5 text-[#8F4938]" />
+                                <Sparkles className="w-3.5 h-3.5 text-[#8F4938]" />
                                 <span>{t.sidebars.left.testFireworkBurst}</span>
                               </button>
                             )}
@@ -1564,23 +1564,23 @@ export const RightToolSidebar: React.FC = () => {
                             <div className="grid grid-cols-2 gap-2 pt-0.5">
                               <button
                                 onClick={() => duplicateLight(selectedLight.id)}
-                                className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                                className="py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                               >
                                 {t.sidebars.left.duplicate}
                               </button>
                               <button
                                 onClick={() => snapLightToSurface(selectedLight.id)}
-                                className="py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                                className="py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                               >
                                 {t.sidebars.left.snapToSurface}
                               </button>
                             </div>
 
                             {/* Focus and Delete Row */}
-                            <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                            <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                               <button
                                 onClick={focusCamera}
-                                className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                                className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                               >
                                 {t.common.focus}
                               </button>
@@ -1598,7 +1598,7 @@ export const RightToolSidebar: React.FC = () => {
                         );
                       })()
                     ) : (
-                      <div className="text-center py-6 text-[#8D7666] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]/60">
+                      <div className="text-center py-6 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
                         Select a light or firework from the list above or diorama to edit properties.
                       </div>
                     )}
@@ -1613,10 +1613,10 @@ export const RightToolSidebar: React.FC = () => {
               {/* ======================================================== */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                 Diorama Elements
               </span>
-              <span className="text-[10px] font-bold bg-[#EADECF] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
                 {(activeTool === 'building' || activeTool === 'walls')
                   ? walls.length + foundations.length + stairs.length
                   : splines.length}
@@ -1627,7 +1627,7 @@ export const RightToolSidebar: React.FC = () => {
               {(activeTool === 'building' || activeTool === 'walls') && (
                 <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
                   {walls.length === 0 && foundations.length === 0 && stairs.length === 0 ? (
-                    <div className="text-center py-4 text-[#8D7666] italic text-xs">
+                    <div className="text-center py-4 text-[#7C7267] italic text-xs">
                       No fort structures built yet.
                     </div>
                   ) : (
@@ -1652,7 +1652,7 @@ export const RightToolSidebar: React.FC = () => {
                         (wall.gates?.length || 0);
 
                       return (
-                        <div key={wall.id} className="rounded-xl border border-[#D9C9B4] bg-[#FAF8F5] overflow-hidden">
+                        <div key={wall.id} className="rounded-xl border border-[#D8D1C5] bg-[#FAF8F5] overflow-hidden">
                           {/* Wall Row */}
                           <div
                             onClick={() => {
@@ -1662,7 +1662,7 @@ export const RightToolSidebar: React.FC = () => {
                             onMouseEnter={() => setHoveredElement({ type: 'wall', id: wall.id })}
                             onMouseLeave={() => setHoveredElement(null)}
                             className={`group flex items-center justify-between px-2.5 py-1.5 transition-colors cursor-pointer ${
-                              isSelected ? 'bg-[#B85F45] text-[#FAF8F5]' : 'hover:bg-[#EADECF]'
+                              isSelected ? 'bg-[#B85F45] text-[#FAF8F5]' : 'hover:bg-[#D8D1C5]'
                             }`}
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
@@ -1672,19 +1672,19 @@ export const RightToolSidebar: React.FC = () => {
                                   className="p-0.5 rounded hover:bg-black/10 cursor-pointer"
                                 >
                                   {isExpanded ? (
-                                    <TbChevronDown className="w-3.5 h-3.5" />
+                                    <ChevronDown className="w-3.5 h-3.5" />
                                   ) : (
-                                    <TbChevronRight className="w-3.5 h-3.5" />
+                                    <ChevronRight className="w-3.5 h-3.5" />
                                   )}
                                 </button>
                               ) : (
                                 <div className="w-4" />
                               )}
-                              <TbBuildingFortress className="w-3.5 h-3.5 shrink-0" />
+                              <Castle className="w-3.5 h-3.5 shrink-0" />
                               <span className="font-semibold truncate">{wall.name || `Rampart ${idx + 1}`}</span>
                               <span
                                 className={`text-[10px] truncate ${
-                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
                                 }`}
                               >
                                 ({totalLengthM.toFixed(1)}m)
@@ -1697,7 +1697,7 @@ export const RightToolSidebar: React.FC = () => {
                                 title="Focus Camera"
                                 className="p-1 rounded hover:bg-black/10 cursor-pointer"
                               >
-                                <TbFocus2 className="w-3.5 h-3.5" />
+                                <Focus className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -1707,14 +1707,14 @@ export const RightToolSidebar: React.FC = () => {
                                 title="Delete Wall"
                                 className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                               >
-                                <TbTrash className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
 
                           {/* Children */}
                           {isExpanded && childCount > 0 && (
-                            <div className="pl-6 pr-2 py-1 space-y-1 bg-[#F3EBE0]/60 border-t border-[#D9C9B4]/60">
+                            <div className="pl-6 pr-2 py-1 space-y-1 bg-[#EBE6DC]/60 border-t border-[#D8D1C5]/60">
                               {/* Corner Bastions */}
                               {bastionIndices.map((bIdx) => {
                                 const isChildSelected =
@@ -1733,12 +1733,12 @@ export const RightToolSidebar: React.FC = () => {
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
-                                        ? 'bg-[#4B382C] text-[#FAF8F5]'
-                                        : 'hover:bg-[#EADECF] text-[#5C4638]'
+                                        ? 'bg-[#2B2621] text-[#FAF8F5]'
+                                        : 'hover:bg-[#D8D1C5] text-[#5C4638]'
                                     }`}
                                   >
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <TbBuildingFortress className="w-3 h-3 text-[#B85F45]" />
+                                      <Castle className="w-3 h-3 text-[#B85F45]" />
                                       <span className="truncate">{label}</span>
                                     </div>
                                     <button
@@ -1749,7 +1749,7 @@ export const RightToolSidebar: React.FC = () => {
                                       title="Remove Bastion"
                                       className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                     >
-                                      <TbTrash className="w-3 h-3" />
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 );
@@ -1771,12 +1771,12 @@ export const RightToolSidebar: React.FC = () => {
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
-                                        ? 'bg-[#4B382C] text-[#FAF8F5]'
-                                        : 'hover:bg-[#EADECF] text-[#5C4638]'
+                                        ? 'bg-[#2B2621] text-[#FAF8F5]'
+                                        : 'hover:bg-[#D8D1C5] text-[#5C4638]'
                                     }`}
                                   >
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <TbTower className="w-3 h-3 text-[#B85F45]" />
+                                      <TowerControl className="w-3 h-3 text-[#B85F45]" />
                                       <span className="truncate">{tw.name || `Watchtower ${tIdx + 1}`}</span>
                                     </div>
                                     <button
@@ -1787,7 +1787,7 @@ export const RightToolSidebar: React.FC = () => {
                                       title="Remove Watchtower"
                                       className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                     >
-                                      <TbTrash className="w-3 h-3" />
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 );
@@ -1809,12 +1809,12 @@ export const RightToolSidebar: React.FC = () => {
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
-                                        ? 'bg-[#4B382C] text-[#FAF8F5]'
-                                        : 'hover:bg-[#EADECF] text-[#5C4638]'
+                                        ? 'bg-[#2B2621] text-[#FAF8F5]'
+                                        : 'hover:bg-[#D8D1C5] text-[#5C4638]'
                                     }`}
                                   >
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <TbBuildingFortress className="w-3 h-3 text-[#B85F45]" />
+                                      <Castle className="w-3 h-3 text-[#B85F45]" />
                                       <span className="truncate">{bx.name || `Rampart Bastion ${bIdx + 1}`}</span>
                                     </div>
                                     <button
@@ -1825,7 +1825,7 @@ export const RightToolSidebar: React.FC = () => {
                                       title="Remove Bastion"
                                       className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                     >
-                                      <TbTrash className="w-3 h-3" />
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 );
@@ -1847,12 +1847,12 @@ export const RightToolSidebar: React.FC = () => {
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
-                                        ? 'bg-[#4B382C] text-[#FAF8F5]'
-                                        : 'hover:bg-[#EADECF] text-[#5C4638]'
+                                        ? 'bg-[#2B2621] text-[#FAF8F5]'
+                                        : 'hover:bg-[#D8D1C5] text-[#5C4638]'
                                     }`}
                                   >
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <TbCircleHalf2 className="w-3 h-3 text-[#B85F45]" />
+                                      <CircleDot className="w-3 h-3 text-[#B85F45]" />
                                       <span className="truncate">{rb.name || `Round Bastion ${rIdx + 1}`}</span>
                                     </div>
                                     <button
@@ -1863,7 +1863,7 @@ export const RightToolSidebar: React.FC = () => {
                                       title="Remove Round Bastion"
                                       className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                     >
-                                      <TbTrash className="w-3 h-3" />
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 );
@@ -1885,12 +1885,12 @@ export const RightToolSidebar: React.FC = () => {
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
-                                        ? 'bg-[#4B382C] text-[#FAF8F5]'
-                                        : 'hover:bg-[#EADECF] text-[#5C4638]'
+                                        ? 'bg-[#2B2621] text-[#FAF8F5]'
+                                        : 'hover:bg-[#D8D1C5] text-[#5C4638]'
                                     }`}
                                   >
                                     <div className="flex items-center gap-1.5 min-w-0">
-                                      <TbDoorEnter className="w-3 h-3 text-[#B85F45]" />
+                                      <DoorOpen className="w-3 h-3 text-[#B85F45]" />
                                       <span className="truncate">{gt.name || `Arched Gateway ${gIdx + 1}`}</span>
                                     </div>
                                     <button
@@ -1901,7 +1901,7 @@ export const RightToolSidebar: React.FC = () => {
                                       title="Remove Gateway"
                                       className="p-0.5 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                                     >
-                                      <TbTrash className="w-3 h-3" />
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 );
@@ -1929,18 +1929,18 @@ export const RightToolSidebar: React.FC = () => {
                             }}
                             onMouseEnter={() => setHoveredElement({ type: 'foundation', id: foundation.id })}
                             onMouseLeave={() => setHoveredElement(null)}
-                            className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D9C9B4] transition-colors cursor-pointer ${
+                            className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D8D1C5] transition-colors cursor-pointer ${
                               isSelected
                                 ? 'bg-[#B85F45] text-[#FAF8F5]'
-                                : 'bg-[#FAF8F5] hover:bg-[#EADECF] text-[#4B382C]'
+                                : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621]'
                             }`}
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <TbBox className="w-3.5 h-3.5 shrink-0" />
+                              <Box className="w-3.5 h-3.5 shrink-0" />
                               <span className="font-semibold truncate">{foundation.name || `Foundation Slab ${idx + 1}`}</span>
                               <span
                                 className={`text-[10px] truncate ${
-                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
                                 }`}
                               >
                                 ({widthCm}×{depthCm}cm)
@@ -1953,7 +1953,7 @@ export const RightToolSidebar: React.FC = () => {
                                 title="Focus Camera"
                                 className="p-1 rounded hover:bg-black/10 cursor-pointer"
                               >
-                                <TbFocus2 className="w-3.5 h-3.5" />
+                                <Focus className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -1966,7 +1966,7 @@ export const RightToolSidebar: React.FC = () => {
                                 title="Delete Foundation"
                                 className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                               >
-                                <TbTrash className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
@@ -1988,18 +1988,18 @@ export const RightToolSidebar: React.FC = () => {
                             }}
                             onMouseEnter={() => setHoveredElement({ type: 'stair', id: stair.id })}
                             onMouseLeave={() => setHoveredElement(null)}
-                            className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D9C9B4] transition-colors cursor-pointer ${
+                            className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D8D1C5] transition-colors cursor-pointer ${
                               isSelected
                                 ? 'bg-[#B85F45] text-[#FAF8F5]'
-                                : 'bg-[#FAF8F5] hover:bg-[#EADECF] text-[#4B382C]'
+                                : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621]'
                             }`}
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <TbStairs className="w-3.5 h-3.5 shrink-0 text-[#B85F45]" />
+                              <Footprints className="w-3.5 h-3.5 shrink-0 text-[#B85F45]" />
                               <span className="font-semibold truncate">{stair.name || `Stone Staircase ${idx + 1}`}</span>
                               <span
                                 className={`text-[10px] truncate ${
-                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                  isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
                                 }`}
                               >
                                 ({stair.points.length} pts)
@@ -2012,7 +2012,7 @@ export const RightToolSidebar: React.FC = () => {
                                 title="Focus Camera"
                                 className="p-1 rounded hover:bg-black/10 cursor-pointer"
                               >
-                                <TbFocus2 className="w-3.5 h-3.5" />
+                                <Focus className="w-3.5 h-3.5" />
                               </button>
                               <button
                                 onClick={(e) => {
@@ -2025,7 +2025,7 @@ export const RightToolSidebar: React.FC = () => {
                                 title="Delete Staircase"
                                 className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                               >
-                                <TbTrash className="w-3.5 h-3.5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
@@ -2040,14 +2040,14 @@ export const RightToolSidebar: React.FC = () => {
               {activeTool === 'spline' && (
                 <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
                   {splines.length === 0 ? (
-                    <div className="text-center py-4 text-[#8D7666] italic text-xs">
+                    <div className="text-center py-4 text-[#7C7267] italic text-xs">
                       No paths drawn yet.
                     </div>
                   ) : (
                     splines.map((spline, idx) => {
                       const isSelected = selectedSplineId === spline.id;
                       const Icon =
-                        spline.type === 'steps' ? TbStairs : spline.type === 'flags' ? TbFlag : TbFlame;
+                        spline.type === 'steps' ? Footprints : spline.type === 'flags' ? Flag : Flame;
                       const label =
                         spline.name ||
                         (spline.type === 'steps'
@@ -2062,10 +2062,10 @@ export const RightToolSidebar: React.FC = () => {
                           onClick={() => setSelectedSplineId(spline.id)}
                           onMouseEnter={() => setHoveredElement({ type: 'spline', id: spline.id })}
                           onMouseLeave={() => setHoveredElement(null)}
-                          className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D9C9B4] transition-colors cursor-pointer ${
+                          className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D8D1C5] transition-colors cursor-pointer ${
                             isSelected
                               ? 'bg-[#B85F45] text-[#FAF8F5]'
-                              : 'bg-[#FAF8F5] hover:bg-[#EADECF] text-[#4B382C]'
+                              : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621]'
                           }`}
                         >
                           <div className="flex items-center gap-2 min-w-0">
@@ -2073,7 +2073,7 @@ export const RightToolSidebar: React.FC = () => {
                             <span className="font-semibold truncate">{label}</span>
                             <span
                               className={`text-[10px] truncate ${
-                                isSelected ? 'text-[#FAF8F5]/80' : 'text-[#8D7666]'
+                                isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
                               }`}
                             >
                               ({spline.points.length} pts)
@@ -2086,7 +2086,7 @@ export const RightToolSidebar: React.FC = () => {
                               title="Focus Camera"
                               className="p-1 rounded hover:bg-black/10 cursor-pointer"
                             >
-                              <TbFocus2 className="w-3.5 h-3.5" />
+                              <Focus className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -2096,7 +2096,7 @@ export const RightToolSidebar: React.FC = () => {
                               title="Delete Path"
                               className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
                             >
-                              <TbTrash className="w-3.5 h-3.5" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -2110,9 +2110,9 @@ export const RightToolSidebar: React.FC = () => {
           {/* ======================================================== */}
           {/* 2. CONTEXTUAL OBJECT INSPECTOR                            */}
           {/* ======================================================== */}
-          <div className="border-t border-[#D9C9B4] pt-3 space-y-2.5">
+          <div className="border-t border-[#D8D1C5] pt-3 space-y-2.5">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+              <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                 {t.sidebars.right.elementProperties}
               </span>
                 {(selectedWallId || selectedComponent || selectedSplineId || selectedFoundationId || selectedStairId) && (
@@ -2140,17 +2140,17 @@ export const RightToolSidebar: React.FC = () => {
                   const heightOffset = custom?.heightOffset ?? 0.0;
 
                   return (
-                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                      <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                          <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                          <Castle className="w-4 h-4 text-[#B85F45]" />
                           <span>{t.sidebars.left.fortStampBastion}</span>
                         </div>
                       </div>
 
                       {/* Bastion Name */}
                       <div>
-                        <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                        <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                         <div className="flex items-center gap-1 mt-0.5">
                           <input
                             type="text"
@@ -2159,7 +2159,7 @@ export const RightToolSidebar: React.FC = () => {
                             onChange={(e) =>
                               updateBastionProperties(selectedWall.id, bIdx, { name: e.target.value })
                             }
-                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                           />
                           <button
                             onClick={() =>
@@ -2167,19 +2167,19 @@ export const RightToolSidebar: React.FC = () => {
                                 updateBastionProperties(selectedWall.id, bIdx, { name })
                               )
                             }
-                            className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                            className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                             title={t.tools.walls.rollName}
                           >
-                            <TbDice5 className="w-3.5 h-3.5" />
+                            <Dices className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
                       {/* Radius Slider */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.tools.walls.bastionRadius}</span>
-                          <span className="text-[#8D7666]">{(radius * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{(radius * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2198,9 +2198,9 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Height Offset Slider */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.heightAboveWall}</span>
-                          <span className="text-[#8D7666]">{(heightOffset * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{(heightOffset * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2217,10 +2217,10 @@ export const RightToolSidebar: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                         <button
                           onClick={focusCamera}
-                          className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                          className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                         >
                           {t.common.focus}
                         </button>
@@ -2246,39 +2246,39 @@ export const RightToolSidebar: React.FC = () => {
                   if (!tower) return null;
 
                   return (
-                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                      <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                          <TbTower className="w-4 h-4 text-[#B85F45]" />
+                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                          <TowerControl className="w-4 h-4 text-[#B85F45]" />
                           <span>{t.sidebars.left.fortStampWatchtower}</span>
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                        <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                         <div className="flex items-center gap-1 mt-0.5">
                           <input
                             type="text"
                             value={tower.name || ''}
                             placeholder={t.sidebars.left.fortStampWatchtower}
                             onChange={(e) => updateTowerName(selectedWall.id, tower.id, e.target.value)}
-                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                           />
                           <button
                             onClick={() => rollRandomName((name) => updateTowerName(selectedWall.id, tower.id, name))}
-                            className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                            className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                             title={t.tools.walls.rollName}
                           >
-                            <TbDice5 className="w-3.5 h-3.5" />
+                            <Dices className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
                       {/* Radius / Width */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.tools.walls.bastionRadius}</span>
-                          <span className="text-[#8D7666]">{((tower.radius || 0.13) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((tower.radius || 0.13) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2295,9 +2295,9 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Height Above Wall */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.heightAboveWall}</span>
-                          <span className="text-[#8D7666]">{((tower.heightOffset || 0.02) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((tower.heightOffset || 0.02) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2312,10 +2312,10 @@ export const RightToolSidebar: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                         <button
                           onClick={focusCamera}
-                          className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                          className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                         >
                           {t.common.focus}
                         </button>
@@ -2341,39 +2341,39 @@ export const RightToolSidebar: React.FC = () => {
                   if (!box) return null;
 
                   return (
-                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                      <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                          <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                          <Castle className="w-4 h-4 text-[#B85F45]" />
                           <span>{t.sidebars.left.fortStampBastion}</span>
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                        <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                         <div className="flex items-center gap-1 mt-0.5">
                           <input
                             type="text"
                             value={box.name || ''}
                             placeholder={t.sidebars.left.fortStampBastion}
                             onChange={(e) => updateBoxBastionName(selectedWall.id, box.id, e.target.value)}
-                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                           />
                           <button
                             onClick={() => rollRandomName((name) => updateBoxBastionName(selectedWall.id, box.id, name))}
-                            className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                            className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                             title={t.tools.walls.rollName}
                           >
-                            <TbDice5 className="w-3.5 h-3.5" />
+                            <Dices className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
                       {/* Width along wall */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.tools.walls.thickness}</span>
-                          <span className="text-[#8D7666]">{((box.width || 0.30) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((box.width || 0.30) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2390,9 +2390,9 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Inward Depth / Length */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.tools.walls.length}</span>
-                          <span className="text-[#8D7666]">{((box.depth || 0.30) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((box.depth || 0.30) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2409,9 +2409,9 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Height Above Wall */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.heightAboveWall}</span>
-                          <span className="text-[#8D7666]">{((box.heightOffset || 0.04) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((box.heightOffset || 0.04) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2428,7 +2428,7 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Flip Orientation */}
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.right.flipOrientation}</span>
+                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.right.flipOrientation}</span>
                         <input
                           type="checkbox"
                           checked={box.flipSide || false}
@@ -2439,10 +2439,10 @@ export const RightToolSidebar: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                         <button
                           onClick={focusCamera}
-                          className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                          className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                         >
                           {t.common.focus}
                         </button>
@@ -2468,39 +2468,39 @@ export const RightToolSidebar: React.FC = () => {
                   if (!gate) return null;
 
                   return (
-                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                      <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                          <TbDoorEnter className="w-4 h-4 text-[#B85F45]" />
+                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                          <DoorOpen className="w-4 h-4 text-[#B85F45]" />
                           <span>{t.sidebars.left.fortStampGate}</span>
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                        <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                         <div className="flex items-center gap-1 mt-0.5">
                           <input
                             type="text"
                             value={gate.name || ''}
                             placeholder={t.sidebars.left.fortStampGate}
                             onChange={(e) => updateGateName(selectedWall.id, gate.id, e.target.value)}
-                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                           />
                           <button
                             onClick={() => rollRandomName((name) => updateGateName(selectedWall.id, gate.id, name))}
-                            className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                            className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                             title={t.tools.walls.rollName}
                           >
-                            <TbDice5 className="w-3.5 h-3.5" />
+                            <Dices className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
                       {/* Arch Width */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.archWidth}</span>
-                          <span className="text-[#8D7666]">{((gate.width || 0.18) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((gate.width || 0.18) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2517,9 +2517,9 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Arch Height */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.archHeight}</span>
-                          <span className="text-[#8D7666]">{((gate.height || 0.18) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((gate.height || 0.18) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2536,7 +2536,7 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Flanking Watchtowers */}
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.right.flankingWatchtowers}</span>
+                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.right.flankingWatchtowers}</span>
                         <input
                           type="checkbox"
                           checked={gate.hasGatehouse ?? true}
@@ -2547,10 +2547,10 @@ export const RightToolSidebar: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                         <button
                           onClick={focusCamera}
-                          className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                          className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                         >
                           {t.common.focus}
                         </button>
@@ -2576,39 +2576,39 @@ export const RightToolSidebar: React.FC = () => {
                   if (!rb) return null;
 
                   return (
-                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                      <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                          <TbCircleHalf2 className="w-4 h-4 text-[#B85F45]" />
+                    <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                      <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                        <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                          <CircleDot className="w-4 h-4 text-[#B85F45]" />
                           <span>{t.sidebars.left.fortStampRoundBastion}</span>
                         </div>
                       </div>
 
                       <div>
-                        <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                        <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                         <div className="flex items-center gap-1 mt-0.5">
                           <input
                             type="text"
                             value={rb.name || ''}
                             placeholder={t.sidebars.left.fortStampRoundBastion}
                             onChange={(e) => updateRoundBastionName(selectedWall.id, rb.id, e.target.value)}
-                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                            className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                           />
                           <button
                             onClick={() => rollRandomName((name) => updateRoundBastionName(selectedWall.id, rb.id, name))}
-                            className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                            className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                             title={t.tools.walls.rollName}
                           >
-                            <TbDice5 className="w-3.5 h-3.5" />
+                            <Dices className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
 
                       {/* Radius */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.bastionRadius}</span>
-                          <span className="text-[#8D7666]">{((rb.radius || 0.22) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((rb.radius || 0.22) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2625,9 +2625,9 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Height Above Wall */}
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.heightAboveWall}</span>
-                          <span className="text-[#8D7666]">{((rb.heightOffset || 0.05) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((rb.heightOffset || 0.05) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -2644,7 +2644,7 @@ export const RightToolSidebar: React.FC = () => {
 
                       {/* Flip Orientation */}
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.right.flipOrientation}</span>
+                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.right.flipOrientation}</span>
                         <input
                           type="checkbox"
                           checked={rb.flipSide || false}
@@ -2655,10 +2655,10 @@ export const RightToolSidebar: React.FC = () => {
                         />
                       </div>
 
-                      <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                      <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                         <button
                           onClick={focusCamera}
-                          className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                          className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                         >
                           {t.common.focus}
                         </button>
@@ -2679,38 +2679,38 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* E. PARENT WALL INSPECTOR */}
               {(activeTool === 'building' || activeTool === 'walls') && selectedWall && !selectedComponent && (
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                      <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                      <Castle className="w-4 h-4 text-[#B85F45]" />
                       <span>{t.sidebars.right.rampartSpecs}</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                    <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                     <div className="flex items-center gap-1 mt-0.5">
                       <input
                         type="text"
                         value={selectedWall.name || ''}
                         placeholder={t.sidebars.left.fortStampBastion}
                         onChange={(e) => updateWallName(selectedWall.id, e.target.value)}
-                        className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                        className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                       />
                       <button
                         onClick={() => rollRandomName((name) => updateWallName(selectedWall.id, name))}
-                        className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                        className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                         title={t.tools.walls.rollName}
                       >
-                        <TbDice5 className="w-3.5 h-3.5" />
+                        <Dices className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.right.wallHeight}</span>
-                      <span className="text-[#8D7666]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
+                      <span className="text-[#7C7267]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
                     </div>
                     <input
                       type="range"
@@ -2724,9 +2724,9 @@ export const RightToolSidebar: React.FC = () => {
                   </div>
 
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.right.wallThickness}</span>
-                      <span className="text-[#8D7666]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
+                      <span className="text-[#7C7267]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
                     </div>
                     <input
                       type="range"
@@ -2740,7 +2740,7 @@ export const RightToolSidebar: React.FC = () => {
                   </div>
 
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.right.battlements}</span>
+                    <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.right.battlements}</span>
                     <input
                       type="checkbox"
                       checked={wallSettings.crenellations}
@@ -2751,7 +2751,7 @@ export const RightToolSidebar: React.FC = () => {
 
                   {wallSettings.crenellations && (
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.right.flipBattlementsRim}</span>
+                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.right.flipBattlementsRim}</span>
                       <input
                         type="checkbox"
                         checked={wallSettings.flipCrenellations ?? false}
@@ -2762,7 +2762,7 @@ export const RightToolSidebar: React.FC = () => {
                   )}
 
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.right.cornerAutoBastions}</span>
+                    <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.right.cornerAutoBastions}</span>
                     <input
                       type="checkbox"
                       checked={wallSettings.autoBastions}
@@ -2773,9 +2773,9 @@ export const RightToolSidebar: React.FC = () => {
 
                   {wallSettings.autoBastions && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.bastionRadius}</span>
-                        <span className="text-[#8D7666]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -2789,10 +2789,10 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                     <button
                       onClick={focusCamera}
-                      className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                      className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                     >
                       {t.common.focus}
                     </button>
@@ -2811,15 +2811,15 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* F. SPLINE FEATURE INSPECTOR */}
               {activeTool === 'spline' && selectedSpline && (
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
                       {selectedSpline.type === 'steps' ? (
-                        <TbStairs className="w-4 h-4 text-[#B85F45]" />
+                        <Footprints className="w-4 h-4 text-[#B85F45]" />
                       ) : selectedSpline.type === 'flags' ? (
-                        <TbFlag className="w-4 h-4 text-[#B85F45]" />
+                        <Flag className="w-4 h-4 text-[#B85F45]" />
                       ) : (
-                        <TbFlame className="w-4 h-4 text-[#B85F45]" />
+                        <Flame className="w-4 h-4 text-[#B85F45]" />
                       )}
                       <span>{t.sidebars.right.pathFeature}</span>
                     </div>
@@ -2827,28 +2827,28 @@ export const RightToolSidebar: React.FC = () => {
 
                   {/* Name */}
                   <div>
-                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                    <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                     <div className="flex items-center gap-1 mt-0.5">
                       <input
                         type="text"
                         value={selectedSpline.name || ''}
                         placeholder={selectedSpline.type === 'steps' ? t.sidebars.right.steps : selectedSpline.type === 'flags' ? t.sidebars.right.flags : t.sidebars.right.diyas}
                         onChange={(e) => updateSplineName(selectedSpline.id, e.target.value)}
-                        className="flex-1 px-2 py-1 text-xs bg-white border border-[#D9C9B4] rounded-lg text-[#2B1E16]"
+                        className="flex-1 px-2 py-1 text-xs bg-white border border-[#D8D1C5] rounded-lg text-[#2B1E16]"
                       />
                       <button
                         onClick={() => rollRandomName((name) => updateSplineName(selectedSpline.id, name))}
-                        className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]"
+                        className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]"
                         title={t.tools.walls.rollName}
                       >
-                        <TbDice5 className="w-3.5 h-3.5" />
+                        <Dices className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
                   {/* Switch Type inside Inspector */}
                   <div>
-                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.sidebars.right.featureType}</label>
+                    <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.sidebars.right.featureType}</label>
                     <div className="grid grid-cols-3 gap-1 mt-0.5">
                       {(['steps', 'flags', 'diyas'] as SplineConversionType[]).map((st) => (
                         <button
@@ -2856,8 +2856,8 @@ export const RightToolSidebar: React.FC = () => {
                           onClick={() => updateSplineType(selectedSpline.id, st)}
                           className={`py-1 text-xs rounded-lg font-medium transition-colors cursor-pointer ${
                             selectedSpline.type === st
-                              ? 'bg-[#4B382C] text-[#FAF8F5]'
-                              : 'bg-[#EADECF] text-[#5C4638] hover:bg-[#DFCDBD]'
+                              ? 'bg-[#2B2621] text-[#FAF8F5]'
+                              : 'bg-[#FAF8F5] text-[#5C4638] hover:bg-[#D8D1C5]'
                           }`}
                         >
                           {st === 'steps' ? t.sidebars.right.steps : st === 'flags' ? t.sidebars.right.flags : t.sidebars.right.diyas}
@@ -2868,11 +2868,11 @@ export const RightToolSidebar: React.FC = () => {
 
                   {/* Complete Elemental Sliders for Spline */}
                   {selectedSpline.type === 'steps' && (
-                    <div className="space-y-2 pt-1 border-t border-[#D9C9B4]">
+                    <div className="space-y-2 pt-1 border-t border-[#D8D1C5]">
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.stairWidth}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.stepWidth ?? 0.06)) * 100).toFixed(0)} cm
                           </span>
                         </div>
@@ -2890,9 +2890,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.treadDepth}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.stepRun ?? 0.025)) * 100).toFixed(1)} cm
                           </span>
                         </div>
@@ -2910,9 +2910,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.stepRiseHeight}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.stepRise ?? 0.01)) * 100).toFixed(1)} cm
                           </span>
                         </div>
@@ -2930,9 +2930,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.stepSpacing}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.stepSpacing ?? 0.025)) * 100).toFixed(1)} cm
                           </span>
                         </div>
@@ -2950,9 +2950,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.pathOffset}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.stepOffset ?? 0.0)) * 100).toFixed(1)} cm
                           </span>
                         </div>
@@ -2970,9 +2970,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.scale}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(selectedSpline.settings?.scale ?? 1.0).toFixed(1)}x
                           </span>
                         </div>
@@ -2992,11 +2992,11 @@ export const RightToolSidebar: React.FC = () => {
                   )}
 
                   {selectedSpline.type !== 'steps' && (
-                    <div className="space-y-2 pt-1 border-t border-[#D9C9B4]">
+                    <div className="space-y-2 pt-1 border-t border-[#D8D1C5]">
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.itemSpacing}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.spacing ?? (selectedSpline.type === 'flags' ? 0.20 : 0.35))) * 100).toFixed(0)} cm
                           </span>
                         </div>
@@ -3014,9 +3014,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.pathOffset}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(((selectedSpline.settings?.stepOffset ?? 0.0)) * 100).toFixed(1)} cm
                           </span>
                         </div>
@@ -3034,9 +3034,9 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
 
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.right.itemScale}</span>
-                          <span className="text-[#8D7666]">
+                          <span className="text-[#7C7267]">
                             {(selectedSpline.settings?.scale ?? 1.0).toFixed(1)}x
                           </span>
                         </div>
@@ -3055,10 +3055,10 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                     <button
                       onClick={focusCamera}
-                      className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                      className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                     >
                       {t.common.focus}
                     </button>
@@ -3077,43 +3077,43 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* FOUNDATION INSPECTOR */}
               {(activeTool === 'building' || activeTool === 'walls') && selectedFoundation && (
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                      <TbBox className="w-4 h-4 text-[#B85F45]" />
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                      <Box className="w-4 h-4 text-[#B85F45]" />
                       <span>{t.tools.building.foundationTitle}</span>
                     </div>
-                    <div className="text-[10px] text-[#8D7666]">
+                    <div className="text-[10px] text-[#7C7267]">
                       {(selectedFoundation.length * 100).toFixed(0)}cm ×{' '}
                       {(selectedFoundation.width * 100).toFixed(0)}cm
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                    <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                     <div className="flex items-center gap-1 mt-0.5">
                       <input
                         type="text"
                         value={selectedFoundation.name || ''}
                         onChange={(e) => updateFoundation(selectedFoundation.id, { name: e.target.value })}
-                        className="flex-1 px-2 py-1 bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-xs"
+                        className="flex-1 px-2 py-1 bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-xs"
                       />
                       <button
                         onClick={() => rollRandomName((name) => updateFoundation(selectedFoundation.id, { name }))}
-                        className="p-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[#4B382C] cursor-pointer"
+                        className="p-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg text-[#2B2621] cursor-pointer"
                         title={t.tools.walls.rollName}
                       >
-                        <TbDice5 className="w-3.5 h-3.5" />
+                        <Dices className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
                   {/* Sliders */}
-                  <div className="space-y-2.5 pt-1 border-t border-[#D9C9B4]">
+                  <div className="space-y-2.5 pt-1 border-t border-[#D8D1C5]">
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.height}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {((selectedFoundation.height || 0.40) * 100).toFixed(0)} cm
                         </span>
                       </div>
@@ -3131,9 +3131,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.verticalOffset}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {((selectedFoundation.verticalOffset || 0.0) * 100).toFixed(0)} cm
                         </span>
                       </div>
@@ -3151,9 +3151,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.tilingRepeat}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(selectedFoundation.tilingRepeat || 2.0).toFixed(1)}x
                         </span>
                       </div>
@@ -3171,10 +3171,10 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                     <button
                       onClick={focusCamera}
-                      className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                      className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                     >
                       {t.common.focus}
                     </button>
@@ -3193,42 +3193,42 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* STAIRS INSPECTOR */}
               {(activeTool === 'building' || activeTool === 'walls') && selectedStair && (
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
-                  <div className="flex items-center justify-between border-b border-[#D9C9B4] pb-1.5">
-                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#4B382C]">
-                      <TbStairs className="w-4 h-4 text-[#B85F45]" />
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
+                  <div className="flex items-center justify-between border-b border-[#D8D1C5] pb-1.5">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#2B2621]">
+                      <Footprints className="w-4 h-4 text-[#B85F45]" />
                       <span>{t.tools.building.stairsTitle}</span>
                     </div>
-                    <div className="text-[10px] text-[#8D7666]">
+                    <div className="text-[10px] text-[#7C7267]">
                       {selectedStair.points.length} {t.sidebars.right.waypoints}
                     </div>
                   </div>
 
                   <div>
-                    <label className="text-[10px] font-bold text-[#8D7666] uppercase">{t.common.name}</label>
+                    <label className="text-[10px] font-bold text-[#7C7267] uppercase">{t.common.name}</label>
                     <div className="flex items-center gap-1 mt-0.5">
                       <input
                         type="text"
                         value={selectedStair.name || ''}
                         onChange={(e) => updateStairName(selectedStair.id, e.target.value)}
-                        className="flex-1 px-2 py-1 bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-xs"
+                        className="flex-1 px-2 py-1 bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-xs"
                       />
                       <button
                         onClick={() => rollRandomName((name) => updateStairName(selectedStair.id, name))}
-                        className="p-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[#4B382C] cursor-pointer"
+                        className="p-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg text-[#2B2621] cursor-pointer"
                         title={t.tools.walls.rollName}
                       >
-                        <TbDice5 className="w-3.5 h-3.5" />
+                        <Dices className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
                   {/* Sliders */}
-                  <div className="space-y-2.5 pt-1 border-t border-[#D9C9B4]">
+                  <div className="space-y-2.5 pt-1 border-t border-[#D8D1C5]">
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.stepScale}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(selectedStair.settings?.scale ?? 2.0).toFixed(1)}x
                         </span>
                       </div>
@@ -3246,9 +3246,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.stairWidth}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(((selectedStair.settings?.stepWidth ?? 0.10)) * 100).toFixed(0)} cm
                         </span>
                       </div>
@@ -3266,9 +3266,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.treadDepth}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(((selectedStair.settings?.stepRun ?? 0.03)) * 100).toFixed(1)} cm
                         </span>
                       </div>
@@ -3286,9 +3286,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.stepRiseHeight}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(((selectedStair.settings?.stepRise ?? 0.015)) * 100).toFixed(1)} cm
                         </span>
                       </div>
@@ -3306,9 +3306,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.stepSpacing}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(((selectedStair.settings?.stepSpacing ?? 0.03)) * 100).toFixed(1)} cm
                         </span>
                       </div>
@@ -3326,9 +3326,9 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.right.pathOffset}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {(((selectedStair.settings?.stepOffset ?? 0.0)) * 100).toFixed(1)} cm
                         </span>
                       </div>
@@ -3346,10 +3346,10 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1 border-t border-[#D9C9B4]">
+                  <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]">
                     <button
                       onClick={focusCamera}
-                      className="flex-1 py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer text-center"
+                      className="flex-1 py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer text-center"
                     >
                       {t.common.focus}
                     </button>
@@ -3368,7 +3368,7 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* G. EMPTY SELECTION STATE */}
               {!selectedWallId && !selectedComponent && !selectedSplineId && !selectedFoundationId && !selectedStairId && (
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#8D7666] leading-relaxed">
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px] text-[#7C7267] leading-relaxed">
                   {t.sidebars.right.emptySelection}
                 </div>
               )}

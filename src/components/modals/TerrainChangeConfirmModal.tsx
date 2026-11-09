@@ -2,12 +2,12 @@
 
 import React from 'react';
 import {
-  TbAlertTriangle,
-  TbX,
-  TbTrash,
-  TbDeviceFloppy,
-  TbArrowBackUp,
-} from 'react-icons/tb';
+  AlertTriangle,
+  X,
+  Trash2,
+  Save,
+  Undo2,
+} from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -52,96 +52,96 @@ export const TerrainChangeConfirmModal: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs animate-in fade-in duration-200 select-none">
-      <div className="relative w-full max-w-lg bg-[#F9F6F0] rounded-3xl border-2 border-[#D9C9B4] shadow-2xl p-6 sm:p-7 flex flex-col gap-5">
+      <div className="relative w-full max-w-lg bg-[#EBE6DC] rounded-2xl border border-[#D8D1C5] shadow-2xl p-6 flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#B85F45]/15 text-[#B85F45] border border-[#B85F45]/30 flex items-center justify-center shrink-0 shadow-xs">
-              <TbAlertTriangle className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#B85F45]/15 text-[#B85F45] border border-[#B85F45]/30 flex items-center justify-center shrink-0">
+              <AlertTriangle size={20} strokeWidth={1.75} />
             </div>
             <div>
-              <h3 className="font-yatra text-xl text-[#2B1E16] tracking-wide leading-tight">
+              <h3 className="font-yatra text-xl text-[#2B2621] tracking-wide leading-tight">
                 {t.startupModal.terrainConfirmTitle}
               </h3>
-              <span className="text-xs text-[#8D7666] font-sans">
-                {t.terrainConfirmModal.target} <strong className="text-[#4B382C] uppercase">{pendingTerrainChange.title}</strong>
+              <span className="text-xs text-[#7C7267] font-sans">
+                {t.terrainConfirmModal.target} <strong className="text-[#2B2621] uppercase">{pendingTerrainChange.title}</strong>
               </span>
             </div>
           </div>
 
           <button
             onClick={() => setTerrainConfirmOpen(false)}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-[#8D7666] hover:text-[#2B1E16] hover:bg-[#EADECF] transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-md flex items-center justify-center text-[#7C7267] hover:text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
             title={t.common.cancel}
           >
-            <TbX className="w-5 h-5" />
+            <X size={18} strokeWidth={1.75} />
           </button>
         </div>
 
         {/* Warning Body */}
-        <p className="text-xs sm:text-sm text-[#634E40] leading-relaxed font-sans">
+        <p className="text-xs sm:text-sm text-[#5A5248] leading-relaxed font-sans">
           {t.startupModal.terrainConfirmDesc}
         </p>
 
         {/* Item Count Badges */}
-        <div className="p-3.5 rounded-2xl bg-[#F2EBE1] border border-[#D9C9B4] flex flex-wrap gap-2 text-xs font-sans">
-          <div className="w-full text-[11px] font-bold text-[#8F4938] uppercase tracking-wider mb-0.5">
+        <div className="p-3 rounded-xl bg-[#FAF8F5] border border-[#D8D1C5] flex flex-wrap gap-2 text-xs font-sans">
+          <div className="w-full text-[11px] font-semibold text-[#B85F45] tracking-wide mb-0.5">
             {t.terrainConfirmModal.objectsToBeCleared} ({totalCount}):
           </div>
           {wallCount > 0 && (
-            <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#EBE6DC] text-[#2B2621] font-medium text-[11px] tabular-nums border border-[#D8D1C5]">
               {wallCount} {t.terrainConfirmModal.walls}
             </span>
           )}
           {foundationCount > 0 && (
-            <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#EBE6DC] text-[#2B2621] font-medium text-[11px] tabular-nums border border-[#D8D1C5]">
               {foundationCount} {t.terrainConfirmModal.foundations}
             </span>
           )}
           {stairCount > 0 && (
-            <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#EBE6DC] text-[#2B2621] font-medium text-[11px] tabular-nums border border-[#D8D1C5]">
               {stairCount} {t.terrainConfirmModal.stairs}
             </span>
           )}
           {propCount > 0 && (
-            <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#EBE6DC] text-[#2B2621] font-medium text-[11px] tabular-nums border border-[#D8D1C5]">
               {propCount} {t.terrainConfirmModal.figurines}
             </span>
           )}
           {lightCount > 0 && (
-            <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#EBE6DC] text-[#2B2621] font-medium text-[11px] tabular-nums border border-[#D8D1C5]">
               {lightCount} {t.terrainConfirmModal.diyasLights}
             </span>
           )}
           {foliageCount > 0 && (
-            <span className="px-2.5 py-1 rounded-lg bg-[#EADECF] font-semibold text-[#4B382C]">
+            <span className="px-2.5 py-0.5 rounded-md bg-[#EBE6DC] text-[#2B2621] font-medium text-[11px] tabular-nums border border-[#D8D1C5]">
               {foliageCount} {t.terrainConfirmModal.foliage}
             </span>
           )}
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-end gap-2.5 pt-2 border-t border-[#D9C9B4]/60">
+        <div className="flex flex-col sm:flex-row items-center justify-end gap-2 pt-2 border-t border-[#D8D1C5]">
           <button
             onClick={() => setTerrainConfirmOpen(false)}
-            className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-[#634E40] hover:bg-[#EADECF] transition-colors cursor-pointer text-center"
+            className="w-full sm:w-auto px-3.5 py-1.5 rounded-md text-xs font-medium text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-colors cursor-pointer text-center"
           >
             {t.startupModal.terrainConfirmCancelBtn}
           </button>
 
           <button
             onClick={handleBackupAndProceed}
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#4B382C] hover:bg-[#38281E] text-white shadow-xs transition-all cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-[#2B2621] hover:bg-[#38322B] text-[#FAF8F5] shadow-xs transition-all cursor-pointer"
           >
-            <TbDeviceFloppy className="w-4 h-4 text-[#F59E0B]" />
+            <Save size={15} strokeWidth={1.75} className="text-[#FAF8F5]" />
             <span>{t.startupModal.terrainConfirmBackupBtn}</span>
           </button>
 
           <button
             onClick={handleWipeAndProceed}
-            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#B85F45] hover:bg-[#8F4938] text-white shadow-md shadow-[#B85F45]/30 transition-all cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-md text-xs font-semibold bg-[#B85F45] hover:bg-[#A3523B] text-white shadow-sm transition-all cursor-pointer"
           >
-            <TbTrash className="w-4 h-4" />
+            <Trash2 size={15} strokeWidth={1.75} />
             <span>{t.startupModal.terrainConfirmWipeBtn}</span>
           </button>
         </div>
@@ -149,4 +149,3 @@ export const TerrainChangeConfirmModal: React.FC = () => {
     </div>
   );
 };
-

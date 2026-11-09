@@ -53,71 +53,78 @@ Component voltage is driven by **saturated earth-tone tool and feature cards** i
 | `{colors.sea-blue}` | `#0284C7` | Nostalgic crinkled blue plastic sheet sea, water tanks (*taki*). |
 | `{colors.diya-amber}` | `#F59E0B` | Flickering Diya oil lamp flame, gold canopy (*Meghdambari*) trim, poster sub-header. |
 
-### Surface Tokens
+### Surface Tokens & 3-Tier Studio Hierarchy
+
+The studio interface implements a rigorous **3-tier surface hierarchy** (de-beiging overhaul) inspired by professional DCC environments (Blender, Unreal Engine 5, ZBrush) adapted with authentic Indian mineral earth tones:
+
+| Tier / Token | Hex | Role & Visual Expression |
+|---|---|---|
+| **Level 1 Canvas** `{colors.canvas}` | `#F4F1EA` | Viewport backdrop, application floor, sun-bleached courtyard ground. (`#1A1816` in Night Diya mode). |
+| **Level 2 Panels & Docks** `{colors.surface-base}` | `#EBE6DC` | Docked tool sidebars, floating mode rails, App Menu Bar, Top Tool Bar, Bottom Dock, and Modal containers. Framed by a precise 1px hairline border (`#D8D1C5`) and `shadow-xs`. |
+| **Level 3 Active Surfaces** `{colors.surface-dark}` | `#2B2621` | High-contrast basalt dark stone for active tool modes, selected tabs, pressed pill buttons, and focused items, paired with crisp white text (`#FAF8F5`). |
+| **Nested Cards** `{colors.surface-card}` | `#FAF8F5` | Secondary content cards, asset tiles, and inspector property boxes, bordered by `#D8D1C5` hairline. |
+| **Elevated Surfaces** `{colors.surface-strong}` | `#D8D1C5` | Hovered items, active button hover states, dragged handles. |
+| **Hairline Dividers** `{colors.border-subtle}` | `#D8D1C5` | Subtle 1px dividers within headers, docks, and property groups. Replaces muddy beige borders. |
+
+### Accent & Semantic Tokens
 
 | Token | Hex | Role & Visual Expression |
 |---|---|---|
-| `{colors.canvas}` | `#F9F6F0` | Default application floor. Warm plaster / sun-bleached sandstone. |
-| `{colors.surface-base}` | `#F3EBE0` | Docked sidebars (Left Tool Properties, Right Outliner, Mode Strip). |
-| `{colors.surface-soft}` | `#E4D8CB` | Top secondary tool bar, hanging folder guide tabs, control pills. |
-| `{colors.surface-card}` | `#FAF8F5` | Inner cards, outliner tree items, object inspector sheets, text inputs. |
-| `{colors.surface-strong}` | `#EADECF` | Hovered items, active secondary buttons, selected rows in outliner. |
-| `{colors.surface-elevated}` | `#DFCDBD` | Active tabs, pressed pills, drag handles. |
-| `{colors.surface-dark}` | `#23211E` | Night Mode viewport backing, dark basalt preset cards. |
-| `{colors.surface-dark-elevated}` | `#322E2A` | Elevated night mode toolbars, dark popover floating panels. |
-| `{colors.border-panel}` | `#CDBCAB` | 1px perimeter border for docked sidebars, top bars, and hanging tabs. |
-| `{colors.border-card}` | `#D9C9B4` | 1px internal divider on cards, inputs, and section splitters. |
-| `{colors.border-subtle}` | `#D8C7B5` | Hairline separators within headers, rows, and input groups. |
-| `{colors.border-focus}` | `#BFA892` | Focused input border, active outliner selection border. |
-
-### Text Tokens
-
-| Token | Hex | Role & Visual Expression |
-|---|---|---|
-| `{colors.ink}` | `#2B1E16` | Main headlines, tool titles, high-emphasis text. |
-| `{colors.body-strong}` | `#4B382C` | Section sub-heads, lead descriptions, primary button text, tab labels. |
-| `{colors.body}` | `#5C4638` | Default body copy, tool descriptions, guide instructions, chevron icons. |
-| `{colors.muted}` | `#8D7666` | Helper notes, slider labels, shortcut keys, category uppercase labels. |
-| `{colors.muted-soft}` | `#B29E8E` | Subtle captions, watermarks, inactive icon strokes, disabled states. |
-| `{colors.on-primary}` | `#FFFFFF` | Text on primary dark buttons (`#4B382C`) and saffron tags (`#E85D04`). |
-| `{colors.on-dark}` | `#FAF8F5` | Text on dark basalt cards and Night Mode overlays. |
-
-### Semantic Tokens
-
-| Token | Hex | Role & Visual Expression |
-|---|---|---|
-| `{colors.success}` | `#10B981` | Safe snap hologram, confirmed action, active selection ring, 3D handle highlight. |
-| `{colors.warning}` | `#F59E0B` | Unsnapped hovering hologram, selection wireframe edge, mud drying advisory. |
-| `{colors.error}` | `#DC2626` | Destructive actions (Delete wall/component/spline), error notifications. |
+| `{colors.terracotta}` | `#B85F45` | Primary CTA, active selection ring, finished wall indicator, primary slider thumb accent. |
+| `{colors.terracotta-hover}` | `#A24F37` | Hovered state for primary terracotta CTAs. |
+| `{colors.bhagwa}` | `#E85D04` | Festive saffron highlight, celebratory badge, royal flag accent. |
+| `{colors.bhagwa-glow}` | `#FF7722` | Saffron hover state and glowing marigold highlights. |
+| `{colors.success}` | `#15803D` | Valid snap placement, safe 3D position, saved project indicator. |
+| `{colors.warning}` | `#D97706` | Unsnapped hovering preview, non-destructive caution, drying mud advisory. |
+| `{colors.error}` / Destructive | `#DC2626` | Destructive actions (Delete wall/component/project, wipe terrain), error notifications. |
 | `{colors.info}` | `#0284C7` | Blueprint guide tooltip, step hints, water tool suggestion. |
+
+### Normalized Border Radii
+
+| Tier | Radius | Target Components |
+|---|---|---|
+| **Controls** | `8px` (`rounded-lg` / `rounded-md`) | Buttons, inputs, dropdown items, slider tracks/thumbs, status chips. |
+| **Cards** | `12px` (`rounded-xl`) | Content containers, asset preview tiles, floating quick bars, outliner rows. |
+| **Panels** | `16px` (`rounded-2xl`) | Left and right docked tool drawers, bottom tool shelf, contextual docks. |
+| **Modals** | `20px` (`rounded-[20px]`) | Centered modal windows (Startup, Project Hub, Shortcuts, About, Confirmation dialogs). |
 
 ---
 
-## Typography
+## Typography & Iconography
 
-### Font Families
-1. **Primary Festive Display:** **`Yatra One`** (Google Fonts, OFL)
-   * Inspired by the hand-painted signboards and Devanagari script tradition of Maharashtra. 
-   * Features sharp, chisel-like cut strokes, high stroke contrast, and architectural discipline reminiscent of fort masonry.
-   * Handles bilingual English and Marathi/Devanagari headlines with commanding presence.
-2. **Playful Rounded Display (Alternative/Celebratory):** **`Modak`** (Google Fonts, OFL)
-   * Chunky, plump, joyful Devanagari display font used for festive greetings (*"दिवाळीच्या हार्दिक शुभेच्छा"*), mode banners, and celebrations.
-3. **Primary UI & Technical Body:** **`Inter`**
-   * Clean, hyper-legible sans-serif for numbers, dimension readouts (`cm`), sliders, dropdowns, and button microcopy.
+### Font Families & Roles
+1. **Primary UI Engine:** **`Inter`**
+   * Standardized across all UI menus, toolbars, sidebar panels, modals, outliner trees, buttons, dropdowns, and micro-copy.
+   * Delivers crisp legibility, tight tracking, and optical neutrality across high-density DCC layouts.
+   * **Tabular Numerals for Numeric Readouts:** All dimension displays, coordinates, percentages, and slider values use `tabular-nums font-mono text-[11px]` to eliminate layout jitter during active dragging.
+2. **Authentic Cultural Display:** **`Yatra One`** (Google Fonts, OFL)
+   * Hand-carved Devanagari/Latin architectural voice inspired by traditional Maharashtra fort signage and temple masonry.
+   * **Strict Usage Discipline:** Reserved exclusively for high-impact brand/display elements:
+     - AppMenuBar brand mark ("The Killa Playground")
+     - Large modal hero headers and landmark title placards
+     - Generated festive poster title plaques
+   * *Never used for buttons, menu items, sidebar tabs, or property controls.*
+3. **Playful Celebratory Display:** **`Modak`** (Google Fonts, OFL)
+   * Celebratory chunky display font reserved exclusively for festive greeting banners and Diwali celebratory popovers.
 
-### Scale & Hierarchy
+### 5-Tier Typography Scale
 
-| Token | Size / Line Height | Weight | Font | Usage |
+| Tier | Size / Line Height | Weight | Font | Primary Usage |
 |---|---|---|---|---|
-| `{typography.display-xl}` | 48px / 1.1 | Bold (700) | Yatra One | Poster main fort title, splash banner |
-| `{typography.display-lg}` | 36px / 1.15 | Regular (400) | Yatra One | Landmark modals, victory headers |
-| `{typography.display-md}` | 24px / 1.2 | Regular (400) | Yatra One | Fort blueprint placards, modal titles |
-| `{typography.display-sm}` | 18px / 1.25 | Regular (400) | Yatra One | In-flow brand title, feature card headers |
-| `{typography.category-header}` | 9px / 1.0 | Bold (700) | Inter | Uppercase tracking category labels (`text-[9px] font-bold text-[#8D7666] uppercase tracking-wider`) |
-| `{typography.title-sm}` | 12px / 1.3 | SemiBold (600) | Inter | Tool properties titles, outliner row names |
-| `{typography.body-md}` | 14px / 1.4 | Regular (400) | Inter | General descriptions, help guidance |
-| `{typography.body-sm}` | 12px / 1.4 | Regular / Medium | Inter | Slider labels, toggle text, helper hints |
-| `{typography.caption}` | 10px / 1.3 | Medium (500) | Inter | Dimension readouts (`25 cm`), key badges (`Z`, `Y`, `X`) |
+| **Display XL** | 48px / 1.1 | Bold (700) | Yatra One | Exported festive poster main fort title, splash hero |
+| **Display LG** | 32px / 1.15 | Regular (400) | Yatra One | Landmark modals, victory headers, celebratory splash |
+| **Display MD** | 20px / 1.2 | Regular (400) | Yatra One | Fort blueprint placards, modal dialog titles |
+| **Title SM** | 13px / 1.3 | SemiBold (600) | Inter | Panel section headers, modal card titles, outliner groups |
+| **Body SM** | 12px / 1.4 | Medium (500) | Inter | Buttons, tool options, labels, dropdown menu items |
+| **Micro / Readout** | 11px / 1.2 | Regular (400) | Inter / Mono | Helper hints, shortcuts, slider values (`tabular-nums font-mono`) |
+| **Category Header** | 9-10px / 1.0 | SemiBold (600) | Inter | Uppercase section tracking tags (`tracking-wider uppercase text-[#7C7267]`) |
+
+### Iconography: Standardized Lucide Icons
+All HUD components, toolbars, sidebars, and modals use **`lucide-react`** exclusively:
+- **Geometry & Stroke**: Standard controls use `size={16}` (16×16px) with `strokeWidth={1.75}` for crisp, balanced line weights on both standard and Retina displays.
+- **Docks & Primary Tools**: Main tool shelves and bottom docks use `size={18}` with `strokeWidth={1.75}`.
+- **Hero Icons**: Modal headers use `size={20}` or `size={24}` with `strokeWidth={1.5}` or `1.75`.
+- **Zero Legacy Icons**: No `react-icons/tb` (Tabler) or ad-hoc emoji icons remain in the HUD architecture. Third-party brand logos (WhatsApp, X) are implemented as clean 16px inline SVG path components using `currentColor`.
 
 ---
 
@@ -210,12 +217,12 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
 
 To ensure that every new HUD element, panel, card, button, slider, or 3D handle matches the rest of the application seamlessly throughout development, all authoring agents and engineers must adhere to the following rules:
 
-### Rule 1: Surface & Border Hierarchy
-Never use pure white (`#FFFFFF`) or cold gray (`#F3F4F6`) for panels or containers:
-- **Docked Sidebars**: Background `#F3EBE0`, outer border `1px solid #CDBCAB`, shadow `shadow-lg`.
-- **Top Bars & Hanging Tabs**: Background `#E4D8CB`, border `1px solid #CDBCAB`, shadow `shadow-xs` / `shadow-sm`.
-- **Inner Containers & Outliner Cards**: Background `#FAF8F5`, border `1px solid #D9C9B4`, rounded `rounded-xl`.
-- **Selected Outliner Row / Active Item**: Background `#B85F45` (Terracotta) with text `#FAF8F5`, or subtle hover background `#EADECF`.
+### Rule 1: Surface & Border Hierarchy (3-Tier Discipline)
+Never use pure stark white (`#FFFFFF`) or cold artificial gray (`#F3F4F6`) for panels or containers:
+- **Level 2 Docked Sidebars & HUD**: Background `#EBE6DC`, outer border `1px solid #D8D1C5`, shadow `shadow-xs`.
+- **Top Bars & Hanging Tabs**: Background `#EBE6DC`, border `1px solid #D8D1C5`, shadow `shadow-xs`.
+- **Inner Containers & Outliner Cards**: Background `#FAF8F5`, border `1px solid #D8D1C5`, rounded `rounded-xl`.
+- **Level 3 Active Surfaces & Selections**: Background `#2B2621` (Basalt) with text `#FAF8F5`, or `#B85F45` (Terracotta) for primary actions and active selection rings. Subtle hover uses `#D8D1C5`.
 - **Panel Edge Tactile Resizing Grip**: Always include the 6-dot embossed grip on resizable edges:
   ```tsx
   <div className="flex flex-col items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
@@ -329,20 +336,20 @@ Permutation C: Left Sidebar Minimized + Modes Strip Open
 
 ### Rule 9: Tool Properties Panel Anatomy & Card Container Discipline
 To prevent visual clutter and maintain ergonomic consistency across all tool panels:
-- **Reserved White Box Containers (`bg-[#FAF8F5]` / `border-[#D9C9B4]` rounded-xl):**
+- **Reserved White Box Containers (`bg-[#FAF8F5]` / `border-[#D8D1C5]` rounded-xl):**
   - White container cards are strictly reserved for:
     1. **Top Section Header Badge** (e.g. `Texture Studio`, `Path Drafting`, `Wall Architecture`).
     2. **Active Item / Target Preview Cards** (e.g. Active Texture preview with image, name, and category; Selected Wall summary).
     3. **Primary Action Group Containers** (e.g. Finish / Cancel buttons, Flood / Clear buttons).
 - **Direct Background Mounting for Property Sliders & Inputs:**
-  - Sliders, number readouts, and toggles **MUST sit directly on the panel background (`bg-[#F3EBE0]`)**.
+  - Sliders, number readouts, and toggles **MUST sit directly on the Level 2 panel background (`bg-[#EBE6DC]`)**.
   - **NEVER** wrap individual property sliders inside separate white card containers.
   - Standard slider layout:
     ```tsx
     <div>
-      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
         <span>Brush Radius</span>
-        <span className="text-[#8D7666]">{radius.toFixed(1)}m</span>
+        <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{radius.toFixed(1)}m</span>
       </div>
       <input
         type="range"
@@ -351,7 +358,7 @@ To prevent visual clutter and maintain ergonomic consistency across all tool pan
         step={step}
         value={radius}
         onChange={(e) => setRadius(parseFloat(e.target.value))}
-        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
       />
     </div>
     ```
@@ -421,6 +428,17 @@ Before authoring or modifying any HUD component or tool sidebar:
     `[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`
   - Uses the warm plaster background (`bg-[#F2EBE1]/95 border border-[#D9C9B4] rounded-full shadow-md`).
 - **Interactive States & Highlights:**
+
+### Rule 19: Unified Pill-in-Pill Language Selector (`LanguageSelector.tsx`)
+To maintain visual consistency and eliminate fragmented implementations across the studio:
+- **Single Source of Truth:** All language selection across the application MUST use the unified [`LanguageSelector.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/common/LanguageSelector.tsx) component. Never write ad-hoc inline language button arrays.
+- **Pill-in-Pill Geometry:**
+  - Outer container: `inline-flex items-center bg-[#EBE6DC] p-0.5 rounded-full border border-[#D8D1C5] select-none shadow-xs font-sans`.
+  - Inner language buttons: True pills (`rounded-full`) formatted with `px-2.5 py-0.5 text-[11px] font-semibold`.
+  - Active button: Level 3 basalt dark stone (`bg-[#2B2621] text-[#FAF8F5] shadow-xs`).
+  - Inactive button: `text-[#7C7267] hover:text-[#2B2621] hover:bg-[#D8D1C5]/60`.
+  - Both container and selection highlight MUST be `rounded-full` (eliminating the "square in pill" visual defect).
+- **Mounted Locations:** Standardized across App Menu Bar, Startup Modal, Poster Studio Modal, and Top Navigation Bar.
   - `Day` active: Button highlighted in `#F59E0B` (Amber) or `#EADECF` pill background.
   - `Play` active: Button highlighted in `#E85D04` (Bhagwa Saffron) with subtle pulse ring.
   - `Night` active: Button highlighted in `#23211E` with `#F59E0B` flame icon.

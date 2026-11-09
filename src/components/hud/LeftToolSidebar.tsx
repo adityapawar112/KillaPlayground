@@ -3,55 +3,53 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import * as THREE from 'three';
 import {
-  TbMountain,
-  TbTrendingDown,
-  TbMinus,
-  TbWaveSine,
-  TbArrowUpRight,
-  TbTexture,
-  TbBrush,
-  TbCheck,
-  TbSparkles,
-  TbPlant2,
-  TbFocus2,
-  TbLock,
-  TbBuildingFortress,
-  TbRoute,
-  TbUsersGroup,
-  TbDropletHalf2,
-  TbAdjustmentsHorizontal,
-  TbChevronLeft,
-  TbChevronDown,
-  TbPointer,
-  TbPencil,
-  TbDoorEnter,
-  TbTower,
-  TbTrash,
-  TbPlus,
-  TbBox,
-  TbFlag,
-  TbFlame,
-  TbStairs,
-  TbX,
-  TbArrowsMove,
-  TbEdit,
-  TbPalette,
-  TbTrees,
-  TbRefresh,
-  TbCircleHalf2,
-  TbEye,
-  TbSun,
-  TbMoon,
-  TbClock,
-  TbCompass,
-  TbCamera,
-  TbRotateClockwise2,
-  TbMovie,
-  TbSunrise,
-  TbSunset,
-  TbCube,
-  TbChevronRight,
-} from 'react-icons/tb';
+  Mountain,
+  TrendingDown,
+  Minus,
+  Activity,
+  ArrowUpRight,
+  Layers,
+  Paintbrush,
+  Check,
+  Sparkles,
+  Sprout,
+  Focus,
+  Lock,
+  Castle,
+  Route,
+  Users,
+  Droplets,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronDown,
+  MousePointer,
+  Pencil,
+  DoorOpen,
+  TowerControl,
+  Trash2,
+  Plus,
+  Box,
+  Flag,
+  Flame,
+  Footprints,
+  X,
+  Move,
+  Palette,
+  Trees,
+  RefreshCw,
+  CircleDot,
+  Eye,
+  Sun,
+  Moon,
+  Clock,
+  Compass,
+  Camera,
+  RotateCw,
+  Clapperboard,
+  Sunrise,
+  Sunset,
+  ChevronRight,
+} from 'lucide-react';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { getAtmosphericLighting } from '@/lib/lighting/atmosphericLighting';
@@ -509,7 +507,7 @@ export const LeftToolSidebar: React.FC = () => {
 
   const isModePanelOpen =
     ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting', 'view'].includes(activeTool) && !isToolModeMinimized;
-  const propertiesTabLeft = isModePanelOpen ? '76px' : '8px';
+  const propertiesTabLeft = isModePanelOpen ? '84px' : '8px';
 
   return (
     <>
@@ -523,12 +521,12 @@ export const LeftToolSidebar: React.FC = () => {
         >
           <button
             onClick={toggleMobileSidebar}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#CDBCAB] rounded-b-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#D8D1C5] border-x border-b border-[#D8D1C5] rounded-b-lg shadow-sm text-xs font-semibold text-[#2B2621] active:scale-95 transition-transform cursor-pointer"
             title={t.sidebars.left.openProperties}
           >
-            <TbAdjustmentsHorizontal className="w-3.5 h-3.5 text-[#8F4938]" />
+            <SlidersHorizontal className="w-3.5 h-3.5 text-[#8F4938]" />
             <span className="text-[11px] font-bold">{t.sidebars.left.properties}</span>
-            <TbChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
       )}
@@ -537,7 +535,7 @@ export const LeftToolSidebar: React.FC = () => {
       <aside
         aria-label="Editor Sidebar"
         style={{ width: `${sidebarWidth}px` }}
-        className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#F3EBE0] border-r border-[#CDBCAB] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
+        className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-r border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
           isMobileSidebarMinimized ? '-translate-x-full' : 'translate-x-0'
         } ${
           !showContextualDock
@@ -564,9 +562,9 @@ export const LeftToolSidebar: React.FC = () => {
         </div>
 
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-3 border-b border-[#D8C7B5] shrink-0 bg-[#ECE2D5]/70">
-          <div className="flex items-center gap-1.5 text-[#4B382C]">
-            <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
+        <div className="flex items-center justify-between p-3 border-b border-[#D8D1C5] shrink-0 bg-[#ECE2D5]/70">
+          <div className="flex items-center gap-1.5 text-[#2B2621]">
+            <SlidersHorizontal className="w-4 h-4 text-[#8F4938]" />
             <span className="text-xs font-bold uppercase tracking-wider">{t.sidebars.left.toolProperties}</span>
           </div>
 
@@ -579,29 +577,29 @@ export const LeftToolSidebar: React.FC = () => {
               title={t.sidebars.left.minimizeSidebar}
               className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
             >
-              <TbChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         {/* Scrollable Tool Content */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-4 text-xs text-[#4B382C]">
+        <div className="flex-1 overflow-y-auto p-3.5 space-y-4 text-xs text-[#2B2621]">
           {/* ======================================================== */}
           {/* 1. UNIFIED BUILDING CONSTRUCTION TOOL                     */}
           {/* ======================================================== */}
           {(activeTool === 'building' || activeTool === 'walls') && (
             <div className="space-y-4">
               {/* Header Badge */}
-              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
                 <div className="flex items-center gap-1.5">
                   {buildingMode === 'foundation' ? (
-                    <TbBox className="w-4 h-4 text-[#B85F45]" />
+                    <Box className="w-4 h-4 text-[#B85F45]" />
                   ) : buildingMode === 'stairs' ? (
-                    <TbStairs className="w-4 h-4 text-[#B85F45]" />
+                    <Footprints className="w-4 h-4 text-[#B85F45]" />
                   ) : (
-                    <TbBuildingFortress className="w-4 h-4 text-[#B85F45]" />
+                    <Castle className="w-4 h-4 text-[#B85F45]" />
                   )}
-                  <span className="font-bold text-[#4B382C]">
+                  <span className="font-bold text-[#2B2621]">
                     {buildingMode === 'walls'
                       ? 'Rampart Drafting'
                       : buildingMode === 'foundation'
@@ -613,7 +611,7 @@ export const LeftToolSidebar: React.FC = () => {
                       : 'Selection Mode'}
                   </span>
                 </div>
-                <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                <span className="text-[10px] uppercase font-semibold text-[#7C7267]">
                   {buildingMode} mode
                 </span>
               </div>
@@ -621,7 +619,7 @@ export const LeftToolSidebar: React.FC = () => {
               {/* A. WALLS MODE */}
               {buildingMode === 'walls' && (
                 <div className="space-y-3.5">
-                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
                     <div className="flex justify-between items-center text-[11px]">
                       <span className="font-semibold text-[#5C4638]">Draft Points:</span>
                       <span className="font-bold text-[#B85F45]">
@@ -630,7 +628,7 @@ export const LeftToolSidebar: React.FC = () => {
                           '(Min 2 needed)'
                         ) : (
                           <span className="inline-flex items-center gap-1 text-green-700">
-                            <TbCheck className="w-3.5 h-3.5" /> Ready
+                            <Check className="w-3.5 h-3.5" /> Ready
                           </span>
                         )}
                       </span>
@@ -648,10 +646,10 @@ export const LeftToolSidebar: React.FC = () => {
                         className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-sm ${
                           activeWallDraft.length >= 2
                             ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
-                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
+                            : 'bg-[#DFCDBD] text-[#7C7267] cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <TbCheck className="w-4 h-4" />
+                        <Check className="w-4 h-4" />
                         {t.tools.walls.finishWall}
                       </button>
 
@@ -667,10 +665,10 @@ export const LeftToolSidebar: React.FC = () => {
                         className={`py-2 px-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition-all shadow-sm ${
                           activeWallDraft.length >= 3
                             ? 'bg-[#8C4A32] text-white hover:bg-[#783E29] cursor-pointer'
-                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
+                            : 'bg-[#DFCDBD] text-[#7C7267] cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <TbRefresh className="w-3.5 h-3.5" />
+                        <RefreshCw className="w-3.5 h-3.5" />
                         {t.tools.walls.closeLoop}
                       </button>
 
@@ -678,9 +676,9 @@ export const LeftToolSidebar: React.FC = () => {
                         <button
                           onClick={cancelCurrentWall}
                           title={t.tools.walls.cancelDraft}
-                          className="p-2 rounded-xl bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer"
+                          className="p-2 rounded-xl bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5] cursor-pointer"
                         >
-                          <TbX className="w-4 h-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -689,9 +687,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Creation Sliders */}
                   <div className="space-y-3">
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.height}</span>
-                        <span className="text-[#8D7666]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -705,9 +703,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.thickness}</span>
-                        <span className="text-[#8D7666]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -721,7 +719,7 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] font-semibold text-[#4B382C]">{t.tools.walls.crenellations}</span>
+                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.walls.crenellations}</span>
                       <input
                         type="checkbox"
                         checked={wallSettings.crenellations}
@@ -732,7 +730,7 @@ export const LeftToolSidebar: React.FC = () => {
 
                     {wallSettings.crenellations && (
                       <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-[#4B382C]">{t.tools.building.flipCrenellations}</span>
+                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.building.flipCrenellations}</span>
                         <input
                           type="checkbox"
                           checked={wallSettings.flipCrenellations ?? false}
@@ -743,7 +741,7 @@ export const LeftToolSidebar: React.FC = () => {
                     )}
 
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-[#4B382C]">{t.tools.walls.autoBastions}</span>
+                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.walls.autoBastions}</span>
                       <input
                         type="checkbox"
                         checked={wallSettings.autoBastions}
@@ -754,9 +752,9 @@ export const LeftToolSidebar: React.FC = () => {
 
                     {wallSettings.autoBastions && (
                       <div>
-                        <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.tools.walls.bastionRadius}</span>
-                          <span className="text-[#8D7666]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -776,7 +774,7 @@ export const LeftToolSidebar: React.FC = () => {
               {/* B. FOUNDATION MODE */}
               {buildingMode === 'foundation' && (
                 <div className="space-y-3.5">
-                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-1.5">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="text-[11px] font-semibold text-[#5C4638]">
                         {activeFoundationDraft?.phase === 'height'
@@ -795,9 +793,9 @@ export const LeftToolSidebar: React.FC = () => {
                             setToastMessage('Foundation draft canceled.');
                           }}
                           title="Cancel Draft"
-                          className="p-1 rounded-lg bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer transition-colors"
+                          className="p-1 rounded-lg bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5] cursor-pointer transition-colors"
                         >
-                          <TbX className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </div>
@@ -810,13 +808,13 @@ export const LeftToolSidebar: React.FC = () => {
                             Height: {((activeFoundationDraft.height || 0.40) * 100).toFixed(0)} cm (Click to confirm!)
                           </span>
                         ) : (
-                          <span className="block text-[10px] text-[#8D7666] font-normal mt-0.5">
+                          <span className="block text-[10px] text-[#7C7267] font-normal mt-0.5">
                             Release mouse to adjust height
                           </span>
                         )}
                       </div>
                     ) : (
-                      <p className="text-[11px] text-[#634E40] leading-snug">
+                      <p className="text-[11px] text-[#5A5248] leading-snug">
                         Click and drag diagonally across terrain to draw base, move mouse to adjust height, then click to place.
                       </p>
                     )}
@@ -825,9 +823,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Foundation Sliders */}
                   <div className="space-y-3">
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.height}</span>
-                        <span className="text-[#8D7666]">{((defaultFoundationHeight || 0.40) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267]">{((defaultFoundationHeight || 0.40) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -841,9 +839,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.offset}</span>
-                        <span className="text-[#8D7666]">{((defaultFoundationOffset || 0.0) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267]">{((defaultFoundationOffset || 0.0) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -857,9 +855,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.uvTiling}</span>
-                        <span className="text-[#8D7666]">{(defaultFoundationTiling || 2.0).toFixed(1)}x</span>
+                        <span className="text-[#7C7267]">{(defaultFoundationTiling || 2.0).toFixed(1)}x</span>
                       </div>
                       <input
                         type="range"
@@ -878,7 +876,7 @@ export const LeftToolSidebar: React.FC = () => {
               {/* C. STAIRS MODE */}
               {buildingMode === 'stairs' && (
                 <div className="space-y-3.5">
-                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
                     <div className="flex justify-between items-center text-[11px]">
                       <span className="font-semibold text-[#5C4638]">Stair Points:</span>
                       <span className="font-bold text-[#B85F45]">
@@ -887,7 +885,7 @@ export const LeftToolSidebar: React.FC = () => {
                           '(Min 2 needed)'
                         ) : (
                           <span className="inline-flex items-center gap-1 text-green-700">
-                            <TbCheck className="w-3.5 h-3.5" /> Ready
+                            <Check className="w-3.5 h-3.5" /> Ready
                           </span>
                         )}
                       </span>
@@ -905,10 +903,10 @@ export const LeftToolSidebar: React.FC = () => {
                         className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm ${
                           activeStairDraft.length >= 2
                             ? 'bg-[#E85D04] text-white hover:bg-[#D05303] cursor-pointer'
-                            : 'bg-[#DFCDBD] text-[#8D7666] cursor-not-allowed opacity-60'
+                            : 'bg-[#DFCDBD] text-[#7C7267] cursor-not-allowed opacity-60'
                         }`}
                       >
-                        <TbCheck className="w-4 h-4" />
+                        <Check className="w-4 h-4" />
                         {t.tools.walls.finishStairs}
                       </button>
 
@@ -916,9 +914,9 @@ export const LeftToolSidebar: React.FC = () => {
                         <button
                           onClick={cancelStairs}
                           title={t.tools.building.cancelStairs}
-                          className="p-2 rounded-xl bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD] cursor-pointer"
+                          className="p-2 rounded-xl bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5] cursor-pointer"
                         >
-                          <TbX className="w-4 h-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -927,9 +925,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Stairway Sliders */}
                   <div className="space-y-3">
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.scale}</span>
-                        <span className="text-[#8D7666]">{(stairSettings.scale ?? 2.0).toFixed(1)}x</span>
+                        <span className="text-[#7C7267]">{(stairSettings.scale ?? 2.0).toFixed(1)}x</span>
                       </div>
                       <input
                         type="range"
@@ -943,9 +941,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.stepWidth}</span>
-                        <span className="text-[#8D7666]">{((stairSettings.stepWidth || 0.10) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267]">{((stairSettings.stepWidth || 0.10) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -959,9 +957,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.stepRun}</span>
-                        <span className="text-[#8D7666]">{((stairSettings.stepRun || 0.03) * 100).toFixed(1)} cm</span>
+                        <span className="text-[#7C7267]">{((stairSettings.stepRun || 0.03) * 100).toFixed(1)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -975,9 +973,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.stepRise}</span>
-                        <span className="text-[#8D7666]">{((stairSettings.stepRise || 0.015) * 100).toFixed(1)} cm</span>
+                        <span className="text-[#7C7267]">{((stairSettings.stepRise || 0.015) * 100).toFixed(1)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -991,9 +989,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>Step Spacing</span>
-                        <span className="text-[#8D7666]">{((stairSettings.stepSpacing || 0.03) * 100).toFixed(1)} cm</span>
+                        <span className="text-[#7C7267]">{((stairSettings.stepSpacing || 0.03) * 100).toFixed(1)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -1007,9 +1005,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>Step Offset</span>
-                        <span className="text-[#8D7666]">{((stairSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
+                        <span className="text-[#7C7267]">{((stairSettings.stepOffset || 0.0) * 100).toFixed(1)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -1028,16 +1026,16 @@ export const LeftToolSidebar: React.FC = () => {
               {/* D. FORTIFICATIONS MODE */}
               {buildingMode === 'fortifications' && (
                 <div className="space-y-3.5">
-                  <div className="text-[11px] text-[#634E40] leading-relaxed">
+                  <div className="text-[11px] text-[#5A5248] leading-relaxed">
                     {t.sidebars.left.fortificationsSubtitle}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { id: 'tower' as FortStampType, label: t.sidebars.left.fortStampWatchtower, desc: t.sidebars.left.fortStampWatchtowerDesc, icon: TbTower },
-                      { id: 'box' as FortStampType, label: t.sidebars.left.fortStampBastion, desc: t.sidebars.left.fortStampBastionDesc, icon: TbBuildingFortress },
-                      { id: 'round_bastion' as FortStampType, label: t.sidebars.left.fortStampRoundBastion, desc: t.sidebars.left.fortStampRoundBastionDesc, icon: TbCircleHalf2 },
-                      { id: 'gate' as FortStampType, label: t.sidebars.left.fortStampGate, desc: t.sidebars.left.fortStampGateDesc, icon: TbDoorEnter },
+                      { id: 'tower' as FortStampType, label: t.sidebars.left.fortStampWatchtower, desc: t.sidebars.left.fortStampWatchtowerDesc, icon: TowerControl },
+                      { id: 'box' as FortStampType, label: t.sidebars.left.fortStampBastion, desc: t.sidebars.left.fortStampBastionDesc, icon: Castle },
+                      { id: 'round_bastion' as FortStampType, label: t.sidebars.left.fortStampRoundBastion, desc: t.sidebars.left.fortStampRoundBastionDesc, icon: CircleDot },
+                      { id: 'gate' as FortStampType, label: t.sidebars.left.fortStampGate, desc: t.sidebars.left.fortStampGateDesc, icon: DoorOpen },
                     ].map((stamp) => {
                       const Icon = stamp.icon;
                       const isStampActive = activeStamp === stamp.id;
@@ -1048,13 +1046,13 @@ export const LeftToolSidebar: React.FC = () => {
                           onClick={() => setActiveStamp(isStampActive ? null : stamp.id)}
                           className={`flex flex-col items-center justify-center p-2 rounded-xl border text-center transition-all cursor-pointer ${
                             isStampActive
-                              ? 'bg-[#4B382C] text-[#FAF8F5] border-[#38281E] shadow-md ring-2 ring-[#B85F45]'
-                              : 'bg-[#FAF8F5] text-[#4B382C] border-[#D9C9B4] hover:bg-[#EADECF]'
+                              ? 'bg-[#2B2621] text-[#FAF8F5] border-[#38281E] shadow-md ring-2 ring-[#B85F45]'
+                              : 'bg-[#FAF8F5] text-[#2B2621] border-[#D8D1C5] hover:bg-[#D8D1C5]'
                           }`}
                         >
                           <Icon className="w-5 h-5 mb-1 text-[#B85F45]" />
                           <span className="font-bold text-[10px] leading-tight">{stamp.label}</span>
-                          <span className="text-[8px] text-[#8D7666] leading-tight mt-0.5">{stamp.desc}</span>
+                          <span className="text-[8px] text-[#7C7267] leading-tight mt-0.5">{stamp.desc}</span>
                         </button>
                       );
                     })}
@@ -1063,15 +1061,15 @@ export const LeftToolSidebar: React.FC = () => {
                   {activeStamp && (
                     <div className="p-3 bg-[#EAE2D7] rounded-xl border border-[#B85F45]/40 space-y-2">
                       <div className="flex items-center gap-1.5 text-xs font-bold text-[#8F4938]">
-                        <TbSparkles className="w-4 h-4" />
+                        <Sparkles className="w-4 h-4" />
                         {t.sidebars.left.continuousStamping}
                       </div>
-                      <p className="text-[11px] text-[#634E40] leading-snug">
+                      <p className="text-[11px] text-[#5A5248] leading-snug">
                         {t.sidebars.left.continuousStampingDesc}
                       </p>
                       <button
                         onClick={() => setActiveStamp(null)}
-                        className="w-full py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#4B382C] border border-[#D9C9B4] rounded-lg hover:bg-[#DFCDBD] cursor-pointer"
+                        className="w-full py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] border border-[#D8D1C5] rounded-lg hover:bg-[#D8D1C5] cursor-pointer"
                       >
                         {t.sidebars.left.doneStamping}
                       </button>
@@ -1084,10 +1082,10 @@ export const LeftToolSidebar: React.FC = () => {
               {buildingMode === 'select' && (
                 <div className="space-y-3">
                   {selectedWall ? (
-                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-3">
                       <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">{t.sidebars.left.selectedWall}</div>
-                        <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
+                        <div className="text-[10px] font-bold text-[#7C7267] uppercase">{t.sidebars.left.selectedWall}</div>
+                        <div className="text-xs font-bold text-[#2B2621] mt-0.5 truncate">
                           {selectedWall.name || t.tools.walls.defensiveRampart}
                           {selectedComponent && (
                             <span className="text-[#B85F45] ml-1">
@@ -1103,9 +1101,9 @@ export const LeftToolSidebar: React.FC = () => {
                             setSelectedWallId(null);
                             setSelectedComponent(null);
                           }}
-                          className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbX className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5" />
                           {t.sidebars.right.deselect}
                         </button>
 
@@ -1131,19 +1129,19 @@ export const LeftToolSidebar: React.FC = () => {
                           }}
                           className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbTrash className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5" />
                           {t.sidebars.left.delete}
                         </button>
                       </div>
                     </div>
                   ) : selectedFoundation ? (
-                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-3">
                       <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">{t.sidebars.left.selectedFoundation}</div>
-                        <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
+                        <div className="text-[10px] font-bold text-[#7C7267] uppercase">{t.sidebars.left.selectedFoundation}</div>
+                        <div className="text-xs font-bold text-[#2B2621] mt-0.5 truncate">
                           {selectedFoundation.name || t.tools.building.foundationTitle}
                         </div>
-                        <div className="text-[11px] text-[#8D7666] mt-0.5">
+                        <div className="text-[11px] text-[#7C7267] mt-0.5">
                           {(selectedFoundation.length * 100).toFixed(0)}cm ×{' '}
                           {(selectedFoundation.width * 100).toFixed(0)}cm • {t.tools.building.height}: {(selectedFoundation.height * 100).toFixed(0)}cm
                         </div>
@@ -1152,9 +1150,9 @@ export const LeftToolSidebar: React.FC = () => {
                       <div className="space-y-1.5 pt-1">
                         <button
                           onClick={() => setSelectedFoundationId(null)}
-                          className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbX className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5" />
                           {t.sidebars.right.deselect}
                         </button>
 
@@ -1165,19 +1163,19 @@ export const LeftToolSidebar: React.FC = () => {
                           }}
                           className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbTrash className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5" />
                           {t.sidebars.left.delete}
                         </button>
                       </div>
                     </div>
                   ) : selectedStair ? (
-                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-3">
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-3">
                       <div>
-                        <div className="text-[10px] font-bold text-[#8D7666] uppercase">{t.sidebars.left.selectedStaircase}</div>
-                        <div className="text-xs font-bold text-[#4B382C] mt-0.5 truncate">
+                        <div className="text-[10px] font-bold text-[#7C7267] uppercase">{t.sidebars.left.selectedStaircase}</div>
+                        <div className="text-xs font-bold text-[#2B2621] mt-0.5 truncate">
                           {selectedStair.name || t.tools.building.stairsTitle}
                         </div>
-                        <div className="text-[11px] text-[#8D7666] mt-0.5">
+                        <div className="text-[11px] text-[#7C7267] mt-0.5">
                           {selectedStair.points.length} {t.sidebars.right.waypoints} • {t.tools.building.stepWidth}: {(((selectedStair.settings?.stepWidth ?? 0.10)) * 100).toFixed(0)}cm
                         </div>
                       </div>
@@ -1185,9 +1183,9 @@ export const LeftToolSidebar: React.FC = () => {
                       <div className="space-y-1.5 pt-1">
                         <button
                           onClick={() => setSelectedStairId(null)}
-                          className="w-full py-1.5 text-xs font-semibold bg-[#EADECF] text-[#4B382C] rounded-lg hover:bg-[#DFCDBD] cursor-pointer flex items-center justify-center gap-1.5"
+                          className="w-full py-1.5 text-xs font-semibold bg-[#FAF8F5] text-[#2B2621] rounded-lg hover:bg-[#D8D1C5] cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbX className="w-3.5 h-3.5" />
+                          <X className="w-3.5 h-3.5" />
                           {t.sidebars.right.deselect}
                         </button>
 
@@ -1198,15 +1196,15 @@ export const LeftToolSidebar: React.FC = () => {
                           }}
                           className="w-full py-1.5 text-xs font-semibold bg-red-100 text-red-700 rounded-lg hover:bg-red-200 cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                          <TbTrash className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5" />
                           {t.sidebars.left.delete}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-xs text-[#634E40] space-y-2">
-                      <div className="font-bold text-[#4B382C] flex items-center gap-1.5">
-                        <TbPointer className="w-4 h-4 text-[#B85F45]" />
+                    <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-xs text-[#5A5248] space-y-2">
+                      <div className="font-bold text-[#2B2621] flex items-center gap-1.5">
+                        <MousePointer className="w-4 h-4 text-[#B85F45]" />
                         {t.sidebars.left.selectAndInspect}
                       </div>
                       <p className="leading-relaxed">
@@ -1224,14 +1222,14 @@ export const LeftToolSidebar: React.FC = () => {
           {/* ======================================================== */}
           {activeTool === 'terrain' && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-                <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
-                  <TbMountain className="w-4 h-4 text-[#B85F45]" />
+              <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
+                <div className="flex items-center gap-1.5 font-bold text-[#2B2621]">
+                  <Mountain className="w-4 h-4 text-[#B85F45]" />
                   <span>
                     {t.toolModeSidebar.terrainModes[terrainSubTool as keyof typeof t.toolModeSidebar.terrainModes] || terrainSubTool}
                   </span>
                 </div>
-                <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                <span className="text-[10px] uppercase font-semibold text-[#7C7267]">
                   {terrainSubTool}
                 </span>
               </div>
@@ -1239,9 +1237,9 @@ export const LeftToolSidebar: React.FC = () => {
               {/* Sliders for active terrain brush */}
               <div className="space-y-3 pt-1">
                 <div>
-                  <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                  <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.brushRadius}</span>
-                    <span className="text-[#8D7666]">{brushRadius.toFixed(1)}m</span>
+                    <span className="text-[#7C7267]">{brushRadius.toFixed(1)}m</span>
                   </div>
                   <input
                     type="range"
@@ -1255,9 +1253,9 @@ export const LeftToolSidebar: React.FC = () => {
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                  <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.brushStrength}</span>
-                    <span className="text-[#8D7666]">{(brushStrength * 100).toFixed(0)}%</span>
+                    <span className="text-[#7C7267]">{(brushStrength * 100).toFixed(0)}%</span>
                   </div>
                   <input
                     type="range"
@@ -1272,9 +1270,9 @@ export const LeftToolSidebar: React.FC = () => {
 
                 {terrainSubTool === 'plateau' && (
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.targetHeight}</span>
-                      <span className="text-[#8D7666]">{plateauHeight.toFixed(2)}m</span>
+                      <span className="text-[#7C7267]">{plateauHeight.toFixed(2)}m</span>
                     </div>
                     <input
                       type="range"
@@ -1290,9 +1288,9 @@ export const LeftToolSidebar: React.FC = () => {
 
                 {terrainSubTool === 'slope' && (
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.slopeAngle}</span>
-                      <span className="text-[#8D7666]">{slopeAngle}°</span>
+                      <span className="text-[#7C7267]">{slopeAngle}°</span>
                     </div>
                     <input
                       type="range"
@@ -1306,9 +1304,9 @@ export const LeftToolSidebar: React.FC = () => {
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-[#D9C9B4]">
+                <div className="pt-2 border-t border-[#D8D1C5]">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.left.lockMud}</span>
+                    <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.lockMud}</span>
                     <input
                       type="checkbox"
                       checked={mudLocked}
@@ -1330,21 +1328,21 @@ export const LeftToolSidebar: React.FC = () => {
             return (
               <div className="space-y-4">
                 {/* Header Card */}
-                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-                  <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
-                    <TbTexture className="w-4 h-4 text-[#B85F45]" />
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
+                  <div className="flex items-center gap-1.5 font-bold text-[#2B2621]">
+                    <Layers className="w-4 h-4 text-[#B85F45]" />
                     <span>{t.sidebars.left.textureStudio}</span>
                   </div>
-                  <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                  <span className="text-[10px] uppercase font-semibold text-[#7C7267]">
                     {t.toolModeSidebar.textureModes[paintSubTool as keyof typeof t.toolModeSidebar.textureModes] || paintSubTool} {t.sidebars.left.mode}
                   </span>
                 </div>
 
                 {/* Active Texture Card (for paint mode) */}
                 {paintSubTool === 'paint' && (
-                  <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                  <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                         {t.sidebars.left.activeTexture}
                       </span>
                       <button
@@ -1352,13 +1350,13 @@ export const LeftToolSidebar: React.FC = () => {
                         className="text-[10px] font-bold text-[#B85F45] hover:text-[#8F4938] flex items-center gap-1 cursor-pointer transition-colors"
                         title={t.sidebars.right.openTextures}
                       >
-                        <TbPalette className="w-3.5 h-3.5" />
+                        <Palette className="w-3.5 h-3.5" />
                         <span>{t.sidebars.left.browseTextures}</span>
                       </button>
                     </div>
 
                     <div className="flex items-center gap-2.5 pt-1">
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#E4D8CB] border border-[#D9C9B4] shrink-0">
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#D8D1C5] border border-[#D8D1C5] shrink-0">
                         <img
                           src={currentTexture.previewPath}
                           alt={currentTexture.name}
@@ -1366,17 +1364,17 @@ export const LeftToolSidebar: React.FC = () => {
                         />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="text-xs font-bold text-[#4B382C] truncate">
+                        <div className="text-xs font-bold text-[#2B2621] truncate">
                           {(locale === 'mr' || locale === 'hi') && (currentTexture as { devanagari?: string }).devanagari ? (currentTexture as { devanagari?: string }).devanagari : currentTexture.name}
                         </div>
-                        <div className="text-[10px] text-[#8D7666] truncate mt-0.5">
+                        <div className="text-[10px] text-[#7C7267] truncate mt-0.5">
                           {currentTexture.description}
                         </div>
                         <div className="flex items-center gap-1 mt-1">
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#EADECF] text-[#5C4638]">
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#FAF8F5] text-[#5C4638]">
                             {(locale === 'mr' || locale === 'hi') ? (TEXTURE_CATEGORIES.find(c => c.id === currentTexture.category)?.devanagari || currentTexture.category) : currentTexture.category}
                           </span>
-                          <span className="text-[9px] text-[#8D7666]">
+                          <span className="text-[9px] text-[#7C7267]">
                             {t.sidebars.left.layer} {currentTexture.layerIndex}
                           </span>
                         </div>
@@ -1389,9 +1387,9 @@ export const LeftToolSidebar: React.FC = () => {
                 <div className="space-y-3 pt-1">
                   {/* Brush Radius */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.brushRadius}</span>
-                      <span className="text-[#8D7666]">{paintBrushRadius.toFixed(1)}m</span>
+                      <span className="text-[#7C7267]">{paintBrushRadius.toFixed(1)}m</span>
                     </div>
                     <input
                       type="range"
@@ -1406,9 +1404,9 @@ export const LeftToolSidebar: React.FC = () => {
 
                   {/* Strength */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.brushStrength}</span>
-                      <span className="text-[#8D7666]">{Math.round(paintBrushStrength * 100)}%</span>
+                      <span className="text-[#7C7267]">{Math.round(paintBrushStrength * 100)}%</span>
                     </div>
                     <input
                       type="range"
@@ -1424,9 +1422,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Edge Falloff - Paint Mode only */}
                   {paintSubTool === 'paint' && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.edgeFalloff}</span>
-                        <span className="text-[#8D7666]">{Math.round(paintBrushFalloff * 100)}%</span>
+                        <span className="text-[#7C7267]">{Math.round(paintBrushFalloff * 100)}%</span>
                       </div>
                       <input
                         type="range"
@@ -1443,9 +1441,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Tiling Repeat - Paint Mode only */}
                   {paintSubTool === 'paint' && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.textureScale}</span>
-                        <span className="text-[#8D7666]">{paintTextureRepeat.toFixed(0)}x</span>
+                        <span className="text-[#7C7267]">{paintTextureRepeat.toFixed(0)}x</span>
                       </div>
                       <input
                         type="range"
@@ -1468,7 +1466,7 @@ export const LeftToolSidebar: React.FC = () => {
                         fillPaintTerrain(currentTexture.layerIndex);
                         setToastMessage(`Flooded terrain with ${currentTexture.name}`);
                       }}
-                      className="flex-1 py-1.5 px-2 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] text-[#4B382C] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
+                      className="flex-1 py-1.5 px-2 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] text-[#2B2621] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
                       title="Flood entire terrain with active texture"
                     >
                       {t.sidebars.left.floodTerrain}
@@ -1478,7 +1476,7 @@ export const LeftToolSidebar: React.FC = () => {
                         clearPaintTerrain();
                         setToastMessage('Restored natural base terrain');
                       }}
-                      className="flex-1 py-1.5 px-2 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-[#5C4638] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
+                      className="flex-1 py-1.5 px-2 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-[#5C4638] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
                       title="Clear all painted textures back to base soil"
                     >
                       {t.sidebars.left.clearPaint}
@@ -1493,7 +1491,7 @@ export const LeftToolSidebar: React.FC = () => {
                         clearPaintTerrain();
                         setToastMessage('Restored natural base terrain');
                       }}
-                      className="w-full py-1.5 px-2 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-[#5C4638] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
+                      className="w-full py-1.5 px-2 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-red-50 hover:text-red-700 hover:border-red-300 text-[#5C4638] rounded-xl font-bold text-xs transition-colors cursor-pointer text-center"
                       title="Clear all painted textures back to base soil"
                     >
                       {t.sidebars.left.clearPaint}
@@ -1513,12 +1511,12 @@ export const LeftToolSidebar: React.FC = () => {
             return (
               <div className="space-y-4">
                 {/* Header Card */}
-                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
-                  <div className="flex items-center gap-1.5 font-bold text-[#4B382C]">
-                    <TbTrees className="w-4 h-4 text-[#15803D]" />
+                <div className="flex items-center justify-between px-2.5 py-1.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
+                  <div className="flex items-center gap-1.5 font-bold text-[#2B2621]">
+                    <Trees className="w-4 h-4 text-[#15803D]" />
                     <span>{t.sidebars.left.foliageStudio}</span>
                   </div>
-                  <span className="text-[10px] uppercase font-semibold text-[#8D7666]">
+                  <span className="text-[10px] uppercase font-semibold text-[#7C7267]">
                     {t.toolModeSidebar.foliageModes[foliageSubTool as keyof typeof t.toolModeSidebar.foliageModes] || foliageSubTool} {t.sidebars.left.mode}
                   </span>
                 </div>
@@ -1526,7 +1524,7 @@ export const LeftToolSidebar: React.FC = () => {
                 {/* Scatter Mode: Selection Mode Toggle & Deselect All Button */}
                 {foliageSubTool === 'scatter' && (
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                    <div className="flex items-center justify-between text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       <span>{t.sidebars.left.selectionMode}</span>
                       {foliageSelectMode === 'multi' && (
                         <span className="text-[#15803D] font-bold lowercase">
@@ -1534,13 +1532,13 @@ export const LeftToolSidebar: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-1 p-0.5 bg-[#EFE8DD] rounded-lg border border-[#D9C9B4]">
+                    <div className="grid grid-cols-2 gap-1 p-0.5 bg-[#EFE8DD] rounded-lg border border-[#D8D1C5]">
                       <button
                         onClick={() => setFoliageSelectMode('single')}
                         className={`py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                           foliageSelectMode === 'single'
-                            ? 'bg-white text-[#4B382C] shadow-sm'
-                            : 'text-[#8D7666] hover:text-[#4B382C]'
+                            ? 'bg-white text-[#2B2621] shadow-sm'
+                            : 'text-[#7C7267] hover:text-[#2B2621]'
                         }`}
                       >
                         {t.sidebars.left.singleSelect}
@@ -1550,7 +1548,7 @@ export const LeftToolSidebar: React.FC = () => {
                         className={`py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                           foliageSelectMode === 'multi'
                             ? 'bg-[#15803D] text-white shadow-sm'
-                            : 'text-[#8D7666] hover:text-[#4B382C]'
+                            : 'text-[#7C7267] hover:text-[#2B2621]'
                         }`}
                       >
                         {t.sidebars.left.multiSelect}
@@ -1562,9 +1560,9 @@ export const LeftToolSidebar: React.FC = () => {
                       <button
                         onClick={clearFoliageSelection}
                         disabled={selectedFoliageIds.length === 0}
-                        className="w-full py-1 px-2 text-[11px] font-semibold text-[#8D7666] hover:text-[#B91C1C] hover:bg-[#FBE8E8] disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#8D7666] border border-[#D9C9B4] rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                        className="w-full py-1 px-2 text-[11px] font-semibold text-[#7C7267] hover:text-[#B91C1C] hover:bg-[#FBE8E8] disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#7C7267] border border-[#D8D1C5] rounded-lg transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        <TbTrash className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3.5 h-3.5" />
                         <span>{t.sidebars.left.deselectAll}</span>
                       </button>
                     )}
@@ -1575,21 +1573,21 @@ export const LeftToolSidebar: React.FC = () => {
                 {foliageSubTool !== 'erase' && (
                   foliageSubTool === 'scatter' && foliageSelectMode === 'multi' ? (
                     selectedFoliageIds.length === 0 ? (
-                      <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-dashed border-[#D9C9B4] text-center space-y-1">
-                        <div className="text-[11px] font-semibold text-[#8D7666]">{t.sidebars.left.noSpeciesSelected}</div>
+                      <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-dashed border-[#D8D1C5] text-center space-y-1">
+                        <div className="text-[11px] font-semibold text-[#7C7267]">{t.sidebars.left.noSpeciesSelected}</div>
                         <div className="text-[10px] text-[#A89887]">{t.sidebars.left.speciesSelectHint}</div>
                         <button
                           onClick={toggleRightSidebar}
                           className="text-[10px] font-bold text-[#15803D] hover:underline cursor-pointer inline-flex items-center gap-1 mt-1"
                         >
-                          <TbTrees className="w-3 h-3" />
+                          <Trees className="w-3 h-3" />
                           <span>{t.sidebars.left.openFoliageBrowser}</span>
                         </button>
                       </div>
                     ) : (
-                      <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                      <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                          <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                             {t.sidebars.left.activeFoliage} ({selectedFoliageIds.length})
                           </span>
                           <button
@@ -1597,7 +1595,7 @@ export const LeftToolSidebar: React.FC = () => {
                             className="text-[10px] font-bold text-[#15803D] hover:text-[#166534] flex items-center gap-1 cursor-pointer transition-colors"
                             title={t.sidebars.right.openFoliage}
                           >
-                            <TbTrees className="w-3.5 h-3.5" />
+                            <Trees className="w-3.5 h-3.5" />
                             <span>{t.sidebars.left.browseFoliage}</span>
                           </button>
                         </div>
@@ -1610,7 +1608,7 @@ export const LeftToolSidebar: React.FC = () => {
                               <div
                                 key={id}
                                 title={itName}
-                                className="w-8 h-8 rounded-md bg-[#E4D8CB] border border-[#D9C9B4] p-0.5 relative group shrink-0"
+                                className="w-8 h-8 rounded-md bg-[#D8D1C5] border border-[#D8D1C5] p-0.5 relative group shrink-0"
                               >
                                 <img
                                   src={it.previewPath}
@@ -1621,7 +1619,7 @@ export const LeftToolSidebar: React.FC = () => {
                             );
                           })}
                           {selectedFoliageIds.length > 10 && (
-                            <div className="w-8 h-8 rounded-md bg-[#EADECF] border border-[#D9C9B4] flex items-center justify-center text-[10px] font-bold text-[#5C4638] shrink-0">
+                            <div className="w-8 h-8 rounded-md bg-[#FAF8F5] border border-[#D8D1C5] flex items-center justify-center text-[10px] font-bold text-[#5C4638] shrink-0">
                               +{selectedFoliageIds.length - 10}
                             </div>
                           )}
@@ -1629,9 +1627,9 @@ export const LeftToolSidebar: React.FC = () => {
                       </div>
                     )
                   ) : (
-                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-[#8D7666] uppercase tracking-wider">
+                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                           {t.sidebars.left.activeFoliage}
                         </span>
                         <button
@@ -1639,13 +1637,13 @@ export const LeftToolSidebar: React.FC = () => {
                           className="text-[10px] font-bold text-[#15803D] hover:text-[#166534] flex items-center gap-1 cursor-pointer transition-colors"
                           title={t.sidebars.right.openFoliage}
                         >
-                          <TbTrees className="w-3.5 h-3.5" />
+                          <Trees className="w-3.5 h-3.5" />
                           <span>{t.sidebars.left.browseFoliage}</span>
                         </button>
                       </div>
 
                       <div className="flex items-center gap-2.5 pt-1">
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#E4D8CB] border border-[#D9C9B4] shrink-0 flex items-center justify-center p-1">
+                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-[#D8D1C5] border border-[#D8D1C5] shrink-0 flex items-center justify-center p-1">
                           <img
                             src={currentFoliage.previewPath}
                             alt={(locale === 'mr' || locale === 'hi') && (currentFoliage as { devanagari?: string }).devanagari ? (currentFoliage as { devanagari?: string }).devanagari : currentFoliage.name}
@@ -1653,17 +1651,17 @@ export const LeftToolSidebar: React.FC = () => {
                           />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-bold text-[#4B382C] truncate">
+                          <div className="text-xs font-bold text-[#2B2621] truncate">
                             {(locale === 'mr' || locale === 'hi') && (currentFoliage as { devanagari?: string }).devanagari ? (currentFoliage as { devanagari?: string }).devanagari : currentFoliage.name}
                           </div>
-                          <div className="text-[10px] text-[#8D7666] truncate mt-0.5">
+                          <div className="text-[10px] text-[#7C7267] truncate mt-0.5">
                             {currentFoliage.description}
                           </div>
                           <div className="flex items-center gap-1 mt-1">
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#EADECF] text-[#5C4638]">
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#FAF8F5] text-[#5C4638]">
                               {(locale === 'mr' || locale === 'hi') ? (FOLIAGE_CATEGORIES.find(c => c.id === currentFoliage.category)?.devanagari || currentFoliage.category.replace('_', ' ')) : currentFoliage.category.replace('_', ' ')}
                             </span>
-                            <span className="text-[9px] text-[#8D7666]">
+                            <span className="text-[9px] text-[#7C7267]">
                               {currentFoliage.defaultWidth}m × {currentFoliage.defaultHeight}m
                             </span>
                           </div>
@@ -1673,12 +1671,12 @@ export const LeftToolSidebar: React.FC = () => {
                   )
                 )}
 
-                {/* Sliders Mounted Directly on Panel Background (bg-[#F3EBE0], NO enclosing cards) */}
+                {/* Sliders Mounted Directly on Panel Background (bg-[#EBE6DC], NO enclosing cards) */}
                 <div className="space-y-3 pt-1">
                   {/* Single Mode Placement Notice */}
                   {foliageSubTool === 'single' && (
-                    <div className="p-2 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[10px] text-[#5C4638] flex items-center gap-2">
-                      <TbFocus2 className="w-4 h-4 text-[#15803D] shrink-0" />
+                    <div className="p-2 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[10px] text-[#5C4638] flex items-center gap-2">
+                      <Focus className="w-4 h-4 text-[#15803D] shrink-0" />
                       <span>{t.sidebars.left.singlePlacementNotice}</span>
                     </div>
                   )}
@@ -1686,9 +1684,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Brush Radius - For Scatter & Erase modes */}
                   {foliageSubTool !== 'single' && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.brushRadius}</span>
-                        <span className="text-[#8D7666]">{foliageBrushRadius.toFixed(2)}m</span>
+                        <span className="text-[#7C7267]">{foliageBrushRadius.toFixed(2)}m</span>
                       </div>
                       <input
                         type="range"
@@ -1705,9 +1703,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Density - Scatter Mode only */}
                   {foliageSubTool === 'scatter' && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.seedlingDensity}</span>
-                        <span className="text-[#8D7666]">{foliageBrushDensity} per stroke</span>
+                        <span className="text-[#7C7267]">{foliageBrushDensity} per stroke</span>
                       </div>
                       <input
                         type="range"
@@ -1724,9 +1722,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Scale Jitter - Scatter & Single modes */}
                   {foliageSubTool !== 'erase' && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.scaleJitter}</span>
-                        <span className="text-[#8D7666]">±{Math.round(foliageScaleJitter * 100)}%</span>
+                        <span className="text-[#7C7267]">±{Math.round(foliageScaleJitter * 100)}%</span>
                       </div>
                       <input
                         type="range"
@@ -1743,9 +1741,9 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Normal Alignment - Scatter & Single modes */}
                   {foliageSubTool !== 'erase' && (
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.alignToNormal}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {Math.round(foliageNormalAlign * 100)}% {foliageNormalAlign === 0 ? `(${t.sidebars.left.upright})` : ''}
                         </span>
                       </div>
@@ -1763,8 +1761,8 @@ export const LeftToolSidebar: React.FC = () => {
                 </div>
 
                 {/* Primary Action Group Card: Placed count & Clear */}
-                <div className="pt-2 border-t border-[#D9C9B4] flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-[#8D7666]">
+                <div className="pt-2 border-t border-[#D8D1C5] flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#7C7267]">
                     {foliageInstances.length} {t.sidebars.left.planted}
                   </span>
                   <button
@@ -1778,11 +1776,11 @@ export const LeftToolSidebar: React.FC = () => {
                     className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${
                       foliageInstances.length > 0
                         ? 'bg-[#8F4938] text-white hover:bg-[#723627] active:scale-95 shadow-sm'
-                        : 'bg-[#E4D8CB] text-[#A69485] cursor-not-allowed'
+                        : 'bg-[#D8D1C5] text-[#A69485] cursor-not-allowed'
                     }`}
                     title={t.sidebars.left.clearAllFoliage}
                   >
-                    <TbTrash className="w-3.5 h-3.5" />
+                    <Trash2 className="w-3.5 h-3.5" />
                     <span>{t.sidebars.left.clearAllFoliage}</span>
                   </button>
                 </div>
@@ -1801,19 +1799,19 @@ export const LeftToolSidebar: React.FC = () => {
             return (
               <div className="space-y-4">
                 {/* 1. Header Card Badge */}
-                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-[#EADECF] flex items-center justify-center text-[#8F4938]">
-                      <TbUsersGroup className="w-4 h-4" />
+                    <div className="w-7 h-7 rounded-lg bg-[#FAF8F5] flex items-center justify-center text-[#8F4938]">
+                      <Users className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.historicalFigurines}</div>
-                      <div className="text-[10px] text-[#8D7666]">
+                      <div className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.historicalFigurines}</div>
+                      <div className="text-[10px] text-[#7C7267]">
                         {placedProps.length} / 250 {t.sidebars.left.placed}
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] uppercase font-semibold text-[#7C7267] bg-[#FAF8F5] px-2 py-0.5 rounded-full">
                     {t.toolModeSidebar.propModes[propSubTool as keyof typeof t.toolModeSidebar.propModes] || propSubTool} {t.sidebars.left.mode}
                   </span>
                 </div>
@@ -1822,9 +1820,9 @@ export const LeftToolSidebar: React.FC = () => {
                 {propSubTool === 'place' && (
                   <div className="space-y-3.5">
                     {/* Active Figurine Target Preview Card */}
-                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] flex items-center justify-between">
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] flex items-center justify-between">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="relative w-9 h-9 rounded-lg bg-[#E8DDD0] flex items-center justify-center text-[#8F4938] shrink-0 border border-[#D9C9B4] overflow-hidden">
+                        <div className="relative w-9 h-9 rounded-lg bg-[#E8DDD0] flex items-center justify-center text-[#8F4938] shrink-0 border border-[#D8D1C5] overflow-hidden">
                           <img
                             src={activeFigurine.previewPath}
                             alt={(locale === 'mr' || locale === 'hi') && activeFigurine.devanagariName ? activeFigurine.devanagariName : activeFigurine.name}
@@ -1835,13 +1833,13 @@ export const LeftToolSidebar: React.FC = () => {
                               if (fb) (fb as HTMLElement).style.display = 'block';
                             }}
                           />
-                          <TbUsersGroup className="fallback-icon hidden w-5 h-5 text-[#8F4938]" />
+                          <Users className="fallback-icon hidden w-5 h-5 text-[#8F4938]" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-[#4B382C] truncate">
+                          <div className="text-xs font-bold text-[#2B2621] truncate">
                             {(locale === 'mr' || locale === 'hi') && activeFigurine.devanagariName ? activeFigurine.devanagariName : activeFigurine.name}
                           </div>
-                          <div className="text-[10px] text-[#8D7666] truncate">
+                          <div className="text-[10px] text-[#7C7267] truncate">
                             {(locale === 'mr' || locale === 'hi') && (activeFigurine as { devanagariDescription?: string }).devanagariDescription
                               ? (activeFigurine as { devanagariDescription?: string }).devanagariDescription
                               : (activeFigurine.culturalLore || activeFigurine.category)}
@@ -1850,18 +1848,18 @@ export const LeftToolSidebar: React.FC = () => {
                       </div>
                       <button
                         onClick={toggleRightSidebar}
-                        className="px-2 py-1 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[10px] font-bold text-[#4B382C] cursor-pointer shrink-0 transition-colors"
+                        className="px-2 py-1 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg text-[10px] font-bold text-[#2B2621] cursor-pointer shrink-0 transition-colors"
                         title={t.sidebars.right.openFigurines}
                       >
-                        <span className="flex items-center gap-0.5">{t.sidebars.left.change} <TbChevronRight className="w-3 h-3" /></span>
+                        <span className="flex items-center gap-0.5">{t.sidebars.left.change} <ChevronRight className="w-3 h-3" /></span>
                       </button>
                     </div>
 
-                    {/* Sliders mounted directly on panel background bg-[#F3EBE0] */}
+                    {/* Sliders mounted directly on panel background bg-[#EBE6DC] */}
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.placementScale}</span>
-                        <span className="text-[#8D7666]">{propPlacementScale.toFixed(1)}x</span>
+                        <span className="text-[#7C7267]">{propPlacementScale.toFixed(1)}x</span>
                       </div>
                       <input
                         type="range"
@@ -1870,14 +1868,14 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.1}
                         value={propPlacementScale}
                         onChange={(e) => setPropPlacementScale(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.rotationHeading}</span>
-                        <span className="text-[#8D7666]">{propPlacementRotation}°</span>
+                        <span className="text-[#7C7267]">{propPlacementRotation}°</span>
                       </div>
                       <input
                         type="range"
@@ -1886,12 +1884,12 @@ export const LeftToolSidebar: React.FC = () => {
                         step={5}
                         value={propPlacementRotation}
                         onChange={(e) => setPropPlacementRotation(parseInt(e.target.value, 10))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.left.randomizeHeading}</span>
+                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
                       <button
                         onClick={() => setPropRandomRotation(!propRandomRotation)}
                         className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
@@ -1907,9 +1905,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.alignToNormal}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {propNormalAlign === 0 ? `${t.sidebars.left.upright} (0%)` : `${Math.round(propNormalAlign * 100)}%`}
                         </span>
                       </div>
@@ -1920,14 +1918,14 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.05}
                         value={propNormalAlign}
                         onChange={(e) => setPropNormalAlign(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.elevationOffset}</span>
-                        <span className="text-[#8D7666]">{(propElevationOffset * 100).toFixed(0)}cm</span>
+                        <span className="text-[#7C7267]">{(propElevationOffset * 100).toFixed(0)}cm</span>
                       </div>
                       <input
                         type="range"
@@ -1936,17 +1934,17 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.01}
                         value={propElevationOffset}
                         onChange={(e) => setPropElevationOffset(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
-                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#634E40] space-y-2">
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px] text-[#5A5248] space-y-2">
                       <p className="leading-snug">
                         {t.sidebars.left.propHint}
                       </p>
                       <button
                         onClick={toggleRightSidebar}
-                        className="w-full py-1.5 bg-[#4B382C] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
+                        className="w-full py-1.5 bg-[#2B2621] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
                       >
                         {t.sidebars.left.browseFigurines}
                       </button>
@@ -1959,29 +1957,29 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="space-y-3.5">
                     {selectedProp ? (
                       <div className="space-y-3">
-                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-[#4B382C]">
+                            <span className="text-xs font-bold text-[#2B2621]">
                               {(locale === 'mr' || locale === 'hi') && selectedFigurineMeta?.devanagariName
                                 ? selectedFigurineMeta.devanagariName
                                 : (selectedFigurineMeta?.name || selectedProp.type)}
                             </span>
-                            <span className="text-[10px] text-[#8D7666] font-mono">
+                            <span className="text-[10px] text-[#7C7267] font-mono">
                               {selectedProp.id.slice(-6)}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[#634E40] bg-[#EADECF] p-2 rounded-lg">
+                          <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[#5A5248] bg-[#FAF8F5] p-2 rounded-lg">
                             <div>
-                              <span className="text-[#8D7666] block">X:</span>
+                              <span className="text-[#7C7267] block">X:</span>
                               <span className="font-bold">{selectedProp.position[0].toFixed(2)}m</span>
                             </div>
                             <div>
-                              <span className="text-[#8D7666] block">Y:</span>
+                              <span className="text-[#7C7267] block">Y:</span>
                               <span className="font-bold">{selectedProp.position[1].toFixed(2)}m</span>
                             </div>
                             <div>
-                              <span className="text-[#8D7666] block">Z:</span>
+                              <span className="text-[#7C7267] block">Z:</span>
                               <span className="font-bold">{selectedProp.position[2].toFixed(2)}m</span>
                             </div>
                           </div>
@@ -1989,13 +1987,13 @@ export const LeftToolSidebar: React.FC = () => {
                           <div className="grid grid-cols-2 gap-2 pt-1">
                             <button
                               onClick={() => duplicateProp(selectedProp.id)}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                              className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs text-[#2B2621] cursor-pointer transition-colors"
                             >
                               + {t.sidebars.left.duplicate}
                             </button>
                             <button
                               onClick={() => snapPropToSurface(selectedProp.id)}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                              className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs text-[#2B2621] cursor-pointer transition-colors"
                             >
                               {t.sidebars.left.snapToSurface}
                             </button>
@@ -2005,7 +2003,7 @@ export const LeftToolSidebar: React.FC = () => {
                             onClick={() => setPropSubTool('transform')}
                             className="w-full py-1.5 bg-[#B85F45] text-white hover:bg-[#A04F38] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
                           >
-                            <TbArrowsMove className="w-3.5 h-3.5" />
+                            <Move className="w-3.5 h-3.5" />
                             <span>{t.sidebars.left.nudgePosition}</span>
                           </button>
 
@@ -2013,23 +2011,23 @@ export const LeftToolSidebar: React.FC = () => {
                             onClick={() => removeProp(selectedProp.id)}
                             className="w-full py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1"
                           >
-                            <TbTrash className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" />
                             <span>{t.sidebars.left.deleteFigurine}</span>
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
-                        <TbPointer className="w-6 h-6 mx-auto text-[#8D7666]" />
-                        <div className="text-xs font-bold text-[#4B382C]">{t.toolModeSidebar.propModes.select}</div>
-                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-center space-y-2">
+                        <MousePointer className="w-6 h-6 mx-auto text-[#7C7267]" />
+                        <div className="text-xs font-bold text-[#2B2621]">{t.toolModeSidebar.propModes.select}</div>
+                        <p className="text-[11px] text-[#5A5248] leading-relaxed">
                           {t.sidebars.left.selectFigurinePrompt}
                         </p>
                       </div>
                     )}
 
                     {placedProps.length > 0 && (
-                      <div className="pt-2 border-t border-[#D9C9B4]">
+                      <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to remove all placed figurines from the diorama?')) {
@@ -2050,27 +2048,27 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="space-y-3.5">
                     {selectedProp ? (
                       <div className="space-y-3.5">
-                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
-                          <div className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.cameraRelativeNudge}</div>
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
+                          <div className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.cameraRelativeNudge}</div>
                           <div className="space-y-1.5">
                             <div className="grid grid-cols-3 gap-1.5">
                               <button
                                 onClick={() => movePropCameraRelative('up')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Vertically Up (+Y)"
                               >
                                 ↑ {t.sidebars.left.nudgeUp}
                               </button>
                               <button
                                 onClick={() => movePropCameraRelative('forward')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Forward in Camera View"
                               >
                                 ▲ {t.sidebars.left.nudgeForward}
                               </button>
                               <button
                                 onClick={() => movePropCameraRelative('down')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Vertically Down (-Y)"
                               >
                                 ↓ {t.sidebars.left.nudgeDown}
@@ -2080,21 +2078,21 @@ export const LeftToolSidebar: React.FC = () => {
                             <div className="grid grid-cols-3 gap-1.5">
                               <button
                                 onClick={() => movePropCameraRelative('left')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Left in Camera View"
                               >
                                 ◀ {t.sidebars.left.nudgeLeft}
                               </button>
                               <button
                                 onClick={() => movePropCameraRelative('backward')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Backward in Camera View"
                               >
                                 ▼ {t.sidebars.left.nudgeBackward}
                               </button>
                               <button
                                 onClick={() => movePropCameraRelative('right')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Right in Camera View"
                               >
                                 ▶ {t.sidebars.left.nudgeRight}
@@ -2104,28 +2102,28 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
 
                         <div>
-                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                             <span>{t.sidebars.left.headingRotation}</span>
-                            <span className="text-[#8D7666]">
+                            <span className="text-[#7C7267]">
                               {Math.round(((selectedProp.rotation[1] * 180) / Math.PI + 360) % 360)}°
                             </span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                             <button
                               onClick={() => rotatePropRelative(-15)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               ⟲ -15°
                             </button>
                             <button
                               onClick={() => rotatePropRelative(15)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               ⟳ +15°
                             </button>
                             <button
                               onClick={() => rotatePropRelative(180)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               ⟳ 180°
                             </button>
@@ -2133,20 +2131,20 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
 
                         <div>
-                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                             <span>{t.sidebars.left.scaleMultiplier}</span>
-                            <span className="text-[#8D7666]">{selectedProp.scale[0].toFixed(2)}x</span>
+                            <span className="text-[#7C7267]">{selectedProp.scale[0].toFixed(2)}x</span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                             <button
                               onClick={() => scalePropRelative(0.9)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               -10%
                             </button>
                             <button
                               onClick={() => scalePropRelative(1.1)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               +10%
                             </button>
@@ -2154,17 +2152,17 @@ export const LeftToolSidebar: React.FC = () => {
                               onClick={() => {
                                 updatePropTransform(selectedProp.id, { scale: [1, 1, 1] });
                               }}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               1.0x
                             </button>
                           </div>
                         </div>
 
-                        <div className="pt-2 border-t border-[#D9C9B4] space-y-2">
+                        <div className="pt-2 border-t border-[#D8D1C5] space-y-2">
                           <button
                             onClick={() => snapPropToSurface(selectedProp.id)}
-                            className="w-full py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg text-xs font-bold cursor-pointer text-[#4B382C]"
+                            className="w-full py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg text-xs font-bold cursor-pointer text-[#2B2621]"
                           >
                             {t.sidebars.left.snapFlushToSurface}
                           </button>
@@ -2177,10 +2175,10 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
-                        <TbArrowsMove className="w-6 h-6 mx-auto text-[#8D7666]" />
-                        <div className="text-xs font-bold text-[#4B382C]">{t.toolModeSidebar.propModes.transform}</div>
-                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-center space-y-2">
+                        <Move className="w-6 h-6 mx-auto text-[#7C7267]" />
+                        <div className="text-xs font-bold text-[#2B2621]">{t.toolModeSidebar.propModes.transform}</div>
+                        <p className="text-[11px] text-[#5A5248] leading-relaxed">
                           {t.sidebars.left.selectFirstPrompt}
                         </p>
                       </div>
@@ -2193,9 +2191,9 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="space-y-3.5">
                     {/* Brush Radius Slider mounted directly on panel background */}
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.brushRadius}</span>
-                        <span className="text-[#8D7666]">{propEraseRadius.toFixed(1)}m</span>
+                        <span className="text-[#7C7267]">{propEraseRadius.toFixed(1)}m</span>
                       </div>
                       <input
                         type="range"
@@ -2204,20 +2202,20 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.1}
                         value={propEraseRadius}
                         onChange={(e) => setPropEraseRadius(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
-                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-1.5">
-                      <TbTrash className="w-5 h-5 mx-auto text-red-500" />
-                      <div className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.eraseBrush}</div>
-                      <p className="text-[11px] text-[#634E40] leading-relaxed">
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-center space-y-1.5">
+                      <Trash2 className="w-5 h-5 mx-auto text-red-500" />
+                      <div className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.eraseBrush}</div>
+                      <p className="text-[11px] text-[#5A5248] leading-relaxed">
                         {t.sidebars.left.eraseBrushDesc}
                       </p>
                     </div>
 
                     {placedProps.length > 0 && (
-                      <div className="pt-2 border-t border-[#D9C9B4]">
+                      <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
                             if (window.confirm(`Are you sure you want to remove all ${placedProps.length} placed figurines from the diorama?`)) {
@@ -2247,19 +2245,19 @@ export const LeftToolSidebar: React.FC = () => {
             return (
               <div className="space-y-4">
                 {/* 1. Header Card Badge */}
-                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-[#EADECF] flex items-center justify-center text-[#B85F45]">
-                      <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                    <div className="w-7 h-7 rounded-lg bg-[#FAF8F5] flex items-center justify-center text-[#B85F45]">
+                      <Flame className="w-4 h-4 text-[#F59E0B]" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.festiveLighting}</div>
-                      <div className="text-[10px] text-[#8D7666]">
+                      <div className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.festiveLighting}</div>
+                      <div className="text-[10px] text-[#7C7267]">
                         {placedLights.length} / 250 {t.sidebars.left.placed}
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] uppercase font-semibold text-[#7C7267] bg-[#FAF8F5] px-2 py-0.5 rounded-full">
                     {t.toolModeSidebar.lightingModes[lightingSubTool as keyof typeof t.toolModeSidebar.lightingModes] || lightingSubTool} {t.sidebars.left.mode}
                   </span>
                 </div>
@@ -2268,9 +2266,9 @@ export const LeftToolSidebar: React.FC = () => {
                 {lightingSubTool === 'place' && (
                   <div className="space-y-3.5">
                     {/* Active Light Target Preview Card */}
-                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] flex items-center justify-between">
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] flex items-center justify-between">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="relative w-9 h-9 rounded-lg bg-[#E8DDD0] flex items-center justify-center text-[#8F4938] shrink-0 border border-[#D9C9B4] overflow-hidden">
+                        <div className="relative w-9 h-9 rounded-lg bg-[#E8DDD0] flex items-center justify-center text-[#8F4938] shrink-0 border border-[#D8D1C5] overflow-hidden">
                           <img
                             src={activeLight.previewPath}
                             alt={(locale === 'mr' || locale === 'hi') && activeLight.devanagariName ? activeLight.devanagariName : activeLight.name}
@@ -2281,13 +2279,13 @@ export const LeftToolSidebar: React.FC = () => {
                               if (fb) (fb as HTMLElement).style.display = 'block';
                             }}
                           />
-                          <TbFlame className="fallback-icon hidden w-5 h-5 text-[#F59E0B]" />
+                          <Flame className="fallback-icon hidden w-5 h-5 text-[#F59E0B]" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-[#4B382C] truncate">
+                          <div className="text-xs font-bold text-[#2B2621] truncate">
                             {(locale === 'mr' || locale === 'hi') && activeLight.devanagariName ? activeLight.devanagariName : activeLight.name}
                           </div>
-                          <div className="text-[10px] text-[#8D7666] truncate">
+                          <div className="text-[10px] text-[#7C7267] truncate">
                             {(locale === 'mr' || locale === 'hi') && (activeLight as { devanagariDescription?: string }).devanagariDescription
                               ? (activeLight as { devanagariDescription?: string }).devanagariDescription
                               : (activeLight.culturalLore || activeLight.category)}
@@ -2296,18 +2294,18 @@ export const LeftToolSidebar: React.FC = () => {
                       </div>
                       <button
                         onClick={toggleRightSidebar}
-                        className="px-2 py-1 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg text-[10px] font-bold text-[#4B382C] cursor-pointer shrink-0 transition-colors"
+                        className="px-2 py-1 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg text-[10px] font-bold text-[#2B2621] cursor-pointer shrink-0 transition-colors"
                         title={t.sidebars.right.openLighting}
                       >
-                        <span className="flex items-center gap-0.5">{t.sidebars.left.change} <TbChevronRight className="w-3 h-3" /></span>
+                        <span className="flex items-center gap-0.5">{t.sidebars.left.change} <ChevronRight className="w-3 h-3" /></span>
                       </button>
                     </div>
 
-                    {/* Sliders mounted directly on panel background bg-[#F3EBE0] */}
+                    {/* Sliders mounted directly on panel background bg-[#EBE6DC] */}
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.placementScale}</span>
-                        <span className="text-[#8D7666]">{lightPlacementScale.toFixed(1)}x</span>
+                        <span className="text-[#7C7267]">{lightPlacementScale.toFixed(1)}x</span>
                       </div>
                       <input
                         type="range"
@@ -2316,14 +2314,14 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.1}
                         value={lightPlacementScale}
                         onChange={(e) => setLightPlacementScale(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.rotationHeading}</span>
-                        <span className="text-[#8D7666]">{lightPlacementRotation}°</span>
+                        <span className="text-[#7C7267]">{lightPlacementRotation}°</span>
                       </div>
                       <input
                         type="range"
@@ -2332,12 +2330,12 @@ export const LeftToolSidebar: React.FC = () => {
                         step={5}
                         value={lightPlacementRotation}
                         onChange={(e) => setLightPlacementRotation(parseInt(e.target.value, 10))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.left.randomizeHeading}</span>
+                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
                       <button
                         onClick={() => setLightRandomRotation(!lightRandomRotation)}
                         className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
@@ -2353,9 +2351,9 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.alignToNormal}</span>
-                        <span className="text-[#8D7666]">
+                        <span className="text-[#7C7267]">
                           {lightNormalAlign === 0 ? `${t.sidebars.left.upright} (0%)` : `${Math.round(lightNormalAlign * 100)}%`}
                         </span>
                       </div>
@@ -2366,14 +2364,14 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.05}
                         value={lightNormalAlign}
                         onChange={(e) => setLightNormalAlign(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.elevationOffset}</span>
-                        <span className="text-[#8D7666]">{(lightElevationOffset * 100).toFixed(0)}cm</span>
+                        <span className="text-[#7C7267]">{(lightElevationOffset * 100).toFixed(0)}cm</span>
                       </div>
                       <input
                         type="range"
@@ -2382,16 +2380,16 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.01}
                         value={lightElevationOffset}
                         onChange={(e) => setLightElevationOffset(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     {activeLight.category === 'fireworks' && (
                       <>
                         <div>
-                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                             <span>{t.sidebars.left.burstHeight}</span>
-                            <span className="text-[#8D7666]">
+                            <span className="text-[#7C7267]">
                               {lightRandomBurstHeight ? 'Random' : `${(lightBurstHeight * 100).toFixed(0)}cm`}
                             </span>
                           </div>
@@ -2403,14 +2401,14 @@ export const LeftToolSidebar: React.FC = () => {
                             value={lightBurstHeight}
                             disabled={lightRandomBurstHeight}
                             onChange={(e) => setLightBurstHeight(parseFloat(e.target.value))}
-                            className={`w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45] ${
+                            className={`w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45] ${
                               lightRandomBurstHeight ? 'opacity-40 cursor-not-allowed' : ''
                             }`}
                           />
                         </div>
 
                         <div className="flex items-center justify-between pt-1">
-                          <span className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.left.randomizeHeading}</span>
+                          <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
                           <button
                             type="button"
                             role="switch"
@@ -2430,13 +2428,13 @@ export const LeftToolSidebar: React.FC = () => {
                       </>
                     )}
 
-                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-[11px] text-[#634E40] space-y-2">
+                    <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px] text-[#5A5248] space-y-2">
                       <p className="leading-snug">
                         {t.sidebars.left.lightHint}
                       </p>
                       <button
                         onClick={toggleRightSidebar}
-                        className="w-full py-1.5 bg-[#4B382C] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
+                        className="w-full py-1.5 bg-[#2B2621] text-[#FAF8F5] rounded-lg font-bold text-xs hover:bg-[#38281E] cursor-pointer"
                       >
                         {t.sidebars.left.browseLights}
                       </button>
@@ -2449,29 +2447,29 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="space-y-3.5">
                     {selectedLight ? (
                       <div className="space-y-3">
-                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2.5">
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2.5">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-[#4B382C]">
+                            <span className="text-xs font-bold text-[#2B2621]">
                               {(locale === 'mr' || locale === 'hi') && selectedLightMeta?.devanagariName
                                 ? selectedLightMeta.devanagariName
                                 : (selectedLightMeta?.name || selectedLight.type)}
                             </span>
-                            <span className="text-[10px] text-[#8D7666] font-mono">
+                            <span className="text-[10px] text-[#7C7267] font-mono">
                               {selectedLight.id.slice(-6)}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[#634E40] bg-[#EADECF] p-2 rounded-lg">
+                          <div className="grid grid-cols-3 gap-1.5 text-[10px] text-[#5A5248] bg-[#FAF8F5] p-2 rounded-lg">
                             <div>
-                              <span className="text-[#8D7666] block">X:</span>
+                              <span className="text-[#7C7267] block">X:</span>
                               <span className="font-bold">{selectedLight.position[0].toFixed(2)}m</span>
                             </div>
                             <div>
-                              <span className="text-[#8D7666] block">Y:</span>
+                              <span className="text-[#7C7267] block">Y:</span>
                               <span className="font-bold">{selectedLight.position[1].toFixed(2)}m</span>
                             </div>
                             <div>
-                              <span className="text-[#8D7666] block">Z:</span>
+                              <span className="text-[#7C7267] block">Z:</span>
                               <span className="font-bold">{selectedLight.position[2].toFixed(2)}m</span>
                             </div>
                           </div>
@@ -2482,7 +2480,7 @@ export const LeftToolSidebar: React.FC = () => {
                               onClick={() => triggerTestFirework(selectedLight.id)}
                               className="w-full py-2 bg-[#F59E0B] text-[#2B1E16] hover:bg-[#D97706] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                             >
-                              <TbSparkles className="w-4 h-4 text-[#8F4938]" />
+                              <Sparkles className="w-4 h-4 text-[#8F4938]" />
                               <span>{t.sidebars.left.testFireworkBurst}</span>
                             </button>
                           )}
@@ -2490,9 +2488,9 @@ export const LeftToolSidebar: React.FC = () => {
                           {/* Burst Height Slider (Fireworks only) */}
                           {selectedLight.category === 'fireworks' && (
                             <div>
-                              <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                              <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                                 <span>{t.sidebars.left.burstHeight}</span>
-                                <span className="text-[#8D7666]">
+                                <span className="text-[#7C7267]">
                                   {(((selectedLight.burstHeight ?? (selectedLightMeta?.burstAltitude ?? 1.0))) * 100).toFixed(0)}cm
                                 </span>
                               </div>
@@ -2505,7 +2503,7 @@ export const LeftToolSidebar: React.FC = () => {
                                 onChange={(e) =>
                                   updateLightTransform(selectedLight.id, { burstHeight: parseFloat(e.target.value) })
                                 }
-                                className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                                className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                               />
                             </div>
                           )}
@@ -2513,13 +2511,13 @@ export const LeftToolSidebar: React.FC = () => {
                           <div className="grid grid-cols-2 gap-2 pt-1">
                             <button
                               onClick={() => duplicateLight(selectedLight.id)}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                              className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs text-[#2B2621] cursor-pointer transition-colors"
                             >
                               + {t.sidebars.left.duplicate}
                             </button>
                             <button
                               onClick={() => snapLightToSurface(selectedLight.id)}
-                              className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs text-[#4B382C] cursor-pointer transition-colors"
+                              className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs text-[#2B2621] cursor-pointer transition-colors"
                             >
                               {t.sidebars.left.snapToSurface}
                             </button>
@@ -2529,7 +2527,7 @@ export const LeftToolSidebar: React.FC = () => {
                             onClick={() => setLightingSubTool('transform')}
                             className="w-full py-1.5 bg-[#B85F45] text-white hover:bg-[#A04F38] rounded-lg font-bold text-xs cursor-pointer transition-colors flex items-center justify-center gap-1.5"
                           >
-                            <TbArrowsMove className="w-3.5 h-3.5" />
+                            <Move className="w-3.5 h-3.5" />
                             <span>{t.sidebars.left.nudgePosition}</span>
                           </button>
 
@@ -2537,23 +2535,23 @@ export const LeftToolSidebar: React.FC = () => {
                             onClick={() => removeLight(selectedLight.id)}
                             className="w-full py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg text-xs font-bold cursor-pointer transition-colors flex items-center justify-center gap-1"
                           >
-                            <TbTrash className="w-3.5 h-3.5" />
+                            <Trash2 className="w-3.5 h-3.5" />
                             <span>{t.sidebars.left.deleteLight}</span>
                           </button>
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
-                        <TbPointer className="w-6 h-6 mx-auto text-[#8D7666]" />
-                        <div className="text-xs font-bold text-[#4B382C]">{t.toolModeSidebar.lightingModes.select}</div>
-                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-center space-y-2">
+                        <MousePointer className="w-6 h-6 mx-auto text-[#7C7267]" />
+                        <div className="text-xs font-bold text-[#2B2621]">{t.toolModeSidebar.lightingModes.select}</div>
+                        <p className="text-[11px] text-[#5A5248] leading-relaxed">
                           {t.sidebars.left.selectLightPrompt}
                         </p>
                       </div>
                     )}
 
                     {placedLights.length > 0 && (
-                      <div className="pt-2 border-t border-[#D9C9B4]">
+                      <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
                             if (window.confirm('Are you sure you want to remove all placed lights & fireworks from the diorama?')) {
@@ -2574,27 +2572,27 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="space-y-3.5">
                     {selectedLight ? (
                       <div className="space-y-3.5">
-                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
-                          <div className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.cameraRelativeNudge}</div>
+                        <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
+                          <div className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.cameraRelativeNudge}</div>
                           <div className="space-y-1.5">
                             <div className="grid grid-cols-3 gap-1.5">
                               <button
                                 onClick={() => moveLightCameraRelative('up')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Vertically Up (+Y)"
                               >
                                 ↑ {t.sidebars.left.nudgeUp}
                               </button>
                               <button
                                 onClick={() => moveLightCameraRelative('forward')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Forward in Camera View"
                               >
                                 ▲ {t.sidebars.left.nudgeForward}
                               </button>
                               <button
                                 onClick={() => moveLightCameraRelative('down')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Vertically Down (-Y)"
                               >
                                 ↓ {t.sidebars.left.nudgeDown}
@@ -2604,21 +2602,21 @@ export const LeftToolSidebar: React.FC = () => {
                             <div className="grid grid-cols-3 gap-1.5">
                               <button
                                 onClick={() => moveLightCameraRelative('left')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Left in Camera View"
                               >
                                 ◀ {t.sidebars.left.nudgeLeft}
                               </button>
                               <button
                                 onClick={() => moveLightCameraRelative('backward')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Backward in Camera View"
                               >
                                 ▼ {t.sidebars.left.nudgeBackward}
                               </button>
                               <button
                                 onClick={() => moveLightCameraRelative('right')}
-                                className="py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] rounded-lg font-bold text-xs cursor-pointer text-center text-[#4B382C]"
+                                className="py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] rounded-lg font-bold text-xs cursor-pointer text-center text-[#2B2621]"
                                 title="Move Right in Camera View"
                               >
                                 ▶ {t.sidebars.left.nudgeRight}
@@ -2628,28 +2626,28 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
 
                         <div>
-                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                             <span>{t.sidebars.left.headingRotation}</span>
-                            <span className="text-[#8D7666]">
+                            <span className="text-[#7C7267]">
                               {Math.round(((selectedLight.rotation[1] * 180) / Math.PI + 360) % 360)}°
                             </span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                             <button
                               onClick={() => rotateLightRelative(-15)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               ⟲ -15°
                             </button>
                             <button
                               onClick={() => rotateLightRelative(15)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               ⟳ +15°
                             </button>
                             <button
                               onClick={() => rotateLightRelative(180)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               ⟳ 180°
                             </button>
@@ -2657,20 +2655,20 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
 
                         <div>
-                          <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                             <span>{t.sidebars.left.scaleMultiplier}</span>
-                            <span className="text-[#8D7666]">{selectedLight.scale[0].toFixed(2)}x</span>
+                            <span className="text-[#7C7267]">{selectedLight.scale[0].toFixed(2)}x</span>
                           </div>
                           <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                             <button
                               onClick={() => scaleLightRelative(0.9)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               -10%
                             </button>
                             <button
                               onClick={() => scaleLightRelative(1.1)}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               +10%
                             </button>
@@ -2678,7 +2676,7 @@ export const LeftToolSidebar: React.FC = () => {
                               onClick={() => {
                                 updateLightTransform(selectedLight.id, { scale: [1, 1, 1] });
                               }}
-                              className="py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#4B382C]"
+                              className="py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg font-semibold text-xs cursor-pointer text-center text-[#2B2621]"
                             >
                               1.0x
                             </button>
@@ -2688,9 +2686,9 @@ export const LeftToolSidebar: React.FC = () => {
                         {/* Burst Height Slider (Fireworks only) */}
                         {selectedLight.category === 'fireworks' && (
                           <div>
-                            <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                            <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                               <span>{t.sidebars.left.burstHeight}</span>
-                              <span className="text-[#8D7666]">
+                              <span className="text-[#7C7267]">
                                 {(((selectedLight.burstHeight ?? (selectedLightMeta?.burstAltitude ?? 1.0))) * 100).toFixed(0)}cm
                               </span>
                             </div>
@@ -2703,15 +2701,15 @@ export const LeftToolSidebar: React.FC = () => {
                               onChange={(e) =>
                                 updateLightTransform(selectedLight.id, { burstHeight: parseFloat(e.target.value) })
                               }
-                              className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                              className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                             />
                           </div>
                         )}
 
-                        <div className="pt-2 border-t border-[#D9C9B4] space-y-2">
+                        <div className="pt-2 border-t border-[#D8D1C5] space-y-2">
                           <button
                             onClick={() => snapLightToSurface(selectedLight.id)}
-                            className="w-full py-1.5 bg-[#FAF8F5] border border-[#D9C9B4] hover:bg-[#EADECF] rounded-lg text-xs font-bold cursor-pointer text-[#4B382C]"
+                            className="w-full py-1.5 bg-[#FAF8F5] border border-[#D8D1C5] hover:bg-[#D8D1C5] rounded-lg text-xs font-bold cursor-pointer text-[#2B2621]"
                           >
                             {t.sidebars.left.snapFlushToSurface}
                           </button>
@@ -2724,10 +2722,10 @@ export const LeftToolSidebar: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-2">
-                        <TbArrowsMove className="w-6 h-6 mx-auto text-[#8D7666]" />
-                        <div className="text-xs font-bold text-[#4B382C]">{t.toolModeSidebar.lightingModes.transform}</div>
-                        <p className="text-[11px] text-[#634E40] leading-relaxed">
+                      <div className="p-4 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-center space-y-2">
+                        <Move className="w-6 h-6 mx-auto text-[#7C7267]" />
+                        <div className="text-xs font-bold text-[#2B2621]">{t.toolModeSidebar.lightingModes.transform}</div>
+                        <p className="text-[11px] text-[#5A5248] leading-relaxed">
                           {t.sidebars.left.selectFirstPrompt}
                         </p>
                       </div>
@@ -2740,9 +2738,9 @@ export const LeftToolSidebar: React.FC = () => {
                   <div className="space-y-3.5">
                     {/* Brush Radius Slider mounted directly on panel background */}
                     <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.brushRadius}</span>
-                        <span className="text-[#8D7666]">{lightEraseRadius.toFixed(1)}m</span>
+                        <span className="text-[#7C7267]">{lightEraseRadius.toFixed(1)}m</span>
                       </div>
                       <input
                         type="range"
@@ -2751,20 +2749,20 @@ export const LeftToolSidebar: React.FC = () => {
                         step={0.1}
                         value={lightEraseRadius}
                         onChange={(e) => setLightEraseRadius(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
-                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] text-center space-y-1.5">
-                      <TbTrash className="w-5 h-5 mx-auto text-red-500" />
-                      <div className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.eraseBrush}</div>
-                      <p className="text-[11px] text-[#634E40] leading-relaxed">
+                    <div className="p-3.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-center space-y-1.5">
+                      <Trash2 className="w-5 h-5 mx-auto text-red-500" />
+                      <div className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.eraseBrush}</div>
+                      <p className="text-[11px] text-[#5A5248] leading-relaxed">
                         {t.sidebars.left.eraseBrushDesc}
                       </p>
                     </div>
 
                     {placedLights.length > 0 && (
-                      <div className="pt-2 border-t border-[#D9C9B4]">
+                      <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
                             if (window.confirm(`Are you sure you want to remove all ${placedLights.length} placed lights & fireworks from the diorama?`)) {
@@ -2796,69 +2794,69 @@ export const LeftToolSidebar: React.FC = () => {
             return (
               <div className="space-y-4">
                 {/* 1. Header Card Badge */}
-                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4]">
+                <div className="flex items-center justify-between p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-[#EADECF] flex items-center justify-center text-[#B85F45]">
-                      {nightMode ? <TbMoon className="w-4 h-4 text-[#38BDF8]" /> : <TbSun className="w-4 h-4 text-[#F59E0B]" />}
+                    <div className="w-7 h-7 rounded-lg bg-[#FAF8F5] flex items-center justify-center text-[#B85F45]">
+                      {nightMode ? <Moon className="w-4 h-4 text-[#38BDF8]" /> : <Sun className="w-4 h-4 text-[#F59E0B]" />}
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-[#4B382C]">{t.appMenuBar.siteTitle}</div>
-                      <div className="text-[10px] text-[#8D7666]">
+                      <div className="text-xs font-bold text-[#2B2621]">{t.appMenuBar.siteTitle}</div>
+                      <div className="text-[10px] text-[#7C7267]">
                         {timeStr} • {timePhase}
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] uppercase font-semibold text-[#8D7666] bg-[#EADECF] px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] uppercase font-semibold text-[#7C7267] bg-[#FAF8F5] px-2 py-0.5 rounded-full">
                     {t.toolModeSidebar.viewModes[viewMode as keyof typeof t.toolModeSidebar.viewModes] || viewMode} {t.sidebars.left.mode}
                   </span>
                 </div>
 
                 {/* 2. Quick Celestial Presets (direct on panel background) */}
                 <div className="space-y-1.5">
-                  <div className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.left.presetsTitle}</div>
+                  <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.presetsTitle}</div>
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => setSunDirectionPreset('dawn')}
                       className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
                         Math.abs(timeOfDay - 6.0) < 0.5
-                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <TbSunrise className="w-4 h-4 text-[#EA580C]" />
+                      <Sunrise className="w-4 h-4 text-[#EA580C]" />
                       <span>{t.sidebars.left.dawn} (06:00)</span>
                     </button>
                     <button
                       onClick={() => setSunDirectionPreset('noon')}
                       className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
                         Math.abs(timeOfDay - 12.0) < 0.5
-                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <TbSun className="w-4 h-4 text-[#F59E0B]" />
+                      <Sun className="w-4 h-4 text-[#F59E0B]" />
                       <span>{t.sidebars.left.noon} (12:00)</span>
                     </button>
                     <button
                       onClick={() => setSunDirectionPreset('sunset')}
                       className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
                         Math.abs(timeOfDay - 17.5) < 0.5
-                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <TbSunset className="w-4 h-4 text-[#D97706]" />
+                      <Sunset className="w-4 h-4 text-[#D97706]" />
                       <span>{t.sidebars.left.goldenHour}</span>
                     </button>
                     <button
                       onClick={() => setSunDirectionPreset('night')}
                       className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
                         nightMode && Math.abs(timeOfDay - 21.0) < 1.0
-                          ? 'bg-[#EADECF] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#4B382C] hover:bg-[#EAE0D3]'
+                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
                       }`}
                     >
-                      <TbFlame className="w-4 h-4 text-[#B85F45]" />
+                      <Flame className="w-4 h-4 text-[#B85F45]" />
                       <span>{t.sidebars.left.night}</span>
                     </button>
                   </div>
@@ -2866,9 +2864,9 @@ export const LeftToolSidebar: React.FC = () => {
 
                 {/* 3. Test Fireworks Celebration Salvo (Plays all fireworks for 5s regardless of time) */}
                 <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center justify-between text-[11px] font-semibold text-[#4B382C]">
+                  <div className="flex items-center justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.fireworksDisplay}</span>
-                    <span className="text-[10px] text-[#8D7666] font-mono">
+                    <span className="text-[10px] text-[#7C7267] font-mono">
                       {placedFireworksCount} {t.sidebars.left.placed}
                     </span>
                   </div>
@@ -2879,9 +2877,9 @@ export const LeftToolSidebar: React.FC = () => {
                     disabled={isSalvoActive || placedFireworksCount === 0}
                     className={`w-full py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer ${
                       isSalvoActive
-                        ? 'bg-[#EADECF] text-[#8D7666] cursor-not-allowed border border-[#CDBCAB]'
+                        ? 'bg-[#FAF8F5] text-[#7C7267] cursor-not-allowed border border-[#D8D1C5]'
                         : placedFireworksCount === 0
-                        ? 'bg-[#FAF8F5] text-[#8D7666] border border-[#D9C9B4] cursor-not-allowed opacity-70'
+                        ? 'bg-[#FAF8F5] text-[#7C7267] border border-[#D8D1C5] cursor-not-allowed opacity-70'
                         : 'bg-[#B85F45] text-white hover:bg-[#A04F38] active:scale-95 border border-[#96432D]'
                     }`}
                     title={
@@ -2890,7 +2888,7 @@ export const LeftToolSidebar: React.FC = () => {
                         : 'Launch a 5-second celebratory salvo of all fireworks'
                     }
                   >
-                    <TbSparkles
+                    <Sparkles
                       className={`w-4 h-4 ${isSalvoActive ? 'animate-spin text-[#B85F45]' : 'text-[#F59E0B]'}`}
                     />
                     <span>
@@ -2907,12 +2905,12 @@ export const LeftToolSidebar: React.FC = () => {
                 <div className="space-y-3.5 pt-1">
                   {/* Time of Day Slider */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span className="flex items-center gap-1">
-                        <TbClock className="w-3.5 h-3.5 text-[#8F4938]" />
+                        <Clock className="w-3.5 h-3.5 text-[#8F4938]" />
                         <span>{t.sidebars.left.timeOfDay}</span>
                       </span>
-                      <span className="text-[#8D7666] font-mono">{timeStr}</span>
+                      <span className="text-[#7C7267] font-mono">{timeStr}</span>
                     </div>
                     <input
                       type="range"
@@ -2921,15 +2919,15 @@ export const LeftToolSidebar: React.FC = () => {
                       step={0.25}
                       value={timeOfDay}
                       onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
 
                   {/* Sun / Moon Elevation (X-Axis Rotation) */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.sunElevation}</span>
-                      <span className="text-[#8D7666] font-mono">{sunElevation}°</span>
+                      <span className="text-[#7C7267] font-mono">{sunElevation}°</span>
                     </div>
                     <input
                       type="range"
@@ -2938,18 +2936,18 @@ export const LeftToolSidebar: React.FC = () => {
                       step={1}
                       value={sunElevation}
                       onChange={(e) => setSunElevation(parseInt(e.target.value, 10))}
-                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
 
                   {/* Sun / Moon Azimuth (Compass Heading) */}
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span className="flex items-center gap-1">
-                        <TbCompass className="w-3.5 h-3.5 text-[#8F4938]" />
+                        <Compass className="w-3.5 h-3.5 text-[#8F4938]" />
                         <span>{t.sidebars.left.sunAzimuth}</span>
                       </span>
-                      <span className="text-[#8D7666] font-mono">{sunAzimuth}°</span>
+                      <span className="text-[#7C7267] font-mono">{sunAzimuth}°</span>
                     </div>
                     <input
                       type="range"
@@ -2958,47 +2956,47 @@ export const LeftToolSidebar: React.FC = () => {
                       step={1}
                       value={sunAzimuth}
                       onChange={(e) => setSunAzimuth(parseInt(e.target.value, 10))}
-                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
                 </div>
 
                 {/* 4. Camera Perspectives (Mounted directly on panel background) */}
                 <div className="space-y-1.5 pt-1">
-                  <div className="text-[11px] font-semibold text-[#4B382C]">{t.sidebars.left.perspectivesTitle}</div>
+                  <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.perspectivesTitle}</div>
                   <div className="grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => setCameraViewPreset('isometric')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
                     >
-                      <TbCube className="w-4 h-4 text-[#8D7666]" />
+                      <Box className="w-4 h-4 text-[#7C7267]" />
                       <span>{t.sidebars.left.isometric}</span>
                     </button>
                     <button
                       onClick={() => setCameraViewPreset('top')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
                     >
-                      <TbEye className="w-4 h-4 text-[#8D7666]" />
+                      <Eye className="w-4 h-4 text-[#7C7267]" />
                       <span>{t.sidebars.left.birdsEye}</span>
                     </button>
                     <button
                       onClick={() => setCameraViewPreset('rampart')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
                     >
-                      <TbBuildingFortress className="w-4 h-4 text-[#8D7666]" />
+                      <Castle className="w-4 h-4 text-[#7C7267]" />
                       <span>{t.sidebars.left.rampartEye}</span>
                     </button>
                     <button
                       onClick={() => setCameraViewPreset('bastion')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#4B382C] border border-[#D9C9B4] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
                     >
-                      <TbFlag className="w-4 h-4 text-[#B85F45]" />
+                      <Flag className="w-4 h-4 text-[#B85F45]" />
                       <span>{t.sidebars.left.bastionHero}</span>
                     </button>
                   </div>
                   <button
                     onClick={() => setCameraViewPreset('reset')}
-                    className="w-full py-1 bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border border-[#CDBCAB] rounded-lg text-[11px] font-bold transition-colors cursor-pointer mt-1"
+                    className="w-full py-1 bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-[11px] font-bold transition-colors cursor-pointer mt-1"
                   >
                     {t.sidebars.left.resetCameraHome}
                   </button>
@@ -3007,9 +3005,9 @@ export const LeftToolSidebar: React.FC = () => {
                 {/* 5. Camera Lens / FOV & Turntable (Direct on panel background) */}
                 <div className="space-y-3.5 pt-1">
                   <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.cameraFov}</span>
-                      <span className="text-[#8D7666] font-mono">{cameraFov}°</span>
+                      <span className="text-[#7C7267] font-mono">{cameraFov}°</span>
                     </div>
                     <input
                       type="range"
@@ -3018,9 +3016,9 @@ export const LeftToolSidebar: React.FC = () => {
                       step={1}
                       value={cameraFov}
                       onChange={(e) => setCameraFov(parseInt(e.target.value, 10))}
-                      className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
-                    <div className="flex justify-between text-[9px] text-[#8D7666] mt-0.5">
+                    <div className="flex justify-between text-[9px] text-[#7C7267] mt-0.5">
                       <span>25° {t.sidebars.left.telephoto}</span>
                       <span>45° {t.sidebars.left.standard}</span>
                       <span>75° {t.sidebars.left.wide}</span>
@@ -3029,14 +3027,14 @@ export const LeftToolSidebar: React.FC = () => {
 
                   {/* Turntable Showcase Controls */}
                   <div>
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#4B382C] mb-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#2B2621] mb-1.5">
                       <span>{t.sidebars.left.turntable}</span>
                       <button
                         onClick={() => setViewMode(viewMode === 'turntable' ? 'orbit' : 'turntable')}
                         className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
                           viewMode === 'turntable'
                             ? 'bg-[#B85F45] text-white'
-                            : 'bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]'
+                            : 'bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]'
                         }`}
                       >
                         {viewMode === 'turntable' ? t.sidebars.left.spinningActive : t.sidebars.left.start360Spin}
@@ -3044,7 +3042,7 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
                     {viewMode === 'turntable' && (
                       <div>
-                        <div className="flex justify-between text-[10px] text-[#634E40] mb-0.5">
+                        <div className="flex justify-between text-[10px] text-[#5A5248] mb-0.5">
                           <span>{t.sidebars.left.spinSpeed}</span>
                           <span className="font-mono">{turntableSpeed.toFixed(1)} RPM</span>
                         </div>
@@ -3055,7 +3053,7 @@ export const LeftToolSidebar: React.FC = () => {
                           step={0.1}
                           value={turntableSpeed}
                           onChange={(e) => setTurntableSpeed(parseFloat(e.target.value))}
-                          className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                         />
                       </div>
                     )}
@@ -3063,19 +3061,19 @@ export const LeftToolSidebar: React.FC = () => {
                 </div>
 
                 {/* 6. Presentation Card & Actions */}
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D9C9B4] space-y-2">
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">
                   <div className="flex items-center gap-2">
-                    <TbEye className="w-4 h-4 text-[#8F4938]" />
-                    <span className="text-xs font-bold text-[#4B382C]">{t.sidebars.left.dioramaPresentation}</span>
+                    <Eye className="w-4 h-4 text-[#8F4938]" />
+                    <span className="text-xs font-bold text-[#2B2621]">{t.sidebars.left.dioramaPresentation}</span>
                   </div>
-                  <p className="text-[11px] text-[#634E40] leading-relaxed">
+                  <p className="text-[11px] text-[#5A5248] leading-relaxed">
                     {t.sidebars.left.dioramaPresentationDesc}
                   </p>
                   <button
                     onClick={() => setPosterModalOpen(true)}
-                    className="w-full py-1.5 bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-1.5 bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] rounded-lg text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                   >
-                    <TbCamera className="w-3.5 h-3.5 text-[#B85F45]" />
+                    <Camera className="w-3.5 h-3.5 text-[#B85F45]" />
                     <span>{t.sidebars.left.openPosterStudio}</span>
                   </button>
                 </div>

@@ -8,15 +8,15 @@ Whenever UI components, tool sidebars, docks, cards, modals, or HUD elements are
 ## 1. Container & Card Usage Discipline
 
 Never default to wrapping every control in a card:
-- **Direct Panel Background Mounting:**
-  - Property sliders, numerical readouts, and simple toggles **MUST sit directly on the sidebar background (`bg-[#F3EBE0]`)**.
+- **Direct Level 2 Panel Background Mounting:**
+  - Property sliders, numerical readouts, and simple toggles **MUST sit directly on the sidebar background (`bg-[#EBE6DC]`)**.
   - **NEVER** wrap individual property sliders inside separate white card containers.
   - Standard slider pattern:
     ```tsx
     <div>
-      <div className="flex justify-between text-[11px] font-semibold text-[#4B382C]">
+      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
         <span>Brush Radius</span>
-        <span className="text-[#8D7666]">{radius.toFixed(1)}m</span>
+        <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{radius.toFixed(1)}m</span>
       </div>
       <input
         type="range"
@@ -25,12 +25,12 @@ Never default to wrapping every control in a card:
         step={step}
         value={radius}
         onChange={(e) => setRadius(parseFloat(e.target.value))}
-        className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
       />
     </div>
     ```
-- **Strictly Reserved White Containers (`bg-[#FAF8F5]` / `border-[#D9C9B4]` rounded-xl):**
-  - White container cards are reserved exclusively for:
+- **Strictly Reserved Nested Containers (`bg-[#FAF8F5]` / `border-[#D8D1C5]` rounded-xl):**
+  - Nested white container cards are reserved exclusively for:
     1. **Top Section Header Badge** (e.g., `Texture Studio`, `Path Drafting`, `Wall Architecture`).
     2. **Active Item / Target Preview Cards** (e.g., Active Texture preview with thumbnail, name, and layer badge).
     3. **Primary Action Group Containers** (e.g., Finish/Cancel draft or Flood/Clear buttons).
@@ -95,10 +95,17 @@ All interactive 3D tools must implement standard ergonomic wheel gestures, inter
 
 ---
 
-## 8. Mandatory UI Consistency Verification Protocol
+## 8. Unified Pill-in-Pill Language Selector
+
+- **Single Source of Truth:** All language selection across the application MUST use [`LanguageSelector.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/common/LanguageSelector.tsx). Never write ad-hoc inline language button arrays.
+- **Pill-in-Pill Geometry:** Both outer container and active language buttons MUST be `rounded-full` pills with Level 3 basalt active highlight (`bg-[#2B2621] text-[#FAF8F5]`). Never render square or box highlights inside rounded containers.
+
+---
+
+## 9. Mandatory UI Consistency Verification Protocol
 
 Before completing any task that adds or edits UI components:
 1. **Compare Sibling Panels:** Confirm that slider spacing, label typography, font sizes, and container styles match the canonical `Spline` and `Terrain` panels in [`LeftToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/LeftToolSidebar.tsx).
-2. **Consult `design.md`:** Validate background colors (`#F3EBE0`), border colors (`#CDBCAB`, `#D9C9B4`), and accent colors (`#B85F45`, `#E85D04`).
+2. **Consult `design.md`:** Validate 3-tier surface hierarchy (Level 1 `#F4F1EA`, Level 2 `#EBE6DC`, Level 3 `#2B2621`), hairline borders (`#D8D1C5`), Lucide icon standards (`size={16}`, `strokeWidth={1.75}`), and accent colors (`#B85F45`, `#E85D04`).
 3. **Visual Verification:** Use browser tools (`chrome-devtools` or `take_screenshot`) to visually inspect the rendered UI in the browser and attach evidence before declaring completion.
 

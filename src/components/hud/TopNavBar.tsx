@@ -3,19 +3,20 @@
 import React from 'react';
 import Image from 'next/image';
 import {
-  TbArrowBackUp,
-  TbArrowForwardUp,
-  TbReload,
-  TbFlame,
-  TbSparkles,
-  TbShield,
-  TbChevronDown,
-  TbLanguage,
-  TbKeyboard,
-} from 'react-icons/tb';
+  Undo2,
+  Redo2,
+  RotateCcw,
+  Flame,
+  Sparkles,
+  Shield,
+  ChevronDown,
+  Languages,
+  Keyboard,
+} from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
 
 interface TopNavBarProps {
   onUndo?: () => void;
@@ -58,24 +59,24 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
   return (
     <header className="fixed top-3 left-4 right-4 z-40 flex items-center justify-between pointer-events-none select-none">
       {/* Left cluster: Branding & Fort Nameplate */}
-      <div className="flex items-center gap-2.5 pointer-events-auto bg-[#F2EBE1]/92 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-[#D9C9B4] shadow-md transition-all">
-        <div className="relative w-8 h-8 flex items-center justify-center shrink-0">
+      <div className="flex items-center gap-2.5 pointer-events-auto bg-[#EBE6DC]/95 backdrop-blur-md px-3 py-1 rounded-xl border border-[#D8D1C5] shadow-sm transition-all">
+        <div className="relative w-7 h-7 flex items-center justify-center shrink-0">
           <Image
             src="/killaplayground-tranparent.png"
             alt="The Killa Playground Logo"
-            width={32}
-            height={32}
+            width={28}
+            height={28}
             className="w-full h-full object-contain drop-shadow-xs"
             priority
           />
         </div>
         <div className="flex flex-col">
-          <div className="flex items-center gap-2">
-            <span className="font-sans font-bold text-sm tracking-tight text-[#2B1E16]">
+          <div className="flex items-center gap-1.5">
+            <span className="font-semibold text-xs tracking-tight text-[#2B2621]">
               {fortTitle || t.defaultFortTitle}
             </span>
-            <span className="text-[10px] font-sans font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#EADECF] text-[#634E40]">
-              Playground
+            <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5]">
+              Studio
             </span>
           </div>
         </div>
@@ -84,100 +85,87 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
       {/* Center cluster: Active Mode Pill */}
       <button
         onClick={() => setModeSelectModalOpen(true)}
-        className="hidden md:flex items-center gap-2 pointer-events-auto bg-[#F2EBE1]/92 backdrop-blur-md hover:bg-[#DFCDBD] px-3.5 py-1.5 rounded-2xl border border-[#D9C9B4] shadow-md transition-all group cursor-pointer"
+        className="hidden md:flex items-center gap-2 pointer-events-auto bg-[#EBE6DC]/95 backdrop-blur-md hover:bg-[#D8D1C5] px-3 py-1.5 rounded-xl border border-[#D8D1C5] shadow-sm transition-all group cursor-pointer"
         title="Change Fort Blueprint or Generate Terrain"
       >
-        <span className="w-2 h-2 rounded-full bg-[#E85D04] animate-pulse" />
-        <span className="text-xs font-semibold text-[#4B382C]">
+        <span className="w-2 h-2 rounded-full bg-[#B85F45] animate-pulse" />
+        <span className="text-xs font-semibold text-[#2B2621]">
           {activeTemplateLabel}
         </span>
-        <TbChevronDown className="w-3.5 h-3.5 text-[#8D7666] group-hover:translate-y-0.5 transition-transform" />
+        <ChevronDown size={14} strokeWidth={1.75} className="text-[#7C7267] group-hover:translate-y-0.5 transition-transform" />
       </button>
 
       {/* Right cluster: Language, Undo/Redo/Reset, Night Diya Mode, Finish CTA */}
       <div className="flex items-center gap-2 pointer-events-auto">
         {/* Language Switcher (EN | MR | HI) */}
-        <div className="flex items-center bg-[#F2EBE1]/92 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-md p-1">
-          {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
-            <button
-              key={lang}
-              onClick={() => setLocale(lang)}
-              className={`px-2 py-1 rounded-xl text-[11px] font-bold uppercase transition-all cursor-pointer ${
-                locale === lang
-                  ? 'bg-[#4B382C] text-[#FAF8F5] shadow-sm'
-                  : 'text-[#8D7666] hover:text-[#2B1E16] hover:bg-[#DFCDBD]'
-              }`}
-              title={lang === 'en' ? 'English' : lang === 'mr' ? 'मराठी' : 'हिन्दी'}
-            >
-              {lang === 'en' ? 'EN' : lang === 'mr' ? 'म' : 'हि'}
-            </button>
-          ))}
-        </div>
+        <LanguageSelector size="md" />
 
         {/* Undo / Redo / Separate Reset Cluster */}
-        <div className="flex items-center bg-[#F2EBE1]/92 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-md p-1">
+        <div className="flex items-center bg-[#EBE6DC]/95 backdrop-blur-md rounded-xl border border-[#D8D1C5] shadow-sm p-0.5">
           {/* Undo */}
           <button
             onClick={onUndo}
             disabled={!canUndo}
-            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-md transition-colors cursor-pointer ${
               canUndo
-                ? 'text-[#2B1E16] hover:bg-[#DFCDBD]'
-                : 'text-[#B29E8E] cursor-not-allowed'
+                ? 'text-[#2B2621] hover:bg-[#D8D1C5]'
+                : 'text-[#A3978B] cursor-not-allowed'
             }`}
             title={t.undo}
           >
-            <TbArrowBackUp className="w-4 h-4" />
+            <Undo2 size={16} strokeWidth={1.75} />
           </button>
 
           {/* Redo */}
           <button
             onClick={onRedo}
             disabled={!canRedo}
-            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-md transition-colors cursor-pointer ${
               canRedo
-                ? 'text-[#2B1E16] hover:bg-[#DFCDBD]'
-                : 'text-[#B29E8E] cursor-not-allowed'
+                ? 'text-[#2B2621] hover:bg-[#D8D1C5]'
+                : 'text-[#A3978B] cursor-not-allowed'
             }`}
             title={t.redo}
           >
-            <TbArrowForwardUp className="w-4 h-4" />
+            <Redo2 size={16} strokeWidth={1.75} />
           </button>
 
-          <div className="w-[1px] h-4 bg-[#D9C9B4] mx-0.5" />
+          <div className="w-[1px] h-4 bg-[#D8D1C5] mx-0.5" />
 
           {/* Dedicated Reset Button */}
           <button
             onClick={() => setResetConfirmOpen(true)}
-            className="p-1.5 rounded-xl text-[#B85F45] hover:bg-[#B85F45]/15 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-[#B85F45] hover:bg-[#B85F45]/15 transition-colors cursor-pointer"
             title={t.reset}
           >
-            <TbReload className="w-4 h-4" />
+            <RotateCcw size={16} strokeWidth={1.75} />
           </button>
         </div>
 
         {/* Shortcuts Button */}
         <button
           onClick={() => setShortcutsModalOpen(true)}
-          className="p-2 rounded-2xl bg-[#F2EBE1]/92 backdrop-blur-md border border-[#D9C9B4] shadow-md text-[#634E40] hover:bg-[#DFCDBD] hover:text-[#2B1E16] transition-all cursor-pointer"
+          className="p-1.5 rounded-xl bg-[#EBE6DC]/95 backdrop-blur-md border border-[#D8D1C5] shadow-sm text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-all cursor-pointer"
           title={t.shortcuts}
         >
-          <TbKeyboard className="w-4 h-4" />
+          <Keyboard size={16} strokeWidth={1.75} />
         </button>
 
         {/* Diwali Night Diya Toggle */}
         <button
           onClick={toggleNightMode}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border shadow-md backdrop-blur-md transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border shadow-sm backdrop-blur-md transition-all cursor-pointer ${
             nightMode
-              ? 'bg-[#23211E] text-[#F59E0B] border-[#F59E0B] shadow-[#F59E0B]/20'
-              : 'bg-[#F2EBE1]/92 text-[#634E40] border-[#D9C9B4] hover:bg-[#DFCDBD]'
+              ? 'bg-[#2B2621] text-[#FAF8F5] border-[#2B2621]'
+              : 'bg-[#EBE6DC]/95 text-[#5A5248] border-[#D8D1C5] hover:bg-[#D8D1C5]'
           }`}
           title="Toggle Diwali Evening & Glowing Diyas (N)"
         >
-          <TbFlame
-            className={`w-4 h-4 transition-transform ${
-              nightMode ? 'scale-110 text-[#F59E0B] animate-pulse' : 'text-[#8D7666]'
+          <Flame
+            size={16}
+            strokeWidth={1.75}
+            className={`transition-transform ${
+              nightMode ? 'scale-110 text-[#B85F45] animate-pulse' : 'text-[#7C7267]'
             }`}
           />
           <span className="text-xs font-semibold hidden lg:inline">
@@ -188,9 +176,9 @@ export const TopNavBar: React.FC<TopNavBarProps> = ({
         {/* Finish & Share Button */}
         <button
           onClick={() => setPosterModalOpen(true)}
-          className="flex items-center gap-1.5 bg-[#E85D04] hover:bg-[#FF7722] active:scale-95 text-white px-3.5 py-1.5 rounded-2xl font-semibold text-xs shadow-lg shadow-[#E85D04]/35 transition-all cursor-pointer"
+          className="flex items-center gap-1.5 bg-[#B85F45] hover:bg-[#A3523B] active:scale-95 text-white px-3.5 py-1.5 rounded-xl font-semibold text-xs shadow-sm transition-all cursor-pointer"
         >
-          <TbSparkles className="w-4 h-4" />
+          <Sparkles size={16} strokeWidth={1.75} />
           <span>{t.finishKilla}</span>
         </button>
       </div>

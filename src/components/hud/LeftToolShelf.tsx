@@ -2,21 +2,16 @@
 
 import React from 'react';
 import {
-  TbMountain,
-  TbBuildingFortress,
-  TbRoute,
-  TbTexture,
-  TbBrush,
-  TbTrees,
-  TbUsersGroup,
-  TbShovel,
-  TbDropletHalf2,
-  TbLayersSubtract,
-  TbSun,
-  TbPick,
-  TbPlant2,
-  TbFlame,
-} from 'react-icons/tb';
+  Mountain,
+  Castle,
+  Layers,
+  Trees,
+  Users,
+  Flame,
+  Shovel,
+  Droplets,
+  Sun,
+} from 'lucide-react';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -28,20 +23,20 @@ interface ToolDef {
 
 // 6 Primary Killa-First Construction Tools (Ticket 10)
 const PRIMARY_KILLA_TOOLS: ToolDef[] = [
-  { id: 'terrain', key: '1', icon: TbMountain },
-  { id: 'building', key: '2', icon: TbBuildingFortress },
-  { id: 'texture', key: '3', icon: TbTexture },
-  { id: 'foliage', key: '4', icon: TbTrees },
-  { id: 'prop', key: '5', icon: TbUsersGroup },
-  { id: 'lighting', key: '6', icon: TbFlame },
+  { id: 'terrain', key: '1', icon: Mountain },
+  { id: 'building', key: '2', icon: Castle },
+  { id: 'texture', key: '3', icon: Layers },
+  { id: 'foliage', key: '4', icon: Trees },
+  { id: 'prop', key: '5', icon: Users },
+  { id: 'lighting', key: '6', icon: Flame },
 ];
 
 // Soil Simulation Tools (Deferred Advanced Phase)
 const SECONDARY_SOIL_TOOLS: ToolDef[] = [
-  { id: 'soil', key: '7', icon: TbShovel },
-  { id: 'water', key: '8', icon: TbDropletHalf2 },
-  { id: 'shape_side', key: '9', icon: TbLayersSubtract },
-  { id: 'dry', key: '0', icon: TbSun },
+  { id: 'soil', key: '7', icon: Shovel },
+  { id: 'water', key: '8', icon: Droplets },
+  { id: 'shape_side', key: '9', icon: Layers },
+  { id: 'dry', key: '0', icon: Sun },
 ];
 
 export const LeftToolShelf: React.FC = () => {
@@ -88,32 +83,34 @@ export const LeftToolShelf: React.FC = () => {
       <div key={tool.id} className="relative group">
         <button
           onClick={() => setActiveTool(tool.id)}
-          className={`relative flex flex-col items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl transition-all duration-200 cursor-pointer ${
+          className={`relative flex flex-col items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-lg transition-all duration-200 cursor-pointer ${
             isActive
-              ? 'bg-[#4B382C] text-white shadow-md shadow-[#4B382C]/30 scale-105'
-              : 'text-[#634E40] hover:bg-[#DFCDBD] hover:text-[#2B1E16]'
+              ? 'bg-[#2B2621] text-[#FAF8F5] shadow-sm scale-105'
+              : 'text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
           }`}
           aria-label={`${details?.fullLabel || details?.label} (${tool.key})`}
         >
           {/* Shortcut Key Badge */}
           <span
-            className={`absolute top-1 right-1 text-[8px] font-mono font-bold leading-none px-1 py-0.5 rounded ${
+            className={`absolute top-1 right-1 text-[8px] font-mono font-semibold tabular-nums leading-none px-1 py-0.5 rounded ${
               isActive
                 ? 'bg-black/30 text-[#FAF8F5]'
-                : 'bg-[#EADECF] text-[#8D7666]'
+                : 'bg-[#D8D1C5] text-[#5A5248]'
             }`}
           >
             {tool.key}
           </span>
 
           <Icon
-            className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform group-hover:scale-110 ${
-              isActive ? 'text-[#FAF8F5]' : 'text-[#4B382C]'
+            size={18}
+            strokeWidth={1.75}
+            className={`transition-transform group-hover:scale-110 ${
+              isActive ? 'text-[#FAF8F5]' : 'text-[#2B2621]'
             }`}
           />
           <span
             className={`text-[8.5px] font-semibold mt-0.5 tracking-tight leading-none ${
-              isActive ? 'text-[#FAF8F5]' : 'text-[#634E40]'
+              isActive ? 'text-[#FAF8F5]' : 'text-[#5A5248]'
             }`}
           >
             {details?.label}
@@ -121,10 +118,10 @@ export const LeftToolShelf: React.FC = () => {
         </button>
 
         {/* Hover Tooltip (Pops out to the RIGHT, avoiding overlap) */}
-        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#23211E]/95 backdrop-blur-md text-[#FAF8F5] text-xs font-medium rounded-lg whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-xl z-50 flex items-center gap-2 border border-[#4B382C]/40">
-          <span className="font-bold text-[#F59E0B]">[{tool.key}]</span>
+        <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-[#2B2621]/95 backdrop-blur-md text-[#FAF8F5] text-xs font-medium rounded-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-xl z-50 flex items-center gap-2 border border-[#D8D1C5]/30">
+          <span className="font-bold text-[#B85F45]">[{tool.key}]</span>
           <span className="font-semibold text-white">{details?.fullLabel}</span>
-          <span className="text-[#D9C9B4] text-[11px]">— {details?.desc}</span>
+          <span className="text-[#D8D1C5] text-[11px]">— {details?.desc}</span>
         </div>
       </div>
     );
@@ -133,7 +130,7 @@ export const LeftToolShelf: React.FC = () => {
   return (
     <aside
       aria-label="3D Editing Tools"
-      className="fixed left-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1 p-1.5 bg-[#F2EBE1]/94 backdrop-blur-xl rounded-[22px] border border-[#D9C9B4] shadow-2xl transition-all select-none"
+      className="fixed left-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-1 p-1.5 bg-[#EBE6DC]/95 backdrop-blur-xl rounded-xl border border-[#D8D1C5] shadow-2xl transition-all select-none"
     >
       {/* Group 1: 6 Primary Killa-First Construction Tools */}
       <div className="flex flex-col items-center gap-1">
@@ -141,7 +138,7 @@ export const LeftToolShelf: React.FC = () => {
       </div>
 
       {/* Visual Divider Separating Killa Tools from Soil Pipeline */}
-      <div className="w-7 h-[1.5px] bg-[#D9C9B4]/80 my-1 rounded-full" />
+      <div className="w-7 h-[1px] bg-[#D8D1C5] my-1 rounded-full" />
 
       {/* Group 2: Soil Pipeline Tools */}
       <div className="flex flex-col items-center gap-1">

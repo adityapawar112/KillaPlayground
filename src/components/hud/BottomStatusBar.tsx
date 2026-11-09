@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { TbChevronDown, TbChevronUp, TbInfoCircle } from 'react-icons/tb';
+import { ChevronDown, ChevronUp, Info } from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -86,12 +86,12 @@ export const BottomStatusBar: React.FC = () => {
         <div className="hidden md:flex fixed bottom-0 left-1/2 -translate-x-1/2 z-30 pointer-events-auto select-none font-sans">
           <button
             onClick={toggleBottomStatusBar}
-            className="flex items-center gap-1.5 px-3 py-0.5 bg-[#E4D8CB] border-x border-t border-[#CDBCAB] rounded-t-lg shadow-sm text-xs font-semibold text-[#4B382C] active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1 bg-[#EBE6DC] border-x border-t border-[#D8D1C5] rounded-t-md shadow-sm text-xs font-medium text-[#2B2621] hover:bg-[#D8D1C5] active:scale-95 transition-all cursor-pointer"
             title={t.bottomStatusBar.controlsAndTips}
           >
-            <TbInfoCircle className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="text-[11px] font-bold">{t.bottomStatusBar.controlsAndTips}</span>
-            <TbChevronUp className="w-3.5 h-3.5 text-[#5C4638]" />
+            <Info size={14} strokeWidth={1.75} className="text-[#B85F45]" />
+            <span className="text-[11px] font-semibold">{t.bottomStatusBar.controlsAndTips}</span>
+            <ChevronUp size={14} strokeWidth={1.75} className="text-[#5A5248]" />
           </button>
         </div>
       )}
@@ -102,26 +102,26 @@ export const BottomStatusBar: React.FC = () => {
           aria-label="Viewport Navigation Strip"
           className="hidden md:flex fixed bottom-2 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none items-center justify-center max-w-[95vw] font-sans"
         >
-          <div className="flex items-center gap-2 sm:gap-3 px-3.5 py-1 rounded-full bg-[#F2EBE1]/95 border border-[#D9C9B4] text-[10px] sm:text-[11px] text-[#634E40] shadow-sm pointer-events-auto">
+          <div className="flex items-center gap-2 sm:gap-3 px-3.5 py-1 rounded-full bg-[#EBE6DC]/95 backdrop-blur-md border border-[#D8D1C5] text-[10px] sm:text-[11px] text-[#5A5248] shadow-sm pointer-events-auto">
             <span className="flex items-center gap-1">
-              <span className="font-semibold text-[#2B1E16]">{t.bottomStatusBar.leftClick}</span>{' '}
-              <span className="text-[#E85D04] font-bold">
+              <span className="font-semibold text-[#2B2621]">{t.bottomStatusBar.leftClick}</span>{' '}
+              <span className="text-[#B85F45] font-semibold">
                 {getLeftClickAction()}
               </span>
             </span>
-            <span className="text-[#D9C9B4]">•</span>
-            <span className="text-[#2B1E16] font-semibold">{t.bottomStatusBar.rightDrag}</span>
-            <span className="text-[#D9C9B4]">•</span>
-            <span className="text-[#2B1E16] font-semibold">{t.bottomStatusBar.middleDrag}</span>
-            <span className="text-[#D9C9B4]">•</span>
-            <span className="text-[#2B1E16] font-semibold">{t.bottomStatusBar.scroll}</span>
-            <span className="text-[#D9C9B4]">•</span>
+            <span className="text-[#D8D1C5]">•</span>
+            <span className="text-[#2B2621] font-medium">{t.bottomStatusBar.rightDrag}</span>
+            <span className="text-[#D8D1C5]">•</span>
+            <span className="text-[#2B2621] font-medium">{t.bottomStatusBar.middleDrag}</span>
+            <span className="text-[#D8D1C5]">•</span>
+            <span className="text-[#2B2621] font-medium">{t.bottomStatusBar.scroll}</span>
+            <span className="text-[#D8D1C5]">•</span>
             <button
               onClick={toggleBottomStatusBar}
               title={t.bottomStatusBar.minimizeStrip}
-              className="p-0.5 rounded hover:bg-[#D9C9B4] text-[#8D7666] hover:text-[#4B382C] transition-colors cursor-pointer"
+              className="p-0.5 rounded hover:bg-[#D8D1C5] text-[#7C7267] hover:text-[#2B2621] transition-colors cursor-pointer"
             >
-              <TbChevronDown className="w-3 h-3" />
+              <ChevronDown size={14} strokeWidth={1.75} />
             </button>
           </div>
         </footer>

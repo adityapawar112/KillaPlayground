@@ -2,17 +2,17 @@
 
 import React, { useEffect } from 'react';
 import {
-  TbBuildingCastle,
-  TbAdjustmentsHorizontal,
-  TbX,
-  TbDice5,
-  TbMountain,
-  TbRipple,
-  TbSparkles,
-  TbCheck,
-  TbArrowRight,
-  TbPlant2,
-} from 'react-icons/tb';
+  Castle,
+  SlidersHorizontal,
+  X,
+  Dices,
+  Mountain,
+  Waves,
+  Sparkles,
+  Check,
+  ArrowRight,
+  Sprout,
+} from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -39,7 +39,7 @@ const HISTORICAL_FORTS: FortBlueprint[] = [
     },
     type: 'hill',
     waterLevel: 0.08,
-    icon: TbMountain,
+    icon: Mountain,
   },
   {
     id: 'janjira',
@@ -52,7 +52,7 @@ const HISTORICAL_FORTS: FortBlueprint[] = [
     },
     type: 'sea',
     waterLevel: 0.22,
-    icon: TbRipple,
+    icon: Waves,
   },
   {
     id: 'sinhagad',
@@ -65,7 +65,7 @@ const HISTORICAL_FORTS: FortBlueprint[] = [
     },
     type: 'hill',
     waterLevel: 0.06,
-    icon: TbBuildingCastle,
+    icon: Castle,
   },
   {
     id: 'pratapgad',
@@ -78,7 +78,7 @@ const HISTORICAL_FORTS: FortBlueprint[] = [
     },
     type: 'hill',
     waterLevel: 0.05,
-    icon: TbPlant2,
+    icon: Sprout,
   },
   {
     id: 'vijaydurg',
@@ -91,7 +91,7 @@ const HISTORICAL_FORTS: FortBlueprint[] = [
     },
     type: 'naval',
     waterLevel: 0.20,
-    icon: TbRipple,
+    icon: Waves,
   },
 ];
 
@@ -185,20 +185,20 @@ export const TerrainStudioDrawer: React.FC = () => {
     /* Floating Dropdown Panel (Anchored directly under Top Menu Bar, 3D Canvas visible behind) */
     <div
       onPointerDown={(e) => e.stopPropagation()}
-      className={`fixed left-4 top-[3.25rem] z-40 w-[420px] sm:w-[460px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-4.5rem)] bg-[#F9F6F0] rounded-2xl sm:rounded-3xl border-2 border-[#D9C9B4] shadow-2xl shadow-black/25 flex flex-col transition-all duration-200 select-none animate-in fade-in slide-in-from-top-3 ${
+      className={`fixed left-4 top-[3.25rem] z-40 w-[420px] sm:w-[460px] max-w-[calc(100vw-32px)] max-h-[calc(100vh-4.5rem)] bg-[#EBE6DC] rounded-2xl sm:rounded-3xl border-2 border-[#D8D1C5] shadow-2xl shadow-black/25 flex flex-col transition-all duration-200 select-none animate-in fade-in slide-in-from-top-3 ${
         nightMode ? 'text-[#F9F6F0] bg-[#1E1B18] border-[#4A3E35]' : 'text-[#2B1E16]'
       }`}
       role="dialog"
       aria-label="Historical Forts & Terrain Studio"
     >
       {/* Dropdown Header */}
-      <div className="p-4 sm:p-5 bg-[#4B382C] text-white flex items-center justify-between border-b border-[#D9C9B4]/40 rounded-t-2xl sm:rounded-t-3xl shadow-sm shrink-0">
+      <div className="p-4 sm:p-5 bg-[#2B2621] text-white flex items-center justify-between border-b border-[#D8D1C5]/40 rounded-t-2xl sm:rounded-t-3xl shadow-sm shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center">
             {terrainDrawerTab === 'historical' ? (
-              <TbBuildingCastle className="w-6 h-6 text-[#FAF8F5]" />
+              <Castle className="w-6 h-6 text-[#FAF8F5]" />
             ) : (
-              <TbAdjustmentsHorizontal className="w-6 h-6 text-[#FAF8F5]" />
+              <SlidersHorizontal className="w-6 h-6 text-[#FAF8F5]" />
             )}
           </div>
           <div>
@@ -218,21 +218,21 @@ export const TerrainStudioDrawer: React.FC = () => {
           className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
           title={t.common.close}
         >
-          <TbX className="w-5 h-5" />
+          <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Tab Switcher Pills: Historic vs Scratch */}
-      <div className="p-3 bg-[#EADECF]/60 border-b border-[#D9C9B4] flex items-center gap-2 shrink-0 font-sans">
+      <div className="p-3 bg-[#EBE6DC]/60 border-b border-[#D8D1C5] flex items-center gap-2 shrink-0 font-sans">
         <button
           onClick={() => setTerrainDrawerTab('historical')}
           className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
             terrainDrawerTab === 'historical'
-              ? 'bg-[#4B382C] text-white shadow-sm'
-              : 'bg-[#F2EBE1] text-[#634E40] hover:bg-[#DFCDBD]'
+              ? 'bg-[#2B2621] text-white shadow-sm'
+              : 'bg-[#FAF8F5] text-[#5A5248] hover:bg-[#D8D1C5]'
           }`}
         >
-          <TbBuildingCastle className="w-4 h-4" />
+          <Castle className="w-4 h-4" />
           <span>{t.modeModal.historicalTab}</span>
         </button>
 
@@ -240,11 +240,11 @@ export const TerrainStudioDrawer: React.FC = () => {
           onClick={() => setTerrainDrawerTab('freeform')}
           className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
             terrainDrawerTab === 'freeform'
-              ? 'bg-[#4B382C] text-white shadow-sm'
-              : 'bg-[#F2EBE1] text-[#634E40] hover:bg-[#DFCDBD]'
+              ? 'bg-[#2B2621] text-white shadow-sm'
+              : 'bg-[#FAF8F5] text-[#5A5248] hover:bg-[#D8D1C5]'
           }`}
         >
-          <TbAdjustmentsHorizontal className="w-4 h-4" />
+          <SlidersHorizontal className="w-4 h-4" />
           <span>{t.modeModal.freeformTab}</span>
         </button>
       </div>
@@ -271,8 +271,8 @@ export const TerrainStudioDrawer: React.FC = () => {
                   onClick={() => handleSelectFort(fort)}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer group flex flex-col gap-2.5 ${
                     isSelected
-                      ? 'bg-[#EADECF] border-[#4B382C] shadow-md ring-2 ring-[#4B382C]/20'
-                      : 'bg-[#F2EBE1]/80 border-[#D9C9B4] hover:bg-[#DFCDBD] hover:border-[#BFA892]'
+                      ? 'bg-[#EBE6DC] border-[#4B382C] shadow-md ring-2 ring-[#4B382C]/20'
+                      : 'bg-[#FAF8F5]/80 border-[#D8D1C5] hover:bg-[#D8D1C5] hover:border-[#BFA892]'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -280,8 +280,8 @@ export const TerrainStudioDrawer: React.FC = () => {
                       <div
                         className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
                           isSelected
-                            ? 'bg-[#4B382C] text-white'
-                            : 'bg-[#EADECF] text-[#634E40] group-hover:bg-[#4B382C] group-hover:text-white'
+                            ? 'bg-[#2B2621] text-white'
+                            : 'bg-[#EBE6DC] text-[#5A5248] group-hover:bg-[#2B2621] group-hover:text-white'
                         }`}
                       >
                         <Icon className="w-5 h-5" />
@@ -292,29 +292,29 @@ export const TerrainStudioDrawer: React.FC = () => {
                             {name}
                           </h3>
                         </div>
-                        <span className="text-[11px] text-[#8D7666] font-sans mt-0.5 block">
+                        <span className="text-[11px] text-[#7C7267] font-sans mt-0.5 block">
                           {region}
                         </span>
                       </div>
                     </div>
 
                     {isSelected ? (
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-[#4B382C] bg-[#DFCDBD] px-2.5 py-1 rounded-full">
-                        <TbCheck className="w-3.5 h-3.5" />
+                      <span className="flex items-center gap-1 text-[11px] font-bold text-[#2B2621] bg-[#DFCDBD] px-2.5 py-1 rounded-full">
+                        <Check className="w-3.5 h-3.5" />
                         {t.common.active}
                       </span>
                     ) : (
-                      <span className="text-xs text-[#8D7666] group-hover:text-[#4B382C] flex items-center gap-1 font-bold">
-                        {t.common.select} <TbArrowRight className="w-3.5 h-3.5" />
+                      <span className="text-xs text-[#7C7267] group-hover:text-[#2B2621] flex items-center gap-1 font-bold">
+                        {t.common.select} <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     )}
                   </div>
 
-                  <p className="text-xs text-[#634E40] leading-relaxed">
+                  <p className="text-xs text-[#5A5248] leading-relaxed">
                     {desc}
                   </p>
 
-                  <div className="pt-2 border-t border-[#D9C9B4]/50 flex items-center justify-between text-[11px] text-[#8D7666]">
+                  <div className="pt-2 border-t border-[#D8D1C5]/50 flex items-center justify-between text-[11px] text-[#7C7267]">
                     <span>{t.terrainStudio.waterLevel}: <strong>{(fort.waterLevel * 100).toFixed(0)}{t.terrainStudio.cm}</strong></span>
                   </div>
                 </div>
@@ -325,20 +325,20 @@ export const TerrainStudioDrawer: React.FC = () => {
           /* FREEFORM PROCEDURAL GENERATOR CONTROLS */
           <div className="space-y-5">
             {/* Randomizer Card */}
-            <div className="p-4 rounded-2xl bg-[#EADECF]/80 border border-[#D9C9B4] flex items-center justify-between">
+            <div className="p-4 rounded-2xl bg-[#EBE6DC]/80 border border-[#D8D1C5] flex items-center justify-between">
               <div>
                 <span className="font-bold text-sm text-[#2B1E16] block font-sans">
                   {t.terrainStudio.randomSeedTitle}
                 </span>
-                <span className="text-xs text-[#634E40] block mt-0.5 font-mono">
+                <span className="text-xs text-[#5A5248] block mt-0.5 font-mono">
                   {t.terrainStudio.activeSeed}: #{safeFreeform.seed}
                 </span>
               </div>
               <button
                 onClick={handleRollDice}
-                className="px-4 py-2 rounded-xl bg-[#4B382C] text-white hover:bg-[#38281E] font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
+                className="px-4 py-2 rounded-xl bg-[#2B2621] text-white hover:bg-[#38281E] font-bold text-xs flex items-center gap-2 shadow-sm transition-all cursor-pointer active:scale-95"
               >
-                <TbDice5 className="w-4 h-4" />
+                <Dices className="w-4 h-4" />
                 <span>{t.terrainStudio.rollSeedBtn}</span>
               </button>
             </div>
@@ -351,9 +351,9 @@ export const TerrainStudioDrawer: React.FC = () => {
 
               {/* Tableland Width */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                <div className="flex items-center justify-between text-xs font-bold text-[#2B2621]">
                   <span>{t.terrainStudio.summitWidth}</span>
-                  <span className="text-[#8D7666]">{(safeFreeform.tablelandWidth * 2).toFixed(1)} {t.terrainStudio.meters}</span>
+                  <span className="text-[#7C7267]">{(safeFreeform.tablelandWidth * 2).toFixed(1)} {t.terrainStudio.meters}</span>
                 </div>
                 <input
                   type="range"
@@ -364,16 +364,16 @@ export const TerrainStudioDrawer: React.FC = () => {
                   onChange={(e) => handleFreeformChange('tablelandWidth', parseFloat(e.target.value))}
                   className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                 />
-                <span className="text-[10px] text-[#8D7666]">
+                <span className="text-[10px] text-[#7C7267]">
                   {t.terrainStudio.summitWidthDesc}
                 </span>
               </div>
 
               {/* Elevation */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                <div className="flex items-center justify-between text-xs font-bold text-[#2B2621]">
                   <span>{t.terrainStudio.peakElevation}</span>
-                  <span className="text-[#8D7666]">{safeFreeform.elevation.toFixed(2)} {t.terrainStudio.meters}</span>
+                  <span className="text-[#7C7267]">{safeFreeform.elevation.toFixed(2)} {t.terrainStudio.meters}</span>
                 </div>
                 <input
                   type="range"
@@ -388,9 +388,9 @@ export const TerrainStudioDrawer: React.FC = () => {
 
               {/* Stepped Mountain Tiers */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                <div className="flex items-center justify-between text-xs font-bold text-[#2B2621]">
                   <span>{t.terrainStudio.tiersTitle}</span>
-                  <span className="text-[#8D7666]">
+                  <span className="text-[#7C7267]">
                     {safeFreeform.tiers === 1
                       ? t.terrainStudio.tier1
                       : safeFreeform.tiers === 2
@@ -407,16 +407,16 @@ export const TerrainStudioDrawer: React.FC = () => {
                   onChange={(e) => handleFreeformChange('tiers', parseInt(e.target.value))}
                   className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                 />
-                <span className="text-[10px] text-[#8D7666]">
+                <span className="text-[10px] text-[#7C7267]">
                   {t.terrainStudio.tiersDesc}
                 </span>
               </div>
 
               {/* Cliff Steepness */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                <div className="flex items-center justify-between text-xs font-bold text-[#2B2621]">
                   <span>{t.terrainStudio.cliffSteepness}</span>
-                  <span className="text-[#8D7666]">{safeFreeform.cliffSteepness >= 6 ? t.terrainStudio.cliffSheer : t.terrainStudio.cliffGentle}</span>
+                  <span className="text-[#7C7267]">{safeFreeform.cliffSteepness >= 6 ? t.terrainStudio.cliffSheer : t.terrainStudio.cliffGentle}</span>
                 </div>
                 <input
                   type="range"
@@ -431,9 +431,9 @@ export const TerrainStudioDrawer: React.FC = () => {
 
               {/* Roughness & Crags */}
               <div className="space-y-1">
-                <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                <div className="flex items-center justify-between text-xs font-bold text-[#2B2621]">
                   <span>{t.terrainStudio.cragsRoughness}</span>
-                  <span className="text-[#8D7666]">{(safeFreeform.roughness * 100).toFixed(0)}%</span>
+                  <span className="text-[#7C7267]">{(safeFreeform.roughness * 100).toFixed(0)}%</span>
                 </div>
                 <input
                   type="range"
@@ -448,15 +448,15 @@ export const TerrainStudioDrawer: React.FC = () => {
             </div>
 
             {/* Base Water Level Section with Real Toggle Switch */}
-            <div className="pt-3 border-t border-[#D9C9B4]/60 space-y-3">
+            <div className="pt-3 border-t border-[#D8D1C5]/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg bg-cyan-700/15 text-cyan-800 flex items-center justify-center">
-                    <TbRipple className="w-5 h-5" />
+                    <Waves className="w-5 h-5" />
                   </div>
                   <div>
                     <span className="font-bold text-xs text-[#2B1E16] block">{t.terrainStudio.waterPlaneTitle}</span>
-                    <span className="text-[10px] text-[#8D7666] block">
+                    <span className="text-[10px] text-[#7C7267] block">
                       {waterLevelActive ? t.terrainStudio.waterPlaneActive : t.terrainStudio.waterPlaneInactive}
                     </span>
                   </div>
@@ -484,9 +484,9 @@ export const TerrainStudioDrawer: React.FC = () => {
 
               {waterLevelActive && (
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-[#4B382C]">
+                  <div className="flex items-center justify-between text-xs font-bold text-[#2B2621]">
                     <span>{t.terrainStudio.waterElevation}</span>
-                    <span className="text-[#8D7666]">{(waterLevel * 100).toFixed(0)} {t.terrainStudio.cm}</span>
+                    <span className="text-[#7C7267]">{(waterLevel * 100).toFixed(0)} {t.terrainStudio.cm}</span>
                   </div>
                   <input
                     type="range"
@@ -497,7 +497,7 @@ export const TerrainStudioDrawer: React.FC = () => {
                     onChange={(e) => setWaterLevel(parseFloat(e.target.value))}
                     className="w-full h-1.5 bg-[#E4D8CB] rounded-lg appearance-none cursor-pointer accent-cyan-700"
                   />
-                  <span className="text-[10px] text-[#8D7666]">
+                  <span className="text-[10px] text-[#7C7267]">
                     {t.terrainStudio.waterElevationDesc}
                   </span>
                 </div>
@@ -508,15 +508,15 @@ export const TerrainStudioDrawer: React.FC = () => {
       </div>
 
       {/* Dropdown Sticky Footer: Start Crafting Button */}
-      <div className="p-4 bg-[#F2EBE1] border-t border-[#D9C9B4] rounded-b-2xl sm:rounded-b-3xl flex items-center justify-between gap-3 shrink-0 font-sans">
-        <div className="text-xs text-[#634E40]">
+      <div className="p-4 bg-[#FAF8F5] border-t border-[#D8D1C5] rounded-b-2xl sm:rounded-b-3xl flex items-center justify-between gap-3 shrink-0 font-sans">
+        <div className="text-xs text-[#5A5248]">
           {t.common.active}: <strong className="text-[#2B1E16]">{templateId.toUpperCase()}</strong>
         </div>
         <button
           onClick={() => setTerrainDrawerOpen(false)}
-          className="px-6 py-2 rounded-xl bg-[#E85D04] hover:bg-[#FF7722] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#E85D04]/30 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
+          className="px-6 py-2 rounded-xl bg-[#B85F45] hover:bg-[#A3523B] text-white font-bold text-xs sm:text-sm shadow-md shadow-[#E85D04]/30 transition-all cursor-pointer flex items-center gap-2 active:scale-95"
         >
-          <TbSparkles className="w-4 h-4" />
+          <Sparkles className="w-4 h-4" />
           <span>{t.modeModal.startBuilding}</span>
         </button>
       </div>

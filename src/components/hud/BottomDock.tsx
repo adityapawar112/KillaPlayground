@@ -2,19 +2,14 @@
 
 import React from 'react';
 import {
-  TbMountain,
-  TbBuildingFortress,
-  TbRoute,
-  TbTexture,
-  TbBrush,
-  TbTrees,
-  TbUsersGroup,
-  TbShovel,
-  TbDropletHalf2,
-  TbLayersSubtract,
-  TbPlant2,
-  TbFlame,
-} from 'react-icons/tb';
+  Mountain,
+  Castle,
+  Layers,
+  Trees,
+  Users,
+  Flame,
+  Shovel,
+} from 'lucide-react';
 import { useEditorStore, ToolType } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
@@ -25,13 +20,13 @@ interface ToolDef {
 }
 
 const TOOLS_CONFIG: ToolDef[] = [
-  { id: 'terrain', key: '1', icon: TbMountain },
-  { id: 'building', key: '2', icon: TbBuildingFortress },
-  { id: 'texture', key: '3', icon: TbTexture },
-  { id: 'foliage', key: '4', icon: TbTrees },
-  { id: 'prop', key: '5', icon: TbUsersGroup },
-  { id: 'lighting', key: '6', icon: TbFlame },
-  { id: 'soil', key: '7', icon: TbShovel },
+  { id: 'terrain', key: '1', icon: Mountain },
+  { id: 'building', key: '2', icon: Castle },
+  { id: 'texture', key: '3', icon: Layers },
+  { id: 'foliage', key: '4', icon: Trees },
+  { id: 'prop', key: '5', icon: Users },
+  { id: 'lighting', key: '6', icon: Flame },
+  { id: 'soil', key: '7', icon: Shovel },
 ];
 
 export const BottomDock: React.FC = () => {
@@ -64,7 +59,7 @@ export const BottomDock: React.FC = () => {
   return (
     <nav
       aria-label="3D Editing Tools"
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 bg-[#F2EBE1]/94 backdrop-blur-xl rounded-[24px] border border-[#D9C9B4] shadow-2xl transition-all select-none"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 p-1.5 bg-[#EBE6DC]/95 backdrop-blur-xl rounded-2xl border border-[#D8D1C5] shadow-2xl transition-all select-none"
     >
       {TOOLS_CONFIG.map((tool) => {
         const Icon = tool.icon;
@@ -79,40 +74,42 @@ export const BottomDock: React.FC = () => {
           <button
             key={tool.id}
             onClick={() => setActiveTool(tool.id)}
-            className={`group relative flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl transition-all duration-200 cursor-pointer ${
+            className={`group relative flex flex-col items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-xl transition-all duration-200 cursor-pointer ${
               isActive
-                ? 'bg-[#4B382C] text-white shadow-md shadow-[#4B382C]/30 scale-105'
-                : 'text-[#634E40] hover:bg-[#DFCDBD] hover:text-[#2B1E16]'
+                ? 'bg-[#2B2621] text-[#FAF8F5] shadow-sm scale-105'
+                : 'text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
             }`}
             title={`${details?.fullLabel || details?.label} (${tool.key}) - ${details?.desc}`}
           >
             {/* Shortcut Key Badge */}
             <span
-              className={`absolute top-1 right-1.5 text-[9px] font-mono font-bold leading-none px-1 py-0.5 rounded ${
+              className={`absolute top-1 right-1.5 text-[9px] font-mono font-semibold tabular-nums leading-none px-1 py-0.5 rounded ${
                 isActive
                   ? 'bg-black/30 text-[#FAF8F5]'
-                  : 'bg-[#EADECF] text-[#8D7666]'
+                  : 'bg-[#D8D1C5] text-[#5A5248]'
               }`}
             >
               {tool.key}
             </span>
 
             <Icon
-              className={`w-5 h-5 sm:w-6 sm:h-6 transition-transform group-hover:scale-110 ${
-                isActive ? 'text-[#FAF8F5]' : 'text-[#4B382C]'
+              size={20}
+              strokeWidth={1.75}
+              className={`transition-transform group-hover:scale-110 ${
+                isActive ? 'text-[#FAF8F5]' : 'text-[#2B2621]'
               }`}
             />
             <span
-              className={`text-[10px] sm:text-[11px] font-semibold mt-1 tracking-tight leading-none ${
-                isActive ? 'text-[#FAF8F5]' : 'text-[#634E40]'
+              className={`text-[10px] sm:text-[11px] font-medium mt-1 tracking-tight leading-none ${
+                isActive ? 'text-[#FAF8F5]' : 'text-[#5A5248]'
               }`}
             >
               {details?.label}
             </span>
 
             {/* Hover Tooltip */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-[#23211E] text-[#FAF8F5] text-[11px] font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
-              {details?.fullLabel} <span className="text-[#F59E0B]">[{tool.key}]</span> — {details?.desc}
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-[#2B2621] text-[#FAF8F5] text-[11px] font-medium rounded-md whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-lg">
+              {details?.fullLabel} <span className="text-[#B85F45]">[{tool.key}]</span> — {details?.desc}
             </div>
           </button>
         );

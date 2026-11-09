@@ -3,21 +3,22 @@
 import React, { useRef, useEffect } from 'react';
 import Image from 'next/image';
 import {
-  TbShield,
-  TbX,
-  TbMountain,
-  TbRipple,
-  TbBuildingCastle,
-  TbFlame,
-  TbFolderOpen,
-  TbTrash,
-  TbClock,
-  TbCheck,
-  TbSparkles,
-} from 'react-icons/tb';
+  Shield,
+  X,
+  Mountain,
+  Waves,
+  Castle,
+  Flame,
+  FolderOpen,
+  Trash2,
+  Clock,
+  Check,
+  Sparkles,
+} from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
 
 function formatTimeAgo(timestamp: number, locale: Locale): string {
   const diffSec = Math.floor((Date.now() - timestamp) / 1000);
@@ -60,7 +61,7 @@ const BLUEPRINTS: BlueprintOption[] = [
       mr: 'स्वराज्याची राजधानी, बालेकिल्ला व अभेद्य कडे',
       hi: 'स्वराज्य की राजधानी, बालेकिल्ला और अभेद्य चट्टानें',
     },
-    icon: TbMountain,
+    icon: Mountain,
   },
   {
     id: 'janjira',
@@ -70,7 +71,7 @@ const BLUEPRINTS: BlueprintOption[] = [
       mr: 'अरबी समुद्रातील अजिंक्य जलदुर्ग, १९ बुलंद बुरूज',
       hi: 'अरब सागर में स्थित जलदुर्ग, १९ बुलंद बुर्ज',
     },
-    icon: TbRipple,
+    icon: Waves,
   },
   {
     id: 'sinhagad',
@@ -80,7 +81,7 @@ const BLUEPRINTS: BlueprintOption[] = [
       mr: 'पुण्याजवळील तानाजी मालुसरेंच्या पराक्रमाने पावन झालेला गड',
       hi: 'तानाजी मालुसरे की वीरता से पावन हुआ पर्वतीय किला',
     },
-    icon: TbBuildingCastle,
+    icon: Castle,
   },
 ];
 
@@ -148,9 +149,9 @@ export const StartupModal: React.FC = () => {
         className="hidden"
       />
 
-      <div className="relative w-full max-w-4xl bg-[#F9F6F0] rounded-3xl border-2 border-[#D9C9B4] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-4xl bg-[#EBE6DC] rounded-3xl border-2 border-[#D8D1C5] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         {/* Blender-Style Splash Header */}
-        <div className="relative bg-[#4B382C] px-6 py-5 text-white flex items-center justify-between border-b border-[#D9C9B4]/40 shadow-inner">
+        <div className="relative bg-[#2B2621] px-6 py-5 text-white flex items-center justify-between border-b border-[#D8D1C5]/40 shadow-inner">
           <div className="flex items-center gap-4">
             <div className="relative w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-lg p-1 shrink-0 backdrop-blur-xs">
               <Image
@@ -167,7 +168,7 @@ export const StartupModal: React.FC = () => {
                 <h2 className="font-yatra text-2xl sm:text-3xl tracking-wide text-white drop-shadow-sm">
                   {t.startupModal.title}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-[#E85D04] text-[10px] font-sans font-bold uppercase tracking-wider text-white shadow-xs">
+                <span className="px-2 py-0.5 rounded-full bg-[#B85F45] text-[10px] font-sans font-bold uppercase tracking-wider text-white shadow-xs">
                   v1.0
                 </span>
               </div>
@@ -182,7 +183,7 @@ export const StartupModal: React.FC = () => {
             className="w-9 h-9 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
             title={t.startupModal.close}
           >
-            <TbX className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -201,21 +202,21 @@ export const StartupModal: React.FC = () => {
                   setStartupModalOpen(false);
                   setTerrainDrawerOpen(true, 'historical');
                 }}
-                className="w-full p-4 rounded-2xl bg-[#F2EBE1]/90 border-2 border-[#D9C9B4] hover:border-[#4B382C] hover:bg-[#EADECF] text-left transition-all cursor-pointer group shadow-xs hover:shadow-md flex items-start gap-3.5"
+                className="w-full p-4 rounded-2xl bg-[#FAF8F5]/90 border-2 border-[#D8D1C5] hover:border-[#4B382C] hover:bg-[#EBE6DC] text-left transition-all cursor-pointer group shadow-xs hover:shadow-md flex items-start gap-3.5"
               >
-                <div className="w-12 h-12 rounded-2xl bg-[#4B382C] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                  <TbBuildingCastle className="w-6 h-6 text-[#FAF8F5]" />
+                <div className="w-12 h-12 rounded-2xl bg-[#2B2621] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                  <Castle className="w-6 h-6 text-[#FAF8F5]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-base text-[#2B1E16] font-sans tracking-wide">
                       {t.startupModal.blueprints}
                     </h3>
-                    <span className="text-[10px] font-bold text-[#4B382C] bg-[#DFCDBD] px-2 py-0.5 rounded-full uppercase">
+                    <span className="text-[10px] font-bold text-[#2B2621] bg-[#DFCDBD] px-2 py-0.5 rounded-full uppercase">
                       {t.startupModal.blueprintsCount}
                     </span>
                   </div>
-                  <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
+                  <p className="text-xs text-[#5A5248] mt-1 leading-relaxed">
                     {t.startupModal.blueprintsDesc}
                   </p>
                 </div>
@@ -227,10 +228,10 @@ export const StartupModal: React.FC = () => {
                   setStartupModalOpen(false);
                   setTerrainDrawerOpen(true, 'freeform');
                 }}
-                className="w-full p-4 rounded-2xl bg-[#F2EBE1]/90 border-2 border-[#D9C9B4] hover:border-[#4B382C] hover:bg-[#EADECF] text-left transition-all cursor-pointer group shadow-xs hover:shadow-md flex items-start gap-3.5"
+                className="w-full p-4 rounded-2xl bg-[#FAF8F5]/90 border-2 border-[#D8D1C5] hover:border-[#4B382C] hover:bg-[#EBE6DC] text-left transition-all cursor-pointer group shadow-xs hover:shadow-md flex items-start gap-3.5"
               >
                 <div className="w-12 h-12 rounded-2xl bg-[#8F4938] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
-                  <TbMountain className="w-6 h-6 text-[#FAF8F5]" />
+                  <Mountain className="w-6 h-6 text-[#FAF8F5]" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -241,7 +242,7 @@ export const StartupModal: React.FC = () => {
                       {t.startupModal.customBadge}
                     </span>
                   </div>
-                  <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
+                  <p className="text-xs text-[#5A5248] mt-1 leading-relaxed">
                     {t.startupModal.fromScratchDesc}
                   </p>
                 </div>
@@ -250,37 +251,25 @@ export const StartupModal: React.FC = () => {
               {/* Open / Import Project File Button */}
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full p-3 rounded-2xl bg-[#F2EBE1]/60 border border-[#D9C9B4] hover:bg-[#DFCDBD] text-left transition-all cursor-pointer group flex items-center justify-between"
+                className="w-full p-3 rounded-2xl bg-[#FAF8F5]/60 border border-[#D8D1C5] hover:bg-[#D8D1C5] text-left transition-all cursor-pointer group flex items-center justify-between"
               >
                 <div className="flex items-center gap-2.5">
-                  <TbFolderOpen className="w-5 h-5 text-[#0284C7]" />
+                  <FolderOpen className="w-5 h-5 text-[#0284C7]" />
                   <span className="font-bold text-xs text-[#2B1E16] font-sans">
                     {t.startupModal.importFile}
                   </span>
                 </div>
-                <span className="text-[10px] text-[#8D7666]">
+                <span className="text-[10px] text-[#7C7267]">
                   .killa / .json
                 </span>
               </button>
             </div>
 
             {/* Quick Preferences */}
-            <div className="pt-2 border-t border-[#D9C9B4]/60 flex items-center justify-between">
-              <div className="flex items-center gap-1">
-                <span className="text-xs font-semibold text-[#8D7666] mr-1">{t.language}:</span>
-                {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
-                  <button
-                    key={lang}
-                    onClick={() => setLocale(lang)}
-                    className={`px-2 py-1 rounded-lg text-xs font-bold uppercase transition-all cursor-pointer ${
-                      locale === lang
-                        ? 'bg-[#4B382C] text-white'
-                        : 'bg-[#EADECF] text-[#634E40] hover:bg-[#DFCDBD]'
-                    }`}
-                  >
-                    {lang === 'en' ? 'EN' : lang === 'mr' ? 'मराठी' : 'हिन्दी'}
-                  </button>
-                ))}
+            <div className="pt-2 border-t border-[#D8D1C5]/60 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-[#7C7267]">{t.language}:</span>
+                <LanguageSelector size="sm" />
               </div>
 
               <button
@@ -288,10 +277,10 @@ export const StartupModal: React.FC = () => {
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   nightMode
                     ? 'bg-[#23211E] text-[#F59E0B] border border-[#F59E0B]'
-                    : 'bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]'
+                    : 'bg-[#EBE6DC] text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
-                <TbFlame className={`w-4 h-4 ${nightMode ? 'text-[#F59E0B]' : 'text-[#8D7666]'}`} />
+                <Flame className={`w-4 h-4 ${nightMode ? 'text-[#F59E0B]' : 'text-[#7C7267]'}`} />
                 <span>{nightMode ? t.common.night : t.common.day}</span>
               </button>
             </div>
@@ -301,10 +290,10 @@ export const StartupModal: React.FC = () => {
           <div className="p-5 sm:p-6 flex flex-col font-sans">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#B85F45] flex items-center gap-1.5 font-sans">
-                <TbClock className="w-4 h-4" />
+                <Clock className="w-4 h-4" />
                 {t.startupModal.recentProjects}
               </h3>
-              <span className="text-[11px] font-semibold text-[#8D7666]">
+              <span className="text-[11px] font-semibold text-[#7C7267]">
                 {savedProjects.length} {t.common.saved}
               </span>
             </div>
@@ -312,14 +301,14 @@ export const StartupModal: React.FC = () => {
             {/* List of projects */}
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[340px]">
               {savedProjects.length === 0 ? (
-                <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-[#D9C9B4] rounded-2xl bg-[#F2EBE1]/40">
-                  <div className="w-12 h-12 rounded-2xl bg-[#EADECF] text-[#8D7666] flex items-center justify-center mb-3">
-                    <TbClock className="w-6 h-6" />
+                <div className="h-full min-h-[220px] flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-[#D8D1C5] rounded-2xl bg-[#FAF8F5]/40">
+                  <div className="w-12 h-12 rounded-2xl bg-[#EBE6DC] text-[#7C7267] flex items-center justify-center mb-3">
+                    <Clock className="w-6 h-6" />
                   </div>
-                  <h4 className="font-bold text-sm text-[#4B382C]">
+                  <h4 className="font-bold text-sm text-[#2B2621]">
                     {t.startupModal.noRecents}
                   </h4>
-                  <p className="text-xs text-[#8D7666] mt-1 max-w-xs leading-relaxed">
+                  <p className="text-xs text-[#7C7267] mt-1 max-w-xs leading-relaxed">
                     {t.startupModal.noRecentsDesc}
                   </p>
                 </div>
@@ -327,19 +316,19 @@ export const StartupModal: React.FC = () => {
                 savedProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="p-3.5 rounded-2xl bg-[#F2EBE1] border border-[#D9C9B4] hover:border-[#BFA892] transition-all flex items-center justify-between group"
+                    className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#D8D1C5] hover:border-[#BFA892] transition-all flex items-center justify-between group"
                   >
                     <div className="flex-1 min-w-0 pr-3">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-sm text-[#2B1E16] font-sans truncate">
                           {project.name}
                         </span>
-                        <span className="text-[10px] uppercase font-bold text-[#8D7666] bg-[#EADECF] px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] uppercase font-bold text-[#7C7267] bg-[#EBE6DC] px-1.5 py-0.5 rounded">
                           {project.templateId}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] text-[#8D7666] mt-1">
-                        <TbClock className="w-3.5 h-3.5 text-[#B58B63]" />
+                      <div className="flex items-center gap-1 text-[11px] text-[#7C7267] mt-1">
+                        <Clock className="w-3.5 h-3.5 text-[#B58B63]" />
                         <span>
                           {t.startupModal.lastSaved}: {formatTimeAgo(project.updatedAt, locale)}
                         </span>
@@ -349,16 +338,16 @@ export const StartupModal: React.FC = () => {
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => loadProjectLocally(project.id)}
-                        className="px-3 py-1.5 rounded-xl bg-[#4B382C] text-[#FAF8F5] text-xs font-semibold hover:bg-[#322E2A] transition-colors cursor-pointer shadow-xs"
+                        className="px-3 py-1.5 rounded-xl bg-[#2B2621] text-[#FAF8F5] text-xs font-semibold hover:bg-[#322E2A] transition-colors cursor-pointer shadow-xs"
                       >
                         {t.startupModal.open}
                       </button>
                       <button
                         onClick={() => deleteProjectLocally(project.id)}
-                        className="p-1.5 rounded-xl text-[#8D7666] hover:text-[#B85F45] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                        className="p-1.5 rounded-xl text-[#7C7267] hover:text-[#B85F45] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                         title={t.startupModal.delete}
                       >
-                        <TbTrash className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -369,8 +358,8 @@ export const StartupModal: React.FC = () => {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-3.5 bg-[#F2EBE1] border-t border-[#D9C9B4] flex flex-col sm:flex-row items-center justify-between gap-3">
-          <label className="flex items-center gap-2 text-xs text-[#634E40] cursor-pointer font-medium">
+        <div className="px-6 py-3.5 bg-[#FAF8F5] border-t border-[#D8D1C5] flex flex-col sm:flex-row items-center justify-between gap-3">
+          <label className="flex items-center gap-2 text-xs text-[#5A5248] cursor-pointer font-medium">
             <input
               type="checkbox"
               checked={!dontShowStartupModal}
@@ -381,14 +370,14 @@ export const StartupModal: React.FC = () => {
           </label>
 
           <div className="flex items-center gap-3">
-            <span className="hidden sm:inline text-[11px] text-[#8D7666]">
+            <span className="hidden sm:inline text-[11px] text-[#7C7267]">
               {t.common.pressEscToClose}
             </span>
             <button
               onClick={() => setStartupModalOpen(false)}
-              className="px-5 py-2 rounded-xl bg-[#E85D04] hover:bg-[#FF7722] text-white text-xs font-bold transition-all shadow-md shadow-[#E85D04]/30 cursor-pointer flex items-center gap-1.5"
+              className="px-5 py-2 rounded-xl bg-[#B85F45] hover:bg-[#A3523B] text-white text-xs font-bold transition-all shadow-md shadow-[#E85D04]/30 cursor-pointer flex items-center gap-1.5"
             >
-              <TbSparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
               <span>{t.startupModal.startCrafting}</span>
             </button>
           </div>

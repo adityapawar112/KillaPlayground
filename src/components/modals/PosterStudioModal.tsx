@@ -2,28 +2,40 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  TbX,
-  TbDownload,
-  TbShare,
-  TbCopy,
-  TbRefresh,
-  TbCamera,
-  TbTrash,
-  TbCheck,
-  TbPhoto,
-  TbGridDots,
-  TbTypography,
-  TbPalette,
-  TbBrandWhatsapp,
-  TbBrandX,
-  TbSunrise,
-  TbSun,
-  TbSunset,
-  TbFlame,
-} from 'react-icons/tb';
+  X,
+  Download,
+  Share2,
+  Copy,
+  RefreshCw,
+  Camera,
+  Trash2,
+  Check,
+  Image as ImageIcon,
+  Grid,
+  Type,
+  Palette,
+  Sunrise,
+  Sun,
+  Sunset,
+  Flame,
+} from 'lucide-react';
+
+const WhatsappIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+  </svg>
+);
+
+const XSocialIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+  </svg>
+);
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
 import {
   POSTER_TEMPLATES,
   PosterTemplateId,
@@ -645,15 +657,15 @@ export const PosterStudioModal: React.FC = () => {
       aria-labelledby="poster-studio-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs select-none"
     >
-      <div className="relative w-full max-w-6xl h-[92vh] max-h-[960px] bg-[#F9F6F0] border-2 border-[#D9C9B4] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[#4B382C]">
+      <div className="relative w-full max-w-6xl h-[92vh] max-h-[960px] bg-[#EBE6DC] border-2 border-[#D8D1C5] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[#2B2621]">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[#FAF8F5] border-b border-[#D9C9B4]">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#FAF8F5] border-b border-[#D8D1C5]">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#FFFBEB] border border-[#F59E0B] flex items-center justify-center text-[#B45309]">
-              <TbPalette className="w-5 h-5 text-[#E85D04]" />
+              <Palette className="w-5 h-5 text-[#E85D04]" />
             </div>
             <div>
-              <h2 id="poster-studio-title" className="text-base font-bold text-[#4B382C]">
+              <h2 id="poster-studio-title" className="text-base font-bold text-[#2B2621]">
                 {t.posterModal?.title || 'Festive Killa Poster Studio'}
               </h2>
             </div>
@@ -661,28 +673,14 @@ export const PosterStudioModal: React.FC = () => {
 
           <div className="flex items-center gap-3">
             {/* Language Selector Pill */}
-            <div className="flex items-center bg-[#EADECF] p-0.5 rounded-lg border border-[#CDBCAB]">
-              {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
-                <button
-                  key={lang}
-                  onClick={() => setLocale(lang)}
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all cursor-pointer ${
-                    locale === lang
-                      ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
-                      : 'text-[#634E40] hover:text-[#2B1E16]'
-                  }`}
-                >
-                  {lang === 'en' ? 'EN' : lang === 'mr' ? 'म' : 'हि'}
-                </button>
-              ))}
-            </div>
+            <LanguageSelector size="sm" />
 
             <button
               onClick={() => setPosterModalOpen(false)}
-              className="p-1.5 rounded-lg text-[#8D7666] hover:bg-[#EAE0D3] hover:text-[#4B382C] transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg text-[#7C7267] hover:bg-[#EAE0D3] hover:text-[#2B2621] transition-colors cursor-pointer"
               title="Close (Esc)"
             >
-              <TbX className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -694,7 +692,7 @@ export const PosterStudioModal: React.FC = () => {
             {/* Compositing / Capturing Loading Overlay */}
             {(isCapturing || isCompositing) && (
               <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-xs text-white text-xs font-semibold shadow-lg">
-                <TbRefresh className="w-4 h-4 animate-spin text-[#F59E0B]" />
+                <RefreshCw className="w-4 h-4 animate-spin text-[#F59E0B]" />
                 <span>
                   {locale === 'mr'
                     ? 'चित्र तयार होत आहे...'
@@ -713,11 +711,11 @@ export const PosterStudioModal: React.FC = () => {
           </div>
 
           {/* Right Sidebar: Studio Controls & Configuration */}
-          <div className="w-full md:w-[380px] lg:w-[420px] bg-[#F9F6F0] border-t md:border-t-0 md:border-l border-[#D9C9B4] flex flex-col overflow-y-auto p-3.5 sm:p-4 space-y-4">
+          <div className="w-full md:w-[380px] lg:w-[420px] bg-[#EBE6DC] border-t md:border-t-0 md:border-l border-[#D8D1C5] flex flex-col overflow-y-auto p-3.5 sm:p-4 space-y-4">
             {/* 1. Template Selector (Full visible thumbnails) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
-                <TbPalette className="w-4 h-4 text-[#B85F45]" />
+              <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                <Palette className="w-4 h-4 text-[#B85F45]" />
                 <span>{locale === 'mr' ? 'पोस्टर थीम' : locale === 'hi' ? 'पोस्टर थीम' : 'Poster Theme'}</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -733,7 +731,7 @@ export const PosterStudioModal: React.FC = () => {
                       className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
                         isSelected
                           ? 'border-[#E85D04] bg-[#FFFBEB] ring-2 ring-[#E85D04]/30 shadow-xs'
-                          : 'border-[#D9C9B4] bg-[#FAF8F5] hover:bg-[#EFE8DD]'
+                          : 'border-[#D8D1C5] bg-[#FAF8F5] hover:bg-[#EFE8DD]'
                       }`}
                     >
                       {/* Thumbnail container adjusted so ENTIRE 4:5 poster is 100% visible */}
@@ -745,12 +743,12 @@ export const PosterStudioModal: React.FC = () => {
                         />
                         {isSelected && (
                           <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#E85D04] text-white flex items-center justify-center shadow-xs">
-                            <TbCheck className="w-3.5 h-3.5" />
+                            <Check className="w-3.5 h-3.5" />
                           </div>
                         )}
                       </div>
                       <div className="px-0.5">
-                        <div className="text-[12px] font-bold text-[#4B382C] truncate text-center">
+                        <div className="text-[12px] font-bold text-[#2B2621] truncate text-center">
                           {displayName}
                         </div>
                       </div>
@@ -761,14 +759,14 @@ export const PosterStudioModal: React.FC = () => {
             </div>
 
             {/* 2. Image Count & Grid Pattern Selector */}
-            <div className="space-y-2 pt-2 border-t border-[#D9C9B4]">
+            <div className="space-y-2 pt-2 border-t border-[#D8D1C5]">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
-                  <TbGridDots className="w-4 h-4 text-[#B85F45]" />
+                <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                  <Grid className="w-4 h-4 text-[#B85F45]" />
                   <span>{locale === 'mr' ? 'चित्रांची संख्या' : locale === 'hi' ? 'चित्रों की संख्या' : 'Images in Poster'}</span>
                 </label>
                 {/* Count selector pills (1, 2, 3, 4) */}
-                <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D9C9B4]">
+                <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D8D1C5]">
                   {([1, 2, 3, 4] as ImageCount[]).map((cnt) => (
                     <button
                       key={cnt}
@@ -776,7 +774,7 @@ export const PosterStudioModal: React.FC = () => {
                       className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
                         imageCount === cnt
                           ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
-                          : 'text-[#634E40] hover:text-[#2B1E16]'
+                          : 'text-[#5A5248] hover:text-[#2B1E16]'
                       }`}
                     >
                       {cnt}
@@ -794,7 +792,7 @@ export const PosterStudioModal: React.FC = () => {
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                       gridLayout === g.id
                         ? 'border-[#E85D04] bg-[#FFFBEB] text-[#B45309] font-bold shadow-2xs'
-                        : 'border-[#D9C9B4] bg-[#FAF8F5] text-[#634E40] hover:bg-[#EAE0D3]'
+                        : 'border-[#D8D1C5] bg-[#FAF8F5] text-[#5A5248] hover:bg-[#EAE0D3]'
                     }`}
                   >
                     {presets.grids[g.id] || g.label}
@@ -804,10 +802,10 @@ export const PosterStudioModal: React.FC = () => {
             </div>
 
             {/* 3. Slot Camera Angles & Sources Manager with INLINE Gallery Drawers */}
-            <div className="space-y-2 pt-2 border-t border-[#D9C9B4]">
+            <div className="space-y-2 pt-2 border-t border-[#D8D1C5]">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
-                  <TbCamera className="w-4 h-4 text-[#B85F45]" />
+                <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                  <Camera className="w-4 h-4 text-[#B85F45]" />
                   <span>{locale === 'mr' ? 'चित्रांचे कोन व स्रोत' : locale === 'hi' ? 'चित्रों के कोण व स्रोत' : 'Slot Angles & Sources'}</span>
                 </label>
                 <button
@@ -815,7 +813,7 @@ export const PosterStudioModal: React.FC = () => {
                   className="flex items-center gap-1 text-[11px] font-bold text-[#B85F45] hover:text-[#8F4938] transition-colors cursor-pointer"
                   title="Recapture all slots"
                 >
-                  <TbRefresh className="w-3.5 h-3.5" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                   <span>{locale === 'mr' ? 'सर्व पुन्हा घ्या' : locale === 'hi' ? 'सभी फिर लें' : 'Recapture All'}</span>
                 </button>
               </div>
@@ -831,17 +829,17 @@ export const PosterStudioModal: React.FC = () => {
                       className={`p-2 rounded-xl border transition-all ${
                         isInlineGalleryOpen
                           ? 'border-[#F59E0B] bg-[#FFFBEB]/50 shadow-xs'
-                          : 'border-[#D9C9B4] bg-[#FAF8F5]/70'
+                          : 'border-[#D8D1C5] bg-[#FAF8F5]/70'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-[#4B382C]">
+                        <span className="text-[11px] font-bold text-[#2B2621]">
                           {locale === 'mr' ? `चित्र ${idx + 1}` : locale === 'hi' ? `चित्र ${idx + 1}` : `Slot ${idx + 1}`}
                         </span>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleAssignPerspective(idx, 'current')}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EFE8DD] hover:bg-[#E0D5C5] text-[#4B382C] border border-[#D9C9B4] transition-colors cursor-pointer"
+                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EFE8DD] hover:bg-[#E0D5C5] text-[#2B2621] border border-[#D8D1C5] transition-colors cursor-pointer"
                             title="Capture current viewport view"
                           >
                             {locale === 'mr' ? 'थेट कॅमेरा' : locale === 'hi' ? 'लाइव कैमरा' : 'Live Camera'}
@@ -857,7 +855,7 @@ export const PosterStudioModal: React.FC = () => {
                             }`}
                             title="Pick from local screenshot gallery"
                           >
-                            <TbPhoto className="w-3 h-3" />
+                            <ImageIcon className="w-3 h-3" />
                             <span>{locale === 'mr' ? 'गॅलरी' : locale === 'hi' ? 'गैलरी' : 'Gallery'}</span>
                           </button>
                         </div>
@@ -879,7 +877,7 @@ export const PosterStudioModal: React.FC = () => {
                               className={`py-1 px-1.5 rounded-md text-[10px] font-semibold border text-left truncate transition-colors cursor-pointer ${
                                 isActive
                                   ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
-                                  : 'bg-[#F9F6F0] border-[#D9C9B4] text-[#634E40] hover:bg-[#EAE0D3]'
+                                  : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
                               }`}
                             >
                               {pLabel}
@@ -889,10 +887,10 @@ export const PosterStudioModal: React.FC = () => {
                       </div>
 
                       {/* 4-Tile Diurnal Time of Day Toggle */}
-                      <div className="mt-2 pt-1.5 border-t border-[#D9C9B4]/60">
-                        <div className="text-[10px] font-bold text-[#634E40] mb-1 flex items-center justify-between">
+                      <div className="mt-2 pt-1.5 border-t border-[#D8D1C5]/60">
+                        <div className="text-[10px] font-bold text-[#5A5248] mb-1 flex items-center justify-between">
                           <span>{locale === 'mr' ? 'वेळ व प्रकाश' : locale === 'hi' ? 'समय व प्रकाश' : 'Time of Day'}</span>
-                          <span className="text-[9px] font-normal text-[#8D7666]">
+                          <span className="text-[9px] font-normal text-[#7C7267]">
                             {presets.times[source.timePreset || 'noon']}
                           </span>
                         </div>
@@ -902,12 +900,12 @@ export const PosterStudioModal: React.FC = () => {
                             const tLabel = presets.times[tKey];
                             const Icon =
                               tKey === 'dawn'
-                                ? TbSunrise
+                                ? Sunrise
                                 : tKey === 'noon'
-                                ? TbSun
+                                ? Sun
                                 : tKey === 'sunset'
-                                ? TbSunset
-                                : TbFlame;
+                                ? Sunset
+                                : Flame;
 
                             return (
                               <button
@@ -917,7 +915,7 @@ export const PosterStudioModal: React.FC = () => {
                                 className={`py-1 px-0.5 rounded-md text-[9px] font-semibold border flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
                                   isTimeActive
                                     ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
-                                    : 'bg-[#F9F6F0] border-[#D9C9B4] text-[#634E40] hover:bg-[#EAE0D3]'
+                                    : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
                                 }`}
                                 title={tLabel}
                               >
@@ -964,21 +962,21 @@ export const PosterStudioModal: React.FC = () => {
                                   onClick={handleRequestClearAllScreenshots}
                                   className="text-[9px] font-bold text-red-600 hover:text-red-700 cursor-pointer flex items-center gap-0.5"
                                 >
-                                  <TbTrash className="w-2.5 h-2.5" />
+                                  <Trash2 className="w-2.5 h-2.5" />
                                   <span>{locale === 'mr' ? 'सर्व हटवा' : locale === 'hi' ? 'सभी हटाएं' : 'Clear All'}</span>
                                 </button>
                               )}
                               <button
                                 onClick={() => setActiveGallerySlotIndex(null)}
-                                className="p-0.5 text-[#8D7666] hover:text-[#4B382C] cursor-pointer"
+                                className="p-0.5 text-[#7C7267] hover:text-[#2B2621] cursor-pointer"
                               >
-                                <TbX className="w-3.5 h-3.5" />
+                                <X className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </div>
 
                           {galleryScreenshots.length === 0 ? (
-                            <div className="text-[10px] text-[#8D7666] italic py-2 text-center bg-[#FAF8F5] rounded-lg border border-[#D9C9B4]/50">
+                            <div className="text-[10px] text-[#7C7267] italic py-2 text-center bg-[#FAF8F5] rounded-lg border border-[#D8D1C5]/50">
                               {locale === 'mr'
                                 ? 'अद्याप कोणतेही स्क्रीनशॉट नाहीत. मुख्य स्क्रीनवरील कॅमेरा आयकॉन क्लिक करा.'
                                 : locale === 'hi'
@@ -991,7 +989,7 @@ export const PosterStudioModal: React.FC = () => {
                                 <div
                                   key={shot.id}
                                   onClick={() => handleAssignGalleryShot(idx, shot.dataUrl)}
-                                  className="group relative h-16 rounded-lg overflow-hidden border border-[#D9C9B4] bg-[#23211E] cursor-pointer hover:border-[#E85D04] transition-all"
+                                  className="group relative h-16 rounded-lg overflow-hidden border border-[#D8D1C5] bg-[#23211E] cursor-pointer hover:border-[#E85D04] transition-all"
                                 >
                                   <img
                                     src={shot.dataUrl}
@@ -1003,7 +1001,7 @@ export const PosterStudioModal: React.FC = () => {
                                     className="absolute top-1 right-1 p-1 rounded bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
                                     title="Delete from local gallery"
                                   >
-                                    <TbTrash className="w-2.5 h-2.5" />
+                                    <Trash2 className="w-2.5 h-2.5" />
                                   </button>
                                   <div className="absolute bottom-0 inset-x-0 bg-black/60 px-1 py-0.5 text-[8px] text-white truncate font-mono">
                                     {new Date(shot.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -1021,22 +1019,22 @@ export const PosterStudioModal: React.FC = () => {
             </div>
 
             {/* 4. Typography & Text Personalization (Language-aware, Font locked to Yatra One) */}
-            <div className="space-y-2 pt-2 border-t border-[#D9C9B4]">
-              <label className="text-xs font-bold text-[#4B382C] flex items-center gap-1.5">
-                <TbTypography className="w-4 h-4 text-[#B85F45]" />
+            <div className="space-y-2 pt-2 border-t border-[#D8D1C5]">
+              <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                <Type className="w-4 h-4 text-[#B85F45]" />
                 <span>{locale === 'mr' ? 'मजकूर व मुद्रा' : locale === 'hi' ? 'टेक्स्ट व मुहर' : 'Text & Branding Presets'}</span>
               </label>
 
               {/* Fort Title input & language presets */}
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#634E40]">
+                <span className="text-[11px] font-semibold text-[#5A5248]">
                   {locale === 'mr' ? 'किल्ल्याचे नाव' : locale === 'hi' ? 'किले का नाम' : 'Fort Title'}
                 </span>
                 <input
                   type="text"
                   value={fortTitle}
                   onChange={(e) => setFortTitle(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-[#4B382C] focus:outline-hidden focus:border-[#E85D04]"
+                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
                   placeholder={locale === 'mr' ? 'किल्ल्याचे नाव...' : locale === 'hi' ? 'किले का नाम...' : 'Enter Fort Title...'}
                 />
                 <div className="flex flex-wrap gap-1 pt-0.5">
@@ -1047,7 +1045,7 @@ export const PosterStudioModal: React.FC = () => {
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
                         fortTitle === tItem
                           ? 'bg-[#E85D04] text-white border-[#E85D04]'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#634E40] hover:bg-[#EAE0D3]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
                       }`}
                     >
                       {tItem}
@@ -1058,28 +1056,28 @@ export const PosterStudioModal: React.FC = () => {
 
               {/* Builder Name input */}
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#634E40]">
+                <span className="text-[11px] font-semibold text-[#5A5248]">
                   {locale === 'mr' ? 'निर्माता / संघ' : locale === 'hi' ? 'निर्माता / दल' : 'Builder / Team Credit'}
                 </span>
                 <input
                   type="text"
                   value={builderName}
                   onChange={(e) => setBuilderName(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-[#4B382C] focus:outline-hidden focus:border-[#E85D04]"
+                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
                   placeholder={locale === 'mr' ? 'नाव...' : locale === 'hi' ? 'नाम...' : 'Builder Name...'}
                 />
               </div>
 
               {/* Festive Greeting Presets */}
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#634E40]">
+                <span className="text-[11px] font-semibold text-[#5A5248]">
                   {locale === 'mr' ? 'उत्सव शुभेच्छा' : locale === 'hi' ? 'उत्सव शुभकामनाएं' : 'Festive Wish'}
                 </span>
                 <input
                   type="text"
                   value={festiveGreeting}
                   onChange={(e) => setFestiveGreeting(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D9C9B4] rounded-lg text-[#4B382C] focus:outline-hidden focus:border-[#E85D04]"
+                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
                   placeholder={locale === 'mr' ? 'शुभेच्छा...' : locale === 'hi' ? 'शुभकामनाएं...' : 'Greeting...'}
                 />
                 <div className="flex flex-wrap gap-1 pt-0.5">
@@ -1090,7 +1088,7 @@ export const PosterStudioModal: React.FC = () => {
                       className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
                         festiveGreeting === gItem
                           ? 'bg-[#E85D04] text-white border-[#E85D04]'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#634E40] hover:bg-[#EAE0D3]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
                       }`}
                     >
                       {gItem || presets.cleanNone}
@@ -1101,7 +1099,7 @@ export const PosterStudioModal: React.FC = () => {
 
               {/* Banner / Stamp Style */}
               <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#634E40]">
+                <span className="text-[11px] font-semibold text-[#5A5248]">
                   {locale === 'mr' ? 'मुद्रा / पट्टी शैली' : locale === 'hi' ? 'मुहर / पट्टी शैली' : 'Banner / Watermark Style'}
                 </span>
                 <div className="grid grid-cols-2 gap-1">
@@ -1112,7 +1110,7 @@ export const PosterStudioModal: React.FC = () => {
                       className={`py-1 px-1.5 rounded-lg text-[10px] font-semibold border text-center transition-colors cursor-pointer ${
                         stampStyle === sId
                           ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
-                          : 'bg-[#FAF8F5] border-[#D9C9B4] text-[#634E40] hover:bg-[#EAE0D3]'
+                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
                       }`}
                     >
                       {presets.banners[sId]}
@@ -1123,19 +1121,19 @@ export const PosterStudioModal: React.FC = () => {
             </div>
 
             {/* 5. Export & Social Sharing Actions */}
-            <div className="space-y-2.5 pt-3 border-t border-[#D9C9B4] mt-auto">
+            <div className="space-y-2.5 pt-3 border-t border-[#D8D1C5] mt-auto">
               {/* Format selection */}
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-[#634E40]">
+                <span className="text-[11px] font-semibold text-[#5A5248]">
                   {locale === 'mr' ? 'स्वरूप' : locale === 'hi' ? 'प्रारूप' : 'Export Format'}
                 </span>
-                <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D9C9B4]">
+                <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D8D1C5]">
                   <button
                     onClick={() => setExportFormat('png')}
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                       exportFormat === 'png'
                         ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
-                        : 'text-[#634E40] hover:text-[#2B1E16]'
+                        : 'text-[#5A5248] hover:text-[#2B1E16]'
                     }`}
                   >
                     PNG
@@ -1145,7 +1143,7 @@ export const PosterStudioModal: React.FC = () => {
                     className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
                       exportFormat === 'jpeg'
                         ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
-                        : 'text-[#634E40] hover:text-[#2B1E16]'
+                        : 'text-[#5A5248] hover:text-[#2B1E16]'
                     }`}
                   >
                     JPG
@@ -1159,7 +1157,7 @@ export const PosterStudioModal: React.FC = () => {
                 disabled={!previewCanvas || isCompositing}
                 className="w-full py-2.5 px-4 rounded-xl bg-[#E85D04] hover:bg-[#D04E00] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <TbDownload className="w-4 h-4" />
+                <Download className="w-4 h-4" />
                 <span>
                   {locale === 'mr'
                     ? `पोस्टर डाऊनलोड करा (${exportFormat.toUpperCase()})`
@@ -1174,20 +1172,20 @@ export const PosterStudioModal: React.FC = () => {
                 <button
                   onClick={handleShare}
                   disabled={!previewCanvas || isCompositing}
-                  className="py-1.5 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] text-[#4B382C] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="py-1.5 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D8D1C5] text-[#2B2621] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                   title="Share to WhatsApp, Instagram, or AirDrop"
                 >
-                  <TbShare className="w-3.5 h-3.5 text-[#E85D04]" />
+                  <Share2 className="w-3.5 h-3.5 text-[#E85D04]" />
                   <span>{locale === 'mr' ? 'शेअर करा' : locale === 'hi' ? 'साझा करें' : 'Share Poster'}</span>
                 </button>
 
                 <button
                   onClick={handleCopyClipboard}
                   disabled={!previewCanvas || isCompositing}
-                  className="py-1.5 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D9C9B4] text-[#4B382C] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="py-1.5 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D8D1C5] text-[#2B2621] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                   title="Copy image to clipboard for WhatsApp Web / Discord"
                 >
-                  <TbCopy className="w-3.5 h-3.5 text-[#B85F45]" />
+                  <Copy className="w-3.5 h-3.5 text-[#B85F45]" />
                   <span>{locale === 'mr' ? 'इमेज कॉपी' : locale === 'hi' ? 'इमेज कॉपी' : 'Copy Image'}</span>
                 </button>
               </div>
@@ -1200,7 +1198,7 @@ export const PosterStudioModal: React.FC = () => {
                   rel="noopener noreferrer"
                   className="text-xs font-semibold text-[#16A34A] hover:underline flex items-center gap-1"
                 >
-                  <TbBrandWhatsapp className="w-3.5 h-3.5" />
+                  <WhatsappIcon className="w-3.5 h-3.5" />
                   <span>WhatsApp</span>
                 </a>
                 <span className="text-[#D9C9B4]">•</span>
@@ -1210,7 +1208,7 @@ export const PosterStudioModal: React.FC = () => {
                   rel="noopener noreferrer"
                   className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
                 >
-                  <TbBrandX className="w-3.5 h-3.5" />
+                  <XSocialIcon className="w-3.5 h-3.5" />
                   <span>{locale === 'mr' ? 'एक्स वर शेअर' : locale === 'hi' ? 'एक्स पर साझा' : 'Share on X'}</span>
                 </a>
               </div>
@@ -1225,13 +1223,13 @@ export const PosterStudioModal: React.FC = () => {
             aria-modal="true"
             className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/65 backdrop-blur-xs select-none"
           >
-            <div className="w-full max-w-sm bg-[#FAF8F5] border-2 border-[#D9C9B4] rounded-2xl p-5 shadow-2xl text-[#4B382C] space-y-4">
+            <div className="w-full max-w-sm bg-[#FAF8F5] border-2 border-[#D8D1C5] rounded-2xl p-5 shadow-2xl text-[#2B2621] space-y-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-xl bg-red-100 border border-red-200 text-red-600 flex items-center justify-center shrink-0">
-                  <TbTrash className="w-5 h-5" />
+                  <Trash2 className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[#4B382C]">
+                  <h3 className="text-sm font-bold text-[#2B2621]">
                     {confirmDialog.type === 'clear-all'
                       ? locale === 'mr'
                         ? 'सर्व स्क्रीनशॉट हटवायचे?'
@@ -1244,7 +1242,7 @@ export const PosterStudioModal: React.FC = () => {
                       ? 'यह स्क्रीनशॉट हटाएं?'
                       : 'Delete Screenshot?'}
                   </h3>
-                  <p className="text-xs text-[#634E40] mt-1 leading-relaxed">
+                  <p className="text-xs text-[#5A5248] mt-1 leading-relaxed">
                     {confirmDialog.type === 'clear-all'
                       ? locale === 'mr'
                         ? 'तुम्हाला खात्री आहे की तुम्ही सर्व स्क्रीनशॉट हटवू इच्छिता? ही कृती पूर्ववत केली जाऊ शकत नाही.'
@@ -1260,11 +1258,11 @@ export const PosterStudioModal: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D9C9B4]">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#D8D1C5]">
                 <button
                   type="button"
                   onClick={() => setConfirmDialog({ isOpen: false, type: 'clear-all' })}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#634E40] bg-[#EFE8DD] hover:bg-[#E0D5C5] border border-[#D9C9B4] transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#5A5248] bg-[#EFE8DD] hover:bg-[#E0D5C5] border border-[#D8D1C5] transition-colors cursor-pointer"
                 >
                   {locale === 'mr' ? 'रद्द करा' : locale === 'hi' ? 'रद्द करें' : 'Cancel'}
                 </button>

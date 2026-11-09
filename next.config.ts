@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
     '@react-three/drei',
     'three-custom-shader-material',
     'three-mesh-bvh',
+    'lucide-react',
   ],
   webpack: (config) => {
     config.externals = [...(config.externals || []), { canvas: 'canvas' }];

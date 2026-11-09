@@ -2,25 +2,25 @@
 
 import React from 'react';
 import {
-  TbLock,
-  TbLockOpen,
-  TbRipple,
-  TbSparkles,
-  TbCheck,
-  TbSun,
-  TbMountain,
-  TbPlant2,
-  TbTrees,
-  TbArrowsLeft,
-  TbArrowsRight,
-  TbArrowDownBar,
-  TbTrendingDown,
-  TbMinus,
-  TbWaveSine,
-  TbArrowUpRight,
-  TbArrowBackUp,
-  TbTrash,
-} from 'react-icons/tb';
+  Lock,
+  Unlock,
+  Waves,
+  Sparkles,
+  Check,
+  Sun,
+  Mountain,
+  Sprout,
+  Trees,
+  ArrowLeft,
+  ArrowRight,
+  ArrowDown,
+  TrendingDown,
+  Minus,
+  Activity,
+  ArrowUpRight,
+  Undo2,
+  Trash2,
+} from 'lucide-react';
 import { useEditorStore, BrushSizeType } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -83,7 +83,7 @@ export const ContextualDock: React.FC = () => {
   if (!showContextualDock) return null;
 
   return (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#F2EBE1]/94 backdrop-blur-md rounded-2xl border border-[#D9C9B4] shadow-xl transition-all select-none">
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2 bg-[#EBE6DC]/95 backdrop-blur-md rounded-xl border border-[#D8D1C5] shadow-xl transition-all select-none">
       {/* 1. SOIL TOOL CONTROLS (Lump of Soil) */}
       {activeTool === 'soil' && (
         <div className="flex items-center gap-4">
@@ -148,7 +148,7 @@ export const ContextualDock: React.FC = () => {
             }`}
             title="Toggle reflective water vs blue plastic sheet pond effect"
           >
-            <TbRipple className="w-3.5 h-3.5" />
+            <Waves size={14} strokeWidth={1.75} />
             <span>{waterMode === 'tarpaulin' ? t.tools.water.tarpaulin : t.tools.water.reflective}</span>
           </button>
         </div>
@@ -157,46 +157,46 @@ export const ContextualDock: React.FC = () => {
       {/* 3. SHAPING CONTROLS (Push Left, Push Right, Pat from Top) */}
       {(activeTool === 'shape' || activeTool === 'shape_side' || activeTool === 'shape_top') && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1 font-sans">
+          <div className="flex items-center bg-[#FAF8F5] p-1 rounded-md border border-[#D8D1C5] gap-1 font-sans">
             <button
               onClick={() => setShapeSubTool('push_left')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 shapeSubTool === 'push_left'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
             >
-              <TbArrowsLeft className="w-3.5 h-3.5" />
+              <ArrowLeft size={14} strokeWidth={1.75} />
               <span>{t.tools.shape.pushLeft}</span>
             </button>
             <button
               onClick={() => setShapeSubTool('push_right')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 shapeSubTool === 'push_right'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
             >
-              <TbArrowsRight className="w-3.5 h-3.5" />
+              <ArrowRight size={14} strokeWidth={1.75} />
               <span>{t.tools.shape.pushRight}</span>
             </button>
             <button
               onClick={() => setShapeSubTool('pat_top')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 shapeSubTool === 'pat_top'
-                  ? 'bg-[#4B382C] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
             >
-              <TbArrowDownBar className="w-3.5 h-3.5" />
+              <ArrowDown size={14} strokeWidth={1.75} />
               <span>{t.tools.shape.topPat}</span>
             </button>
           </div>
 
-          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+          <div className="w-[1px] h-5 bg-[#D8D1C5]" />
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-[#4B382C]">{t.tools.shape.size}:</span>
+            <span className="text-xs font-semibold text-[#2B2621]">{t.tools.shape.size}:</span>
             <input
               type="range"
               aria-label={t.tools.shape.size}
@@ -205,7 +205,7 @@ export const ContextualDock: React.FC = () => {
               step="0.1"
               value={brushRadius}
               onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-              className="w-20 accent-[#4B382C] cursor-pointer"
+              className="w-20 accent-[#B85F45] cursor-pointer"
             />
           </div>
         </div>
@@ -216,16 +216,16 @@ export const ContextualDock: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => setMudLocked(!mudLocked)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold border transition-all cursor-pointer ${
               mudLocked
-                ? 'bg-[#588157] text-white border-[#588157] shadow-sm'
-                : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
+                ? 'bg-[#15803D] text-white border-[#15803D] shadow-sm'
+                : 'bg-[#FAF8F5] text-[#2B2621] border-[#D8D1C5] hover:bg-[#D8D1C5]'
             }`}
           >
-            {mudLocked ? <TbLock className="w-4 h-4" /> : <TbSun className="w-4 h-4 text-[#F59E0B]" />}
+            {mudLocked ? <Lock size={16} strokeWidth={1.75} /> : <Sun size={16} strokeWidth={1.75} className="text-[#D97706]" />}
             <span>{mudLocked ? 'Structure Solidified & Dried' : 'Dry & Solidify Soil'}</span>
           </button>
-          <span className="text-[11px] text-[#8D7666]">
+          <span className="text-[11px] text-[#7C7267]">
             Dries shaped mud to allow painting, figurines, and crenellations
           </span>
         </div>
@@ -272,7 +272,7 @@ export const ContextualDock: React.FC = () => {
                   title={`${col.name} - ${col.role}`}
                 >
                   {isSelected && (
-                    <TbCheck
+                    <Check
                       className={`w-3 h-3 absolute inset-0 m-auto ${
                         col.id === 'chuna' ? 'text-black' : 'text-white'
                       }`}
@@ -283,19 +283,19 @@ export const ContextualDock: React.FC = () => {
             })}
           </div>
 
-          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+          <div className="w-[1px] h-5 bg-[#D8D1C5]" />
 
           {/* Steady-Hand Stabilizer Toggle */}
           <button
             onClick={() => setSteadyHand(!steadyHand)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium border transition-all cursor-pointer ${
               steadyHand
-                ? 'bg-[#4B382C] text-white border-[#4B382C]'
-                : 'bg-[#EADECF] text-[#4B382C] border-[#D9C9B4]'
+                ? 'bg-[#2B2621] text-white border-[#2B2621]'
+                : 'bg-[#FAF8F5] text-[#2B2621] border-[#D8D1C5] hover:bg-[#D8D1C5]'
             }`}
             title={t.tools.paint.steadyHandDesc}
           >
-            <TbSparkles className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <Sparkles size={14} strokeWidth={1.75} className="text-[#B85F45]" />
             <span>{t.tools.paint.steadyHand}</span>
           </button>
         </div>
@@ -304,82 +304,82 @@ export const ContextualDock: React.FC = () => {
       {/* 6. TERRAIN MANIPULATION CONTROLS */}
       {activeTool === 'terrain' && (
         <div className="flex items-center gap-3">
-          <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1 font-sans">
+          <div className="flex items-center bg-[#FAF8F5] p-1 rounded-md border border-[#D8D1C5] gap-1 font-sans">
             <button
               onClick={() => setTerrainSubTool('elevate')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'elevate'
-                  ? 'bg-[#E85D04] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
               title={t.toolModeSidebar.terrainTitles.elevate}
             >
-              <TbMountain className="w-3.5 h-3.5" />
+              <Mountain size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.terrainModes.elevate}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('lower')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'lower'
-                  ? 'bg-[#8F4938] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
               title={t.toolModeSidebar.terrainTitles.lower}
             >
-              <TbTrendingDown className="w-3.5 h-3.5" />
+              <TrendingDown size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.terrainModes.lower}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('plateau')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'plateau'
-                  ? 'bg-[#B58B63] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
               title={t.toolModeSidebar.terrainTitles.plateau}
             >
-              <TbMinus className="w-3.5 h-3.5" />
+              <Minus size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.terrainModes.plateau}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('smooth')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'smooth'
-                  ? 'bg-[#777A57] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
               title={t.toolModeSidebar.terrainTitles.smooth}
             >
-              <TbWaveSine className="w-3.5 h-3.5" />
+              <Activity size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.terrainModes.smooth}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('pond')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'pond'
-                  ? 'bg-[#0284C7] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
               title={t.toolModeSidebar.terrainTitles.pond}
             >
-              <TbRipple className="w-3.5 h-3.5" />
+              <Waves size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.terrainModes.pond}</span>
             </button>
             <button
               onClick={() => setTerrainSubTool('slope')}
-              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 terrainSubTool === 'slope'
-                  ? 'bg-[#D97706] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
               title={t.toolModeSidebar.terrainTitles.slope}
             >
-              <TbArrowUpRight className="w-3.5 h-3.5" />
+              <ArrowUpRight size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.terrainModes.slope}</span>
             </button>
           </div>
 
-          <div className="w-[1px] h-5 bg-[#D9C9B4]" />
+          <div className="w-[1px] h-5 bg-[#D8D1C5]" />
 
           {/* Brush Size Slider */}
           <div className="flex items-center gap-1.5">
@@ -496,13 +496,13 @@ export const ContextualDock: React.FC = () => {
           <div className="flex items-center bg-[#EADECF] p-1 rounded-xl border border-[#D9C9B4] gap-1 font-sans">
             <button
               onClick={() => setFoliageSubTool('scatter')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
                 foliageSubTool === 'scatter'
-                  ? 'bg-[#15803D] text-white shadow-sm'
-                  : 'text-[#634E40] hover:text-[#2B1E16]'
+                  ? 'bg-[#2B2621] text-white shadow-sm'
+                  : 'text-[#5A5248] hover:text-[#2B2621]'
               }`}
             >
-              <TbTrees className="w-3.5 h-3.5" />
+              <Trees size={14} strokeWidth={1.75} />
               <span>{t.toolModeSidebar.foliageModes.scatter}</span>
             </button>
             <button

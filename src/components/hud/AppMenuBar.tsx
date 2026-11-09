@@ -3,35 +3,36 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import {
-  TbShield,
-  TbChevronDown,
-  TbFilePlus,
-  TbDeviceFloppy,
-  TbUpload,
-  TbDownload,
-  TbSparkles,
-  TbArrowBackUp,
-  TbArrowForwardUp,
-  TbReload,
-  TbLock,
-  TbLockOpen,
-  TbEye,
-  TbFlame,
-  TbKeyboard,
-  TbHelp,
-  TbCheck,
-  TbLanguage,
-  TbBuildingCastle,
-  TbAdjustmentsHorizontal,
-  TbMenu2,
-  TbX,
-  TbArrowsMinimize,
-  TbArrowsMaximize,
-  TbFolderOpen,
-} from 'react-icons/tb';
+  Shield,
+  ChevronDown,
+  FilePlus,
+  Save,
+  Upload,
+  Download,
+  Sparkles,
+  Undo2,
+  Redo2,
+  RotateCcw,
+  Lock,
+  Unlock,
+  Eye,
+  Flame,
+  Keyboard,
+  HelpCircle,
+  Check,
+  Languages,
+  Castle,
+  SlidersHorizontal,
+  Menu,
+  X,
+  Minimize2,
+  Maximize2,
+  FolderOpen,
+} from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
+import { LanguageSelector } from '@/components/common/LanguageSelector';
 
 interface AppMenuBarProps {
   onUndo?: () => void;
@@ -210,9 +211,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
           />
 
           {/* Slide-over menu panel starting right below top bar */}
-          <div className="relative w-80 max-w-[85vw] h-full bg-[#F5EDE3] border-r border-[#CDBCAB] shadow-2xl flex flex-col z-10 overflow-y-auto">
+          <div className="relative w-80 max-w-[85vw] h-full bg-[#F5EDE3] border-r border-[#D8D1C5] shadow-2xl flex flex-col z-10 overflow-y-auto">
             {/* Brand Header in Drawer */}
-            <div className="p-3.5 border-b border-[#D8C7B5] bg-[#EADECF]/90 flex items-center gap-3">
+            <div className="p-3.5 border-b border-[#D8D1C5] bg-[#FAF8F5]/90 flex items-center gap-3">
               <div className="relative w-9 h-9 shrink-0 flex items-center justify-center">
                 <Image
                   src="/killaplayground-tranparent.png"
@@ -226,26 +227,26 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 <span className="font-yatra text-base text-[#2B1E16] leading-tight">
                   {t.appName}
                 </span>
-                <span className="text-[10px] text-[#8D7666] font-sans font-medium">
+                <span className="text-[10px] text-[#7C7267] font-sans font-medium">
                   {t.appSubtitle}
                 </span>
               </div>
             </div>
 
             {/* Active Fort Selector Header in Drawer */}
-            <div className="p-3 border-b border-[#D8C7B5] bg-[#ECE2D5]/70 font-sans">
+            <div className="p-3 border-b border-[#D8D1C5] bg-[#FAF8F5] font-sans">
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
                   setTerrainDrawerOpen(true, 'historical');
                 }}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border border-[#D9C9B4] text-xs font-bold cursor-pointer"
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border border-[#D8D1C5] text-xs font-bold cursor-pointer"
               >
                 <div className="flex items-center gap-2">
-                  <TbBuildingCastle className="w-4 h-4 text-[#8F4938]" />
+                  <Castle className="w-4 h-4 text-[#8F4938]" />
                   <span className="font-sans uppercase">{displayFortTitle}</span>
                 </div>
-                <span className="text-[10px] text-[#8D7666] uppercase bg-black/10 px-2 py-0.5 rounded">
+                <span className="text-[10px] text-[#7C7267] uppercase bg-black/10 px-2 py-0.5 rounded">
                   {t.common.change}
                 </span>
               </button>
@@ -255,7 +256,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             <div className="flex-1 p-3 space-y-3.5 text-xs">
               {/* FILE SECTION */}
               <div className="space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8D7666] px-2">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] px-2">
                   {t.appMenuBar.file}
                 </div>
                 <button
@@ -263,9 +264,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     openProjectHub('blueprints');
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbFilePlus className="w-4 h-4 text-[#B85F45]" />
+                  <FilePlus className="w-4 h-4 text-[#B85F45]" />
                   <span>{t.appMenuBar.newCanvas}</span>
                 </button>
                 <button
@@ -273,9 +274,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     setTerrainDrawerOpen(true, 'historical');
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbBuildingCastle className="w-4 h-4 text-[#4B382C]" />
+                  <Castle className="w-4 h-4 text-[#2B2621]" />
                   <span>{t.modeModal.historicalTab}...</span>
                 </button>
                 <button
@@ -283,30 +284,30 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     setTerrainDrawerOpen(true, 'freeform');
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
+                  <SlidersHorizontal className="w-4 h-4 text-[#8F4938]" />
                   <span>{t.modeModal.freeformTab}...</span>
                 </button>
                 <button
                   onClick={handleSave}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbDeviceFloppy className="w-4 h-4 text-[#777A57]" />
+                  <Save className="w-4 h-4 text-[#777A57]" />
                   <span>{t.appMenuBar.saveCanvas}</span>
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbUpload className="w-4 h-4 text-[#B58B63]" />
+                  <Upload className="w-4 h-4 text-[#B58B63]" />
                   <span>{t.appMenuBar.importProject}</span>
                 </button>
                 <button
                   onClick={handleExport}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbDownload className="w-4 h-4 text-[#0284C7]" />
+                  <Download className="w-4 h-4 text-[#0284C7]" />
                   <span>{t.appMenuBar.exportProject}</span>
                 </button>
                 <button
@@ -314,16 +315,16 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     setPosterModalOpen(true);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#E85D04] font-bold hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#E85D04] font-bold hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbSparkles className="w-4 h-4 text-[#E85D04]" />
+                  <Sparkles className="w-4 h-4 text-[#E85D04]" />
                   <span>{t.appMenuBar.exportPoster}</span>
                 </button>
               </div>
 
               {/* EDIT SECTION */}
-              <div className="space-y-1 pt-2 border-t border-[#D8C7B5]">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8D7666] px-2">
+              <div className="space-y-1 pt-2 border-t border-[#D8D1C5]">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] px-2">
                   {t.appMenuBar.edit}
                 </div>
                 <button
@@ -333,10 +334,10 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   }}
                   disabled={!canUndo}
                   className={`w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg ${
-                    canUndo ? 'text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
+                    canUndo ? 'text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
                   }`}
                 >
-                  <TbArrowBackUp className="w-4 h-4" />
+                  <Undo2 className="w-4 h-4" />
                   <span>{t.appMenuBar.undo}</span>
                 </button>
                 <button
@@ -346,10 +347,10 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   }}
                   disabled={!canRedo}
                   className={`w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg ${
-                    canRedo ? 'text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
+                    canRedo ? 'text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
                   }`}
                 >
-                  <TbArrowForwardUp className="w-4 h-4" />
+                  <Redo2 className="w-4 h-4" />
                   <span>{t.appMenuBar.redo}</span>
                 </button>
                 <button
@@ -357,9 +358,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setMudLocked(!mudLocked);
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  {mudLocked ? <TbLock className="w-4 h-4 text-[#B85F45]" /> : <TbLockOpen className="w-4 h-4 text-[#777A57]" />}
+                  {mudLocked ? <Lock className="w-4 h-4 text-[#B85F45]" /> : <Unlock className="w-4 h-4 text-[#777A57]" />}
                   <span>{t.appMenuBar.mudLockToggle}</span>
                 </button>
                 <button
@@ -369,14 +370,14 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   }}
                   className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#B85F45] font-semibold hover:bg-[#B85F45]/10 cursor-pointer"
                 >
-                  <TbReload className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4" />
                   <span>{t.appMenuBar.resetCanvas}</span>
                 </button>
               </div>
 
               {/* VIEW SECTION */}
-              <div className="space-y-1 pt-2 border-t border-[#D8C7B5]">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8D7666] px-2">
+              <div className="space-y-1 pt-2 border-t border-[#D8D1C5]">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] px-2">
                   {t.appMenuBar.view}
                 </div>
                 <button
@@ -384,46 +385,46 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     toggleLeftToolbar();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center justify-between rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center justify-between rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
-                    <TbEye className="w-4 h-4 text-[#634E40]" />
+                    <Eye className="w-4 h-4 text-[#5A5248]" />
                     {t.appMenuBar.toggleLeftToolbar}
                   </span>
-                  {showLeftToolbar && <TbCheck className="w-4 h-4 text-[#777A57]" />}
+                  {showLeftToolbar && <Check className="w-4 h-4 text-[#777A57]" />}
                 </button>
                 <button
                   onClick={() => {
                     toggleContextualDock();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center justify-between rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center justify-between rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
-                    <TbEye className="w-4 h-4 text-[#634E40]" />
+                    <Eye className="w-4 h-4 text-[#5A5248]" />
                     {t.appMenuBar.toggleContextual}
                   </span>
-                  {showContextualDock && <TbCheck className="w-4 h-4 text-[#777A57]" />}
+                  {showContextualDock && <Check className="w-4 h-4 text-[#777A57]" />}
                 </button>
                 <button
                   onClick={() => {
                     toggleNightMode();
                     setIsMobileMenuOpen(false);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center justify-between rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center justify-between rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
                   <span className="flex items-center gap-2.5">
-                    <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                    <Flame className="w-4 h-4 text-[#F59E0B]" />
                     {t.appMenuBar.toggleNight}
                   </span>
-                  {nightMode && <TbCheck className="w-4 h-4 text-[#F59E0B]" />}
+                  {nightMode && <Check className="w-4 h-4 text-[#F59E0B]" />}
                 </button>
               </div>
 
               {/* LANGUAGE SECTION */}
-              <div className="space-y-1 pt-2 border-t border-[#D8C7B5]">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8D7666] px-2 flex items-center gap-1">
-                  <TbLanguage className="w-3.5 h-3.5" />
+              <div className="space-y-1 pt-2 border-t border-[#D8D1C5]">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] px-2 flex items-center gap-1">
+                  <Languages className="w-3.5 h-3.5" />
                   <span>{t.appMenuBar.language}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-1 px-1">
@@ -435,7 +436,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                         setIsMobileMenuOpen(false);
                       }}
                       className={`py-1.5 rounded-lg text-xs font-bold text-center transition-colors cursor-pointer ${
-                        locale === lang ? 'bg-[#4B382C] text-white shadow-xs' : 'bg-[#EADECF] text-[#4B382C] hover:bg-[#DFCDBD]'
+                        locale === lang ? 'bg-[#4B382C] text-white shadow-xs' : 'bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]'
                       }`}
                     >
                       {lang === 'en' ? 'English' : lang === 'mr' ? 'मराठी' : 'हिन्दी'}
@@ -445,8 +446,8 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               </div>
 
               {/* HELP SECTION */}
-              <div className="space-y-1 pt-2 border-t border-[#D8C7B5]">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-[#8D7666] px-2">
+              <div className="space-y-1 pt-2 border-t border-[#D8D1C5]">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] px-2">
                   {t.appMenuBar.help}
                 </div>
                 <button
@@ -454,9 +455,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     setShortcutsModalOpen(true);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbKeyboard className="w-4 h-4 text-[#B85F45]" />
+                  <Keyboard className="w-4 h-4 text-[#B85F45]" />
                   <span>{t.appMenuBar.shortcuts}</span>
                 </button>
                 <button
@@ -464,9 +465,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     setStartupModalOpen(true);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbHelp className="w-4 h-4 text-[#777A57]" />
+                  <HelpCircle className="w-4 h-4 text-[#777A57]" />
                   <span>{t.appMenuBar.tutorial}</span>
                 </button>
                 <button
@@ -474,9 +475,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     setIsMobileMenuOpen(false);
                     setAboutModalOpen(true);
                   }}
-                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#634E40] hover:bg-[#EADECF] cursor-pointer"
+                  className="w-full px-2.5 py-2 text-left flex items-center gap-2.5 rounded-lg text-[#5A5248] hover:bg-[#D8D1C5] cursor-pointer"
                 >
-                  <TbShield className="w-4 h-4 text-[#B85F45]" />
+                  <Shield className="w-4 h-4 text-[#B85F45]" />
                   <span>{t.appMenuBar.about}</span>
                 </button>
               </div>
@@ -488,27 +489,27 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
       {/* Top Application Desktop Menu Bar */}
       <header
         ref={menuBarRef}
-        className="w-full bg-[#F2EBE1]/96 backdrop-blur-md border-b border-[#D9C9B4] px-2 sm:px-4 py-1 flex items-center justify-between pointer-events-auto shadow-sm relative z-50 h-[41px]"
+        className="w-full bg-[#EBE6DC]/96 backdrop-blur-md border-b border-[#D8D1C5] px-2 sm:px-4 py-1 flex items-center justify-between pointer-events-auto shadow-sm relative z-50 h-[41px]"
       >
         {/* Left cluster: Hamburger + Logo & Title + Desktop Menus */}
         <div className="flex items-center gap-1 sm:gap-2">
           {/* Hamburger Button (< xl): Shifts into X when menu is open */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="xl:hidden p-1.5 rounded-lg text-[#4B382C] hover:bg-[#DFCDBD] transition-colors cursor-pointer shrink-0"
+            className="xl:hidden p-1.5 rounded-lg text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer shrink-0"
             title={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
           >
             {isMobileMenuOpen ? (
-              <TbX className="w-5 h-5 text-[#8F4938]" />
+              <X className="w-5 h-5 text-[#8F4938]" />
             ) : (
-              <TbMenu2 className="w-5 h-5" />
+              <Menu className="w-5 h-5" />
             )}
           </button>
 
           {/* Logo Icon & Permanent In-Flow Title */}
           <button
             onClick={() => setStartupModalOpen(true)}
-            className="flex items-center gap-1.5 sm:gap-2 px-1.5 py-1 rounded-lg hover:bg-[#DFCDBD] transition-colors cursor-pointer group shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 px-1.5 py-1 rounded-lg hover:bg-[#D8D1C5] transition-colors cursor-pointer group shrink-0"
             title="The Killa Playground - Open Hub"
           >
             <div className="relative w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0">
@@ -532,14 +533,14 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               setActiveMenu(null);
               setTerrainDrawerOpen(!isTerrainDrawerOpen, 'historical');
             }}
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer bg-[#EADECF] hover:bg-[#DFCDBD] text-[#4B382C] border-[#D9C9B4]"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border-[#D8D1C5]"
             title={t.modeModal.subtitle}
           >
-            <TbBuildingCastle className="w-3.5 h-3.5 text-[#8F4938]" />
+            <Castle className="w-3.5 h-3.5 text-[#8F4938]" />
             <span className="tracking-wide uppercase font-sans">
               {displayFortTitle}
             </span>
-            <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
+            <ChevronDown className="w-3 h-3 text-[#7C7267]" />
           </button>
 
           <div className="hidden xl:block w-[1px] h-4 bg-[#D9C9B4] mx-1" />
@@ -553,35 +554,35 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                   activeMenu === 'file'
                     ? 'bg-[#4B382C] text-white'
-                    : 'text-[#4B382C] hover:bg-[#DFCDBD]'
+                    : 'text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
                 {t.appMenuBar.file}
-                <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
+                <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
               {activeMenu === 'file' && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-[#F9F6F0] rounded-xl border border-[#D9C9B4] shadow-2xl py-1 z-50 text-xs">
+                <div className="absolute top-full left-0 mt-1 w-56 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
                   <button
                     onClick={() => {
                       openProjectHub('blueprints');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbFilePlus className="w-4 h-4 text-[#B85F45]" />
+                      <FilePlus className="w-4 h-4 text-[#B85F45]" />
                       {t.appMenuBar.newCanvas}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">Ctrl+N</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">Ctrl+N</kbd>
                   </button>
                   <button
                     onClick={() => {
                       setTerrainDrawerOpen(true, 'historical');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbBuildingCastle className="w-4 h-4 text-[#4B382C]" />
+                    <Castle className="w-4 h-4 text-[#2B2621]" />
                     <span>{t.modeModal.historicalTab}...</span>
                   </button>
                   <button
@@ -589,9 +590,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       setTerrainDrawerOpen(true, 'freeform');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbAdjustmentsHorizontal className="w-4 h-4 text-[#8F4938]" />
+                    <SlidersHorizontal className="w-4 h-4 text-[#8F4938]" />
                     <span>{t.modeModal.freeformTab}...</span>
                   </button>
                   <button
@@ -599,46 +600,46 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       openProjectHub('vault');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbFolderOpen className="w-4 h-4 text-[#0284C7]" />
+                    <FolderOpen className="w-4 h-4 text-[#0284C7]" />
                     <span>{t.startupModal.tabVault}...</span>
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={handleSave}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbDeviceFloppy className="w-4 h-4 text-[#777A57]" />
+                      <Save className="w-4 h-4 text-[#777A57]" />
                       {t.appMenuBar.saveCanvas}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">Ctrl+S</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">Ctrl+S</kbd>
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbUpload className="w-4 h-4 text-[#B58B63]" />
+                    <Upload className="w-4 h-4 text-[#B58B63]" />
                     {t.appMenuBar.importProject}
                   </button>
                   <button
                     onClick={handleExport}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbDownload className="w-4 h-4 text-[#0284C7]" />
+                    <Download className="w-4 h-4 text-[#0284C7]" />
                     {t.appMenuBar.exportProject}
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={() => {
                       setPosterModalOpen(true);
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#E85D04] font-semibold hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#E85D04] font-semibold hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbSparkles className="w-4 h-4 text-[#E85D04]" />
+                    <Sparkles className="w-4 h-4 text-[#E85D04]" />
                     {t.appMenuBar.exportPoster}
                   </button>
                 </div>
@@ -652,14 +653,14 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                   activeMenu === 'edit'
                     ? 'bg-[#4B382C] text-white'
-                    : 'text-[#4B382C] hover:bg-[#DFCDBD]'
+                    : 'text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
                 {t.appMenuBar.edit}
-                <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
+                <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
               {activeMenu === 'edit' && (
-                <div className="absolute top-full left-0 mt-1 w-52 bg-[#F9F6F0] rounded-xl border border-[#D9C9B4] shadow-2xl py-1 z-50 text-xs">
+                <div className="absolute top-full left-0 mt-1 w-52 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
                   <button
                     onClick={() => {
                       onUndo?.();
@@ -668,15 +669,15 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     disabled={!canUndo}
                     className={`w-full px-3.5 py-2 text-left flex items-center justify-between transition-colors ${
                       canUndo
-                        ? 'text-[#2B1E16] hover:bg-[#DFCDBD] cursor-pointer'
+                        ? 'text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer'
                         : 'text-[#B29E8E] cursor-not-allowed'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <TbArrowBackUp className="w-4 h-4" />
+                      <Undo2 className="w-4 h-4" />
                       {t.appMenuBar.undo}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">Ctrl+Z</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">Ctrl+Z</kbd>
                   </button>
                   <button
                     onClick={() => {
@@ -686,35 +687,35 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     disabled={!canRedo}
                     className={`w-full px-3.5 py-2 text-left flex items-center justify-between transition-colors ${
                       canRedo
-                        ? 'text-[#2B1E16] hover:bg-[#DFCDBD] cursor-pointer'
+                        ? 'text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer'
                         : 'text-[#B29E8E] cursor-not-allowed'
                     }`}
                   >
                     <span className="flex items-center gap-2">
-                      <TbArrowForwardUp className="w-4 h-4" />
+                      <Redo2 className="w-4 h-4" />
                       {t.appMenuBar.redo}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">Ctrl+Y</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">Ctrl+Y</kbd>
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={() => {
                       setMudLocked(!mudLocked);
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       {mudLocked ? (
-                        <TbLock className="w-4 h-4 text-[#B85F45]" />
+                        <Lock className="w-4 h-4 text-[#B85F45]" />
                       ) : (
-                        <TbLockOpen className="w-4 h-4 text-[#777A57]" />
+                        <Unlock className="w-4 h-4 text-[#777A57]" />
                       )}
                       {t.appMenuBar.mudLockToggle}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">L</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">L</kbd>
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={() => {
                       setResetConfirmOpen(true);
@@ -722,7 +723,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     }}
                     className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#B85F45] font-semibold hover:bg-[#B85F45]/10 transition-colors cursor-pointer"
                   >
-                    <TbReload className="w-4 h-4" />
+                    <RotateCcw className="w-4 h-4" />
                     {t.appMenuBar.resetCanvas}
                   </button>
                 </div>
@@ -736,57 +737,57 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                   activeMenu === 'view'
                     ? 'bg-[#4B382C] text-white'
-                    : 'text-[#4B382C] hover:bg-[#DFCDBD]'
+                    : 'text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
                 {t.appMenuBar.view}
-                <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
+                <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
               {activeMenu === 'view' && (
-                <div className="absolute top-full left-0 mt-1 w-60 bg-[#F9F6F0] rounded-xl border border-[#D9C9B4] shadow-2xl py-1 z-50 text-xs">
+                <div className="absolute top-full left-0 mt-1 w-60 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
                   <button
                     onClick={toggleLeftToolbar}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbEye className="w-4 h-4 text-[#634E40]" />
+                      <Eye className="w-4 h-4 text-[#5A5248]" />
                       {t.appMenuBar.toggleLeftToolbar}
                     </span>
-                    {showLeftToolbar && <TbCheck className="w-4 h-4 text-[#777A57]" />}
+                    {showLeftToolbar && <Check className="w-4 h-4 text-[#777A57]" />}
                   </button>
                   <button
                     onClick={toggleContextualDock}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbEye className="w-4 h-4 text-[#634E40]" />
+                      <Eye className="w-4 h-4 text-[#5A5248]" />
                       {t.appMenuBar.toggleContextual}
                     </span>
-                    {showContextualDock && <TbCheck className="w-4 h-4 text-[#777A57]" />}
+                    {showContextualDock && <Check className="w-4 h-4 text-[#777A57]" />}
                   </button>
                   <button
                     onClick={toggleBottomStatusBar}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbEye className="w-4 h-4 text-[#634E40]" />
+                      <Eye className="w-4 h-4 text-[#5A5248]" />
                       {t.appMenuBar.toggleBottomStrip}
                     </span>
-                    {showBottomStatusBar && <TbCheck className="w-4 h-4 text-[#777A57]" />}
+                    {showBottomStatusBar && <Check className="w-4 h-4 text-[#777A57]" />}
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={toggleNightMode}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbFlame className="w-4 h-4 text-[#F59E0B]" />
+                      <Flame className="w-4 h-4 text-[#F59E0B]" />
                       {t.appMenuBar.toggleNight}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">N</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">N</kbd>
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
-                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#8D7666]">
+                  <div className="my-1 border-t border-[#D8D1C5]" />
+                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#7C7267]">
                     {t.appMenuBar.cameraViews}
                   </div>
                   <button
@@ -794,7 +795,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       onSetCameraView?.('top');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span>{t.appMenuBar.viewTop}</span>
                   </button>
@@ -803,7 +804,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       onSetCameraView?.('front');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span>{t.appMenuBar.viewFront}</span>
                   </button>
@@ -812,7 +813,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       onSetCameraView?.('side');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span>{t.appMenuBar.viewSide}</span>
                   </button>
@@ -821,7 +822,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       onSetCameraView?.('reset');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span>{t.appMenuBar.viewReset}</span>
                   </button>
@@ -836,14 +837,14 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                   activeMenu === 'language'
                     ? 'bg-[#4B382C] text-white'
-                    : 'text-[#4B382C] hover:bg-[#DFCDBD]'
+                    : 'text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
                 {t.appMenuBar.language}
-                <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
+                <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
               {activeMenu === 'language' && (
-                <div className="absolute top-full left-0 mt-1 w-44 bg-[#F9F6F0] rounded-xl border border-[#D9C9B4] shadow-2xl py-1 z-50 text-xs">
+                <div className="absolute top-full left-0 mt-1 w-44 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
                   {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
                     <button
                       key={lang}
@@ -854,7 +855,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       className={`w-full px-3.5 py-2 text-left flex items-center justify-between transition-colors cursor-pointer ${
                         locale === lang
                           ? 'bg-[#4B382C] text-white font-bold'
-                          : 'text-[#2B1E16] hover:bg-[#DFCDBD]'
+                          : 'text-[#2B1E16] hover:bg-[#D8D1C5]'
                       }`}
                     >
                       <span>
@@ -864,7 +865,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                           ? 'मराठी'
                           : 'हिन्दी'}
                       </span>
-                      {locale === lang && <TbCheck className="w-4 h-4 text-[#F59E0B]" />}
+                      {locale === lang && <Check className="w-4 h-4 text-[#F59E0B]" />}
                     </button>
                   ))}
                 </div>
@@ -878,46 +879,46 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
                   activeMenu === 'help'
                     ? 'bg-[#4B382C] text-white'
-                    : 'text-[#4B382C] hover:bg-[#DFCDBD]'
+                    : 'text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
                 {t.appMenuBar.help}
-                <TbChevronDown className="w-3 h-3 text-[#8D7666]" />
+                <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
               {activeMenu === 'help' && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-[#F9F6F0] rounded-xl border border-[#D9C9B4] shadow-2xl py-1 z-50 text-xs">
+                <div className="absolute top-full left-0 mt-1 w-56 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
                   <button
                     onClick={() => {
                       setShortcutsModalOpen(true);
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <TbKeyboard className="w-4 h-4 text-[#B85F45]" />
+                      <Keyboard className="w-4 h-4 text-[#B85F45]" />
                       {t.appMenuBar.shortcuts}
                     </span>
-                    <kbd className="text-[10px] text-[#8D7666] font-mono">?</kbd>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">?</kbd>
                   </button>
                   <button
                     onClick={() => {
                       openProjectHub('blueprints');
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbHelp className="w-4 h-4 text-[#777A57]" />
+                    <HelpCircle className="w-4 h-4 text-[#777A57]" />
                     {t.appMenuBar.tutorial}
                   </button>
-                  <div className="my-1 border-t border-[#D9C9B4]" />
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={() => {
                       setAboutModalOpen(true);
                       setActiveMenu(null);
                     }}
-                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-2 text-left flex items-center gap-2 text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
-                    <TbShield className="w-4 h-4 text-[#B85F45]" />
+                    <Shield className="w-4 h-4 text-[#B85F45]" />
                     <span>{t.appMenuBar.about}</span>
                   </button>
                 </div>
@@ -929,63 +930,49 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
         {/* Right cluster: Quick Action Pills */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Quick Language Pill (hidden on narrow screens to prevent crowding) */}
-          <div className="hidden lg:flex items-center bg-[#EADECF] rounded-lg p-0.5 border border-[#D9C9B4]">
-            {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => setLocale(lang)}
-                className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
-                  locale === lang
-                    ? 'bg-[#4B382C] text-[#FAF8F5] shadow-xs'
-                    : 'text-[#8D7666] hover:text-[#2B1E16]'
-                }`}
-              >
-                {lang === 'en' ? 'EN' : lang === 'mr' ? 'म' : 'हि'}
-              </button>
-            ))}
-          </div>
+          <LanguageSelector className="hidden lg:inline-flex" size="sm" />
 
           {/* Minimize / Maximize All Panels */}
-          <div className="flex items-center bg-[#EADECF] rounded-lg p-0.5 border border-[#D9C9B4]">
+          <div className="flex items-center bg-[#FAF8F5] rounded-lg p-0.5 border border-[#D8D1C5]">
             <button
               onClick={collapseAllPanels}
-              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
               title="Collapse All Panels"
               aria-label="Collapse All Panels"
             >
-              <TbArrowsMinimize className="w-3.5 h-3.5" />
+              <Minimize2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={expandAllPanels}
-              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#DFCDBD] transition-colors cursor-pointer"
+              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
               title="Expand All Panels"
               aria-label="Expand All Panels"
             >
-              <TbArrowsMaximize className="w-3.5 h-3.5" />
+              <Maximize2 className="w-3.5 h-3.5" />
             </button>
           </div>
 
           {/* Quick Undo / Redo / Reset */}
-          <div className="flex items-center bg-[#EADECF] rounded-lg p-0.5 border border-[#D9C9B4]">
+          <div className="flex items-center bg-[#FAF8F5] rounded-lg p-0.5 border border-[#D8D1C5]">
             <button
               onClick={onUndo}
               disabled={!canUndo}
               className={`p-1 rounded transition-colors ${
-                canUndo ? 'text-[#2B1E16] hover:bg-[#DFCDBD] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
+                canUndo ? 'text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
               }`}
               title={t.appMenuBar.undo}
             >
-              <TbArrowBackUp className="w-3.5 h-3.5" />
+              <Undo2 className="w-3.5 h-3.5" />
             </button>
             <button
               onClick={onRedo}
               disabled={!canRedo}
               className={`p-1 rounded transition-colors ${
-                canRedo ? 'text-[#2B1E16] hover:bg-[#DFCDBD] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
+                canRedo ? 'text-[#2B1E16] hover:bg-[#D8D1C5] cursor-pointer' : 'text-[#B29E8E] cursor-not-allowed'
               }`}
               title={t.appMenuBar.redo}
             >
-              <TbArrowForwardUp className="w-3.5 h-3.5" />
+              <Redo2 className="w-3.5 h-3.5" />
             </button>
             <div className="w-[1px] h-3.5 bg-[#D9C9B4] mx-0.5" />
             <button
@@ -993,7 +980,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               className="p-1 rounded text-[#B85F45] hover:bg-[#B85F45]/15 transition-colors cursor-pointer"
               title={t.appMenuBar.resetCanvas}
             >
-              <TbReload className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -1003,11 +990,11 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
               nightMode
                 ? 'bg-[#23211E] text-[#F59E0B] border-[#F59E0B]'
-                : 'bg-[#EADECF] text-[#634E40] border-[#D9C9B4] hover:bg-[#DFCDBD]'
+                : 'bg-[#FAF8F5] text-[#5A5248] border-[#D8D1C5] hover:bg-[#D8D1C5]'
             }`}
             title="Toggle Diwali Night Diya Mode (N)"
           >
-            <TbFlame className={`w-3.5 h-3.5 ${nightMode ? 'text-[#F59E0B] animate-pulse' : 'text-[#8D7666]'}`} />
+            <Flame className={`w-3.5 h-3.5 ${nightMode ? 'text-[#F59E0B] animate-pulse' : 'text-[#7C7267]'}`} />
             <span className="hidden md:inline text-[11px]">{nightMode ? t.nightModeOn : t.nightModeOff}</span>
           </button>
 
@@ -1016,7 +1003,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             onClick={() => setPosterModalOpen(true)}
             className="flex items-center gap-1 sm:gap-1.5 bg-[#E85D04] hover:bg-[#FF7722] active:scale-95 text-white px-2.5 sm:px-3 py-1 rounded-lg font-bold text-xs shadow-md shadow-[#E85D04]/30 transition-all cursor-pointer"
           >
-            <TbSparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden xs:inline">{t.finishKilla}</span>
           </button>
         </div>
@@ -1031,7 +1018,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             className="p-0.5 hover:bg-white/20 rounded-md transition-colors text-white/70 hover:text-white cursor-pointer"
             title="Dismiss notification"
           >
-            <TbX className="w-3.5 h-3.5" />
+            <X className="w-3.5 h-3.5" />
           </button>
         </div>
       )}

@@ -2,45 +2,68 @@
 @import "tailwindcss";
 
 @theme {
-  --color-canvas: #F9F6F0;
-  --color-surface-soft: #F2EBE1;
-  --color-surface-card: #EADECF;
-  --color-surface-strong: #DFCDBD;
-  --color-surface-dark: #23211E;
-  --color-surface-dark-elevated: #322E2A;
-  --color-hairline: #D9C9B4;
-  --color-hairline-strong: #BFA892;
+  /* Level 1: Canvas & Foundation Floor */
+  --color-canvas: #F4F1EA;
+  --color-surface-card: #FAF8F5;
 
+  /* Level 2: Raised Panels, Sidebars & Docks */
+  --color-surface-base: #EBE6DC;
+  --color-surface-soft: #E4DFD5;
+  --color-surface-strong: #D8D1C5;
+  --color-hairline: #D8D1C5;
+  --color-hairline-strong: #C5BDB0;
+
+  /* Level 3: Basalt Dark Stone Active Surfaces */
+  --color-surface-dark: #2B2621;
+  --color-surface-dark-elevated: #38322B;
+
+  /* Restrained Accents */
   --color-terracotta: #B85F45;
+  --color-terracotta-hover: #A3523B;
   --color-burnt-clay: #8F4938;
   --color-sand: #D8C09D;
   --color-camel: #B58B63;
   --color-olive: #777A57;
-  --color-dark-brown: #4B382C;
+  --color-dark-brown: #2B2621;
 
+  /* Cultural & Festive Accents */
   --color-bhagwa: #E85D04;
   --color-bhagwa-glow: #FF7722;
   --color-chuna: #FAF8F5;
-  --color-basalt: #23211E;
+  --color-basalt: #2B2621;
   --color-halim: #65A30D;
   --color-sea-blue: #0284C7;
   --color-diya-amber: #F59E0B;
   --color-marigold: #FBBF24;
 
-  --color-ink: #2B1E16;
-  --color-body-strong: #4B382C;
-  --color-body: #634E40;
-  --color-muted: #8D7666;
-  --color-muted-soft: #B29E8E;
+  /* Typography Text Tokens */
+  --color-ink: #2B2621;
+  --color-body-strong: #423B33;
+  --color-body: #5A5248;
+  --color-muted: #7C7267;
+  --color-muted-soft: #A3978B;
 
+  /* Standard Semantic Tokens */
+  --color-success: #15803D;
+  --color-warning: #D97706;
+  --color-destructive: #DC2626;
+
+  /* Normalized Radii */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  /* Font Families */
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
   --font-yatra: 'Yatra One', cursive, serif;
   --font-modak: 'Modak', cursive;
-  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 :root {
-  background-color: #F9F6F0;
-  color: #2B1E16;
+  background-color: #F4F1EA;
+  color: #2B2621;
   font-family: 'Inter', var(--font-inter), system-ui, sans-serif;
   user-select: none;
   -webkit-user-select: none;
@@ -52,18 +75,18 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(217, 201, 180, 0.2);
+  background: rgba(216, 209, 197, 0.2);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(141, 118, 102, 0.5);
+  background: rgba(124, 114, 103, 0.4);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(75, 56, 44, 0.7);
+  background: rgba(43, 38, 33, 0.6);
 }
 
-/* Devanagari & Marathi Display Fonts */
+/* Devanagari Display Voice: Reserved for Brand Mark, Hero Headlines, and Poster Plaques */
 .font-yatra {
   font-family: var(--font-yatra), 'Yatra One', cursive, serif !important;
 }

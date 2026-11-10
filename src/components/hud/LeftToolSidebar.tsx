@@ -45,10 +45,12 @@ import {
   Compass,
   Camera,
   RotateCw,
+  RotateCcw,
   Clapperboard,
   Sunrise,
   Sunset,
   ChevronRight,
+  ChevronUp,
 } from 'lucide-react';
 import { useEditorStore, TerrainSubTool } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
@@ -278,12 +280,27 @@ export const LeftToolSidebar: React.FC = () => {
     if (activeTool === 'lighting') {
       return lightingSubTool === 'place';
     }
+    if (activeTool === 'view') {
+      return true;
+    }
     return false;
   }, [activeTool, buildingMode, paintSubTool, foliageSubTool, propSubTool, lightingSubTool]);
 
-  const renderSectionHeader = (title: string) => (
+  const renderSectionHeader = (title: string, onReset?: () => void) => (
     <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] pt-2 pb-0.5 border-b border-[#D8D1C5]/70 flex items-center justify-between">
       <span>{title}</span>
+      {onReset && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onReset();
+          }}
+          className="p-0.5 -mr-0.5 rounded hover:bg-[#D8D1C5] text-[#7C7267] hover:text-[#B85F45] transition-colors cursor-pointer flex items-center justify-center"
+          title={t.sidebars.left.resetSection}
+        >
+          <RotateCcw className="w-3 h-3" />
+        </button>
+      )}
     </div>
   );
 
@@ -708,7 +725,7 @@ export const LeftToolSidebar: React.FC = () => {
 
                   {/* Creation Parameters (Contextual Groupings) */}
                   <div className="space-y-3">
-                    {renderSectionHeader(t.sidebars.left.geometry)}
+                    {renderSectionHeader(t.sidebars.left.geometry, () => setWallSettings({ height: 0.25, thickness: 0.15 }))}
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.height}</span>
@@ -741,7 +758,7 @@ export const LeftToolSidebar: React.FC = () => {
                       />
                     </div>
 
-                    {renderSectionHeader(t.sidebars.left.behavior)}
+                    {renderSectionHeader(t.sidebars.left.behavior, () => setWallSettings({ autoBastions: true }))}
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.walls.autoBastions}</span>
                       <input
@@ -850,6 +867,11 @@ export const LeftToolSidebar: React.FC = () => {
 
                   {/* Foundation Sliders */}
                   <div className="space-y-3">
+                    {renderSectionHeader(t.sidebars.left.geometry, () => {
+                      setDefaultFoundationHeight(0.40);
+                      setDefaultFoundationOffset(0.0);
+                      setDefaultFoundationTiling(2.0);
+                    })}
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.height}</span>
@@ -952,6 +974,9 @@ export const LeftToolSidebar: React.FC = () => {
 
                   {/* Stairway Sliders */}
                   <div className="space-y-3">
+                    {renderSectionHeader(t.sidebars.left.geometry, () => {
+                      setStairSettings({ scale: 2.0, stepWidth: 0.10, stepRun: 0.03, stepRise: 0.015 });
+                    })}
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.building.scale}</span>
@@ -1264,7 +1289,12 @@ export const LeftToolSidebar: React.FC = () => {
 
               {/* Sliders for active terrain brush (Contextual Groupings) */}
               <div className="space-y-3 pt-1">
-                {renderSectionHeader(t.sidebars.left.geometry)}
+                {renderSectionHeader(t.sidebars.left.geometry, () => {
+                  setBrushRadius(0.8);
+                  setBrushStrength(0.5);
+                  setPlateauHeight(1.0);
+                  setSlopeAngle(30);
+                })}
                 <div>
                   <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.brushRadius}</span>
@@ -1333,7 +1363,9 @@ export const LeftToolSidebar: React.FC = () => {
                   </div>
                 )}
 
-                {renderSectionHeader(t.sidebars.left.behavior)}
+                {renderSectionHeader(t.sidebars.left.behavior, () => {
+                  setMudLocked(false);
+                })}
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.lockMud}</span>
                   <input
@@ -1413,7 +1445,10 @@ export const LeftToolSidebar: React.FC = () => {
 
                 {/* Sliders on Panel Background (Contextual Groupings) */}
                 <div className="space-y-3 pt-1">
-                  {renderSectionHeader(t.sidebars.left.geometry)}
+                  {renderSectionHeader(t.sidebars.left.geometry, () => {
+                    setPaintBrushRadius(1.0);
+                    setPaintBrushStrength(0.6);
+                  })}
                   {/* Brush Radius */}
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
@@ -1451,7 +1486,10 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Appearance - Edge Falloff (Paint Mode only) */}
                   {paintSubTool === 'paint' && (
                     <>
-                      {renderSectionHeader(t.sidebars.left.appearance)}
+                      {renderSectionHeader(t.sidebars.left.appearance, () => {
+                        setPaintBrushFalloff(0.5);
+                        setPaintTextureRepeat(16.0);
+                      })}
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.left.edgeFalloff}</span>
@@ -1712,7 +1750,10 @@ export const LeftToolSidebar: React.FC = () => {
                   )}
 
                   {/* Geometry Group */}
-                  {renderSectionHeader(t.sidebars.left.geometry)}
+                  {renderSectionHeader(t.sidebars.left.geometry, () => {
+                    setFoliageBrushRadius(0.6);
+                    setFoliageBrushDensity(6);
+                  })}
 
                   {/* Brush Radius - For Scatter & Erase modes */}
                   {foliageSubTool !== 'single' && (
@@ -1755,7 +1796,10 @@ export const LeftToolSidebar: React.FC = () => {
                   {/* Appearance Group */}
                   {foliageSubTool !== 'erase' && (
                     <>
-                      {renderSectionHeader(t.sidebars.left.appearance)}
+                      {renderSectionHeader(t.sidebars.left.appearance, () => {
+                        setFoliageScaleJitter(0.25);
+                        setFoliageNormalAlign(0.15);
+                      })}
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.sidebars.left.scaleJitter}</span>
@@ -1891,7 +1935,11 @@ export const LeftToolSidebar: React.FC = () => {
 
                     {/* Sliders organized into Contextual Groups */}
                     <div className="space-y-3">
-                      {renderSectionHeader(t.sidebars.left.geometry)}
+                      {renderSectionHeader(t.sidebars.left.geometry, () => {
+                        setPropPlacementScale(1.0);
+                        setPropPlacementRotation(0);
+                        setPropRandomRotation(false);
+                      })}
 
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
@@ -1941,7 +1989,10 @@ export const LeftToolSidebar: React.FC = () => {
                         </button>
                       </div>
 
-                      {renderSectionHeader(t.sidebars.left.placement)}
+                      {renderSectionHeader(t.sidebars.left.placement, () => {
+                        setPropElevationOffset(0.0);
+                        setPropNormalAlign(0.0);
+                      })}
 
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
@@ -2343,9 +2394,50 @@ export const LeftToolSidebar: React.FC = () => {
                       </button>
                     </div>
 
+                    {/* Ticket 16: Quick Celestial Atmosphere Toggle for Lighting Place Mode */}
+                    <div className="flex items-center justify-between p-1.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px]">
+                      <span className="text-[10px] font-semibold text-[#7C7267] pl-1">{t.celestialPresets.quickLighting}:</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setSunDirectionPreset('noon')}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors ${
+                            !nightMode && Math.abs(timeOfDay - 12) < 2
+                              ? 'bg-[#2B2621] text-white shadow-2xs'
+                              : 'text-[#5A5248] hover:bg-[#EBE6DC]'
+                          }`}
+                        >
+                          {t.dioramaQuickBar.day}
+                        </button>
+                        <button
+                          onClick={() => setSunDirectionPreset('sunset')}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors ${
+                            !nightMode && Math.abs(timeOfDay - 17.5) < 2
+                              ? 'bg-[#2B2621] text-white shadow-2xs'
+                              : 'text-[#5A5248] hover:bg-[#EBE6DC]'
+                          }`}
+                        >
+                          {t.sidebars.left.goldenHour}
+                        </button>
+                        <button
+                          onClick={() => setSunDirectionPreset('night')}
+                          className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold cursor-pointer transition-colors ${
+                            nightMode
+                              ? 'bg-[#2B2621] text-white shadow-2xs'
+                              : 'text-[#5A5248] hover:bg-[#EBE6DC]'
+                          }`}
+                        >
+                          {t.dioramaQuickBar.night}
+                        </button>
+                      </div>
+                    </div>
+
                     {/* Sliders organized into Contextual Groups */}
                     <div className="space-y-3">
-                      {renderSectionHeader(t.sidebars.left.appearance)}
+                      {renderSectionHeader(t.sidebars.left.appearance, () => {
+                        setLightPlacementScale(1.0);
+                        setLightPlacementRotation(0);
+                        setLightRandomRotation(false);
+                      })}
 
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
@@ -2395,7 +2487,11 @@ export const LeftToolSidebar: React.FC = () => {
                         </button>
                       </div>
 
-                      {renderSectionHeader(t.sidebars.left.placement)}
+                      {renderSectionHeader(t.sidebars.left.placement, () => {
+                        setLightElevationOffset(0.0);
+                        setLightBurstHeight(1.2);
+                        setLightRandomBurstHeight(true);
+                      })}
 
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
@@ -2900,120 +2996,250 @@ export const LeftToolSidebar: React.FC = () => {
                   </button>
                 </div>
 
-                {/* 2. Celestial & Lighting Group */}
+                {/* 2. Celestial Lighting Studio (Ticket 16 Review Item 14) */}
                 <div className="space-y-3">
-                  {renderSectionHeader(t.sidebars.left.lighting)}
+                  {renderSectionHeader(t.sidebars.left.lighting, () => {
+                    resetAtmosphericModifiers();
+                    setSunDirectionPreset('noon');
+                  })}
 
-                  {/* Quick Celestial Presets */}
-                  <div className="space-y-1.5">
-                    <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.presetsTitle}</div>
-                    <div className="grid grid-cols-2 gap-1.5">
+                  {/* 4 Prominent Celestial Preset Cards */}
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-1 gap-2">
+                      {/* A. Dawn */}
                       <button
                         onClick={() => setSunDirectionPreset('dawn')}
-                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                          Math.abs(timeOfDay - 6.0) < 0.5
-                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                          !nightMode && Math.abs(timeOfDay - 6.0) < 1.0
+                            ? 'bg-[#FAF8F5] border-2 border-[#B85F45] shadow-xs'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] hover:border-[#B85F45]/50 hover:bg-[#F5EFE6]'
                         }`}
                       >
-                        <Sunrise className="w-4 h-4 text-[#EA580C]" />
-                        <span>{t.sidebars.left.dawn} (06:00)</span>
+                        <div className="w-8 h-8 rounded-lg bg-[#FED7AA]/40 flex items-center justify-center shrink-0 mt-0.5 border border-[#FDBA74]/50">
+                          <Sunrise className="w-4 h-4 text-[#EA580C]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#2B2621]">{t.celestialPresets.dawnTitle}</span>
+                            {!nightMode && Math.abs(timeOfDay - 6.0) < 1.0 && (
+                              <span className="w-2 h-2 rounded-full bg-[#B85F45]" />
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[#7C7267] leading-tight mt-0.5">
+                            {t.celestialPresets.dawnDesc}
+                          </p>
+                        </div>
                       </button>
+
+                      {/* B. Noon */}
                       <button
                         onClick={() => setSunDirectionPreset('noon')}
-                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                          Math.abs(timeOfDay - 12.0) < 0.5
-                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                          !nightMode && Math.abs(timeOfDay - 12.0) < 1.5
+                            ? 'bg-[#FAF8F5] border-2 border-[#B85F45] shadow-xs'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] hover:border-[#B85F45]/50 hover:bg-[#F5EFE6]'
                         }`}
                       >
-                        <Sun className="w-4 h-4 text-[#F59E0B]" />
-                        <span>{t.sidebars.left.noon} (12:00)</span>
+                        <div className="w-8 h-8 rounded-lg bg-[#FEF08A]/40 flex items-center justify-center shrink-0 mt-0.5 border border-[#FDE047]/50">
+                          <Sun className="w-4 h-4 text-[#F59E0B]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#2B2621]">{t.celestialPresets.noonTitle}</span>
+                            {!nightMode && Math.abs(timeOfDay - 12.0) < 1.5 && (
+                              <span className="w-2 h-2 rounded-full bg-[#B85F45]" />
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[#7C7267] leading-tight mt-0.5">
+                            {t.celestialPresets.noonDesc}
+                          </p>
+                        </div>
                       </button>
+
+                      {/* C. Golden Hour */}
                       <button
                         onClick={() => setSunDirectionPreset('sunset')}
-                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                          Math.abs(timeOfDay - 17.5) < 0.5
-                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                          !nightMode && Math.abs(timeOfDay - 17.5) < 1.5
+                            ? 'bg-[#FAF8F5] border-2 border-[#B85F45] shadow-xs'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] hover:border-[#B85F45]/50 hover:bg-[#F5EFE6]'
                         }`}
                       >
-                        <Sunset className="w-4 h-4 text-[#D97706]" />
-                        <span>{t.sidebars.left.goldenHour}</span>
+                        <div className="w-8 h-8 rounded-lg bg-[#FED7AA]/50 flex items-center justify-center shrink-0 mt-0.5 border border-[#FB923C]/50">
+                          <Sunset className="w-4 h-4 text-[#D97706]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#2B2621]">{t.celestialPresets.goldenTitle}</span>
+                            {!nightMode && Math.abs(timeOfDay - 17.5) < 1.5 && (
+                              <span className="w-2 h-2 rounded-full bg-[#B85F45]" />
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[#7C7267] leading-tight mt-0.5">
+                            {t.celestialPresets.goldenDesc}
+                          </p>
+                        </div>
                       </button>
+
+                      {/* D. Diwali Night */}
                       <button
                         onClick={() => setSunDirectionPreset('night')}
-                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                          nightMode && Math.abs(timeOfDay - 21.0) < 1.0
-                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                          nightMode
+                            ? 'bg-[#FAF8F5] border-2 border-[#B85F45] shadow-xs'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] hover:border-[#B85F45]/50 hover:bg-[#F5EFE6]'
                         }`}
                       >
-                        <Flame className="w-4 h-4 text-[#B85F45]" />
-                        <span>{t.sidebars.left.night}</span>
+                        <div className="w-8 h-8 rounded-lg bg-[#E0E7FF]/50 flex items-center justify-center shrink-0 mt-0.5 border border-[#C7D2FE]/60">
+                          <Moon className="w-4 h-4 text-[#38BDF8]" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#2B2621]">{t.celestialPresets.nightTitle}</span>
+                            {nightMode && (
+                              <span className="w-2 h-2 rounded-full bg-[#B85F45]" />
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[#7C7267] leading-tight mt-0.5">
+                            {t.celestialPresets.nightDesc}
+                          </p>
+                        </div>
                       </button>
                     </div>
                   </div>
 
-                  {/* Celestial Sliders */}
-                  <div className="space-y-3 pt-1">
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-3.5 h-3.5 text-[#8F4938]" />
-                          <span>{t.sidebars.left.timeOfDay}</span>
-                        </span>
-                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{timeStr}</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0.0}
-                        max={24.0}
-                        step={0.25}
-                        value={timeOfDay}
-                        onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
+                  {/* Advanced Lighting & Atmosphere Controls (Revealed by bottom ADVANCED SETTINGS checkbox) */}
+                  {showAdvanced && (
+                    <div className="space-y-3 pt-1">
+                      {renderSectionHeader(t.celestialPresets.advancedAtmosphere, resetAtmosphericModifiers)}
 
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.sunElevation}</span>
-                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{sunElevation}°</span>
+                      {/* Sun Elevation */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.sunElevation}</span>
+                          <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{sunElevation}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-10}
+                          max={90}
+                          step={1}
+                          value={sunElevation}
+                          onChange={(e) => setSunElevation(parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={-10}
-                        max={90}
-                        step={1}
-                        value={sunElevation}
-                        onChange={(e) => setSunElevation(parseInt(e.target.value, 10))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
 
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span className="flex items-center gap-1">
-                          <Compass className="w-3.5 h-3.5 text-[#8F4938]" />
-                          <span>{t.sidebars.left.sunAzimuth}</span>
-                        </span>
-                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{sunAzimuth}°</span>
+                      {/* Sun / Moon Azimuth */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span className="flex items-center gap-1">
+                            <Compass className="w-3.5 h-3.5 text-[#8F4938]" />
+                            <span>{t.sidebars.left.sunAzimuth}</span>
+                          </span>
+                          <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{sunAzimuth}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={360}
+                          step={1}
+                          value={sunAzimuth}
+                          onChange={(e) => setSunAzimuth(parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        step={1}
-                        value={sunAzimuth}
-                        onChange={(e) => setSunAzimuth(parseInt(e.target.value, 10))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
+
+                      {/* Time of Day */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span className="flex items-center gap-1">
+                            <Clock className="w-3.5 h-3.5 text-[#8F4938]" />
+                            <span>{t.sidebars.left.timeOfDay}</span>
+                          </span>
+                          <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{timeStr}</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.0}
+                          max={24.0}
+                          step={0.25}
+                          value={timeOfDay}
+                          onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+
+                      {/* Ground Light Bounce */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.celestialPresets.bounce}</span>
+                          <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{bounceIntensityMultiplier.toFixed(2)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.0}
+                          max={2.5}
+                          step={0.05}
+                          value={bounceIntensityMultiplier}
+                          onChange={(e) => setBounceIntensityMultiplier(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+
+                      {/* Atmospheric Fog */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.celestialPresets.fogDensity}</span>
+                          <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{fogDensityMultiplier.toFixed(2)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.0}
+                          max={2.5}
+                          step={0.05}
+                          value={fogDensityMultiplier}
+                          onChange={(e) => setFogDensityMultiplier(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+
+                      {/* Exposure */}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.celestialPresets.exposure}</span>
+                          <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{exposureMultiplier.toFixed(2)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.7}
+                          max={1.6}
+                          step={0.05}
+                          value={exposureMultiplier}
+                          onChange={(e) => setExposureMultiplier(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+
+                      {/* 1-Click Reset to Preset Defaults Action */}
+                      <button
+                        onClick={resetAtmosphericModifiers}
+                        className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold bg-[#FAF8F5] hover:bg-[#D8D1C5] border border-[#D8D1C5] text-[#2B2621] transition-colors cursor-pointer flex items-center justify-center gap-1.5 mt-1"
+                      >
+                        <RotateCw className="w-3.5 h-3.5 text-[#B85F45]" />
+                        <span>{t.celestialPresets.resetDefaults}</span>
+                      </button>
                     </div>
-                  </div>
+                  )}
+                </div>
 
                   {/* Camera Perspectives & Settings */}
-                  {renderSectionHeader(t.sidebars.left.camera)}
+                  {renderSectionHeader(t.sidebars.left.camera, () => {
+                    setCameraFov(45);
+                    setTurntableSpeed(1.0);
+                    setViewMode('orbit');
+                    setCameraViewPreset('reset');
+                  })}
 
                   <div className="space-y-1.5">
                     <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.perspectivesTitle}</div>
@@ -3110,7 +3336,6 @@ export const LeftToolSidebar: React.FC = () => {
                       )}
                     </div>
                   </div>
-                </div>
 
                 {/* 6. Presentation Card & Actions */}
                 <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] space-y-2">

@@ -40,6 +40,7 @@ interface TerrainBrushCursorProps {
   radius: number;
   subTool: string;
   toolActive: boolean;
+  isPresentationMode?: boolean;
 }
 
 const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
@@ -47,6 +48,7 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
   radius,
   subTool,
   toolActive,
+  isPresentationMode = false,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const upVec = useMemo(() => new THREE.Vector3(0, 0, 1), []);
@@ -57,7 +59,7 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
     const grp = groupRef.current;
     if (!grp) return;
     const st = cursorStateRef.current;
-    if (!st.visible || !toolActive) {
+    if (!st.visible || !toolActive || isPresentationMode) {
       if (grp.visible) grp.visible = false;
       return;
     }
@@ -75,11 +77,12 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
     );
   });
 
+  // Ticket 16 Review Item 12: Refined anti-aliased terracotta rings (#B85F45) replacing neon orange
   const color = useMemo(() => {
     switch (subTool) {
       case 'elevate':
       case 'paint':
-        return '#E85D04'; // Bhagwa saffron
+        return '#B85F45'; // Authentic terracotta
       case 'scatter':
       case 'single':
         return '#16A34A'; // Emerald forest green
@@ -98,11 +101,13 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
       case 'soil':
         return '#4B382C'; // Natural Sahyadri soil
       default:
-        return '#E85D04';
+        return '#B85F45';
     }
   }, [subTool]);
 
   const isSinglePoint = subTool === 'single';
+  const ringWidth = Math.max(0.012, Math.min(0.035, radius * 0.035));
+  const innerR = Math.max(0.01, radius - ringWidth);
 
   return (
     <group ref={groupRef} visible={false}>
@@ -110,21 +115,21 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
         <>
           {/* Single Placement Pinpoint Target Reticle */}
           <mesh renderOrder={999}>
-            <ringGeometry args={[0.04, 0.06, 32]} />
+            <ringGeometry args={[0.04, 0.055, 32]} />
             <meshBasicMaterial
               color={color}
               transparent
-              opacity={0.9}
+              opacity={0.7}
               depthTest={false}
               side={THREE.DoubleSide}
             />
           </mesh>
           <mesh renderOrder={999}>
-            <circleGeometry args={[0.02, 16]} />
+            <circleGeometry args={[0.018, 16]} />
             <meshBasicMaterial
               color={color}
               transparent
-              opacity={0.95}
+              opacity={0.8}
               depthTest={false}
               side={THREE.DoubleSide}
             />
@@ -132,24 +137,24 @@ const TerrainBrushCursor: React.FC<TerrainBrushCursorProps> = ({
         </>
       ) : (
         <>
-          {/* Outer Radius Ring */}
+          {/* Outer Radius Ring with Subtle Anti-Aliasing & Terracotta Warmth */}
           <mesh renderOrder={999}>
-            <ringGeometry args={[Math.max(0.02, radius - 0.035), radius, 48]} />
+            <ringGeometry args={[innerR, radius, 64]} />
             <meshBasicMaterial
               color={color}
               transparent
-              opacity={0.88}
+              opacity={0.55}
               depthTest={false}
               side={THREE.DoubleSide}
             />
           </mesh>
           {/* Center Reticle Point */}
           <mesh renderOrder={999}>
-            <circleGeometry args={[0.03, 16]} />
+            <circleGeometry args={[Math.min(0.02, radius * 0.08), 16]} />
             <meshBasicMaterial
               color={color}
               transparent
-              opacity={0.92}
+              opacity={0.70}
               depthTest={false}
               side={THREE.DoubleSide}
             />
@@ -243,6 +248,8 @@ export const BaseTerrainContent: React.FC = () => {
   const propSubTool = useEditorStore((s) => s.propSubTool);
   const lightEraseRadius = useEditorStore((s) => s.lightEraseRadius);
   const lightingSubTool = useEditorStore((s) => s.lightingSubTool);
+  const showWireframe = useEditorStore((s) => s.showWireframe);
+  const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
 
   // Load 52 retro textures into DataArrayTexture asynchronously on client once on mount
   useEffect(() => {
@@ -555,6 +562,7 @@ export const BaseTerrainContent: React.FC = () => {
   const handlePointerDown = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
+      if (editor.isPresentationMode || editor.activeTool === 'view') return;
 
       // Handle Building / Walls Tool Actions (Ticket 09)
       if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
@@ -971,6 +979,10 @@ export const BaseTerrainContent: React.FC = () => {
   const handlePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
+      if (editor.isPresentationMode || editor.activeTool === 'view') {
+        hideCursor();
+        return;
+      }
 
       if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
         hideCursor();
@@ -1222,6 +1234,17 @@ export const BaseTerrainContent: React.FC = () => {
   );
 
   const handlePointerUp = useCallback(() => {
+    const editor = useEditorStore.getState();
+    if (editor.isPresentationMode || editor.activeTool === 'view') {
+      isSculptingRef.current = false;
+      isPaintingRef.current = false;
+      isDrawingWallRef.current = false;
+      isDraggingFoundationRef.current = false;
+      isDrawingStairsRef.current = false;
+      isDrawingSplineRef.current = false;
+      return;
+    }
+
     if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
       const editor = useEditorStore.getState();
       const draft = editor.activeFoundationDraft;
@@ -1428,8 +1451,27 @@ export const BaseTerrainContent: React.FC = () => {
         </mesh>
       </Bvh>
 
+      {/* Ticket 16 Review Item 12: Wireframe Overlay (Gated by showWireframe & suppressed in presentation) */}
+      {showWireframe && !isPresentationMode && (
+        <mesh
+          geometry={geometry}
+          position={[0, 0.003, 0]}
+          name="BaseTerrainWireframe"
+          raycast={() => null}
+        >
+          <meshBasicMaterial
+            wireframe
+            color="#B85F45"
+            transparent
+            opacity={0.35}
+            depthTest={true}
+          />
+        </mesh>
+      )}
+
       <TerrainBrushCursor
         cursorStateRef={cursorStateRef}
+        isPresentationMode={isPresentationMode}
         radius={
           activeTool === 'foliage'
             ? foliageBrushRadius

@@ -463,6 +463,21 @@ interface EditorState {
   collapseAllPanels: () => void;
   expandAllPanels: () => void;
 
+  // Viewport Ergonomics, Guides & Presentation Mode (Ticket 16)
+  showGuides: boolean;
+  setShowGuides: (show: boolean) => void;
+  toggleGuides: () => void;
+  showWireframe: boolean;
+  setShowWireframe: (show: boolean) => void;
+  toggleWireframe: () => void;
+  showBrickRing: boolean;
+  setShowBrickRing: (show: boolean) => void;
+  toggleBrickRing: () => void;
+  isPresentationMode: boolean;
+  prePresentationTool: ToolType | null;
+  setPresentationMode: (mode: boolean) => void;
+  togglePresentationMode: () => void;
+
   isPropDrawerOpen: boolean;
   isPosterModalOpen: boolean;
   isModeSelectModalOpen: boolean;
@@ -1659,6 +1674,52 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setIsDirty: (dirty: boolean) => set({ isDirty: dirty }),
   showBottomStatusBar: true,
   toggleBottomStatusBar: () => set((state) => ({ showBottomStatusBar: !state.showBottomStatusBar })),
+
+  // Viewport Ergonomics, Guides & Presentation Mode (Ticket 16)
+  showGuides: true,
+  setShowGuides: (show: boolean) => set({ showGuides: show }),
+  toggleGuides: () => set((state) => ({ showGuides: !state.showGuides })),
+  showWireframe: false,
+  setShowWireframe: (show: boolean) => set({ showWireframe: show }),
+  toggleWireframe: () => set((state) => ({ showWireframe: !state.showWireframe })),
+  showBrickRing: true,
+  setShowBrickRing: (show: boolean) => set({ showBrickRing: show }),
+  toggleBrickRing: () => set((state) => ({ showBrickRing: !state.showBrickRing })),
+  prePresentationTool: null,
+  isPresentationMode: false,
+  setPresentationMode: (mode: boolean) =>
+    set((state) => {
+      if (mode) {
+        return {
+          isPresentationMode: true,
+          prePresentationTool: state.activeTool !== 'view' ? state.activeTool : state.prePresentationTool,
+          activeTool: 'view',
+        };
+      } else {
+        return {
+          isPresentationMode: false,
+          activeTool: state.prePresentationTool || state.activeTool || 'terrain',
+          prePresentationTool: null,
+        };
+      }
+    }),
+  togglePresentationMode: () =>
+    set((state) => {
+      const nextMode = !state.isPresentationMode;
+      if (nextMode) {
+        return {
+          isPresentationMode: true,
+          prePresentationTool: state.activeTool !== 'view' ? state.activeTool : state.prePresentationTool,
+          activeTool: 'view',
+        };
+      } else {
+        return {
+          isPresentationMode: false,
+          activeTool: state.prePresentationTool || state.activeTool || 'terrain',
+          prePresentationTool: null,
+        };
+      }
+    }),
   collapseAllPanels: () =>
     set({
       isMobileSidebarMinimized: true,

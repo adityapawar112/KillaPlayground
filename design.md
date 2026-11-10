@@ -152,7 +152,9 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
 │                          │ (W: 68px) │                                             │ (Resizable,   │
 │                          │           │                                             │  Minimizable) │
 ├──────────────────────────┴───────────┴─────────────────────────────────────────────┴───────────────┤
-│ ZONE 6: BOTTOM VIEWPORT STATUS & TIPS STRIP (BottomStatusBar.tsx) — Centered Floating Pill         │
+│ ZONE 6: UNIFIED VIEWPORT BOTTOM TOOLBAR (ViewportBottomBar.tsx) & CONTEXTUAL KEYCAPS               │
+│ • Floating In-Canvas Modifier Keycaps (ContextualKeycaps.tsx, bottom-16)                           │
+│ • Unified Viewport Dock: Camera Presets (Iso, Top, Rampart, Home) + Actions (Day/Night, Play, etc)│
 └────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -164,7 +166,8 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
   - *Blueprint Selector*: Fort preset selector dropdown (Raigad, Janjira, Sinhagad, Custom).
   - *Desktop Menu*: `File`, `Edit`, `View`, `Language`, `Help` dropdown menus (collapses to slide-out drawer on `< xl`).
   - *Language Switcher*: Quick `EN` | `म` | `हि` pill selector.
-  - *Undo / Redo*: Synchronous 15-slot history triggers (`Ctrl+Z`, `Ctrl+Y`).
+  - *Undo / Redo / Reset Quick Actions*: Synchronous history triggers (`Ctrl+Z`, `Ctrl+Y`) and canvas reset.
+  - *Minimize All / Maximize All Quick Actions*: Instant panel collapse (`Minimize2`) and panel expand (`Maximize2`) buttons for distraction-free diorama drafting.
   - *Diwali Night Diya Mode*: One-click toggle switching between sunny daytime courtyard and starlit night diorama illuminated by warm oil lamps.
   - *Toast Center*: Pinned auto-dismissing notifications with manual close (`✕`) button.
 
@@ -210,6 +213,27 @@ To eliminate visual clutter and match the ergonomic standards of professional 3D
     - *View Tool*: Right sidebar is completely hidden for unobstructed viewing.
 - **Tactile Resizing**: Left edge contains an 8px hoverable handle with 6 embossed grip dots.
 - **Minimizable**: Yes. Header button (`[ ▸ ]`) collapses panel to `translate-x-full` and deploys hanging tab (`[🏰 Outliner ▾]`).
+
+### 6. Zone 6: Unified Viewport Bottom Toolbar & Contextual Keycaps
+- **`ViewportBottomBar.tsx`**:
+  - *Position*: Anchored bottom-center (`bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 z-30`).
+  - *Cluster 1 (Camera Perspectives)*: `[Isometric (45°)]` • `[Bird's Eye / Top (90°)]` • `[Rampart Eye (15°)]` • `[Home (Focus)]`.
+  - *Cluster 2 (Environment & Actions)*: `[Day / Night (N)]` • `[Play / Pause (Space)]` • `[360° Turntable Spin]` • `[Instant Snapshot (F12)]` • `[Present (P)]` (highlighted in `#B85F45` terracotta).
+  - *Micro-Tooltips & Localization*: Trilingual support (`en`, `mr`, `hi`) with keyboard shortcut badges.
+  - *Re-export*: Re-exported as `DioramaQuickBar` for 100% backward compatibility across existing call sites.
+- **`ContextualKeycaps.tsx`**:
+  - *Position*: Floating keycap capsule anchored at `bottom-16` (`z-30`) directly above the viewport toolbar.
+  - *Dynamic Context*:
+    - Sculpting: `[Drag] Elevate • [Ctrl+Drag] Lower • [Shift+Scroll] Radius`
+    - Foliage: `[Drag] Scatter • [Alt+Drag] Erase • [Shift+Scroll] Radius`
+    - Walls & Spline: `[Click] Add Node • [Enter] Finish Wall • [Esc] Cancel`
+    - Figurines & Lights: `[Click] Place Figurine • [Shift+Scroll] Scale • [Ctrl+Scroll] Rotate`
+    - View Tool: `[Drag] Orbit • [Middle Drag] Pan • [Scroll] Zoom`
+  - *Dismissibility*: Auto-dismisses during presentation mode, screenshots, or open modals; includes an inline `✕` button.
+- **`PresentationGlassBar.tsx`**:
+  - *Position*: Floating minimalist dark stone glass capsule (`bg-[#2B2621]/85 backdrop-blur-xl border border-white/20`) active during 1-click presentation mode (`P`).
+  - *Capabilities*: Camera presets, turntable spin, diurnal toggle, high-res snapshot, poster studio shortcut, and `[Esc] Exit Presentation` pill.
+  - *Interaction Guard*: Controls auto-switch to View mode; left drag strictly orbits camera; tool pointer actions are disabled; exiting restores origin tool.
 
 ---
 

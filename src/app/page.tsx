@@ -10,6 +10,7 @@ import { ToolModeSidebar } from '@/components/hud/ToolModeSidebar';
 import { RightToolSidebar } from '@/components/hud/RightToolSidebar';
 import { BottomStatusBar } from '@/components/hud/BottomStatusBar';
 import { DioramaQuickBar } from '@/components/hud/DioramaQuickBar';
+import { PresentationGlassBar } from '@/components/hud/PresentationGlassBar';
 import { ShortcutsModal } from '@/components/modals/ShortcutsModal';
 import { ResetConfirmModal } from '@/components/modals/ResetConfirmModal';
 import { ProjectHubModal } from '@/components/modals/ProjectHubModal';
@@ -69,6 +70,7 @@ export default function HomePage() {
   const setCameraViewPreset = useEditorStore((s) => s.setCameraViewPreset);
   const viewMode = useEditorStore((s) => s.viewMode);
   const isCapturingScreenshot = useEditorStore((s) => s.isCapturingScreenshot);
+  const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
   const undo = useTerrainStore((s) => s.undo);
   const redo = useTerrainStore((s) => s.redo);
   const canUndo = useTerrainStore((s) => (s.historyVersion !== undefined ? s.canUndo() : s.canUndo()));
@@ -107,12 +109,17 @@ export default function HomePage() {
           store.setToastMessage('Stair drawing canceled.');
           return;
         }
-        if (store.isTerrainConfirmOpen) store.setTerrainConfirmOpen(false);
-        if (store.isStartupModalOpen) store.setStartupModalOpen(false);
-        if (store.isAboutModalOpen) store.setAboutModalOpen(false);
-        if (store.isShortcutsModalOpen) store.setShortcutsModalOpen(false);
-        if (store.isResetConfirmOpen) store.setResetConfirmOpen(false);
-        if (store.isTerrainDrawerOpen) store.setTerrainDrawerOpen(false);
+        if (store.isTerrainConfirmOpen) { store.setTerrainConfirmOpen(false); return; }
+        if (store.isStartupModalOpen) { store.setStartupModalOpen(false); return; }
+        if (store.isAboutModalOpen) { store.setAboutModalOpen(false); return; }
+        if (store.isShortcutsModalOpen) { store.setShortcutsModalOpen(false); return; }
+        if (store.isResetConfirmOpen) { store.setResetConfirmOpen(false); return; }
+        if (store.isPosterModalOpen) { store.setPosterModalOpen(false); return; }
+        if (store.isTerrainDrawerOpen) { store.setTerrainDrawerOpen(false); return; }
+        if (store.isPresentationMode) {
+          store.setPresentationMode(false);
+          return;
+        }
         return;
       }
 
@@ -181,8 +188,14 @@ export default function HomePage() {
         e.preventDefault();
       }
 
-      // Quick Screenshot Capture (P)
+      // 1-Click Presentation Mode (Key P)
       else if (e.key.toLowerCase() === 'p' && !e.ctrlKey && !e.metaKey) {
+        store.togglePresentationMode();
+        e.preventDefault();
+      }
+
+      // Quick Headless Screenshot Capture (F12)
+      else if (e.key === 'F12') {
         const btn = document.querySelector('button[title*="Screenshot"]') as HTMLButtonElement;
         if (btn) btn.click();
         e.preventDefault();
@@ -214,37 +227,43 @@ export default function HomePage() {
         <KillaCanvas />
       </div>
 
-
-
       {/* Primary HUD Chrome (Cleanly suppressed during screenshot capture) */}
       {!isCapturingScreenshot && (
         <>
-          {/* Desktop Application Menu Bar + Webpage Title */}
-          <AppMenuBar
-            onUndo={undo}
-            onRedo={redo}
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onSetCameraView={(view) => setCameraViewPreset(view)}
-          />
+          {/* Dedicated Diorama Presentation Bar (Review Item 13) */}
+          <PresentationGlassBar />
 
-          {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
-          <TopToolBar />
+          {/* Standard Studio Chrome (Suppressed during Presentation Mode) */}
+          {!isPresentationMode && (
+            <>
+              {/* Desktop Application Menu Bar + Webpage Title */}
+              <AppMenuBar
+                onUndo={undo}
+                onRedo={redo}
+                canUndo={canUndo}
+                canRedo={canRedo}
+                onSetCameraView={(view) => setCameraViewPreset(view)}
+              />
 
-          {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
-          <LeftToolSidebar />
+              {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
+              <TopToolBar />
 
-          {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
-          <ToolModeSidebar />
+              {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
+              <LeftToolSidebar />
 
-          {/* Right Resizable Sidebar: Outliner + Contextual Inspector */}
-          <RightToolSidebar />
+              {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
+              <ToolModeSidebar />
 
-          {/* Floating Centered Quick-Action Diorama Bar (Ticket 11) */}
-          <DioramaQuickBar />
+              {/* Right Resizable Sidebar: Outliner + Contextual Inspector */}
+              <RightToolSidebar />
 
-          {/* Unobtrusive Bottom Controls Strip */}
-          <BottomStatusBar />
+              {/* Floating Centered Unified Viewport Toolbar (Ticket 16 Review Item 11) */}
+              <DioramaQuickBar />
+
+              {/* Contextual In-Canvas Dynamic Keycaps (Ticket 16 Review Item 15) */}
+              <BottomStatusBar />
+            </>
+          )}
 
           {/* Left-Side Dropdown Terrain Studio (Visible 3D Viewport) */}
           <TerrainStudioDrawer />

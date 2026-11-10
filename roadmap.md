@@ -674,49 +674,65 @@ graph TD
 
 ## Ticket 16: Viewport Ergonomics, Celestial Lighting & Presentation Mode
 
-- **Status**: `pending`
+- **Status**: `completed` (Verified in Browser & Vitest Suites)
 - **Blocked by**: `Ticket 15`
 - **Delivers**:
   - **Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol**:
-    - *Visual Audit Baseline*: Capture screenshots of `DioramaQuickBar.tsx`, bottom status bar, viewport axes, grid overlays, brush reticles, and the lighting tool panel during Day, Golden Hour, Dusk, and Night modes.
-    - *Ticket Refinement*: Document existing button hit-boxes, tooltips, and overlay opacity values; update ticket criteria with exact coordinates and responsive rules before starting implementation.
-    - *Visual Verification*: Capture side-by-side screenshots demonstrating uncluttered viewport and presentation mode.
+    - *Visual Audit Baseline*: Captured 9 screenshots of `DioramaQuickBar.tsx`, bottom status bar, viewport axes, grid overlays, brush reticles, and lighting tool panel across diurnal phases into `screenshots/ticket16-audit/`.
+    - *Ticket Refinement*: Detailed implementation plan artifact created (`ticket16_viewport_celestial_presentation_plan.md`) and user-approved.
+    - *Visual Verification*: Captured high-res verification screenshots confirming consolidated toolbar, keycaps, wireframe, presentation mode, section reset icons, and celestial studio.
   - **Unified Bottom Viewport Toolbar (Review Item 11)**:
-    - Consolidate floating Day/Play/Screenshot/Night pill and floating navigation instruction pill into a single, cohesive, floating viewport toolbar anchored at bottom-center.
-    - Decouple camera viewpoint controls (Isometric 45°, Rampart Eye, Bird's Eye, Home) from environmental controls (Play/Pause, Day/Night toggle, Headless Snapshot).
-    - Clear icon labels with micro-tooltips showing keyboard shortcuts (`Space` for Play/Pause, `N` for Day/Night, `F12` for Snapshot).
+    - Built `ViewportBottomBar.tsx` consolidating bottom viewport controls into two distinct clusters anchored at bottom-center (`bottom-3 md:bottom-5`), eliminating the two competing vertically stacked bars:
+      - *Cluster 1 (Camera Presets):* Isometric (45°), Bird's Eye / Top (90°), Rampart Eye (15°), Home (`Focus`).
+      - *Cluster 2 (Environment & Viewport Actions):* Day/Night toggle, Play/Pause animation toggle, Turntable 360° spin, Snapshot camera button, and 1-Click Presentation Mode.
+    - Added micro-tooltips and trilingual localization (`en`, `mr`, `hi`). Re-exported as `DioramaQuickBar` for backward compatibility.
   - **Subtle & Toggleable Viewport Guides (Review Item 12)**:
-    - Reduce opacity of red/green world axes and ground perimeter guides by 50% for a cleaner diorama focus.
-    - Provide View menu toggles (`View -> Show Guides`, `View -> Show Wireframe`, `View -> Show Brick Retaining Ring`) allowing builders to customize viewport visibility.
-    - Refine 3D brush hover reticle: replace thick bright orange rings with subtle anti-aliased terracotta rings that scale cleanly with brush radius.
+    - Reduced Blender red/green world axes opacity by 50% (`0.60` -> `0.30`) for a cleaner diorama focus.
+    - Added View menu toggles: `View -> Presentation Mode (P)`, `View -> Show Viewport Guides`, `View -> Show Wireframe`, `View -> Show Brick Retaining Ring`.
+    - Integrated dynamic `BaseTerrainWireframe` overlay with warm terracotta lines (`#B85F45`) rendered at `0.35` opacity.
+    - Refined 3D brush hover reticle in `BaseTerrain.tsx`: replaced neon orange rings with subtle anti-aliased terracotta rings (`#B85F45`) at `0.55` opacity with proportional scaling.
   - **Dedicated Diorama Presentation Mode (Review Item 13)**:
-    - 1-click exhibition presentation mode (Key `P` or View menu):
-      - Smoothly collapses left properties, vertical mode rail, right outliner, and top workspace tabs.
-      - Hides all 3D editing guides, brush reticles, wireframes, and coordinate axes.
-      - Retains only a minimalist translucent glass bar: Camera Presets + Turntable, Day/Night toggle, Screenshot button, and an Exit Presentation button (`Esc`).
-    - Allows builders to admire and showcase their finished Killa with zero software distractions.
+    - 1-click exhibition presentation mode (Key `P`, View menu, or bottom bar `Present` button):
+      - Smoothly collapses menu bar, tool shelf, left properties, vertical mode rail, right outliner, and keycaps.
+      - Hides all 3D editing guides, brush reticles, wireframes, coordinate axes, and brick retaining ring (if desired).
+      - Renders `PresentationGlassBar.tsx`: minimalist dark stone glass bar (`bg-[#2B2621]/85 backdrop-blur-xl border border-white/20`) with 5 camera view presets, turntable spin, day/night toggle, screenshot button, poster studio shortcut, and exit button (`Esc`).
+      - Full keyboard binding: `P` toggles presentation mode, `Esc` cleanly exits presentation mode (after dismissing open modals).
+    - **Presentation Mode Interaction Guard**:
+      - Automatically switches `activeTool` to `'view'` mode while recording `prePresentationTool`, preventing accidental terrain sculpting, wall drawing, or painting during presentation.
+      - Pointer handlers in `BaseTerrain.tsx` return immediately in presentation mode; OrbitControls mouse buttons strictly mapped to `LEFT: THREE.MOUSE.ROTATE`.
+      - Exiting presentation mode cleanly restores the user's previous tool and tool mode.
   - **Preset-First Celestial Lighting Studio (Review Item 14)**:
-    - Reorganize Lighting tool panel to lead with 4 prominent celestial presets:
-      - 🌅 *Dawn*: Soft rose-gold morning light, long mountain shadows.
-      - ☀️ *Noon*: Crisp high-angle sun, vibrant earthen textures.
-      - 🌇 *Golden Hour*: Warm amber sunset, blazing bastion silhouettes.
-      - 🌙 *Diwali Night*: Deep star-lit indigo sky, glowing diyas, and celebratory fireworks.
-    - Move granular sliders (Sun Azimuth, Elevation, Moon Azimuth, Light Bounce, Diya Radius) into an expandable `Advanced Lighting & Atmosphere` accordion.
-    - Add a 1-click "Reset to Preset Defaults" action and clear numeric degree/lux readouts.
+    - Reorganized View & Celestial Studio panel (`activeTool === 'view'`) in `LeftToolSidebar.tsx` with 4 prominent cards:
+      - 🌅 *Dawn (06:00)*: Soft rose-gold morning light, long mountain shadows.
+      - ☀️ *Noon (12:00)*: Crisp high-angle sun, vibrant earthen textures.
+      - 🌇 *Golden Hour (17:30)*: Warm amber sunset, blazing bastion silhouettes.
+      - 🌙 *Diwali Night (21:00)*: Deep star-lit indigo sky, glowing diyas, and celebratory fireworks.
+    - **Standard Advanced Settings Pattern**: Aligned with all other sidebar tools using a fixed footer checkbox `[✓] ADVANCED SETTINGS` (`showAdvanced`) that reveals granular sliders: Sun Elevation, Sun / Moon Azimuth, Time of Day, Light Bounce, Atmospheric Fog, Camera Exposure, and a 1-click `Reset to Preset Defaults` button.
+    - Added quick celestial preview pills (`[Day] [Golden Hour] [Night]`) inside Lighting tool (`place` mode).
   - **Contextual In-Canvas Tool Instructions (Review Item 15)**:
-    - Replace the permanent static bottom instruction bar with contextual, transient floating keycap badges that adapt dynamically to the active tool:
-      - *Rampart Drafting:* `[Click] Add Node` • `[Enter] Finish Wall` • `[Esc] Cancel`
-      - *Foliage Scatter:* `[Drag] Scatter` • `[Alt + Drag] Erase` • `[Shift + Scroll] Radius`
-      - *Sculpting:* `[Drag] Elevate` • `[Ctrl + Drag] Lower` • `[Shift + Scroll] Radius`
-    - Auto-dismisses when not in an active drafting interaction.
+    - Built `ContextualKeycaps.tsx`: floating keycap capsule pinned at `bottom-16` directly above the viewport toolbar:
+      - *Sculpting:* `[Drag] Elevate` • `[Ctrl+Drag] Lower` • `[Shift+Scroll] Radius`
+      - *Foliage:* `[Drag] Scatter` • `[Alt+Drag] Erase` • `[Shift+Scroll] Radius`
+      - *Walls / Spline:* `[Click] Add Node` • `[Enter] Finish Wall` • `[Esc] Cancel`
+      - *Figurines / Lights:* `[Click] Place` • `[Shift+Scroll] Scale` • `[Ctrl+Scroll] Rotate`
+      - *View Mode:* `[Drag] Orbit` • `[Middle Drag] Pan` • `[Scroll] Zoom`
+    - Auto-dismisses during presentation mode, screenshots, or open dialogs; includes dismiss `×` button.
+  - **Section Reset Icons on All Properties Dividers**:
+    - Added subtle `RotateCcw` reset icon to every contextual divider section across all tools and tool modes (`GEOMETRY`, `APPEARANCE`, `PLACEMENT`, `BEHAVIOR`, `LIGHTING`, `CAMERA`), allowing 1-click resets to section defaults.
+  - **Panel Minimize All & Maximize All in Top Bar**:
+    - Restored `Minimize All` (`Minimize2`) and `Maximize All` (`Maximize2`) buttons inside the quick actions pill of `AppMenuBar.tsx` right next to Undo, Redo, and Reset.
 
 ### Acceptance Criteria
-- [ ] Pre-execution screenshot audit completed for viewport overlays, quick-action bar, and lighting controls.
-- [ ] Single consolidated bottom viewport toolbar replaces multiple floating control pills.
-- [ ] Viewport guides feature reduced opacity and are individually toggleable via the View menu.
-- [ ] Presentation mode hides all sidebars, rails, and guides with 1-click entry and `Esc` exit.
-- [ ] Lighting panel promotes 4 celestial presets first, housing granular sliders in an advanced accordion.
-- [ ] Contextual keycaps and instructions dynamically reflect active tool state.
+- [x] Pre-execution screenshot audit completed for viewport overlays, quick-action bar, and lighting controls (`screenshots/ticket16-audit/`).
+- [x] Single consolidated bottom viewport toolbar replaces multiple floating control pills (`ViewportBottomBar.tsx`).
+- [x] Viewport guides feature reduced opacity and are individually toggleable via the View menu (`showGuides`, `showWireframe`, `showBrickRing`).
+- [x] Presentation mode hides all sidebars, rails, and guides with 1-click entry (`P`) and `Esc` exit (`PresentationGlassBar.tsx`), with interaction guard switching controls to view mode.
+- [x] Lighting panel promotes 4 celestial presets first, housing granular sliders behind the standard `[✓] ADVANCED SETTINGS` checkbox.
+- [x] Section reset icons added to all properties dividers across all tools and tool modes.
+- [x] Minimize All and Maximize All quick actions restored to top menu bar.
+- [x] Contextual keycaps and instructions dynamically reflect active tool state (`ContextualKeycaps.tsx`).
+- [x] Vitest unit test suite passes with 100% success (`src/components/hud/ticket16.test.ts` - 19 tests, 38 suites, 273 tests).
+- [x] Production build passes with 0 errors (`npm run build` static prerender 7/7).
 
 ---
 

@@ -241,23 +241,30 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
      * **Camera Lens FOV Slider:** 20° Telephoto to 80° Wide-Angle (45° Standard default).
      * **Dual Navigation Modes:** Free Orbit Spectator Mode (`orbit`) and Continuous 360° Turntable Exhibition Mode (`spin`).
      * **Celebration Fireworks 5s Salvo:** Dedicated test button that triggers all placed fireworks across the diorama for 5 seconds regardless of time, with a 5-second disable cooldown.
-   * **Centered Quick-Action Diorama Bar (`DioramaQuickBar.tsx`):**
-     * Floating 5-button dock mounted centered directly above status bar (`[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`).
-     * Governs decoupled ambient 60 FPS animation loop (tree wind sway, particle progression) and instant high-res viewport screenshot capture.
+   * **Unified Viewport Bottom Toolbar (`ViewportBottomBar.tsx`):**
+     * Floating 2-cluster dock mounted centered at bottom viewport (`bottom-3 md:bottom-5`):
+       * *Cluster 1:* 4 Camera perspectives (Isometric 45°, Top 90°, Rampart 15°, Focus Home).
+       * *Cluster 2:* Environment and actions (Day/Night toggle, Play/Pause animation, 360° Turntable, Snapshot camera, 1-Click Presentation Mode).
+     * Re-exported as `DioramaQuickBar` for backward compatibility across all legacy consumers.
+   * **Contextual In-Canvas Keycaps (`ContextualKeycaps.tsx`):**
+     * Dynamically reads active tool and mode, rendering contextual modifier keycaps (`[Drag] Elevate • [Ctrl+Drag] Lower • [Shift+Scroll] Radius`, etc.) pinned at `bottom-16`. Auto-dismisses during presentation mode or screenshot captures.
+   * **Dedicated Diorama Presentation Mode (`PresentationGlassBar.tsx`):**
+     * Fullscreen exhibition mode collapsing all studio toolbars and panels with a floating dark stone glass capsule.
+     * **Presentation Mode Interaction Guard**: Automatically switches `activeTool` to `'view'` mode upon entry, preserving origin tool in `prePresentationTool`. Pointer events in `BaseTerrain.tsx` are disabled for sculpt/paint/build, and OrbitControls mouse buttons are strictly mapped to `LEFT: THREE.MOUSE.ROTATE`. Exiting via `Esc` or pill restores origin tool.
 
 ---
 
 ### 4.3 Decoupled 5-Zone HUD Layout & Resizing Engine
 The user interface is architected into 6 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
 
-1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`TbArrowsMinimize` / `TbArrowsMaximize`).
+1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo/reset, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`Minimize2` / `Maximize2`).
 2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 7 primary fort construction tools (Terrain, Building, Texture, Foliage, Figurines, Lighting, View) and camera preset view controls. Soil pipeline tools are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
-3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Minimizes into `[⚙️ Properties ▾]`.
+3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Features section header reset icons (`RotateCcw`) on every property group divider line (`GEOMETRY`, `APPEARANCE`, `PLACEMENT`, `BEHAVIOR`, `LIGHTING`, `CAMERA`), and standard footer checkbox `[✓] ADVANCED SETTINGS` (`showAdvanced`). Minimizes into `[⚙️ Properties ▾]`.
 4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Building (`Select`, `Walls`, `Foundation`, `Stairs`, `Fortifications`), Lighting (`Place`, `Select`, `Transform`, `Erase`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Automatically hidden during `View` tool. Minimizes into `[🎯 Modes ▾]`.
 5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage / figurine / lighting vault browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Automatically hidden during `View` tool. Minimizes into `[🏰 Outliner ▾]`.
-6. **`QuickActionBar.tsx` & `BottomStatusBar.tsx`**:
-   - `QuickActionBar.tsx`: Centered floating 5-button control dock mounted directly above `BottomStatusBar.tsx` (`[ ☀️ Day | ▶ Play | ⏸ Pause | 📷 Screenshot | 🌙 Night ]`). Governs ambient animation loops and instant high-res viewport screenshot capture.
-   - `BottomStatusBar.tsx`: Viewport navigation and tool guide pill centered at bottom screen. Contextually detects active tool and subtool to display exact primary action (`Left Click: [Action] • Right Drag: Orbit • Middle Drag: Pan • Scroll: Zoom`).
+6. **`ViewportBottomBar.tsx` & `ContextualKeycaps.tsx`**:
+   - `ViewportBottomBar.tsx`: Centered floating 2-cluster control dock (`bottom-3 md:bottom-5`) consolidating camera viewpoints, day/night cycles, animation loops, turntable, snapshot capture, and presentation mode.
+   - `ContextualKeycaps.tsx`: Floating modifier keycap hints (`bottom-16`) detecting active tool state for zero-friction discoverability.
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic
 To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:

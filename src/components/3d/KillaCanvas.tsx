@@ -44,13 +44,14 @@ const AtmosphericEnvironment: React.FC<{
 };
 
 // Ground Axis Lines matching Blender (Red X-Axis & Green Y/Z-Depth Axis)
+// Ticket 16 Review Item 12: Reduced opacity by 50% (0.6 -> 0.30) for a cleaner diorama focus
 const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
   const { lineX, lineZ, geoX, geoZ, matX, matZ } = useMemo(() => {
     const matX = new THREE.LineBasicMaterial({
       color: nightMode ? '#ef4444' : '#dc2626',
       linewidth: 1.5,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.3,
       depthWrite: false,
     });
 
@@ -58,7 +59,7 @@ const BlenderAxisLines: React.FC<{ nightMode: boolean }> = ({ nightMode }) => {
       color: nightMode ? '#22c55e' : '#16a34a',
       linewidth: 1.5,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.3,
       depthWrite: false,
     });
 
@@ -121,6 +122,7 @@ const CameraKeyboardController: React.FC<{
   const activeTool = useEditorStore((s) => s.activeTool);
   const wallMode = useEditorStore((s) => s.wallMode);
   const splineMode = useEditorStore((s) => s.splineMode);
+  const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
 
   const resetCamera = useCallback(() => {
     if (!controlsRef.current) return;
@@ -136,12 +138,13 @@ const CameraKeyboardController: React.FC<{
     }
   }, [controlsRef]);
 
-  // Synchronize dynamic mouse buttons immediately whenever activeTool, wallMode, or splineMode changes
+  // Synchronize dynamic mouse buttons immediately whenever activeTool, wallMode, splineMode, or isPresentationMode changes
   useEffect(() => {
     if (!controlsRef.current) return;
-    const buttons = getOrbitMouseButtons(activeTool, wallMode, splineMode);
+    const effectiveTool = isPresentationMode ? 'view' : activeTool;
+    const buttons = getOrbitMouseButtons(effectiveTool, wallMode, splineMode);
     controlsRef.current.mouseButtons = buttons as any;
-  }, [controlsRef, activeTool, wallMode, splineMode]);
+  }, [controlsRef, activeTool, wallMode, splineMode, isPresentationMode]);
 
   // Respond to store reset trigger
   useEffect(() => {
@@ -315,6 +318,9 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
   const bounceIntensityMultiplier = useEditorStore((s) => s.bounceIntensityMultiplier);
   const exposureMultiplier = useEditorStore((s) => s.exposureMultiplier);
   const isCapturingScreenshot = useEditorStore((s) => s.isCapturingScreenshot);
+  const showGuides = useEditorStore((s) => s.showGuides);
+  const showBrickRing = useEditorStore((s) => s.showBrickRing);
+  const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -707,13 +713,15 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         {/* 3D Celestial Sky Rig: Sun Disc / Corona & Moon Disc / Halo */}
         <CelestialSkyRig config={atmosphericConfig} />
 
-        {/* Blender Red X-Axis & Green Y/Z-Depth Axis (Suppressed during View presentation & Screenshots) */}
-        {!isCapturingScreenshot && activeTool !== 'view' && (
+        {/* Blender Red X-Axis & Green Y/Z-Depth Axis (Suppressed during Presentation, View tool, Screenshots, or when Guides toggled off) */}
+        {!isCapturingScreenshot && !isPresentationMode && showGuides && activeTool !== 'view' && (
           <BlenderAxisLines nightMode={nightMode} />
         )}
 
-        {/* Retaining Courtyard Red Clay Brick Perimeter */}
-        <CourtyardBricks nightMode={nightMode} />
+        {/* Retaining Courtyard Red Clay Brick Perimeter (Gated by showBrickRing toggle) */}
+        {!isCapturingScreenshot && showBrickRing && (
+          <CourtyardBricks nightMode={nightMode} />
+        )}
 
         {/* Base Terrain with StateBuffer DataTexture & BVH Acceleration */}
         <BaseTerrain />

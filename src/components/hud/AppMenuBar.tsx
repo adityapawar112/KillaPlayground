@@ -28,6 +28,9 @@ import {
   Minimize2,
   Maximize2,
   FolderOpen,
+  Grid,
+  Box,
+  Layers,
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
@@ -73,6 +76,14 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     toggleContextualDock,
     showBottomStatusBar,
     toggleBottomStatusBar,
+    showGuides,
+    toggleGuides,
+    showWireframe,
+    toggleWireframe,
+    showBrickRing,
+    toggleBrickRing,
+    isPresentationMode,
+    togglePresentationMode,
     collapseAllPanels,
     expandAllPanels,
     setPosterModalOpen,
@@ -762,10 +773,27 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                 <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
               {activeMenu === 'view' && (
-                <div className="absolute top-full left-0 mt-1 w-60 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
+                <div className="absolute top-full left-0 mt-1 w-64 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
+                  {/* Presentation Mode Trigger */}
+                  <button
+                    onClick={() => {
+                      togglePresentationMode();
+                      setActiveMenu(null);
+                    }}
+                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Maximize2 className="w-4 h-4 text-[#B85F45]" />
+                      <span className="font-semibold text-[#B85F45]">{t.appMenuBar.presentationMode}</span>
+                    </span>
+                    <kbd className="text-[10px] text-[#7C7267] font-mono">P</kbd>
+                  </button>
+                  <div className="my-1 border-t border-[#D8D1C5]" />
+
+                  {/* Panel Visibility */}
                   <button
                     onClick={toggleLeftToolbar}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Eye className="w-4 h-4 text-[#5A5248]" />
@@ -775,7 +803,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   </button>
                   <button
                     onClick={toggleContextualDock}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Eye className="w-4 h-4 text-[#5A5248]" />
@@ -785,7 +813,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                   </button>
                   <button
                     onClick={toggleBottomStatusBar}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Eye className="w-4 h-4 text-[#5A5248]" />
@@ -794,9 +822,43 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                     {showBottomStatusBar && <Check className="w-4 h-4 text-[#777A57]" />}
                   </button>
                   <div className="my-1 border-t border-[#D8D1C5]" />
+
+                  {/* Viewport Guides & Wireframe (Ticket 16 Review Item 12) */}
+                  <button
+                    onClick={toggleGuides}
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Grid className="w-4 h-4 text-[#5A5248]" />
+                      {t.appMenuBar.showGuides}
+                    </span>
+                    {showGuides && <Check className="w-4 h-4 text-[#777A57]" />}
+                  </button>
+                  <button
+                    onClick={toggleWireframe}
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Box className="w-4 h-4 text-[#5A5248]" />
+                      {t.appMenuBar.showWireframe}
+                    </span>
+                    {showWireframe && <Check className="w-4 h-4 text-[#777A57]" />}
+                  </button>
+                  <button
+                    onClick={toggleBrickRing}
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-[#5A5248]" />
+                      {t.appMenuBar.showBrickRing}
+                    </span>
+                    {showBrickRing && <Check className="w-4 h-4 text-[#777A57]" />}
+                  </button>
+
+                  <div className="my-1 border-t border-[#D8D1C5]" />
                   <button
                     onClick={toggleNightMode}
-                    className="w-full px-3.5 py-2 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
                       <Flame className="w-4 h-4 text-[#F59E0B]" />
@@ -965,7 +1027,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
 
         {/* Right cluster: Quick Action Pills */}
         <div className="flex items-center gap-1 sm:gap-1.5">
-          {/* Quick Undo / Redo / Reset */}
+          {/* Quick Undo / Redo / Reset / Minimize & Maximize All */}
           <div className="flex items-center bg-[#FAF8F5] rounded-lg p-0.5 border border-[#D8D1C5]">
             <button
               onClick={onUndo}
@@ -994,6 +1056,21 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               title={t.appMenuBar.resetCanvas}
             >
               <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+            <div className="w-[1px] h-3 bg-[#D9C9B4] mx-0.5" />
+            <button
+              onClick={collapseAllPanels}
+              className="p-1 rounded text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B1E16] transition-colors cursor-pointer"
+              title={t.appMenuBar.collapseAllPanels}
+            >
+              <Minimize2 className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={expandAllPanels}
+              className="p-1 rounded text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B1E16] transition-colors cursor-pointer"
+              title={t.appMenuBar.expandAllPanels}
+            >
+              <Maximize2 className="w-3.5 h-3.5" />
             </button>
           </div>
 

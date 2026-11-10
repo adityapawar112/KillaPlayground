@@ -95,14 +95,7 @@ All interactive 3D tools must implement standard ergonomic wheel gestures, inter
 
 ---
 
-## 8. Unified Pill-in-Pill Language Selector
-
-- **Single Source of Truth:** All language selection across the application MUST use [`LanguageSelector.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/common/LanguageSelector.tsx). Never write ad-hoc inline language button arrays.
-- **Pill-in-Pill Geometry:** Both outer container and active language buttons MUST be `rounded-full` pills with Level 3 basalt active highlight (`bg-[#2B2621] text-[#FAF8F5]`). Never render square or box highlights inside rounded containers.
-
----
-
-## 9. Mandatory UI Consistency Verification Protocol
+## 8. Mandatory UI Consistency Verification Protocol
 
 Before completing any task that adds or edits UI components:
 1. **Compare Sibling Panels:** Confirm that slider spacing, label typography, font sizes, and container styles match the canonical `Spline` and `Terrain` panels in [`LeftToolSidebar.tsx`](file:///c:/Users/adity/Desktop/Projects/KillaPlayground/src/components/hud/LeftToolSidebar.tsx).

@@ -23,32 +23,33 @@ import {
   ChevronDown,
   RotateCw,
   RefreshCw,
-  Clapperboard,
   Sparkles,
+  Columns2,
 } from 'lucide-react';
 import {
   useEditorStore,
   BuildingMode,
-  WallMode,
-  SplineMode,
   TerrainSubTool,
-  FoliageSubTool,
-  LightingSubTool,
   ViewMode,
 } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { getTextureById } from '@/lib/textures/textureManifest';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 
+interface SubToolItem {
+  id: string;
+  label: string;
+  icon: React.ElementType;
+  title: string;
+  shortcut: string;
+  category?: string;
+}
+
 export const ToolModeSidebar: React.FC = () => {
   const {
     activeTool,
     buildingMode,
     setBuildingMode,
-    wallMode,
-    setWallMode,
-    splineMode,
-    setSplineMode,
     terrainSubTool,
     setTerrainSubTool,
     paintSubTool,
@@ -68,6 +69,8 @@ export const ToolModeSidebar: React.FC = () => {
     isMobileTopBarMinimized,
     leftSidebarWidth,
     isMobileSidebarMinimized,
+    isToolRailCompact,
+    toggleToolRailCompact,
   } = useEditorStore();
   const { t } = useTranslation();
 
@@ -89,15 +92,63 @@ export const ToolModeSidebar: React.FC = () => {
   ];
   if (!toolsWithModes.includes(activeTool)) return null;
 
-  // Responsive dynamic top offset
+  // Standard Studio Header dynamic top offset
   const topOffsetClass = !showContextualDock || isMobileTopBarMinimized
-    ? 'top-[41px]'
-    : 'top-[112px] xl:top-[81px]';
+    ? 'top-[38px]'
+    : 'top-[72px]';
 
   // Dynamic horizontal position based on Left Sidebar state
   const isLeftSidebarOpen = !isMobileSidebarMinimized;
   const modeRailLeft = isLeftSidebarOpen ? `${leftSidebarWidth}px` : '0px';
-  const minimizedTabLeft = isLeftSidebarOpen ? `${leftSidebarWidth + 8}px` : '116px';
+  const minimizedTabLeft = isLeftSidebarOpen ? `${leftSidebarWidth + 8}px` : '108px';
+
+  // Rail width based on compact mode toggle
+  const railWidthClass = isToolRailCompact ? 'w-[48px]' : 'w-[68px]';
+
+  const renderToolButton = (item: SubToolItem, isActive: boolean, onClick: () => void) => {
+    const Icon = item.icon;
+    return (
+      <button
+        key={item.id}
+        onClick={onClick}
+        title={`${item.title} (${item.shortcut})`}
+        aria-label={item.label}
+        className={`group relative flex items-center justify-center rounded-lg transition-all cursor-pointer active:scale-95 ${
+          isToolRailCompact ? 'w-8 h-8 mx-auto' : 'w-full py-1.5 px-1 flex-col'
+        } ${
+          isActive
+            ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
+            : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
+        }`}
+      >
+        <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
+        {!isToolRailCompact && (
+          <span className="font-medium text-[9px] mt-0.5 leading-tight text-center tracking-tight truncate max-w-full">
+            {item.label}
+          </span>
+        )}
+
+        {/* Hover Tooltip with Name + Shortcut */}
+        <div className="pointer-events-none absolute left-full ml-2 z-50 hidden group-hover:flex items-center gap-1.5 rounded-md bg-[#23211E] px-2 py-1 text-[10px] font-medium text-white shadow-lg border border-[#FAF8F5]/10 whitespace-nowrap">
+          <span>{item.label}</span>
+          <span className="text-[#B85F45] font-mono text-[9px]">({item.shortcut})</span>
+        </div>
+      </button>
+    );
+  };
+
+  const renderCategoryDivider = (label: string) => {
+    return (
+      <div className="pt-1.5 pb-0.5">
+        <div className="border-t border-[#D8D1C5]" />
+        {!isToolRailCompact && (
+          <div className="text-[8.5px] font-semibold uppercase tracking-wider text-[#7C7267] text-center pt-1 truncate">
+            {label}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -109,11 +160,11 @@ export const ToolModeSidebar: React.FC = () => {
         >
           <button
             onClick={toggleToolMode}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#EBE6DC] border border-[#D8D1C5] rounded-b-md shadow-sm text-xs font-semibold text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+            className="flex items-center gap-1 px-2.5 py-1 bg-[#EBE6DC] border border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
             title={t.toolModeSidebar.openModes}
           >
-            <span className="text-[11px] font-semibold">{t.toolModeSidebar.mode}</span>
-            <ChevronDown size={14} strokeWidth={1.75} className="text-[#5A5248]" />
+            <span className="text-[10px] font-semibold">{t.toolModeSidebar.mode}</span>
+            <ChevronDown size={13} strokeWidth={1.75} className="text-[#5A5248]" />
           </button>
         </div>
       )}
@@ -123,265 +174,195 @@ export const ToolModeSidebar: React.FC = () => {
         <aside
           aria-label="Tool Operational Modes"
           style={{ left: modeRailLeft }}
-          className={`fixed ${topOffsetClass} bottom-0 z-30 flex flex-col w-[76px] bg-[#EBE6DC] border-r border-[#D8D1C5] shadow-xs select-none pointer-events-auto transition-all duration-200 font-sans`}
+          className={`fixed ${topOffsetClass} bottom-0 z-30 flex flex-col ${railWidthClass} bg-[#EBE6DC] border-r border-[#D8D1C5] shadow-xs select-none pointer-events-auto transition-all duration-200 font-sans`}
         >
-          {/* Header Strip with Minimize Toggle */}
-          <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-[#D8D1C5] bg-[#EBE6DC]">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#7C7267]">
-              {t.toolModeSidebar.mode}
-            </span>
+          {/* Header Strip with Density & Minimize Toggles */}
+          <div className="flex items-center justify-between px-1.5 py-1 border-b border-[#D8D1C5] bg-[#EBE6DC] shrink-0">
+            <button
+              onClick={toggleToolRailCompact}
+              className="p-1 rounded hover:bg-[#D8D1C5] text-[#5A5248] transition-colors cursor-pointer"
+              title={isToolRailCompact ? 'Show Tool Labels' : 'Compact Icon Rail'}
+            >
+              <Columns2 size={13} strokeWidth={1.75} />
+            </button>
             <button
               onClick={toggleToolMode}
-              className="p-1 rounded-md hover:bg-[#D8D1C5] text-[#5A5248] transition-colors cursor-pointer"
+              className="p-1 rounded hover:bg-[#D8D1C5] text-[#5A5248] transition-colors cursor-pointer"
               title={t.toolModeSidebar.minimizeModes}
             >
               <ChevronLeft size={14} strokeWidth={1.75} />
             </button>
           </div>
 
-          {/* Vertical Buttons Column */}
-          <div className="flex-1 overflow-y-auto no-scrollbar p-1.5 flex flex-col gap-1.5">
-            {/* A. UNIFIED BUILDING MODES */}
+          {/* Vertical Buttons Column with Logical Groupings */}
+          <div className="flex-1 overflow-y-auto no-scrollbar p-1 flex flex-col gap-1">
+            {/* A. BUILDING & WALLS MODES (Select | Build) */}
             {(activeTool === 'building' || activeTool === 'walls') && (
               <>
-                {[
-                  { id: 'select' as BuildingMode, label: t.toolModeSidebar.buildingModes.select, icon: MousePointer, title: t.toolModeSidebar.buildingTitles.select },
-                  { id: 'walls' as BuildingMode, label: t.toolModeSidebar.buildingModes.walls, icon: Pencil, title: t.toolModeSidebar.buildingTitles.walls },
-                  { id: 'foundation' as BuildingMode, label: t.toolModeSidebar.buildingModes.foundation, icon: Box, title: t.toolModeSidebar.buildingTitles.foundation },
-                  { id: 'stairs' as BuildingMode, label: t.toolModeSidebar.buildingModes.stairs, icon: Footprints, title: t.toolModeSidebar.buildingTitles.stairs },
-                  { id: 'fortifications' as BuildingMode, label: t.toolModeSidebar.buildingModes.fortifications, icon: TowerControl, title: t.toolModeSidebar.buildingTitles.fortifications },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = (buildingMode || 'walls') === m.id;
+                {renderCategoryDivider('Select')}
+                {renderToolButton(
+                  { id: 'select', label: t.toolModeSidebar.buildingModes.select, icon: MousePointer, title: t.toolModeSidebar.buildingTitles.select, shortcut: '1' },
+                  buildingMode === 'select',
+                  () => setBuildingMode('select')
+                )}
 
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setBuildingMode(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[10px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {renderCategoryDivider('Build')}
+                {[
+                  { id: 'walls' as BuildingMode, label: t.toolModeSidebar.buildingModes.walls, icon: Pencil, title: t.toolModeSidebar.buildingTitles.walls, shortcut: '2' },
+                  { id: 'foundation' as BuildingMode, label: t.toolModeSidebar.buildingModes.foundation, icon: Box, title: t.toolModeSidebar.buildingTitles.foundation, shortcut: '3' },
+                  { id: 'stairs' as BuildingMode, label: t.toolModeSidebar.buildingModes.stairs, icon: Footprints, title: t.toolModeSidebar.buildingTitles.stairs, shortcut: '4' },
+                  { id: 'fortifications' as BuildingMode, label: t.toolModeSidebar.buildingModes.fortifications, icon: TowerControl, title: t.toolModeSidebar.buildingTitles.fortifications, shortcut: '5' },
+                ].map((m) =>
+                  renderToolButton(m, (buildingMode || 'walls') === m.id, () => setBuildingMode(m.id))
+                )}
               </>
             )}
 
-            {/* C. TERRAIN MODES: 8 Subtools */}
+            {/* B. TERRAIN SCULPT MODES (Sculpt | Refine | Paint) */}
             {activeTool === 'terrain' && (
               <>
+                {renderCategoryDivider('Sculpt')}
                 {[
-                  { id: 'elevate' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.elevate, icon: Mountain, title: t.toolModeSidebar.terrainTitles.elevate },
-                  { id: 'plateau' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.plateau, icon: Minus, title: t.toolModeSidebar.terrainTitles.plateau },
-                  { id: 'slope' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.slope, icon: ArrowUpRight, title: t.toolModeSidebar.terrainTitles.slope },
-                  { id: 'lower' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.lower, icon: TrendingDown, title: t.toolModeSidebar.terrainTitles.lower },
-                  { id: 'trench' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.trench, icon: Activity, title: t.toolModeSidebar.terrainTitles.trench },
-                  { id: 'smooth' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.smooth, icon: Waves, title: t.toolModeSidebar.terrainTitles.smooth },
-                  { id: 'pond' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.pond, icon: Droplets, title: t.toolModeSidebar.terrainTitles.pond },
-                  { id: 'retexture' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.retexture, icon: Paintbrush, title: t.toolModeSidebar.terrainTitles.retexture },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive =
-                    terrainSubTool === m.id ||
-                    (m.id === 'retexture' && terrainSubTool === 'soil');
+                  { id: 'elevate' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.elevate, icon: Mountain, title: t.toolModeSidebar.terrainTitles.elevate, shortcut: '1' },
+                  { id: 'plateau' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.plateau, icon: Minus, title: t.toolModeSidebar.terrainTitles.plateau, shortcut: '2' },
+                  { id: 'slope' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.slope, icon: ArrowUpRight, title: t.toolModeSidebar.terrainTitles.slope, shortcut: '3' },
+                  { id: 'lower' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.lower, icon: TrendingDown, title: t.toolModeSidebar.terrainTitles.lower, shortcut: '4' },
+                  { id: 'trench' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.trench, icon: Activity, title: t.toolModeSidebar.terrainTitles.trench, shortcut: '5' },
+                ].map((m) =>
+                  renderToolButton(m, terrainSubTool === m.id, () => setTerrainSubTool(m.id))
+                )}
 
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setTerrainSubTool(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[9px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {renderCategoryDivider('Refine')}
+                {[
+                  { id: 'smooth' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.smooth, icon: Waves, title: t.toolModeSidebar.terrainTitles.smooth, shortcut: '6' },
+                  { id: 'pond' as TerrainSubTool, label: t.toolModeSidebar.terrainModes.pond, icon: Droplets, title: t.toolModeSidebar.terrainTitles.pond, shortcut: '7' },
+                ].map((m) =>
+                  renderToolButton(m, terrainSubTool === m.id, () => setTerrainSubTool(m.id))
+                )}
+
+                {renderCategoryDivider('Paint')}
+                {renderToolButton(
+                  { id: 'retexture', label: t.toolModeSidebar.terrainModes.retexture, icon: Paintbrush, title: t.toolModeSidebar.terrainTitles.retexture, shortcut: '8' },
+                  terrainSubTool === 'retexture' || terrainSubTool === 'soil',
+                  () => setTerrainSubTool('retexture')
+                )}
               </>
             )}
 
-            {/* D. TEXTURE MODES: Paint | Erase | Fill */}
+            {/* C. TEXTURE MODES (Brush | Erase) */}
             {(activeTool === 'texture' || activeTool === 'paint') && (
               <>
-                {[
-                  { id: 'paint' as const, label: t.toolModeSidebar.textureModes.paint, icon: Paintbrush, title: t.toolModeSidebar.textureTitles.paint },
-                  { id: 'erase' as const, label: t.toolModeSidebar.textureModes.erase, icon: Eraser, title: t.toolModeSidebar.textureTitles.erase },
-                  { id: 'fill' as const, label: t.toolModeSidebar.textureModes.fill, icon: Sparkles, title: t.toolModeSidebar.textureTitles.fill },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = paintSubTool === m.id;
+                {renderCategoryDivider('Brush')}
+                {renderToolButton(
+                  { id: 'paint', label: t.toolModeSidebar.textureModes.paint, icon: Paintbrush, title: t.toolModeSidebar.textureTitles.paint, shortcut: 'B' },
+                  paintSubTool === 'paint',
+                  () => setPaintSubTool('paint')
+                )}
+                {renderToolButton(
+                  { id: 'fill', label: t.toolModeSidebar.textureModes.fill, icon: Sparkles, title: t.toolModeSidebar.textureTitles.fill, shortcut: 'F' },
+                  false,
+                  () => {
+                    const sel = useEditorStore.getState().selectedTextureId;
+                    const meta = getTextureById(sel);
+                    const layerIdx = meta ? meta.layerIndex : 0;
+                    useTerrainStore.getState().fillPaintTerrain(layerIdx);
+                    useEditorStore.getState().setToastMessage(t.toolModeSidebar.textureTitles.fill);
+                  }
+                )}
 
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => {
-                        if (m.id === 'fill') {
-                          const sel = useEditorStore.getState().selectedTextureId;
-                          const meta = getTextureById(sel);
-                          const layerIdx = meta ? meta.layerIndex : 0;
-                          useTerrainStore.getState().fillPaintTerrain(layerIdx);
-                          useEditorStore.getState().setToastMessage(t.toolModeSidebar.textureTitles.fill);
-                        } else {
-                          setPaintSubTool(m.id as 'paint' | 'erase');
-                        }
-                      }}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[9px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {renderCategoryDivider('Erase')}
+                {renderToolButton(
+                  { id: 'erase', label: t.toolModeSidebar.textureModes.erase, icon: Eraser, title: t.toolModeSidebar.textureTitles.erase, shortcut: 'E' },
+                  paintSubTool === 'erase',
+                  () => setPaintSubTool('erase')
+                )}
               </>
             )}
 
-            {/* E. FOLIAGE MODES: Scatter | Single | Erase */}
+            {/* D. FOLIAGE MODES (Scatter | Erase) */}
             {activeTool === 'foliage' && (
               <>
+                {renderCategoryDivider('Scatter')}
                 {[
-                  { id: 'scatter' as const, label: t.toolModeSidebar.foliageModes.scatter, icon: Trees, title: t.toolModeSidebar.foliageTitles.scatter },
-                  { id: 'single' as const, label: t.toolModeSidebar.foliageModes.single, icon: Focus, title: t.toolModeSidebar.foliageTitles.single },
-                  { id: 'erase' as const, label: t.toolModeSidebar.foliageModes.erase, icon: Eraser, title: t.toolModeSidebar.foliageTitles.erase },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = foliageSubTool === m.id;
+                  { id: 'scatter' as const, label: t.toolModeSidebar.foliageModes.scatter, icon: Trees, title: t.toolModeSidebar.foliageTitles.scatter, shortcut: '1' },
+                  { id: 'single' as const, label: t.toolModeSidebar.foliageModes.single, icon: Focus, title: t.toolModeSidebar.foliageTitles.single, shortcut: '2' },
+                ].map((m) =>
+                  renderToolButton(m, foliageSubTool === m.id, () => setFoliageSubTool(m.id))
+                )}
 
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setFoliageSubTool(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[9px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {renderCategoryDivider('Erase')}
+                {renderToolButton(
+                  { id: 'erase', label: t.toolModeSidebar.foliageModes.erase, icon: Eraser, title: t.toolModeSidebar.foliageTitles.erase, shortcut: 'E' },
+                  foliageSubTool === 'erase',
+                  () => setFoliageSubTool('erase')
+                )}
               </>
             )}
 
-            {/* F. FIGURINE & ASSET MODES: Place | Select | Transform | Erase */}
+            {/* E. FIGURINES & PROPS (Place | Edit | Erase) */}
             {activeTool === 'prop' && (
               <>
-                {[
-                  { id: 'place' as const, label: t.toolModeSidebar.propModes.place, icon: Pencil, title: t.toolModeSidebar.propTitles.place },
-                  { id: 'select' as const, label: t.toolModeSidebar.propModes.select, icon: MousePointer, title: t.toolModeSidebar.propTitles.select },
-                  { id: 'transform' as const, label: t.toolModeSidebar.propModes.transform, icon: Move, title: t.toolModeSidebar.propTitles.transform },
-                  { id: 'erase' as const, label: t.toolModeSidebar.propModes.erase, icon: Eraser, title: t.toolModeSidebar.propTitles.erase },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = propSubTool === m.id;
+                {renderCategoryDivider('Place')}
+                {renderToolButton(
+                  { id: 'place', label: t.toolModeSidebar.propModes.place, icon: Pencil, title: t.toolModeSidebar.propTitles.place, shortcut: 'P' },
+                  propSubTool === 'place',
+                  () => setPropSubTool('place')
+                )}
 
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setPropSubTool(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[9px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {renderCategoryDivider('Edit')}
+                {[
+                  { id: 'select' as const, label: t.toolModeSidebar.propModes.select, icon: MousePointer, title: t.toolModeSidebar.propTitles.select, shortcut: 'S' },
+                  { id: 'transform' as const, label: t.toolModeSidebar.propModes.transform, icon: Move, title: t.toolModeSidebar.propTitles.transform, shortcut: 'T' },
+                ].map((m) =>
+                  renderToolButton(m, propSubTool === m.id, () => setPropSubTool(m.id))
+                )}
+
+                {renderCategoryDivider('Erase')}
+                {renderToolButton(
+                  { id: 'erase', label: t.toolModeSidebar.propModes.erase, icon: Eraser, title: t.toolModeSidebar.propTitles.erase, shortcut: 'E' },
+                  propSubTool === 'erase',
+                  () => setPropSubTool('erase')
+                )}
               </>
             )}
 
-            {/* G. FESTIVE LIGHTING & FIREWORKS MODES: Place | Select | Transform | Erase */}
+            {/* F. LIGHTING & FIREWORKS (Place | Edit | Erase) */}
             {activeTool === 'lighting' && (
               <>
-                {[
-                  { id: 'place' as const, label: t.toolModeSidebar.lightingModes.place, icon: Pencil, title: t.toolModeSidebar.lightingTitles.place },
-                  { id: 'select' as const, label: t.toolModeSidebar.lightingModes.select, icon: MousePointer, title: t.toolModeSidebar.lightingTitles.select },
-                  { id: 'transform' as const, label: t.toolModeSidebar.lightingModes.transform, icon: Move, title: t.toolModeSidebar.lightingTitles.transform },
-                  { id: 'erase' as const, label: t.toolModeSidebar.lightingModes.erase, icon: Eraser, title: t.toolModeSidebar.lightingTitles.erase },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = lightingSubTool === m.id;
+                {renderCategoryDivider('Place')}
+                {renderToolButton(
+                  { id: 'place', label: t.toolModeSidebar.lightingModes.place, icon: Pencil, title: t.toolModeSidebar.lightingTitles.place, shortcut: 'P' },
+                  lightingSubTool === 'place',
+                  () => setLightingSubTool('place')
+                )}
 
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setLightingSubTool(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[9px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                {renderCategoryDivider('Edit')}
+                {[
+                  { id: 'select' as const, label: t.toolModeSidebar.lightingModes.select, icon: MousePointer, title: t.toolModeSidebar.lightingTitles.select, shortcut: 'S' },
+                  { id: 'transform' as const, label: t.toolModeSidebar.lightingModes.transform, icon: Move, title: t.toolModeSidebar.lightingTitles.transform, shortcut: 'T' },
+                ].map((m) =>
+                  renderToolButton(m, lightingSubTool === m.id, () => setLightingSubTool(m.id))
+                )}
+
+                {renderCategoryDivider('Erase')}
+                {renderToolButton(
+                  { id: 'erase', label: t.toolModeSidebar.lightingModes.erase, icon: Eraser, title: t.toolModeSidebar.lightingTitles.erase, shortcut: 'E' },
+                  lightingSubTool === 'erase',
+                  () => setLightingSubTool('erase')
+                )}
               </>
             )}
 
-            {/* H. DIORAMA & SUN VIEW MODES: Orbit | Turntable */}
+            {/* G. VIEW & DIORAMA (Inspect) */}
             {activeTool === 'view' && (
               <>
+                {renderCategoryDivider('Inspect')}
                 {[
-                  { id: 'orbit' as ViewMode, label: t.toolModeSidebar.viewModes.orbit, icon: RotateCw, title: t.toolModeSidebar.viewTitles.orbit },
-                  { id: 'turntable' as ViewMode, label: t.toolModeSidebar.viewModes.turntable, icon: RefreshCw, title: t.toolModeSidebar.viewTitles.turntable },
-                ].map((m) => {
-                  const Icon = m.icon;
-                  const isActive = viewMode === m.id;
-
-                  return (
-                    <button
-                      key={m.id}
-                      onClick={() => setViewMode(m.id)}
-                      title={m.title}
-                      className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition-all cursor-pointer active:scale-95 ${
-                        isActive
-                          ? 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]'
-                          : 'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] hover:bg-[#D8D1C5] hover:text-[#2B2621]'
-                      }`}
-                    >
-                      <Icon size={16} strokeWidth={1.75} className={isActive ? 'text-[#B85F45]' : 'currentColor'} />
-                      <span className="font-medium text-[9px] mt-1 leading-tight text-center">
-                        {m.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                  { id: 'orbit' as ViewMode, label: t.toolModeSidebar.viewModes.orbit, icon: RotateCw, title: t.toolModeSidebar.viewTitles.orbit, shortcut: '1' },
+                  { id: 'turntable' as ViewMode, label: t.toolModeSidebar.viewModes.turntable, icon: RefreshCw, title: t.toolModeSidebar.viewTitles.turntable, shortcut: '2' },
+                ].map((m) =>
+                  renderToolButton(m, viewMode === m.id, () => setViewMode(m.id))
+                )}
               </>
             )}
           </div>

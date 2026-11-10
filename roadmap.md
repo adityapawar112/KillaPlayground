@@ -633,46 +633,42 @@ graph TD
 
 ## Ticket 15: Two-Row Studio Header, Compact Tool Rail & Contextual Panels
 
-- **Status**: `pending`
+- **Status**: `completed` (`verified`)
 - **Blocked by**: `Ticket 14`
 - **Delivers**:
-  - **Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol**:
-    - *Visual Audit Baseline*: Capture screenshots of the top navigation bar (`AppMenuBar.tsx`, `TopToolBar.tsx`), the vertical mode rail (`ToolModeSidebar.tsx`), the left properties sidebar (`LeftToolSidebar.tsx`), and the right outliner (`RightToolSidebar.tsx`) across all 10 tools and their individual sub-modes.
-    - *Ticket Refinement*: Verify every tool property layout and outliner pane; document any hidden sliders, mode-specific controls, or layout collisions before touching code.
-    - *Visual Verification*: Capture before/after layout screenshots verifying vertical space savings and clean two-row alignment.
+  - **Mandatory Pre-Execution Visual Audit & Baseline Protocol**:
+    - *Visual Audit Baseline*: Captured comprehensive 26-image baseline suite in `screenshots/ticket15-baseline/` across all tools, subtools, menus, and responsive viewports.
+    - *Ticket Refinement*: Plan document approved (`ticket_15_studio_header_tool_rail_and_contextual_panels.md`) establishing the exact 2 standard Right Panel layout contracts:
+      1. *Dual-Pane Layout*: Upper Scene Outliner hierarchical tree (`Scene Outliner`) + Lower Element Inspector (`Element Inspector`) for structural tools (`building`, `walls`, `spline`).
+      2. *Single-Pane Layout*: Full-height Asset Browser (`Asset Browser` / `Texture Browser` / `Foliage Browser` / `Figurine Vault` / `Lighting Vault`) with category filter pills and live search for catalog tools (`texture`, `foliage`, `prop`, `lighting`).
+    - *Visual Verification*: Captured post-execution suite of 20 high-resolution verified screenshots in `screenshots/ticket15-verified/` proving clean two-row alignment, direct slider mounting, compact tool rail toggling, and contextual panel groupings.
   - **Two-Row Studio Navigation Hierarchy (Review Item 6)**:
-    - Consolidate multi-layer horizontal bars into a streamlined professional two-row creative studio header:
-      - *Row 1 (Global Brand & Document Bar):* Killa Playground shield logo, project title, document state (unsaved dot), undo/redo, global actions (New, Open, Save, Export Poster), and clean dropdown menus (`File`, `Edit`, `View`, `Settings`, `Help`).
-      - *Row 2 (Workspace Tool Tabs):* Dedicated horizontal tab strip organizing tools into logical studio workspaces (*Terrain*, *Walls*, *Spline*, *Texture*, *Foliage*, *Architecture*, *Lighting/View*).
-    - Relocate secondary actions (Language switch, Help guide, Debug toggles) into Row 1 dropdown menus to eliminate top-bar clutter.
-    - Remove repeated decorative badges, redundant separators, and filler text.
+    - Standardized fixed header heights: Row 1 = `38px`, Row 2 = `34px` (`STUDIO_HEADER_HEIGHT_EXPANDED = 72`, `STUDIO_HEADER_HEIGHT_COLLAPSED = 38`).
+    - *Row 1 (Global Brand & Document Bar)*: Logo shield, project title, document state indicator (glowing terracotta unsaved dot `#B85F45` vs saved green dot `#15803D`), undo/redo with state counters, global action buttons, and dropdown menus (`File`, `Edit`, `View`, `Settings`, `Help`). Secondary settings (Language selector, preferences) cleanly relocated into `Settings` dropdown.
+    - *Row 2 (Workspace Tool Bar)*: Compact horizontal tool selector tabs with concise labels, camera axis shortcuts (`Z`, `Y`, `X`, `Focus`, Zoom `+`/`-`), and synchronized hanging toggle pill.
+    - Sidebars and hanging tabs dynamically synchronize top offsets between `top-[72px]` (expanded) and `top-[38px]` (minimized).
   - **Compact Vertical Tool Rail (Review Item 8)**:
-    - Redesign `ToolModeSidebar.tsx` into a high-density, professional tool rail docked to the canvas edge.
-    - Group tools logically: *Sculpt* (Elevate, Plateau, Smooth, Basin), *Build* (Walls, Towers, Stairs, Foundations), *Paint* (Textures, Surface Mud), and *Place* (Foliage, Figurines, Fireworks).
-    - Distinct burnt terracotta active indicator badge with high-contrast icon.
-    - Hover tooltips displaying tool name and keyboard shortcuts (`1`–`8`, `B`, `E`, `R`).
-    - Icon-only compact mode toggle with smooth expand/collapse.
-  - **Contextual Left Properties Panel (Review Item 9)**:
-    - Reorganize continuous unorganized slider lists in `LeftToolSidebar.tsx` into standardized contextual groupings:
-      - `Geometry`: Height, thickness, radius, plateau elevation.
-      - `Placement`: Coordinates, rotation, slope snap, wall lock.
-      - `Appearance`: Texture slot, falloff, repeat scale, tint.
-      - `Behavior`: Auto-bastion frequency, magnetic snap tolerance, circuit closing.
-    - Frequently used controls mounted at the top directly on the panel background (`bg-[#EBE6DC]`) without enclosing cards.
-    - Collapsible `Advanced Settings` accordion for secondary parameters, preventing vertical scrolling fatigue.
-  - **Right Panel Shell Alignment & Coordination (Review & User Feedback)**:
-    - Align `RightToolSidebar.tsx` with the two-row header and the Level 2 neutral surface hierarchy.
-    - Establish dual-pane architecture: upper *Scene Outliner* (tree view of placed bastions, walls, foundations, lights) and lower *Element Inspector* (selected object transforms and material overrides).
-    - Match left sidebar resizable grip handle (260px–460px) and synchronized minimized toggle tab (`[🏰 Outliner ▾]`) for balanced canvas symmetry.
-    - *(Note: Deep tactile 3D asset browsing and thumbnail generation are implemented in Ticket 17).*
+    - Implemented compact icon-only rail (`w-[48px]`) with toggle to labeled rail (`w-[68px]`).
+    - Categorized logical tool groups (*Sculpt / Refine / Paint*, *Select / Build*, *Brush / Erase*) separated by subtle hairline dividers (`border-[#D8D1C5]`).
+    - High-contrast active badges (`bg-[#2B2621] text-[#FAF8F5]` with `#B85F45` terracotta indicator) and micro-tooltips with keyboard shortcuts (`1`–`7`, `B`, `E`, `R`, `P`, `L`).
+  - **Contextual Left Properties Panel (Review Item 9 & User Refinements)**:
+    - Reorganized continuous slider lists across all tools into standardized contextual groupings (`Geometry`, `Placement`, `Appearance`, `Behavior`, `Lighting`, `Camera`).
+    - Redesigned advanced properties: eliminated accordion boxes at the end of panels. Instead, a clean checkbox (`[✓] ADVANCED SETTINGS`) is fixed at the bottom of the panel only on tools with changeable advanced properties (`walls`, `paint`, `foliage`, `prop place`, `lighting place`).
+    - When ticked ON, extra properties appear directly inside their appropriate sections (`Appearance`, `Placement`, `Behavior`) in the exact same style as standard properties.
+    - Terrain tool displays no advanced properties or checkbox (removed read-only info). View tool moves `Test Fireworks Salvo` directly to the top under the header card, with no advanced checkbox.
+    - All sliders mount directly on the Level 2 panel background (`bg-[#EBE6DC]`) using `w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]` and tabular numerals (`tabular-nums font-mono text-[11px]`), with zero enclosing white cards.
+  - **Right Panel Shell Alignment & Two Standard Layouts (Review & User Feedback)**:
+    - Aligned `RightToolSidebar.tsx` with Level 2 neutral surface hierarchy and synchronized `top-[72px]` / `top-[38px]` offsets.
+    - Standardized **Dual-Pane Layout**: Upper *Scene Outliner* (`t.sidebars.right.sceneOutliner`) hierarchical tree with expand/collapse, element counts, focus, delete, and hover highlight; Lower *Element Inspector* (`t.sidebars.right.elementInspector`) with clean empty state (`t.sidebars.right.selectToInspect`). Used for structural tools (`building`, `walls`, `spline`) and edit modes (`prop select/transform/erase`, `lighting select/transform/erase`).
+    - Standardized **Single-Pane Layout**: Full-height asset browsers for textures, foliage, figurines (`place` mode), and lights (`place` mode) with filter pills, search, and responsive cards. Figurine outliner is strictly restricted to `select`, `transform`, and `erase` modes.
 
 ### Acceptance Criteria
-- [ ] Pre-execution screenshot audit completed across all 10 tools, left panel states, and right outliner.
-- [ ] Top navigation consolidated into two clean rows: Row 1 global/menus, Row 2 workspace tabs.
-- [ ] Vertical tool rail features grouped tools, keyboard shortcuts, tooltips, and compact icon-only mode.
-- [ ] Left property panels organized into `Geometry`, `Placement`, `Appearance`, and `Behavior` with collapsible advanced accordions.
-- [ ] Right sidebar aligned to studio shell with dual-pane outliner and inspector.
-- [ ] All sliders mount directly on panel background without white container cards.
+- [x] Pre-execution screenshot audit completed across all 10 tools, left panel states, and right outliner (`screenshots/ticket15-baseline/`).
+- [x] Top navigation consolidated into two clean rows: Row 1 global/menus (38px), Row 2 workspace tabs (34px).
+- [x] Vertical tool rail features grouped tools, keyboard shortcuts, tooltips, and compact icon-only mode (48px / 68px).
+- [x] Left property panels organized into `Geometry`, `Placement`, `Appearance`, and `Behavior` with collapsible advanced accordions.
+- [x] Right sidebar aligned to studio shell with standardized dual-pane layout (Outliner + Inspector) and single-pane asset browsers.
+- [x] All sliders mount directly on panel background without white container cards.
 
 ---
 

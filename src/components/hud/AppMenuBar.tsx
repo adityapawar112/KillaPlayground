@@ -51,7 +51,7 @@ const FORT_NAMES: Record<string, Record<Locale, string>> = {
   scratch: { en: 'Custom Fort', mr: 'स्वतःचा किल्ला', hi: 'कस्टम किला' },
 };
 
-type ActiveMenu = 'file' | 'edit' | 'view' | 'language' | 'help' | null;
+type ActiveMenu = 'file' | 'edit' | 'view' | 'settings' | 'help' | null;
 
 export const AppMenuBar: React.FC<AppMenuBarProps> = ({
   onUndo,
@@ -89,7 +89,10 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     importProjectData,
     setToastMessage,
     toastMessage,
+    isDirty,
   } = useEditorStore();
+
+  const hasUnsavedChanges = isDirty || canUndo;
 
   const { t, locale, setLocale } = useTranslation();
   const displayFortTitle =
@@ -203,7 +206,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
 
       {/* Mobile Hamburger Drawer Overlay (< xl) */}
       {isMobileMenuOpen && (
-        <div className="fixed top-[41px] left-0 bottom-0 right-0 z-40 flex xl:hidden pointer-events-auto">
+        <div className="fixed top-[38px] left-0 bottom-0 right-0 z-40 flex xl:hidden pointer-events-auto">
           {/* Backdrop */}
           <div
             onClick={() => setIsMobileMenuOpen(false)}
@@ -486,43 +489,43 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
         </div>
       )}
 
-      {/* Top Application Desktop Menu Bar */}
+      {/* Top Application Desktop Menu Bar (Row 1: 38px) */}
       <header
         ref={menuBarRef}
-        className="w-full bg-[#EBE6DC]/96 backdrop-blur-md border-b border-[#D8D1C5] px-2 sm:px-4 py-1 flex items-center justify-between pointer-events-auto shadow-sm relative z-50 h-[41px]"
+        className="w-full bg-[#EBE6DC]/96 backdrop-blur-md border-b border-[#D8D1C5] px-2 sm:px-4 py-0.5 flex items-center justify-between pointer-events-auto shadow-xs relative z-50 h-[38px]"
       >
-        {/* Left cluster: Hamburger + Logo & Title + Desktop Menus */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        {/* Left cluster: Hamburger + Logo & Title + Fort + Document State + Menus */}
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Hamburger Button (< xl): Shifts into X when menu is open */}
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="xl:hidden p-1.5 rounded-lg text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer shrink-0"
+            className="xl:hidden p-1 rounded-lg text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer shrink-0"
             title={isMobileMenuOpen ? 'Close Menu' : 'Open Menu'}
           >
             {isMobileMenuOpen ? (
-              <X className="w-5 h-5 text-[#8F4938]" />
+              <X className="w-4 h-4 text-[#8F4938]" />
             ) : (
-              <Menu className="w-5 h-5" />
+              <Menu className="w-4 h-4" />
             )}
           </button>
 
           {/* Logo Icon & Permanent In-Flow Title */}
           <button
             onClick={() => setStartupModalOpen(true)}
-            className="flex items-center gap-1.5 sm:gap-2 px-1.5 py-1 rounded-lg hover:bg-[#D8D1C5] transition-colors cursor-pointer group shrink-0"
+            className="flex items-center gap-1.5 px-1 py-0.5 rounded-lg hover:bg-[#D8D1C5] transition-colors cursor-pointer group shrink-0"
             title="The Killa Playground - Open Hub"
           >
-            <div className="relative w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shrink-0">
+            <div className="relative w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center shrink-0">
               <Image
                 src="/killaplayground-tranparent.png"
                 alt="The Killa Playground Logo"
-                width={28}
-                height={28}
+                width={24}
+                height={24}
                 className="w-full h-full object-contain group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-200 drop-shadow-xs"
                 priority
               />
             </div>
-            <span className="font-yatra text-base sm:text-lg text-[#2B1E16] tracking-wide whitespace-nowrap hidden sm:inline">
+            <span className="font-yatra text-sm sm:text-base text-[#2B1E16] tracking-wide whitespace-nowrap hidden sm:inline">
               The Killa Playground
             </span>
           </button>
@@ -533,17 +536,32 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               setActiveMenu(null);
               setTerrainDrawerOpen(!isTerrainDrawerOpen, 'historical');
             }}
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-bold transition-all cursor-pointer bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border-[#D8D1C5]"
+            className="hidden xl:flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-xs font-bold transition-all cursor-pointer bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border-[#D8D1C5]"
             title={t.modeModal.subtitle}
           >
             <Castle className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="tracking-wide uppercase font-sans">
+            <span className="tracking-wide uppercase font-sans text-[11px]">
               {displayFortTitle}
             </span>
             <ChevronDown className="w-3 h-3 text-[#7C7267]" />
           </button>
 
-          <div className="hidden xl:block w-[1px] h-4 bg-[#D9C9B4] mx-1" />
+          {/* Document Saved / Unsaved State Indicator */}
+          <div
+            className="hidden md:flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#D8D1C5] bg-[#FAF8F5] text-[10px] font-mono select-none"
+            title={hasUnsavedChanges ? t.appMenuBar.unsavedChanges : t.appMenuBar.saved}
+          >
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                hasUnsavedChanges ? 'bg-[#B85F45] animate-pulse' : 'bg-[#15803D]'
+              }`}
+            />
+            <span className="text-[#5A5248] text-[9.5px] font-medium tracking-tight">
+              {hasUnsavedChanges ? t.appMenuBar.unsavedChanges : t.appMenuBar.saved}
+            </span>
+          </div>
+
+          <div className="hidden xl:block w-[1px] h-3.5 bg-[#D8D1C5] mx-1" />
 
           {/* DESKTOP MENUS (>= xl) */}
           <div className="hidden xl:flex items-center gap-0.5">
@@ -830,21 +848,25 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
               )}
             </div>
 
-            {/* LANGUAGE MENU */}
+            {/* SETTINGS MENU */}
             <div className="relative">
               <button
-                onClick={() => setActiveMenu(activeMenu === 'language' ? null : 'language')}
+                onClick={() => setActiveMenu(activeMenu === 'settings' ? null : 'settings')}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer ${
-                  activeMenu === 'language'
+                  activeMenu === 'settings'
                     ? 'bg-[#4B382C] text-white'
                     : 'text-[#2B2621] hover:bg-[#D8D1C5]'
                 }`}
               >
-                {t.appMenuBar.language}
+                {t.appMenuBar.settings}
                 <ChevronDown className="w-3 h-3 text-[#7C7267]" />
               </button>
-              {activeMenu === 'language' && (
-                <div className="absolute top-full left-0 mt-1 w-44 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
+              {activeMenu === 'settings' && (
+                <div className="absolute top-full left-0 mt-1 w-52 bg-[#EBE6DC] rounded-xl border border-[#D8D1C5] shadow-2xl py-1 z-50 text-xs">
+                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#7C7267] flex items-center gap-1">
+                    <Languages className="w-3.5 h-3.5" />
+                    <span>{t.appMenuBar.language}</span>
+                  </div>
                   {(['en', 'mr', 'hi'] as Locale[]).map((lang) => (
                     <button
                       key={lang}
@@ -852,7 +874,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                         setLocale(lang);
                         setActiveMenu(null);
                       }}
-                      className={`w-full px-3.5 py-2 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                      className={`w-full px-3.5 py-1.5 text-left flex items-center justify-between transition-colors cursor-pointer ${
                         locale === lang
                           ? 'bg-[#4B382C] text-white font-bold'
                           : 'text-[#2B1E16] hover:bg-[#D8D1C5]'
@@ -868,6 +890,20 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       {locale === lang && <Check className="w-4 h-4 text-[#F59E0B]" />}
                     </button>
                   ))}
+                  <div className="my-1 border-t border-[#D8D1C5]" />
+                  <button
+                    onClick={() => {
+                      toggleNightMode();
+                      setActiveMenu(null);
+                    }}
+                    className="w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Flame className="w-4 h-4 text-[#F59E0B]" />
+                      <span>{nightMode ? t.nightModeOn : t.nightModeOff}</span>
+                    </span>
+                    {nightMode && <Check className="w-4 h-4 text-[#F59E0B]" />}
+                  </button>
                 </div>
               )}
             </div>
@@ -928,30 +964,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
         </div>
 
         {/* Right cluster: Quick Action Pills */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
-          {/* Quick Language Pill (hidden on narrow screens to prevent crowding) */}
-          <LanguageSelector className="hidden lg:inline-flex" size="sm" />
-
-          {/* Minimize / Maximize All Panels */}
-          <div className="flex items-center bg-[#FAF8F5] rounded-lg p-0.5 border border-[#D8D1C5]">
-            <button
-              onClick={collapseAllPanels}
-              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
-              title="Collapse All Panels"
-              aria-label="Collapse All Panels"
-            >
-              <Minimize2 className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={expandAllPanels}
-              className="p-1 rounded text-[#5C4638] hover:text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
-              title="Expand All Panels"
-              aria-label="Expand All Panels"
-            >
-              <Maximize2 className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
+        <div className="flex items-center gap-1 sm:gap-1.5">
           {/* Quick Undo / Redo / Reset */}
           <div className="flex items-center bg-[#FAF8F5] rounded-lg p-0.5 border border-[#D8D1C5]">
             <button
@@ -974,7 +987,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             >
               <Redo2 className="w-3.5 h-3.5" />
             </button>
-            <div className="w-[1px] h-3.5 bg-[#D9C9B4] mx-0.5" />
+            <div className="w-[1px] h-3 bg-[#D9C9B4] mx-0.5" />
             <button
               onClick={() => setResetConfirmOpen(true)}
               className="p-1 rounded text-[#B85F45] hover:bg-[#B85F45]/15 transition-colors cursor-pointer"
@@ -987,7 +1000,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
           {/* Night Diya Toggle */}
           <button
             onClick={toggleNightMode}
-            className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-xs font-semibold transition-all cursor-pointer ${
               nightMode
                 ? 'bg-[#23211E] text-[#F59E0B] border-[#F59E0B]'
                 : 'bg-[#FAF8F5] text-[#5A5248] border-[#D8D1C5] hover:bg-[#D8D1C5]'
@@ -1001,7 +1014,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
           {/* Finish & Share CTA */}
           <button
             onClick={() => setPosterModalOpen(true)}
-            className="flex items-center gap-1 sm:gap-1.5 bg-[#E85D04] hover:bg-[#FF7722] active:scale-95 text-white px-2.5 sm:px-3 py-1 rounded-lg font-bold text-xs shadow-md shadow-[#E85D04]/30 transition-all cursor-pointer"
+            className="flex items-center gap-1 sm:gap-1.5 bg-[#E85D04] hover:bg-[#FF7722] active:scale-95 text-white px-2.5 sm:px-3 py-1 rounded-lg font-bold text-xs shadow-xs shadow-[#E85D04]/30 transition-all cursor-pointer"
           >
             <Sparkles className="w-3.5 h-3.5" />
             <span className="hidden xs:inline">{t.finishKilla}</span>

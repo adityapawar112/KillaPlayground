@@ -76,6 +76,9 @@ export const SavedProjectSchema = z.object({
   timestamp: z.number().optional(),
 });
 
+export const STUDIO_HEADER_HEIGHT_EXPANDED = 72;
+export const STUDIO_HEADER_HEIGHT_COLLAPSED = 38;
+
 export type ToolType =
   // 7 Primary Killa-First Tools
   | 'terrain'
@@ -451,6 +454,10 @@ interface EditorState {
   toggleContextualDock: () => void;
   isMobileTopBarMinimized: boolean;
   toggleMobileTopBar: () => void;
+  isToolRailCompact: boolean;
+  toggleToolRailCompact: () => void;
+  isDirty: boolean;
+  setIsDirty: (dirty: boolean) => void;
   showBottomStatusBar: boolean;
   toggleBottomStatusBar: () => void;
   collapseAllPanels: () => void;
@@ -671,6 +678,7 @@ const getInitialStartupPref = (): boolean => {
 const pushUndoSnapshot = () => {
   try {
     useTerrainStore.getState().pushUndo();
+    useEditorStore.getState().setIsDirty(true);
   } catch {
     // Graceful fallback if invoked during initial module bootstrapping
   }
@@ -1645,6 +1653,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleContextualDock: () => set((state) => ({ showContextualDock: !state.showContextualDock })),
   isMobileTopBarMinimized: false,
   toggleMobileTopBar: () => set((state) => ({ isMobileTopBarMinimized: !state.isMobileTopBarMinimized })),
+  isToolRailCompact: false,
+  toggleToolRailCompact: () => set((state) => ({ isToolRailCompact: !state.isToolRailCompact })),
+  isDirty: false,
+  setIsDirty: (dirty: boolean) => set({ isDirty: dirty }),
   showBottomStatusBar: true,
   toggleBottomStatusBar: () => set((state) => ({ showBottomStatusBar: !state.showBottomStatusBar })),
   collapseAllPanels: () =>
@@ -1897,7 +1909,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         console.warn('Failed to save to vault:', err);
       });
 
-    set({ fortTitle: projectName });
+    set({ fortTitle: projectName, isDirty: false });
     return projectId;
   },
 
@@ -1949,6 +1961,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         foliageInstances: pkg.scene.foliageInstances,
         pondWaterFeatures: pkg.scene.pondWaterFeatures,
         isStartupModalOpen: false,
+        isDirty: false,
       });
       return true;
     } catch (err) {

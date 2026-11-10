@@ -260,6 +260,32 @@ export const LeftToolSidebar: React.FC = () => {
   const { clearPaintTerrain, fillPaintTerrain } = useTerrainStore();
 
   const { t, locale } = useTranslation();
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const hasAdvanced = useMemo(() => {
+    if (activeTool === 'building' || activeTool === 'walls') {
+      return buildingMode === 'walls';
+    }
+    if (activeTool === 'texture') {
+      return paintSubTool === 'paint';
+    }
+    if (activeTool === 'foliage') {
+      return foliageSubTool !== 'erase';
+    }
+    if (activeTool === 'prop') {
+      return propSubTool === 'place';
+    }
+    if (activeTool === 'lighting') {
+      return lightingSubTool === 'place';
+    }
+    return false;
+  }, [activeTool, buildingMode, paintSubTool, foliageSubTool, propSubTool, lightingSubTool]);
+
+  const renderSectionHeader = (title: string) => (
+    <div className="text-[10px] font-bold uppercase tracking-wider text-[#7C7267] pt-2 pb-0.5 border-b border-[#D8D1C5]/70 flex items-center justify-between">
+      <span>{title}</span>
+    </div>
+  );
 
   // Sidebar resizable width
   const isDraggingWidthRef = useRef<boolean>(false);
@@ -511,12 +537,12 @@ export const LeftToolSidebar: React.FC = () => {
 
   return (
     <>
-      {/* Minimized Hanging Guide Tab (Pinned to top-left below top bar) */}
+      {/* Minimized Hanging Guide Tab (Pinned to top-left below studio header) */}
       {isMobileSidebarMinimized && (
         <div
           style={{ left: propertiesTabLeft }}
           className={`fixed z-30 pointer-events-auto transition-all duration-200 ${
-            !showContextualDock || isMobileTopBarMinimized ? 'top-[41px]' : 'top-[112px] xl:top-[81px]'
+            !showContextualDock || isMobileTopBarMinimized ? 'top-[38px]' : 'top-[72px]'
           }`}
         >
           <button
@@ -538,11 +564,7 @@ export const LeftToolSidebar: React.FC = () => {
         className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-r border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
           isMobileSidebarMinimized ? '-translate-x-full' : 'translate-x-0'
         } ${
-          !showContextualDock
-            ? 'top-[41px]'
-            : isMobileTopBarMinimized
-            ? 'top-[41px]'
-            : 'top-[112px] xl:top-[81px]'
+          !showContextualDock || isMobileTopBarMinimized ? 'top-[38px]' : 'top-[72px]'
         }`}
       >
         {/* Right Resizing Edge with Tactile Grip Dots */}
@@ -684,12 +706,13 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Creation Sliders */}
+                  {/* Creation Parameters (Contextual Groupings) */}
                   <div className="space-y-3">
+                    {renderSectionHeader(t.sidebars.left.geometry)}
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.height}</span>
-                        <span className="text-[#7C7267]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{((wallSettings.height || 0.25) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -698,14 +721,14 @@ export const LeftToolSidebar: React.FC = () => {
                         step="0.02"
                         value={wallSettings.height || 0.25}
                         onChange={(e) => setWallSettings({ height: parseFloat(e.target.value) })}
-                        className="w-full accent-[#B85F45] cursor-pointer"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.tools.walls.thickness}</span>
-                        <span className="text-[#7C7267]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
+                        <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{((wallSettings.thickness || 0.15) * 100).toFixed(0)} cm</span>
                       </div>
                       <input
                         type="range"
@@ -714,32 +737,11 @@ export const LeftToolSidebar: React.FC = () => {
                         step="0.01"
                         value={wallSettings.thickness || 0.15}
                         onChange={(e) => setWallSettings({ thickness: parseFloat(e.target.value) })}
-                        className="w-full accent-[#B85F45] cursor-pointer"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.walls.crenellations}</span>
-                      <input
-                        type="checkbox"
-                        checked={wallSettings.crenellations}
-                        onChange={(e) => setWallSettings({ crenellations: e.target.checked })}
-                        className="accent-[#B85F45] w-4 h-4 cursor-pointer"
-                      />
-                    </div>
-
-                    {wallSettings.crenellations && (
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.building.flipCrenellations}</span>
-                        <input
-                          type="checkbox"
-                          checked={wallSettings.flipCrenellations ?? false}
-                          onChange={(e) => setWallSettings({ flipCrenellations: e.target.checked })}
-                          className="accent-[#B85F45] w-4 h-4 cursor-pointer"
-                        />
-                      </div>
-                    )}
-
+                    {renderSectionHeader(t.sidebars.left.behavior)}
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.walls.autoBastions}</span>
                       <input
@@ -754,7 +756,7 @@ export const LeftToolSidebar: React.FC = () => {
                       <div>
                         <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                           <span>{t.tools.walls.bastionRadius}</span>
-                          <span className="text-[#7C7267]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{((wallSettings.bastionRadius || 0.13) * 100).toFixed(0)} cm</span>
                         </div>
                         <input
                           type="range"
@@ -763,8 +765,34 @@ export const LeftToolSidebar: React.FC = () => {
                           step="0.01"
                           value={wallSettings.bastionRadius || 0.13}
                           onChange={(e) => setWallSettings({ bastionRadius: parseFloat(e.target.value) })}
-                          className="w-full accent-[#B85F45] cursor-pointer"
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                         />
+                      </div>
+                    )}
+
+                    {showAdvanced && (
+                      <div className="space-y-2 pt-1 border-t border-[#D8D1C5]/50">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.walls.crenellations}</span>
+                          <input
+                            type="checkbox"
+                            checked={wallSettings.crenellations}
+                            onChange={(e) => setWallSettings({ crenellations: e.target.checked })}
+                            className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                          />
+                        </div>
+
+                        {wallSettings.crenellations && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-semibold text-[#2B2621]">{t.tools.building.flipCrenellations}</span>
+                            <input
+                              type="checkbox"
+                              checked={wallSettings.flipCrenellations ?? false}
+                              onChange={(e) => setWallSettings({ flipCrenellations: e.target.checked })}
+                              className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1234,12 +1262,13 @@ export const LeftToolSidebar: React.FC = () => {
                 </span>
               </div>
 
-              {/* Sliders for active terrain brush */}
+              {/* Sliders for active terrain brush (Contextual Groupings) */}
               <div className="space-y-3 pt-1">
+                {renderSectionHeader(t.sidebars.left.geometry)}
                 <div>
                   <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.brushRadius}</span>
-                    <span className="text-[#7C7267]">{brushRadius.toFixed(1)}m</span>
+                    <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{brushRadius.toFixed(1)}m</span>
                   </div>
                   <input
                     type="range"
@@ -1248,14 +1277,14 @@ export const LeftToolSidebar: React.FC = () => {
                     step="0.1"
                     value={brushRadius}
                     onChange={(e) => setBrushRadius(parseFloat(e.target.value))}
-                    className="w-full accent-[#B85F45] cursor-pointer"
+                    className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.brushStrength}</span>
-                    <span className="text-[#7C7267]">{(brushStrength * 100).toFixed(0)}%</span>
+                    <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{(brushStrength * 100).toFixed(0)}%</span>
                   </div>
                   <input
                     type="range"
@@ -1264,7 +1293,7 @@ export const LeftToolSidebar: React.FC = () => {
                     step="0.05"
                     value={brushStrength}
                     onChange={(e) => setBrushStrength(parseFloat(e.target.value))}
-                    className="w-full accent-[#B85F45] cursor-pointer"
+                    className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                   />
                 </div>
 
@@ -1272,7 +1301,7 @@ export const LeftToolSidebar: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.targetHeight}</span>
-                      <span className="text-[#7C7267]">{plateauHeight.toFixed(2)}m</span>
+                      <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{plateauHeight.toFixed(2)}m</span>
                     </div>
                     <input
                       type="range"
@@ -1281,7 +1310,7 @@ export const LeftToolSidebar: React.FC = () => {
                       step="0.05"
                       value={plateauHeight}
                       onChange={(e) => setPlateauHeight(parseFloat(e.target.value))}
-                      className="w-full accent-[#B85F45] cursor-pointer"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
                 )}
@@ -1290,7 +1319,7 @@ export const LeftToolSidebar: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.slopeAngle}</span>
-                      <span className="text-[#7C7267]">{slopeAngle}°</span>
+                      <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{slopeAngle}°</span>
                     </div>
                     <input
                       type="range"
@@ -1299,21 +1328,20 @@ export const LeftToolSidebar: React.FC = () => {
                       step="5"
                       value={slopeAngle}
                       onChange={(e) => setSlopeAngle(parseInt(e.target.value, 10))}
-                      className="w-full accent-[#B85F45] cursor-pointer"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
                 )}
 
-                <div className="pt-2 border-t border-[#D8D1C5]">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.lockMud}</span>
-                    <input
-                      type="checkbox"
-                      checked={mudLocked}
-                      onChange={(e) => setMudLocked(e.target.checked)}
-                      className="accent-[#B85F45] w-4 h-4 cursor-pointer"
-                    />
-                  </div>
+                {renderSectionHeader(t.sidebars.left.behavior)}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.lockMud}</span>
+                  <input
+                    type="checkbox"
+                    checked={mudLocked}
+                    onChange={(e) => setMudLocked(e.target.checked)}
+                    className="accent-[#B85F45] w-4 h-4 cursor-pointer"
+                  />
                 </div>
               </div>
             </div>
@@ -1383,13 +1411,14 @@ export const LeftToolSidebar: React.FC = () => {
                   </div>
                 )}
 
-                {/* Sliders on Panel Background (Unwrapped) */}
+                {/* Sliders on Panel Background (Contextual Groupings) */}
                 <div className="space-y-3 pt-1">
+                  {renderSectionHeader(t.sidebars.left.geometry)}
                   {/* Brush Radius */}
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.brushRadius}</span>
-                      <span className="text-[#7C7267]">{paintBrushRadius.toFixed(1)}m</span>
+                      <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{paintBrushRadius.toFixed(1)}m</span>
                     </div>
                     <input
                       type="range"
@@ -1398,7 +1427,7 @@ export const LeftToolSidebar: React.FC = () => {
                       step="0.1"
                       value={paintBrushRadius}
                       onChange={(e) => setPaintBrushRadius(parseFloat(e.target.value))}
-                      className="w-full accent-[#B85F45] cursor-pointer"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
 
@@ -1406,7 +1435,7 @@ export const LeftToolSidebar: React.FC = () => {
                   <div>
                     <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                       <span>{t.sidebars.left.brushStrength}</span>
-                      <span className="text-[#7C7267]">{Math.round(paintBrushStrength * 100)}%</span>
+                      <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{Math.round(paintBrushStrength * 100)}%</span>
                     </div>
                     <input
                       type="range"
@@ -1415,46 +1444,47 @@ export const LeftToolSidebar: React.FC = () => {
                       step="0.05"
                       value={paintBrushStrength}
                       onChange={(e) => setPaintBrushStrength(parseFloat(e.target.value))}
-                      className="w-full accent-[#B85F45] cursor-pointer"
+                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                     />
                   </div>
 
-                  {/* Edge Falloff - Paint Mode only */}
+                  {/* Appearance - Edge Falloff (Paint Mode only) */}
                   {paintSubTool === 'paint' && (
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.edgeFalloff}</span>
-                        <span className="text-[#7C7267]">{Math.round(paintBrushFalloff * 100)}%</span>
+                    <>
+                      {renderSectionHeader(t.sidebars.left.appearance)}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.edgeFalloff}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{Math.round(paintBrushFalloff * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.0"
+                          max="1.0"
+                          step="0.05"
+                          value={paintBrushFalloff}
+                          onChange={(e) => setPaintBrushFalloff(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min="0.0"
-                        max="1.0"
-                        step="0.05"
-                        value={paintBrushFalloff}
-                        onChange={(e) => setPaintBrushFalloff(parseFloat(e.target.value))}
-                        className="w-full accent-[#B85F45] cursor-pointer"
-                      />
-                    </div>
-                  )}
-
-                  {/* Tiling Repeat - Paint Mode only */}
-                  {paintSubTool === 'paint' && (
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.textureScale}</span>
-                        <span className="text-[#7C7267]">{paintTextureRepeat.toFixed(0)}x</span>
-                      </div>
-                      <input
-                        type="range"
-                        min="4.0"
-                        max="32.0"
-                        step="2.0"
-                        value={paintTextureRepeat}
-                        onChange={(e) => setPaintTextureRepeat(parseFloat(e.target.value))}
-                        className="w-full accent-[#B85F45] cursor-pointer"
-                      />
-                    </div>
+                      {showAdvanced && (
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                            <span>{t.sidebars.left.textureScale}</span>
+                            <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{paintTextureRepeat.toFixed(0)}x</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="4.0"
+                            max="32.0"
+                            step="2.0"
+                            value={paintTextureRepeat}
+                            onChange={(e) => setPaintTextureRepeat(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
 
@@ -1671,7 +1701,7 @@ export const LeftToolSidebar: React.FC = () => {
                   )
                 )}
 
-                {/* Sliders Mounted Directly on Panel Background (bg-[#EBE6DC], NO enclosing cards) */}
+                {/* Parameters with Contextual Groupings */}
                 <div className="space-y-3 pt-1">
                   {/* Single Mode Placement Notice */}
                   {foliageSubTool === 'single' && (
@@ -1681,12 +1711,15 @@ export const LeftToolSidebar: React.FC = () => {
                     </div>
                   )}
 
+                  {/* Geometry Group */}
+                  {renderSectionHeader(t.sidebars.left.geometry)}
+
                   {/* Brush Radius - For Scatter & Erase modes */}
                   {foliageSubTool !== 'single' && (
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.brushRadius}</span>
-                        <span className="text-[#7C7267]">{foliageBrushRadius.toFixed(2)}m</span>
+                        <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{foliageBrushRadius.toFixed(2)}m</span>
                       </div>
                       <input
                         type="range"
@@ -1695,7 +1728,7 @@ export const LeftToolSidebar: React.FC = () => {
                         step="0.05"
                         value={foliageBrushRadius}
                         onChange={(e) => setFoliageBrushRadius(parseFloat(e.target.value))}
-                        className="w-full accent-[#15803D] cursor-pointer"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#15803D]"
                       />
                     </div>
                   )}
@@ -1705,7 +1738,7 @@ export const LeftToolSidebar: React.FC = () => {
                     <div>
                       <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
                         <span>{t.sidebars.left.seedlingDensity}</span>
-                        <span className="text-[#7C7267]">{foliageBrushDensity} per stroke</span>
+                        <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{foliageBrushDensity} per stroke</span>
                       </div>
                       <input
                         type="range"
@@ -1714,49 +1747,50 @@ export const LeftToolSidebar: React.FC = () => {
                         step="1"
                         value={foliageBrushDensity}
                         onChange={(e) => setFoliageBrushDensity(parseInt(e.target.value, 10))}
-                        className="w-full accent-[#15803D] cursor-pointer"
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#15803D]"
                       />
                     </div>
                   )}
 
-                  {/* Scale Jitter - Scatter & Single modes */}
+                  {/* Appearance Group */}
                   {foliageSubTool !== 'erase' && (
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.scaleJitter}</span>
-                        <span className="text-[#7C7267]">±{Math.round(foliageScaleJitter * 100)}%</span>
+                    <>
+                      {renderSectionHeader(t.sidebars.left.appearance)}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.scaleJitter}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">±{Math.round(foliageScaleJitter * 100)}%</span>
+                        </div>
+                        <input
+                          type="range"
+                          min="0.0"
+                          max="0.5"
+                          step="0.05"
+                          value={foliageScaleJitter}
+                          onChange={(e) => setFoliageScaleJitter(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#15803D]"
+                        />
+                        {showAdvanced && (
+                          <div>
+                            <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                              <span>{t.sidebars.left.alignToNormal}</span>
+                              <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">
+                                {Math.round(foliageNormalAlign * 100)}% {foliageNormalAlign === 0 ? `(${t.sidebars.left.upright})` : ''}
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min="0.0"
+                              max="1.0"
+                              step="0.05"
+                              value={foliageNormalAlign}
+                              onChange={(e) => setFoliageNormalAlign(parseFloat(e.target.value))}
+                              className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#15803D]"
+                            />
+                          </div>
+                        )}
                       </div>
-                      <input
-                        type="range"
-                        min="0.0"
-                        max="0.5"
-                        step="0.05"
-                        value={foliageScaleJitter}
-                        onChange={(e) => setFoliageScaleJitter(parseFloat(e.target.value))}
-                        className="w-full accent-[#15803D] cursor-pointer"
-                      />
-                    </div>
-                  )}
-
-                  {/* Normal Alignment - Scatter & Single modes */}
-                  {foliageSubTool !== 'erase' && (
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.alignToNormal}</span>
-                        <span className="text-[#7C7267]">
-                          {Math.round(foliageNormalAlign * 100)}% {foliageNormalAlign === 0 ? `(${t.sidebars.left.upright})` : ''}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="0.0"
-                        max="1.0"
-                        step="0.05"
-                        value={foliageNormalAlign}
-                        onChange={(e) => setFoliageNormalAlign(parseFloat(e.target.value))}
-                        className="w-full accent-[#15803D] cursor-pointer"
-                      />
-                    </div>
+                    </>
                   )}
                 </div>
 
@@ -1855,87 +1889,95 @@ export const LeftToolSidebar: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Sliders mounted directly on panel background bg-[#EBE6DC] */}
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.placementScale}</span>
-                        <span className="text-[#7C7267]">{propPlacementScale.toFixed(1)}x</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0.5}
-                        max={2.5}
-                        step={0.1}
-                        value={propPlacementScale}
-                        onChange={(e) => setPropPlacementScale(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
+                    {/* Sliders organized into Contextual Groups */}
+                    <div className="space-y-3">
+                      {renderSectionHeader(t.sidebars.left.geometry)}
 
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.rotationHeading}</span>
-                        <span className="text-[#7C7267]">{propPlacementRotation}°</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        step={5}
-                        value={propPlacementRotation}
-                        onChange={(e) => setPropPlacementRotation(parseInt(e.target.value, 10))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
-                      <button
-                        onClick={() => setPropRandomRotation(!propRandomRotation)}
-                        className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                          propRandomRotation ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
-                        }`}
-                      >
-                        <div
-                          className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
-                            propRandomRotation ? 'translate-x-4' : 'translate-x-0'
-                          }`}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.placementScale}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{propPlacementScale.toFixed(1)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.5}
+                          max={2.5}
+                          step={0.1}
+                          value={propPlacementScale}
+                          onChange={(e) => setPropPlacementScale(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                         />
-                      </button>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.alignToNormal}</span>
-                        <span className="text-[#7C7267]">
-                          {propNormalAlign === 0 ? `${t.sidebars.left.upright} (0%)` : `${Math.round(propNormalAlign * 100)}%`}
-                        </span>
                       </div>
-                      <input
-                        type="range"
-                        min={0.0}
-                        max={1.0}
-                        step={0.05}
-                        value={propNormalAlign}
-                        onChange={(e) => setPropNormalAlign(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
 
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.elevationOffset}</span>
-                        <span className="text-[#7C7267]">{(propElevationOffset * 100).toFixed(0)}cm</span>
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.rotationHeading}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{propPlacementRotation}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={360}
+                          step={5}
+                          value={propPlacementRotation}
+                          onChange={(e) => setPropPlacementRotation(parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={-0.10}
-                        max={0.30}
-                        step={0.01}
-                        value={propElevationOffset}
-                        onChange={(e) => setPropElevationOffset(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
+
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
+                        <button
+                          onClick={() => setPropRandomRotation(!propRandomRotation)}
+                          className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                            propRandomRotation ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
+                          }`}
+                        >
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
+                              propRandomRotation ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {renderSectionHeader(t.sidebars.left.placement)}
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.elevationOffset}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{(propElevationOffset * 100).toFixed(0)}cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-0.10}
+                          max={0.30}
+                          step={0.01}
+                          value={propElevationOffset}
+                          onChange={(e) => setPropElevationOffset(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+
+                      {showAdvanced && (
+                        <div>
+                          <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                            <span>{t.sidebars.left.alignToNormal}</span>
+                            <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">
+                              {propNormalAlign === 0 ? `${t.sidebars.left.upright} (0%)` : `${Math.round(propNormalAlign * 100)}%`}
+                            </span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0.0}
+                            max={1.0}
+                            step={0.05}
+                            value={propNormalAlign}
+                            onChange={(e) => setPropNormalAlign(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px] text-[#5A5248] space-y-2">
@@ -2301,132 +2343,140 @@ export const LeftToolSidebar: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Sliders mounted directly on panel background bg-[#EBE6DC] */}
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.placementScale}</span>
-                        <span className="text-[#7C7267]">{lightPlacementScale.toFixed(1)}x</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0.5}
-                        max={2.5}
-                        step={0.1}
-                        value={lightPlacementScale}
-                        onChange={(e) => setLightPlacementScale(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
+                    {/* Sliders organized into Contextual Groups */}
+                    <div className="space-y-3">
+                      {renderSectionHeader(t.sidebars.left.appearance)}
 
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.rotationHeading}</span>
-                        <span className="text-[#7C7267]">{lightPlacementRotation}°</span>
-                      </div>
-                      <input
-                        type="range"
-                        min={0}
-                        max={360}
-                        step={5}
-                        value={lightPlacementRotation}
-                        onChange={(e) => setLightPlacementRotation(parseInt(e.target.value, 10))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
-                      <button
-                        onClick={() => setLightRandomRotation(!lightRandomRotation)}
-                        className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                          lightRandomRotation ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
-                        }`}
-                      >
-                        <div
-                          className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
-                            lightRandomRotation ? 'translate-x-4' : 'translate-x-0'
-                          }`}
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.placementScale}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{lightPlacementScale.toFixed(1)}x</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0.5}
+                          max={2.5}
+                          step={0.1}
+                          value={lightPlacementScale}
+                          onChange={(e) => setLightPlacementScale(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                         />
-                      </button>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.alignToNormal}</span>
-                        <span className="text-[#7C7267]">
-                          {lightNormalAlign === 0 ? `${t.sidebars.left.upright} (0%)` : `${Math.round(lightNormalAlign * 100)}%`}
-                        </span>
                       </div>
-                      <input
-                        type="range"
-                        min={0.0}
-                        max={1.0}
-                        step={0.05}
-                        value={lightNormalAlign}
-                        onChange={(e) => setLightNormalAlign(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
 
-                    <div>
-                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                        <span>{t.sidebars.left.elevationOffset}</span>
-                        <span className="text-[#7C7267]">{(lightElevationOffset * 100).toFixed(0)}cm</span>
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.rotationHeading}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{lightPlacementRotation}°</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={0}
+                          max={360}
+                          step={5}
+                          value={lightPlacementRotation}
+                          onChange={(e) => setLightPlacementRotation(parseInt(e.target.value, 10))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
                       </div>
-                      <input
-                        type="range"
-                        min={-0.05}
-                        max={0.30}
-                        step={0.01}
-                        value={lightElevationOffset}
-                        onChange={(e) => setLightElevationOffset(parseFloat(e.target.value))}
-                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                      />
-                    </div>
 
-                    {activeLight.category === 'fireworks' && (
-                      <>
+                      <div className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
+                        <button
+                          onClick={() => setLightRandomRotation(!lightRandomRotation)}
+                          className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                            lightRandomRotation ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
+                          }`}
+                        >
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
+                              lightRandomRotation ? 'translate-x-4' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {renderSectionHeader(t.sidebars.left.placement)}
+
+                      <div>
+                        <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                          <span>{t.sidebars.left.elevationOffset}</span>
+                          <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">{(lightElevationOffset * 100).toFixed(0)}cm</span>
+                        </div>
+                        <input
+                          type="range"
+                          min={-0.05}
+                          max={0.30}
+                          step={0.01}
+                          value={lightElevationOffset}
+                          onChange={(e) => setLightElevationOffset(parseFloat(e.target.value))}
+                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                        />
+                      </div>
+
+                      {activeLight.category === 'fireworks' && (
+                        <>
+                          <div>
+                            <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                              <span>{t.sidebars.left.burstHeight}</span>
+                              <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">
+                                {lightRandomBurstHeight ? 'Random' : `${(lightBurstHeight * 100).toFixed(0)}cm`}
+                              </span>
+                            </div>
+                            <input
+                              type="range"
+                              min={0.4}
+                              max={3.5}
+                              step={0.1}
+                              value={lightBurstHeight}
+                              disabled={lightRandomBurstHeight}
+                              onChange={(e) => setLightBurstHeight(parseFloat(e.target.value))}
+                              className={`w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45] ${
+                                lightRandomBurstHeight ? 'opacity-40 cursor-not-allowed' : ''
+                              }`}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
+                            <button
+                              type="button"
+                              role="switch"
+                              aria-checked={lightRandomBurstHeight}
+                              onClick={() => setLightRandomBurstHeight(!lightRandomBurstHeight)}
+                              className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
+                                lightRandomBurstHeight ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
+                              }`}
+                            >
+                              <div
+                                className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
+                                  lightRandomBurstHeight ? 'translate-x-4' : 'translate-x-0'
+                                }`}
+                              />
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {showAdvanced && (
                         <div>
                           <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                            <span>{t.sidebars.left.burstHeight}</span>
-                            <span className="text-[#7C7267]">
-                              {lightRandomBurstHeight ? 'Random' : `${(lightBurstHeight * 100).toFixed(0)}cm`}
+                            <span>{t.sidebars.left.alignToNormal}</span>
+                            <span className="text-[#7C7267] tabular-nums font-mono text-[11px]">
+                              {lightNormalAlign === 0 ? `${t.sidebars.left.upright} (0%)` : `${Math.round(lightNormalAlign * 100)}%`}
                             </span>
                           </div>
                           <input
                             type="range"
-                            min={0.4}
-                            max={3.5}
-                            step={0.1}
-                            value={lightBurstHeight}
-                            disabled={lightRandomBurstHeight}
-                            onChange={(e) => setLightBurstHeight(parseFloat(e.target.value))}
-                            className={`w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45] ${
-                              lightRandomBurstHeight ? 'opacity-40 cursor-not-allowed' : ''
-                            }`}
+                            min={0.0}
+                            max={1.0}
+                            step={0.05}
+                            value={lightNormalAlign}
+                            onChange={(e) => setLightNormalAlign(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
                           />
                         </div>
-
-                        <div className="flex items-center justify-between pt-1">
-                          <span className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.randomizeHeading}</span>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={lightRandomBurstHeight}
-                            onClick={() => setLightRandomBurstHeight(!lightRandomBurstHeight)}
-                            className={`w-9 h-5 rounded-full transition-colors relative cursor-pointer ${
-                              lightRandomBurstHeight ? 'bg-[#15803D]' : 'bg-[#D9C9B4]'
-                            }`}
-                          >
-                            <div
-                              className={`w-3.5 h-3.5 rounded-full bg-white transition-transform absolute top-0.75 left-0.75 ${
-                                lightRandomBurstHeight ? 'translate-x-4' : 'translate-x-0'
-                              }`}
-                            />
-                          </button>
-                        </div>
-                      </>
-                    )}
+                      )}
+                    </div>
 
                     <div className="p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px] text-[#5A5248] space-y-2">
                       <p className="leading-snug">
@@ -2811,59 +2861,8 @@ export const LeftToolSidebar: React.FC = () => {
                   </span>
                 </div>
 
-                {/* 2. Quick Celestial Presets (direct on panel background) */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.presetsTitle}</div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button
-                      onClick={() => setSunDirectionPreset('dawn')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                        Math.abs(timeOfDay - 6.0) < 0.5
-                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      <Sunrise className="w-4 h-4 text-[#EA580C]" />
-                      <span>{t.sidebars.left.dawn} (06:00)</span>
-                    </button>
-                    <button
-                      onClick={() => setSunDirectionPreset('noon')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                        Math.abs(timeOfDay - 12.0) < 0.5
-                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      <Sun className="w-4 h-4 text-[#F59E0B]" />
-                      <span>{t.sidebars.left.noon} (12:00)</span>
-                    </button>
-                    <button
-                      onClick={() => setSunDirectionPreset('sunset')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                        Math.abs(timeOfDay - 17.5) < 0.5
-                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      <Sunset className="w-4 h-4 text-[#D97706]" />
-                      <span>{t.sidebars.left.goldenHour}</span>
-                    </button>
-                    <button
-                      onClick={() => setSunDirectionPreset('night')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
-                        nightMode && Math.abs(timeOfDay - 21.0) < 1.0
-                          ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      <Flame className="w-4 h-4 text-[#B85F45]" />
-                      <span>{t.sidebars.left.night}</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* 3. Test Fireworks Celebration Salvo (Plays all fireworks for 5s regardless of time) */}
-                <div className="space-y-1.5 pt-1">
+                {/* 1.5. Quick Fireworks Salvo Action */}
+                <div className="space-y-1.5 p-2.5 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]">
                   <div className="flex items-center justify-between text-[11px] font-semibold text-[#2B2621]">
                     <span>{t.sidebars.left.fireworksDisplay}</span>
                     <span className="text-[10px] text-[#7C7267] font-mono">
@@ -2901,162 +2900,215 @@ export const LeftToolSidebar: React.FC = () => {
                   </button>
                 </div>
 
-                {/* 3. Celestial Sliders mounted directly on panel background (No enclosing cards) */}
-                <div className="space-y-3.5 pt-1">
-                  {/* Time of Day Slider */}
-                  <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5 text-[#8F4938]" />
-                        <span>{t.sidebars.left.timeOfDay}</span>
-                      </span>
-                      <span className="text-[#7C7267] font-mono">{timeStr}</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0.0}
-                      max={24.0}
-                      step={0.25}
-                      value={timeOfDay}
-                      onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
-                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
+                {/* 2. Celestial & Lighting Group */}
+                <div className="space-y-3">
+                  {renderSectionHeader(t.sidebars.left.lighting)}
 
-                  {/* Sun / Moon Elevation (X-Axis Rotation) */}
-                  <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                      <span>{t.sidebars.left.sunElevation}</span>
-                      <span className="text-[#7C7267] font-mono">{sunElevation}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={-10}
-                      max={90}
-                      step={1}
-                      value={sunElevation}
-                      onChange={(e) => setSunElevation(parseInt(e.target.value, 10))}
-                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-
-                  {/* Sun / Moon Azimuth (Compass Heading) */}
-                  <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                      <span className="flex items-center gap-1">
-                        <Compass className="w-3.5 h-3.5 text-[#8F4938]" />
-                        <span>{t.sidebars.left.sunAzimuth}</span>
-                      </span>
-                      <span className="text-[#7C7267] font-mono">{sunAzimuth}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={0}
-                      max={360}
-                      step={1}
-                      value={sunAzimuth}
-                      onChange={(e) => setSunAzimuth(parseInt(e.target.value, 10))}
-                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                  </div>
-                </div>
-
-                {/* 4. Camera Perspectives (Mounted directly on panel background) */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.perspectivesTitle}</div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <button
-                      onClick={() => setCameraViewPreset('isometric')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
-                    >
-                      <Box className="w-4 h-4 text-[#7C7267]" />
-                      <span>{t.sidebars.left.isometric}</span>
-                    </button>
-                    <button
-                      onClick={() => setCameraViewPreset('top')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
-                    >
-                      <Eye className="w-4 h-4 text-[#7C7267]" />
-                      <span>{t.sidebars.left.birdsEye}</span>
-                    </button>
-                    <button
-                      onClick={() => setCameraViewPreset('rampart')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
-                    >
-                      <Castle className="w-4 h-4 text-[#7C7267]" />
-                      <span>{t.sidebars.left.rampartEye}</span>
-                    </button>
-                    <button
-                      onClick={() => setCameraViewPreset('bastion')}
-                      className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
-                    >
-                      <Flag className="w-4 h-4 text-[#B85F45]" />
-                      <span>{t.sidebars.left.bastionHero}</span>
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => setCameraViewPreset('reset')}
-                    className="w-full py-1 bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-[11px] font-bold transition-colors cursor-pointer mt-1"
-                  >
-                    {t.sidebars.left.resetCameraHome}
-                  </button>
-                </div>
-
-                {/* 5. Camera Lens / FOV & Turntable (Direct on panel background) */}
-                <div className="space-y-3.5 pt-1">
-                  <div>
-                    <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
-                      <span>{t.sidebars.left.cameraFov}</span>
-                      <span className="text-[#7C7267] font-mono">{cameraFov}°</span>
-                    </div>
-                    <input
-                      type="range"
-                      min={20}
-                      max={80}
-                      step={1}
-                      value={cameraFov}
-                      onChange={(e) => setCameraFov(parseInt(e.target.value, 10))}
-                      className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                    />
-                    <div className="flex justify-between text-[9px] text-[#7C7267] mt-0.5">
-                      <span>25° {t.sidebars.left.telephoto}</span>
-                      <span>45° {t.sidebars.left.standard}</span>
-                      <span>75° {t.sidebars.left.wide}</span>
-                    </div>
-                  </div>
-
-                  {/* Turntable Showcase Controls */}
-                  <div>
-                    <div className="flex items-center justify-between text-[11px] font-semibold text-[#2B2621] mb-1.5">
-                      <span>{t.sidebars.left.turntable}</span>
+                  {/* Quick Celestial Presets */}
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.presetsTitle}</div>
+                    <div className="grid grid-cols-2 gap-1.5">
                       <button
-                        onClick={() => setViewMode(viewMode === 'turntable' ? 'orbit' : 'turntable')}
-                        className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
-                          viewMode === 'turntable'
-                            ? 'bg-[#B85F45] text-white'
-                            : 'bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]'
+                        onClick={() => setSunDirectionPreset('dawn')}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                          Math.abs(timeOfDay - 6.0) < 0.5
+                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
                         }`}
                       >
-                        {viewMode === 'turntable' ? t.sidebars.left.spinningActive : t.sidebars.left.start360Spin}
+                        <Sunrise className="w-4 h-4 text-[#EA580C]" />
+                        <span>{t.sidebars.left.dawn} (06:00)</span>
+                      </button>
+                      <button
+                        onClick={() => setSunDirectionPreset('noon')}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                          Math.abs(timeOfDay - 12.0) < 0.5
+                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        }`}
+                      >
+                        <Sun className="w-4 h-4 text-[#F59E0B]" />
+                        <span>{t.sidebars.left.noon} (12:00)</span>
+                      </button>
+                      <button
+                        onClick={() => setSunDirectionPreset('sunset')}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                          Math.abs(timeOfDay - 17.5) < 0.5
+                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        }`}
+                      >
+                        <Sunset className="w-4 h-4 text-[#D97706]" />
+                        <span>{t.sidebars.left.goldenHour}</span>
+                      </button>
+                      <button
+                        onClick={() => setSunDirectionPreset('night')}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-semibold border transition-colors cursor-pointer text-left flex items-center gap-1.5 ${
+                          nightMode && Math.abs(timeOfDay - 21.0) < 1.0
+                            ? 'bg-[#FAF8F5] border-[#B85F45] text-[#2B1E16]'
+                            : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#2B2621] hover:bg-[#EAE0D3]'
+                        }`}
+                      >
+                        <Flame className="w-4 h-4 text-[#B85F45]" />
+                        <span>{t.sidebars.left.night}</span>
                       </button>
                     </div>
-                    {viewMode === 'turntable' && (
-                      <div>
-                        <div className="flex justify-between text-[10px] text-[#5A5248] mb-0.5">
-                          <span>{t.sidebars.left.spinSpeed}</span>
-                          <span className="font-mono">{turntableSpeed.toFixed(1)} RPM</span>
-                        </div>
-                        <input
-                          type="range"
-                          min={0.5}
-                          max={4.0}
-                          step={0.1}
-                          value={turntableSpeed}
-                          onChange={(e) => setTurntableSpeed(parseFloat(e.target.value))}
-                          className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
-                        />
+                  </div>
+
+                  {/* Celestial Sliders */}
+                  <div className="space-y-3 pt-1">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3.5 h-3.5 text-[#8F4938]" />
+                          <span>{t.sidebars.left.timeOfDay}</span>
+                        </span>
+                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{timeStr}</span>
                       </div>
-                    )}
+                      <input
+                        type="range"
+                        min={0.0}
+                        max={24.0}
+                        step={0.25}
+                        value={timeOfDay}
+                        onChange={(e) => setTimeOfDay(parseFloat(e.target.value))}
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                        <span>{t.sidebars.left.sunElevation}</span>
+                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{sunElevation}°</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={-10}
+                        max={90}
+                        step={1}
+                        value={sunElevation}
+                        onChange={(e) => setSunElevation(parseInt(e.target.value, 10))}
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                        <span className="flex items-center gap-1">
+                          <Compass className="w-3.5 h-3.5 text-[#8F4938]" />
+                          <span>{t.sidebars.left.sunAzimuth}</span>
+                        </span>
+                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{sunAzimuth}°</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={0}
+                        max={360}
+                        step={1}
+                        value={sunAzimuth}
+                        onChange={(e) => setSunAzimuth(parseInt(e.target.value, 10))}
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Camera Perspectives & Settings */}
+                  {renderSectionHeader(t.sidebars.left.camera)}
+
+                  <div className="space-y-1.5">
+                    <div className="text-[11px] font-semibold text-[#2B2621]">{t.sidebars.left.perspectivesTitle}</div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      <button
+                        onClick={() => setCameraViewPreset('isometric')}
+                        className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      >
+                        <Box className="w-4 h-4 text-[#7C7267]" />
+                        <span>{t.sidebars.left.isometric}</span>
+                      </button>
+                      <button
+                        onClick={() => setCameraViewPreset('top')}
+                        className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      >
+                        <Eye className="w-4 h-4 text-[#7C7267]" />
+                        <span>{t.sidebars.left.birdsEye}</span>
+                      </button>
+                      <button
+                        onClick={() => setCameraViewPreset('rampart')}
+                        className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      >
+                        <Castle className="w-4 h-4 text-[#7C7267]" />
+                        <span>{t.sidebars.left.rampartEye}</span>
+                      </button>
+                      <button
+                        onClick={() => setCameraViewPreset('bastion')}
+                        className="py-1.5 px-2 bg-[#FAF8F5] hover:bg-[#EAE0D3] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-xs font-semibold transition-colors cursor-pointer text-left flex items-center gap-1.5"
+                      >
+                        <Flag className="w-4 h-4 text-[#B85F45]" />
+                        <span>{t.sidebars.left.bastionHero}</span>
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => setCameraViewPreset('reset')}
+                      className="w-full py-1 bg-[#FAF8F5] hover:bg-[#D8D1C5] text-[#2B2621] border border-[#D8D1C5] rounded-lg text-[11px] font-bold transition-colors cursor-pointer mt-1"
+                    >
+                      {t.sidebars.left.resetCameraHome}
+                    </button>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    <div>
+                      <div className="flex justify-between text-[11px] font-semibold text-[#2B2621]">
+                        <span>{t.sidebars.left.cameraFov}</span>
+                        <span className="text-[#7C7267] font-mono tabular-nums text-[11px]">{cameraFov}°</span>
+                      </div>
+                      <input
+                        type="range"
+                        min={20}
+                        max={80}
+                        step={1}
+                        value={cameraFov}
+                        onChange={(e) => setCameraFov(parseInt(e.target.value, 10))}
+                        className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                      />
+                      <div className="flex justify-between text-[9px] text-[#7C7267] mt-0.5">
+                        <span>25° {t.sidebars.left.telephoto}</span>
+                        <span>45° {t.sidebars.left.standard}</span>
+                        <span>75° {t.sidebars.left.wide}</span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] font-semibold text-[#2B2621] mb-1.5">
+                        <span>{t.sidebars.left.turntable}</span>
+                        <button
+                          onClick={() => setViewMode(viewMode === 'turntable' ? 'orbit' : 'turntable')}
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-colors ${
+                            viewMode === 'turntable'
+                              ? 'bg-[#B85F45] text-white'
+                              : 'bg-[#FAF8F5] text-[#2B2621] hover:bg-[#D8D1C5]'
+                          }`}
+                        >
+                          {viewMode === 'turntable' ? t.sidebars.left.spinningActive : t.sidebars.left.start360Spin}
+                        </button>
+                      </div>
+                      {viewMode === 'turntable' && (
+                        <div>
+                          <div className="flex justify-between text-[10px] text-[#5A5248] mb-0.5">
+                            <span>{t.sidebars.left.spinSpeed}</span>
+                            <span className="font-mono tabular-nums text-[11px]">{turntableSpeed.toFixed(1)} RPM</span>
+                          </div>
+                          <input
+                            type="range"
+                            min={0.5}
+                            max={4.0}
+                            step={0.1}
+                            value={turntableSpeed}
+                            onChange={(e) => setTurntableSpeed(parseFloat(e.target.value))}
+                            className="w-full h-1.5 bg-[#D8D1C5] rounded-lg appearance-none cursor-pointer accent-[#B85F45]"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -3081,6 +3133,23 @@ export const LeftToolSidebar: React.FC = () => {
             );
           })()}
         </div>
+
+        {/* Fixed Footer: Advanced Settings Checkbox (only when hasAdvanced) */}
+        {hasAdvanced && (
+          <div className="shrink-0 px-3.5 py-2.5 bg-[#E4DDD3] border-t border-[#D8D1C5] flex items-center justify-between">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={showAdvanced}
+                onChange={(e) => setShowAdvanced(e.target.checked)}
+                className="w-4 h-4 accent-[#B85F45] cursor-pointer rounded"
+              />
+              <span className="text-[11px] font-bold text-[#5C4638] uppercase tracking-wider">
+                {t.sidebars.left.advancedSettings}
+              </span>
+            </label>
+          </div>
+        )}
       </aside>
     </>
   );

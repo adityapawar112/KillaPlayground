@@ -301,11 +301,11 @@ export const RightToolSidebar: React.FC = () => {
 
   return (
     <>
-      {/* Minimized Hanging Guide Tab (Pinned to top-right below top bar) */}
+      {/* Minimized Hanging Guide Tab (Pinned to top-right below studio header) */}
       {isRightSidebarMinimized && (
         <div
           className={`fixed right-2 z-30 pointer-events-auto transition-all duration-200 ${
-            !showContextualDock || isMobileTopBarMinimized ? 'top-[41px]' : 'top-[112px] xl:top-[81px]'
+            !showContextualDock || isMobileTopBarMinimized ? 'top-[38px]' : 'top-[72px]'
           }`}
         >
           <button
@@ -343,7 +343,7 @@ export const RightToolSidebar: React.FC = () => {
                 ? t.sidebars.right.figurines
                 : activeTool === 'lighting'
                 ? t.sidebars.right.lighting
-                : t.sidebars.right.outliner}
+                : t.sidebars.right.sceneOutliner}
             </span>
             <ChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
@@ -358,10 +358,10 @@ export const RightToolSidebar: React.FC = () => {
           isRightSidebarMinimized ? 'translate-x-full' : 'translate-x-0'
         } ${
           !showContextualDock
-            ? 'top-[41px]'
+            ? 'top-[38px]'
             : isMobileTopBarMinimized
-            ? 'top-[41px]'
-            : 'top-[112px] xl:top-[81px]'
+            ? 'top-[38px]'
+            : 'top-[72px]'
         }`}
       >
         {/* Left Resizing Edge with Tactile Grip Dots */}
@@ -754,119 +754,10 @@ export const RightToolSidebar: React.FC = () => {
             </div>
           ) : activeTool === 'prop' ? (
             <div className="space-y-4">
-              {/* ======================================================== */}
-              {/* 1. PLACED FIGURINES OUTLINER                             */}
-              {/* ======================================================== */}
-              <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
-                      {t.sidebars.right.placedFigurines}
-                    </span>
-                    <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
-                      {placedProps.length} / 250
-                    </span>
-                  </div>
-                  {selectedPropId && (
-                    <button
-                      onClick={() => setSelectedPropId(null)}
-                      className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
-                    >
-                      {t.sidebars.right.deselect}
-                    </button>
-                  )}
-                </div>
-
-                <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
-                  {placedProps.length === 0 ? (
-                    <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
-                      {t.sidebars.right.noFigurines}
-                    </div>
-                  ) : (
-                    placedProps.map((prop, idx) => {
-                      const isSelected = selectedPropId === prop.id;
-                      const isHovered = hoveredElement?.type === 'prop' && hoveredElement.id === prop.id;
-                      const meta = getFigurineById(prop.type) || FIGURINE_MANIFEST[0];
-                      const label = meta
-                        ? (locale === 'mr' || locale === 'hi') && meta.devanagariName
-                          ? meta.devanagariName
-                          : meta.name
-                        : `Figurine ${idx + 1}`;
-
-                      return (
-                        <div
-                          key={prop.id}
-                          onClick={() => {
-                            setSelectedPropId(prop.id);
-                            if (propSubTool === 'place') {
-                              setPropSubTool('select');
-                            }
-                          }}
-                          onMouseEnter={() => setHoveredElement({ type: 'prop', id: prop.id })}
-                          onMouseLeave={() => setHoveredElement(null)}
-                          className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
-                              : isHovered
-                              ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
-                              : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
-                              <img
-                                src={meta?.previewPath}
-                                alt={label}
-                                className="w-full h-full object-contain p-0.5"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </div>
-                            <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
-                            <span
-                              className={`text-[9px] font-mono shrink-0 ${
-                                isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
-                              }`}
-                            >
-                              ({prop.position[0].toFixed(1)}, {prop.position[2].toFixed(1)})
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPropId(prop.id);
-                                focusCamera(e);
-                              }}
-                              title={t.sidebars.right.focusCamera}
-                              className="p-1 rounded hover:bg-black/10 cursor-pointer"
-                            >
-                              <Focus className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeProp(prop.id);
-                              }}
-                              title={t.sidebars.right.deleteElement}
-                              className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-
-              {/* ======================================================== */}
-              {/* 2. LOWER SECTION: VAULT (PLACE) OR PROPERTIES (OTHER)    */}
-              {/* ======================================================== */}
               {propSubTool === 'place' ? (
+                /* ======================================================== */
+                /* FIGURINE VAULT (ASSET BROWSER IN PLACE MODE)             */
+                /* ======================================================== */
                 <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
@@ -1026,8 +917,116 @@ export const RightToolSidebar: React.FC = () => {
                   )}
                 </div>
               ) : (
-                /* ELEMENT PROPERTIES INSPECTOR */
-                <div className="space-y-2.5">
+                /* ======================================================== */
+                /* DUAL PANE: OUTLINER + ELEMENT INSPECTOR (SELECT/TRANSFORM/ERASE) */
+                /* ======================================================== */
+                <div className="space-y-4">
+                  {/* 1. PLACED FIGURINES OUTLINER */}
+                  <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
+                          {t.sidebars.right.placedFigurines}
+                        </span>
+                        <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                          {placedProps.length} / 250
+                        </span>
+                      </div>
+                      {selectedPropId && (
+                        <button
+                          onClick={() => setSelectedPropId(null)}
+                          className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                        >
+                          {t.sidebars.right.deselect}
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
+                      {placedProps.length === 0 ? (
+                        <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
+                          {t.sidebars.right.noFigurines}
+                        </div>
+                      ) : (
+                        placedProps.map((prop, idx) => {
+                          const isSelected = selectedPropId === prop.id;
+                          const isHovered = hoveredElement?.type === 'prop' && hoveredElement.id === prop.id;
+                          const meta = getFigurineById(prop.type) || FIGURINE_MANIFEST[0];
+                          const label = meta
+                            ? (locale === 'mr' || locale === 'hi') && meta.devanagariName
+                              ? meta.devanagariName
+                              : meta.name
+                            : `Figurine ${idx + 1}`;
+
+                          return (
+                            <div
+                              key={prop.id}
+                              onClick={() => {
+                                setSelectedPropId(prop.id);
+                              }}
+                              onMouseEnter={() => setHoveredElement({ type: 'prop', id: prop.id })}
+                              onMouseLeave={() => setHoveredElement(null)}
+                              className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
+                                  : isHovered
+                                  ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
+                                  : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
+                                  <img
+                                    src={meta?.previewPath}
+                                    alt={label}
+                                    className="w-full h-full object-contain p-0.5"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                                <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
+                                <span
+                                  className={`text-[9px] font-mono shrink-0 ${
+                                    isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
+                                  }`}
+                                >
+                                  ({prop.position[0].toFixed(1)}, {prop.position[2].toFixed(1)})
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPropId(prop.id);
+                                    focusCamera(e);
+                                  }}
+                                  title={t.sidebars.right.focusCamera}
+                                  className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                                >
+                                  <Focus className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    removeProp(prop.id);
+                                  }}
+                                  title={t.sidebars.right.deleteElement}
+                                  className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 2. ELEMENT PROPERTIES INSPECTOR */}
+                  <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       {t.sidebars.right.elementProperties}
@@ -1158,9 +1157,10 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          ) : activeTool === 'lighting' ? (
+              </div>
+            )}
+          </div>
+        ) : activeTool === 'lighting' ? (
             <div className="space-y-4">
               {lightingSubTool === 'place' ? (
                 /* ======================================================== */
@@ -1614,7 +1614,7 @@ export const RightToolSidebar: React.FC = () => {
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
-                Diorama Elements
+                {t.sidebars.right.sceneOutliner}
               </span>
               <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
                 {(activeTool === 'building' || activeTool === 'walls')
@@ -2113,7 +2113,7 @@ export const RightToolSidebar: React.FC = () => {
           <div className="border-t border-[#D8D1C5] pt-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
-                {t.sidebars.right.elementProperties}
+                {t.sidebars.right.elementInspector}
               </span>
                 {(selectedWallId || selectedComponent || selectedSplineId || selectedFoundationId || selectedStairId) && (
                   <button
@@ -3368,8 +3368,9 @@ export const RightToolSidebar: React.FC = () => {
 
               {/* G. EMPTY SELECTION STATE */}
               {!selectedWallId && !selectedComponent && !selectedSplineId && !selectedFoundationId && !selectedStairId && (
-                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#D8D1C5] text-[11px] text-[#7C7267] leading-relaxed">
-                  {t.sidebars.right.emptySelection}
+                <div className="p-4 bg-[#FAF8F5] rounded-xl border border-dashed border-[#D8D1C5] text-center text-[#7C7267] text-xs space-y-1">
+                  <MousePointer className="w-5 h-5 mx-auto text-[#7C7267]/60" />
+                  <div>{t.sidebars.right.selectToInspect}</div>
                 </div>
               )}
             </div>

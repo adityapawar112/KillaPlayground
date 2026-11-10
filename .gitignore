@@ -62,5 +62,5 @@ playwright/.cache/
 # Scratch files & local logs
 *.log
 scratch/
-temp_chrome_profile/
+temp_chrome_profile*/
 screenshots/

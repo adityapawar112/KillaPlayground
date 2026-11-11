@@ -251,20 +251,36 @@ To give users the fastest, most joyful path to crafting a complete fort, tools a
    * **Dedicated Diorama Presentation Mode (`PresentationGlassBar.tsx`):**
      * Fullscreen exhibition mode collapsing all studio toolbars and panels with a floating dark stone glass capsule.
      * **Presentation Mode Interaction Guard**: Automatically switches `activeTool` to `'view'` mode upon entry, preserving origin tool in `prePresentationTool`. Pointer events in `BaseTerrain.tsx` are disabled for sculpt/paint/build, and OrbitControls mouse buttons are strictly mapped to `LEFT: THREE.MOUSE.ROTATE`. Exiting via `Esc` or pill restores origin tool.
+     * **Mobile Viewport Vertical Alignment (< 1024px)**: Pinned vertically to the left edge of the viewport (`left-3 top-1/2 -translate-y-1/2`) with column layout, preventing horizontal control clipping on narrow phone and tablet screens. Redundant presentation mode buttons have been removed from the presentation bar, ensuring a clean, focused control set.
 
 ---
 
-### 4.3 Decoupled 5-Zone HUD Layout & Resizing Engine
-The user interface is architected into 6 independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
+### 4.3 Decoupled HUD Layout & Universal Responsive Engine
+The user interface is architected into independent, decoupled modules to provide full desktop/mobile responsiveness without clutter:
 
-1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height). Hosts branding, fort selector, menus, language switcher, undo/redo/reset, night diya mode, auto-dismissing toast notifications, and **Collapse All / Expand All** pill buttons (`Minimize2` / `Maximize2`).
+1. **`AppMenuBar.tsx`**: Pinned top header (`top-0`, 41px height on desktop). Hosts branding, fort selector, menus, language switcher, undo/redo/reset, night diya mode, auto-dismissing toast notifications, and 1-tap **Presentation View** (`TbMaximize`).
 2. **`TopToolBar.tsx`**: Secondary top bar (`top-[41px]`). Hosts the 7 primary fort construction tools (Terrain, Building, Texture, Foliage, Figurines, Lighting, View) and camera preset view controls. Soil pipeline tools are safely hidden in the toolbar to focus the user experience. Minimizes into a dynamic hanging folder guide tab (`[⛰️ Tools & Views ▾]`).
 3. **`LeftToolSidebar.tsx`**: Universal properties drawer (`left-0`, `bottom-0`). Resizable from 250px to 480px with tactile 6-dot grip handle. Persists width to `localStorage`. Features section header reset icons (`RotateCcw`) on every property group divider line (`GEOMETRY`, `APPEARANCE`, `PLACEMENT`, `BEHAVIOR`, `LIGHTING`, `CAMERA`), and standard footer checkbox `[✓] ADVANCED SETTINGS` (`showAdvanced`). Minimizes into `[⚙️ Properties ▾]`.
 4. **`ToolModeSidebar.tsx`**: Vertical mode strip (width: 68px) attached to right edge of Left Sidebar. Shows icon + label mode buttons for Building (`Select`, `Walls`, `Foundation`, `Stairs`, `Fortifications`), Lighting (`Place`, `Select`, `Transform`, `Erase`), Figurines (`Place`, `Select`, `Transform`, `Erase`), Terrain (8 sculpting modes), Texture (`Paint`, `Erase`), and Foliage (`Scatter`, `Single`, `Erase`). Automatically hidden during `View` tool. Minimizes into `[🎯 Modes ▾]`.
 5. **`RightToolSidebar.tsx`**: Scene Outliner and Contextual Inspector (`right-0`, `bottom-0`). Resizable from 260px to 460px with tactile grip. Upper pane shows `DIORAMA ELEMENTS` tree with child counts and focus/delete actions (or texture / foliage / figurine / lighting vault browser); lower pane shows `ELEMENT PROPERTIES` inspector when an object is selected. Automatically hidden during `View` tool. Minimizes into `[🏰 Outliner ▾]`.
 6. **`ViewportBottomBar.tsx` & `ContextualKeycaps.tsx`**:
-   - `ViewportBottomBar.tsx`: Centered floating 2-cluster control dock (`bottom-3 md:bottom-5`) consolidating camera viewpoints, day/night cycles, animation loops, turntable, snapshot capture, and presentation mode.
+   - `ViewportBottomBar.tsx`: Centered floating 2-cluster control dock (`bottom-3 md:bottom-5`) consolidating camera viewpoints (with persistent perspective cycling across Isometric, Top, Rampart, and Home), day/night cycles, animation loops, turntable, snapshot capture, and 1-tap presentation mode.
    - `ContextualKeycaps.tsx`: Floating modifier keycap hints (`bottom-16`) detecting active tool state for zero-friction discoverability.
+7. **`MobileTopNav.tsx` (< 1024px Two-Tier Header)**:
+   - Row 1 (38px): Hamburger Menu (`☰`) slide-over sheet (File, Switch Fort, HD Poster Studio, Presentation View, Overlays, Language Switcher, Help), Camera Perspective Cycle button (`Iso` -> `Top` -> `Rampart` -> `Home`), Axis Snap cycle (`Z` -> `Y` -> `X`), History Cluster (Undo, Redo, Reset), Zoom In/Out touch buttons, and Festive Fort Poster Studio CTA (`Poster` with sparkles).
+   - Row 2 (28px): Play/Pause simulation toggle, 360° Turntable spin, 1-Tap Present Button, Snapshot Camera, and Day/Night Diurnal Toggle.
+8. **`MobileBottomDrawer.tsx` (< 1024px Touch Drawer Engine)**:
+   - Single-stage pull-up gliding from a collapsed 44px handle peek to a single open height of 50vh, shifting the Virtual Joystick and FABs to `bottom: calc(50vh + 14px)`.
+   - Reuses desktop `<LeftToolSidebar isDrawer />` and `<RightToolSidebar isDrawer />` directly across 4 contextual tabs:
+     - `[ Properties ]`: Universal Left Sidebar properties (sliders, mode parameters).
+     - `[ Assets ]`: Asset Vault browsers (Texture Swatches, Foliage library, Figurine 3D models, Festive Diyas & Fireworks).
+     - `[ Outliner ]`: Scene hierarchy list (placed structures, figurines, lights).
+     - `[ Element ]`: Contextual element properties inspector.
+     - Contextual tab routing filters tabs dynamically per tool mode, and selecting an item in the Outliner tab automatically switches the drawer to `[ Element ]`.
+9. **`VirtualJoystick.tsx` & `RadialPieMenu.tsx` (Mobile Navigation & Quick Dial)**:
+   - Double-ring touch joystick centered at the bottom of the screen with inner orbit core ($r \le 32\text{px}$) and outer pan boundary ($r > 32\text{px}$).
+   - Flanked by Left (Mode) and Right (Tool) Floating Action Buttons (FABs).
+   - Tapping either FAB replaces the joystick in-place with an SVG radial pie wheel dial without separate popup windows, instantly returning to the joystick upon slice selection.
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic
 To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:
@@ -316,6 +332,29 @@ To prevent hanging folder guide tabs from colliding under any permutation of ope
    - Changing primary tools in `useEditorStore.setActiveTool` sets `isPlaying: false` automatically.
    - This returns the canvas to `frameloop="demand"`, pausing continuous vertex wind sway and pyrotechnic physics during active fort sculpting or construction.
    - Switching tool modes/subtools (e.g. within Building or Terrain) preserves `isPlaying`, keeping animations running during mode changes.
+10. **Unified Multi-Touch & Pointer Gesture Engine (`gestureController.ts`)**:
+    - Disambiguates between viewport camera navigation and tool manipulation across touch and trackpad inputs.
+    - Touch Gestures:
+      * Single-finger drag: Orbits the diorama camera around the active focal center.
+      * Discrete Single Tap ($<8\text{px}$ travel, $<350\text{ms}$ duration): Dispatches primary tool action (placing props, stamping fortifications, clicking nodes, selecting elements).
+      * Double-Tap and Drag: Initiates continuous tool action strokes (sculpting mountain terrain, painting texture splats, scattering trees) while suppressing camera orbit and pan.
+      * Two-Finger Drag: Pans the diorama viewport smoothly along screen coordinates.
+      * Two-Finger Pinch: Zooms the camera in and out.
+      * Hardware Volume Buttons: Key listeners capture physical volume up/down events to dynamically increment/decrement the active tool's primary property (e.g. brush radius or sculpt strength).
+    - Mouse & Trackpad Gestures:
+      * Primary Click: Executes tool action.
+      * Primary Click Drag: Orbits diorama.
+      * Two-Finger Drag / Middle Click Drag: Pans viewport.
+      * Pinch / Scroll Wheel: Zooms camera.
+      * Modifier Shortcuts: `Shift + Scroll` for brush size up/down, `Ctrl + Scroll` for brush strength up/down.
+    - Input Event Isolation: Pointer events initiating over the Virtual Joystick, Bottom Drawer, or Top Navigation Bar are strictly quarantined to prevent double-action leaks into the 3D diorama canvas.
+11. **Virtual Joystick Spherical Orbit & Panning Mathematics (`VirtualJoystick.tsx`)**:
+    - Dual-zone virtual joystick centered at bottom viewport:
+      * Inner Core ($r \le 32\text{px}$): Computes angular offsets $(\Delta\theta, \Delta\phi)$ from the joystick deflection vector $(x, y)$ relative to `controls.target`. Offsets are applied directly to a native Three.js `Spherical` coordinates instance, moving the camera position along the sphere around target, updating `controls.update()`, and dispatching `__killa_invalidate()` to render on-demand. Completely eliminates crashes caused by calling non-existent OrbitControls setters.
+      * Outer Boundary Ring ($r > 32\text{px}$): Translates both camera position and `controls.target` along camera right and forward ground vectors scaled by deflection velocity, providing smooth planar panning.
+12. **Persistent Camera Perspective Cycle State Machine**:
+    - State is tracked persistently via `activeCameraPreset` in `useEditorStore.ts`.
+    - Cycles sequentially through `Isometric (45°)` -> `Top-Down (90°)` -> `Rampart Hero (15°)` -> `Home Reset` across desktop bottom bar, mobile top bar, and mobile vertical presentation bar, updating button icons and labels synchronously without one-shot nullification bugs.
 
 ---
 
@@ -354,6 +393,10 @@ Do not send screenshots to a backend server. Generate the entire high-res collag
        * *Primary CTA:* Download Festive Poster button.
        * *Secondary Actions:* Native Web Share API (`navigator.share`) and direct Clipboard copy (`navigator.clipboard.write`).
        * *Social Web Intents:* Direct share links for WhatsApp and X (Twitter).
+   * **Mobile Viewport Optimization (< 1024px)**:
+     * *Vertical Split Architecture*: Top half (`h-[40vh]` / `h-[42vh]`) centers the 4:5 portrait preview frame (`aspectRatio: '1080 / 1350'`, `height: '100%'`, `maxWidth: '100%'`, `width: 'auto'`), guaranteeing that the complete poster composition is visible on screen with zero vertical scrolling.
+     * *Lower Tabbed Inspector (`flex-1 min-h-0`)*: Houses the segmented tab switcher (`[ Slots & Layout ]`, `[ Poster Style ]`) and scrollable controls, directly above the sticky bottom export dock.
+     * *Direct Mobile Access*: Accessible directly via the `Poster` button on the primary mobile top bar (`MobileTopNav.tsx`) and the `HD Poster` button in the hamburger slide-over sheet.
 
 2. **5-Layer Sandwich Compositor (`posterCompositor.ts`):**
    * **Layer 1 (Base Vector Art)**: Background SVG from 4 curated historical themes (`archway_cannon`, `cream_maratha_ensemble`, `maroon_horseback`, `saffron_flag_bearer`).

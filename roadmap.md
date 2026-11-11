@@ -801,7 +801,12 @@ graph TD
     - *Mobile Presentation Mode Controls*: Pinned floating glass bar vertically to the left (`left-3 top-1/2 -translate-y-1/2`) on screens < 1024px to prevent horizontal cut-off.
     - *Single-Stage Mobile Bottom Drawer*: Enforced single pull-up (`44px` peek to `50vh` open) with zero multi-stage bouncing. Automatically shifts Virtual Joystick and FABs to `bottom: calc(50vh + 14px)` so they float above the drawer.
     - *In-Place Radial Pie Wheel*: Flanking Left and Right FABs replace the double-ring joystick seamlessly in-place with the radial SVG donut wheel without separate popup windows.
-    - *Direct Desktop Panel Reuse*: Embedded `<LeftToolSidebar isDrawer />` and `<RightToolSidebar isDrawer />` into the mobile bottom drawer as tabbed views (`[ Properties ]`, `[ Assets ]`, `[ Outliner ]`), guaranteeing 100% feature and state parity with zero scratch reimplementations.
+    - *Direct Desktop Panel Reuse & Section Separation*: Embedded `<LeftToolSidebar isDrawer />` and `<RightToolSidebar isDrawer />` into the mobile bottom drawer as tabbed views (`[ Properties ]`, `[ Assets ]`, `[ Outliner ]`, `[ Element ]`), guaranteeing 100% feature and state parity with zero scratch reimplementations. Separated the upper Outliner section from lower Element Properties; selecting an element in Outliner automatically switches the drawer to the `[ Element ]` tab.
+    - *Camera View Perspective Cycling Fix*: Resolved one-shot `cameraViewPreset` nullification bug by introducing persistent `activeCameraPreset` in `useEditorStore.ts`. The cycle button continuously advances through `Isometric (Box) -> Top (Eye) -> Rampart (Castle) -> Home (Focus)` on desktop bottom bar, mobile top bar, and mobile vertical presentation bar with synchronized icon and label updates.
+    - *Unified Gesture Controller (`gestureController.ts`)*: Integrated multi-touch and pointer gesture detection separating diorama orbiting (single drag) from tool actions (discrete tap: $<8\text{px}$ travel, $<350\text{ms}$ duration), continuous strokes (double-tap drag), viewport pan (two-finger drag), pinch zoom, volume button property adjustment (primary brush size/intensity), and trackpad shortcuts.
+    - *Virtual Joystick Inner Core Orbit*: Replaced invalid `setAzimuthalAngle` calls with native Three.js Spherical coordinate offsets around `controls.target`, allowing seamless camera orbiting inside the inner ring ($r \le 32\text{px}$) and panning in the outer boundary ($r > 32\text{px}$).
+    - *Redundant Workspace Buttons Cleanup*: Removed redundant Standard/Focus view buttons from `AppMenuBar.tsx` and `MobileTopNav.tsx` in favor of a 1-tap `Present` button. Removed the redundant Presentation button from presentation toolbars.
+    - *Mobile Poster Studio Optimization & Access*: Added a dedicated `Poster` button to the mobile upper top bar (`MobileTopNav.tsx`) and an `HD Poster` entry to the hamburger menu. Redesigned `PosterStudioModal.tsx` for mobile: upper half (`h-[40vh]`, `aspectRatio: 1080/1350`, `height: 100%`, `maxWidth: 100%`) displays the full 4:5 preview without scrolling; lower half hosts dual desktop-identical tabs (`[ Slots & Layout ]`, `[ Poster Style ]`) and sticky export dock.
   - **Sahyadri Destructive Confirmation Modal Engine (`DestructiveConfirmModal.tsx`)**:
     - Replaced all native browser `window.confirm` calls in `LeftToolSidebar.tsx` with an accessible, themed dialog featuring backdrop blur, autofocus, keyboard trap (`Escape` to dismiss, `Enter` to confirm), and terracotta destructive button styling.
   - **Trilingual Localization (`translations.ts`)**:
@@ -814,8 +819,11 @@ graph TD
 - [x] Accessible keyboard navigation with visible focus rings verified on all controls (`focus-visible:ring-2 focus-visible:ring-[#B85F45]`).
 - [x] Mobile and tablet layouts transition sidebars into touch-friendly slide-over drawers (`MobileBottomDrawer.tsx`).
 - [x] Double-ring navigation joystick with orbit core, pan boundary, pinch zoom, and in-place radial pie menus implemented (`VirtualJoystick.tsx`, `RadialPieMenu.tsx`).
+- [x] Camera perspective cycling reliably rotates across all views with dynamic icons and labels (`activeCameraPreset`).
+- [x] Bottom drawer dynamic tabs (`[ Properties ]`, `[ Assets ]`, `[ Outliner ]`, `[ Element ]`) adapt cleanly per tool mode and sub-tool.
+- [x] Poster Studio mobile layout displays full 4:5 preview in upper half without scrolling, and lower half properties.
 - [x] Native `window.confirm` calls eradicated and replaced with `DestructiveConfirmModal.tsx`.
-- [x] Vitest unit test suite passes with 100% success (`ticket19.test.ts` - 16 tests, 40 test files, 299 tests total).
+- [x] Vitest unit test suite passes with 100% success (`ticket19.test.ts` & `poster_and_presentation.test.ts` - 42 test files, 309 tests total).
 - [x] Production build passes with 0 errors (`npm run build` static prerender 7/7).
 - [x] Complete 13-point visual verification pass executed and verified via Headless Chrome CDP (`screenshots/ticket19-verified/`).
 

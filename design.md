@@ -560,8 +560,12 @@ To maintain visual consistency and eliminate fragmented implementations across t
   - Backdrop: `fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs select-none`.
   - Outer Container: `bg-[#EBE6DC] border-2 border-[#D8D1C5] rounded-2xl shadow-2xl max-w-6xl w-full h-[92vh] max-h-[960px] overflow-hidden flex flex-col text-[#2B2621]`.
   - Header: Clean, unified top banner with "Festive Fort Poster Studio" (`text-base font-bold text-[#2B2621]`), language switcher pill (`EN` | `म` | `हि`) matching `AppMenuBar`, and `[✕]` close button. Header MUST NOT include decorative subtitles or technical pixel dimensions (e.g. `1080 x 1350 HD`).
-- **2-Column Split Studio Workspace:**
-  - **Left Studio Column (Preview Floor & Synchronized Canvas)**:
+- **2-Column / Responsive Split Studio Workspace:**
+  - **Desktop (≥ 768px)**: 2-column horizontal split workspace with left preview canvas and right inspector panel.
+  - **Mobile (< 768px)**: Responsive vertical split workspace (`flex-col`):
+    - Upper half (`h-[40vh]` / `h-[42vh]`): Dedicated dark basalt viewing mat (`bg-[#1E1915]`) centering the 4:5 portrait poster frame (`aspectRatio: '1080 / 1350'`, `height: 100%`, `maxWidth: 100%`, `width: auto`), guaranteeing 100% visibility of the entire poster without vertical scrolling.
+    - Lower half (`flex-1 min-h-0`): Houses the segmented tab switcher (`[ Slots & Layout ]`, `[ Poster Style ]`), scrollable controls, and sticky bottom action dock.
+  - **Preview Floor & Synchronized Canvas**:
     - Dedicated dark basalt viewing mat (`bg-[#1E1915] p-3 sm:p-5 flex flex-col items-center justify-center relative overflow-hidden min-h-0`).
     - Strict 4:5 aspect portrait poster frame (`aspectRatio: '1080 / 1350'`) with 100% visible bounds and smooth canvas containment.
     - **Synchronized Slot Selection Overlay**:
@@ -607,6 +611,34 @@ To maintain visual consistency and eliminate fragmented implementations across t
     1. Triggers direct browser file download (`killa-diorama-<timestamp>.png`).
     2. Persists to browser IndexedDB Screenshot Vault (`killa_screenshots_db`, store `screenshots`).
   - Supports individual screenshot deletion and batch clearing with in-app confirmation guards.
+
+### Rule 27: Mobile Studio Viewport Layout & Touch Navigation (< 1024px)
+- **Two-Row Mobile Navigation Bar (`MobileTopNav.tsx`):**
+  - Container: Pinned top header (`fixed top-0 left-0 right-0 z-40 select-none`).
+  - Row 1 (38px Primary Bar): `bg-[#EBE6DC] border-b border-[#D8D1C5] px-2 flex items-center justify-between text-[#2B2621]`.
+    - Hamburger button (`☰`): Touch target `32×32px`, `rounded-lg hover:bg-[#D8D1C5]/50`.
+    - Camera Perspective cycle pill: Displays active view (`Iso`, `Top`, `Rampart`, `Home`) with contextual icon (`Box`, `Eye`, `Castle`, `Focus`), `bg-[#FAF8F5] border border-[#D8D1C5] text-[11px] font-medium px-2 py-1 rounded-lg`.
+    - Axis Snap cycle pill: Single button cycling `Z`, `Y`, `X` orientations.
+    - History Cluster: Undo, Redo, and Reset icon buttons with tactile hover feedback.
+    - Viewport Zoom Controls: `[+]` and `[-]` buttons for immediate optical zoom.
+    - Festive Poster Studio CTA: High-contrast terracotta pill (`bg-[#B85F45] text-white hover:bg-[#A24F37] text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-xs`).
+  - Row 2 (28px Diurnal & Playback Bar): `bg-[#F4F1EA] border-b border-[#D8D1C5] px-2 flex items-center justify-between text-[#4B382C] text-[10px]`.
+    - Play/Pause toggle, 360° Turntable spin, 1-Tap Present button (`TbMaximize`), Snapshot camera, and Day/Night diurnal solar toggle.
+  - Hamburger Slide-Over Sheet: Width `300px`, max-width `85vw`, `bg-[#FAF8F5] border-r border-[#D8D1C5] shadow-2xl z-50 p-4 space-y-3`. Hosts File / Open / Switch Fort, HD Poster Studio, 1-Tap Presentation View, Overlays, Language Switcher, and Help.
+- **Double-Ring Virtual Joystick & In-Place Radial Pie Wheel (`VirtualJoystick.tsx`, `RadialPieMenu.tsx`):**
+  - Position: Centered bottom viewport (`bottom: 24px` resting, elevated to `bottom: calc(50vh + 14px)` when bottom drawer is open).
+  - Outer Boundary Ring: Diameter `144px`, `bg-[#2B2621]/45 backdrop-blur-xs border border-[#D8D1C5]/60 rounded-full`. 4 tactile cardinal dots (`#D8D1C5`). Pushing past boundary pans camera viewport.
+  - Inner Core Thumbstick: Diameter `64px`, `bg-[#FAF8F5]/95 border-2 border-[#B85F45] rounded-full shadow-md flex items-center justify-center`. Center label "ORBIT" in `text-[9px] font-bold text-[#4B382C]`. Dragging orbits camera spherical angles around diorama center.
+  - Flanking Action Buttons (FABs): Diameter `48px`, `bg-[#FAF8F5] border-1.5 border-[#D8D1C5] rounded-full shadow-md`. Left FAB triggers Tool Mode selector; Right FAB triggers Primary Tool selector.
+  - In-Place Radial Pie Wheel: Tapping either FAB replaces the joystick in-place with a circular SVG donut dial (`diameter: 160px`). Slices feature dark basalt background `#2B2621`, active slice highlight `#B85F45` with gold trim, and center cancel circle (`w-12 h-12 bg-[#FAF8F5] text-[#4B382C]`). Selecting any slice immediately closes the dial and restores the joystick.
+- **Single-Stage Mobile Bottom Drawer (`MobileBottomDrawer.tsx`):**
+  - Closed Peek: Height `44px` with pill grab handle (`w-12 h-1.5 bg-[#D8D1C5] rounded-full`).
+  - Open Elevation: Height `50vh`, `bg-[#EBE6DC] border-t border-[#D8D1C5] rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)]`. Enforces single pull-up with zero multi-stage bouncing.
+  - 4 Dynamic Drawer Tabs: `[ Properties ]`, `[ Assets ]`, `[ Outliner ]`, `[ Element ]`. Mounted directly on a `#FAF8F5` surface card with `#B85F45` active indicator and `text-[11px] font-medium`.
+  - Section Separation Standard: The upper Outliner section is strictly separated from lower Element Properties. Selecting any item in Outliner automatically switches the drawer to the `[ Element ]` tab.
+- **Mobile Vertical Presentation Glass Bar (`PresentationGlassBar.tsx`):**
+  - Pinned vertically on screens < 1024px along the left viewport edge (`fixed left-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 p-2 bg-[#2B2621]/90 backdrop-blur-md rounded-2xl border border-[#D8D1C5]/30 shadow-2xl`).
+  - Houses camera perspective cycling (synced with `activeCameraPreset`), 360° turntable, day/night diurnal lighting, snapshot camera, poster studio launch, and exit button. Redundant presentation buttons are removed.
 
 ---
 

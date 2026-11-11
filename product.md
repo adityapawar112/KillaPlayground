@@ -62,7 +62,8 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ├── Camera Perspectives & Lens FOV: Isometric (45°), Bird's Eye, Rampart Eye, Bastion Hero & FOV Slider
 ├── Continuous 360° Turntable Mode & Free Orbit Spectator with zero-modification viewport guard
 ├── 5-Second Celebratory Fireworks Salvo Test Action
-├── Quick-Action Dock: Day | Play | Pause | Screenshot | Night with continuous festive night pyrotechnics
+├── 5-Button Quick-Action Diorama Bar: Day | Play | Pause | Screenshot | Night with continuous festive night pyrotechnics
+├── Mobile Studio Experience & Universal Gestures: Virtual Joystick, Touch Gestures, Bottom Drawer Tabs & Mobile Poster Studio
 └── Demand Frameloop & Auto-Pause: Tool switching automatically stops playback to ensure responsive demand rendering
 │
 ▼
@@ -443,6 +444,74 @@ For builders desiring the authentic organic mud craft simulation:
   * *Side Pushing:* Compresses wet mud into vertical wall faces.
 * **Drying & Mud Locking:** Sets lock state to 1.0, protecting finished structures from accidental brush deformation.
 * **Freehand Mud Paint:** Detail liner brush with `lazy-brush` stabilizer for hand-painting dark basalt base coats and white lime (*chuna*) brick divider lines over dried mud masses[cite: 1, 2].
+
+---
+
+### Phase 12: Mobile Studio Experience & Universal Interaction Architecture
+
+To bring the tactile joy of building Diwali mud forts to mobile phones, tablets, and touchscreens at ₹0 additional cost, the application implements a dedicated mobile studio layout (< 1024px) paired with a universal gesture engine:
+
+#### 1. Two-Row Mobile Navigation Bar (`MobileTopNav.tsx`)
+* **Row 1 (38px Primary Utility Bar):**
+  * *Hamburger Menu (`☰`):* Opens an accessible slide-over sheet hosting Project Hub (File / Open / Switch Fort), Festive Fort Poster Studio CTA, 1-Tap Presentation View, Grid/Water Overlays, Trilingual Language Switcher (`EN` | `म` | `हि`), and Interactive Guide.
+  * *Camera Perspective Cycle Button (`Iso`):* Compact pill cycling sequentially through `Isometric (45°)` -> `Bird's Eye (90°)` -> `Rampart Hero (15°)` -> `Home Reset` with synchronized dynamic icons and labels.
+  * *Axis Snap Cycle (`Z`):* Cycles camera orientation along `Z-Axis` -> `Y-Axis` -> `X-Axis`.
+  * *History Cluster:* Instant one-tap `Undo` (`TbRotateCcw`), `Redo` (`TbRotateClockwise`), and `Reset` (`TbTrash`) actions.
+  * *Zoom Controls:* High-precision `Zoom In (+)` and `Zoom Out (-)` touch targets.
+  * *Festive Poster Studio CTA:* Prominent amber button (`Poster` with `Sparkles`) launching the full Festive Fort Poster Studio directly from the top bar.
+* **Row 2 (28px Diurnal & Playback Bar):**
+  * *Animation Loop:* One-tap `Play` / `Pause` simulation toggle.
+  * *360° Turntable Spin:* Smooth continuous diorama auto-rotation.
+  * *1-Tap Present Button:* Instantly enters fullscreen presentation exhibition mode, hiding all toolbars and drawers.
+  * *Snapshot Camera:* Captures a clean headless 1920 × 1080 screenshot with physical diurnal sky and scene lighting, dual-saving to disk and the local IndexedDB vault.
+  * *Day / Night Diurnal Toggle:* Shifts between daylight courtyard radiance and luminous full-moon Diwali night with festive diyas and pyrotechnic volleys.
+
+#### 2. Double-Ring Virtual Joystick & In-Place Radial Menus (`VirtualJoystick.tsx`, `RadialPieMenu.tsx`)
+* **Bottom-Centered Dual-Zone Virtual Joystick:**
+  * *Inner Core ($r \le 32\text{px}$):* Dragging inside the inner terracotta circle orbits the camera azimuth and polar angles around `controls.target` using continuous spherical coordinate offsets ($d\theta, d\phi$) with zero viewport shear or jump.
+  * *Outer Boundary Ring ($r > 32\text{px}$):* Pushing the thumbstick outward beyond the boundary ring smoothly pans the camera viewport along the screen-right and screen-forward ground vectors.
+  * *Pinch-to-Zoom:* Supports two-finger pinch gestures directly over the joystick zone to zoom the diorama camera in and out.
+* **Flanking Collapsible Action Buttons (FABs) & In-Place Radial Pie Wheel:**
+  * Flanked by a Left FAB (Tool Mode Selector) and Right FAB (Primary Tool Selector).
+  * Tapping either FAB seamlessly converts the center joystick into an SVG radial pie wheel in-place—eliminating disconnected floating popups or secondary windows.
+  * Tapping a pie slice immediately selects the tool or mode, updates the corresponding FAB icon, closes the dial, and restores the double-ring joystick.
+
+#### 3. Universal Gesture Engine (`gestureController.ts`)
+* **Multi-Touch Viewport Controls:**
+  * *Single-Finger Drag:* Smoothly orbits the diorama camera.
+  * *Discrete Single Tap ($<8\text{px}$ travel, $<350\text{ms}$ duration):* Performs primary tool action (placing a prop, stamping a bastion, selecting a wall).
+  * *Double-Tap and Drag:* Initiates continuous tool action strokes (sculpting mountain terrain, painting texture splats, scattering trees) while suppressing camera orbit and pan.
+  * *Two-Finger Drag:* Panning the viewport across the courtyard diorama.
+  * *Pinch Gesture:* Two-finger continuous zooming in and out.
+  * *Hardware Volume Button Integration:* Listening to hardware volume keys dynamically adjusts the active tool's primary property (e.g. brush radius or sculpt strength).
+* **Trackpad & Mouse Controls:**
+  * Primary click executes tool action; left-click drag orbits; double-tap drag pans; pinch gesture zooms.
+  * Keyboard shortcuts provide instant property adjustments (`Shift + Scroll` for brush size, `Ctrl + Scroll` for brush strength).
+* **Input Isolation Guard:**
+  * Any pointer activity originating within the Virtual Joystick, Bottom Drawer, or Top Navigation Bar automatically mutes viewport gestures, preventing conflicting double-actions.
+
+#### 4. Single-Stage Mobile Bottom Drawer (`MobileBottomDrawer.tsx`)
+* **Single-Stage Drawer Elevation:**
+  * Glides between a collapsed $44\text{px}$ grab handle peek and a single open height of $50\text{vh}$, completely eliminating multi-stage jump bugs.
+  * Pulling up the drawer automatically shifts the Virtual Joystick and flanking FABs to `bottom: calc(50vh + 14px)`, keeping navigation controls permanently accessible floating above the drawer.
+* **Direct Desktop Panel Reuse (Zero Code Duplication):**
+  * Directly embeds desktop `<LeftToolSidebar isDrawer />` and `<RightToolSidebar isDrawer />` components into touch-friendly tabbed views, ensuring 100% feature and state parity with desktop mode.
+* **4 Dynamic Tabs Adapted Per Tool & Mode:**
+  * `[ Properties ]`: Universal Left Sidebar properties (brush size, strength, elevation, foundation extrusion, stair spacing).
+  * `[ Assets ]`: Asset Vault browsers (Texture Swatches, Foliage nature library, Figurine 3D models, Festive Diyas & Fireworks).
+  * `[ Outliner ]`: Placed scene tree (walls, towers, bastions, figurines, lights).
+  * `[ Element ]`: Inspector for the currently selected object.
+  * *Contextual Routing:* Tabs dynamically adapt per tool mode (e.g. Figurine Place displays `Properties` and `Assets`; Figurine Select displays `Properties`, `Outliner`, and `Element`). Selecting any item in the Outliner tab automatically routes the drawer to `[ Element ]`.
+
+#### 5. Mobile-Optimized Festive Fort Poster Studio (`PosterStudioModal.tsx`)
+* **Responsive Vertical Split Layout:**
+  * *Upper Half (`h-[40vh]`):* Features a dedicated 4:5 aspect ratio viewing frame (`aspectRatio: 1080/1350`, `height: 100%`, `maxWidth: 100%`) displaying the entire festive poster collage clearly without vertical scrolling or aspect distortion.
+  * *Lower Half (`flex-1`):* Hosts the desktop-identical segmented tabs (`[ Slots & Layout ]`, `[ Poster Style ]`) and scrollable controls.
+  * *Sticky Action Dock:* Pinned export controls (`Download Festive Poster PNG/JPG`, `Share Poster`, `Copy Image`, WhatsApp and X intents) remain permanently visible at the base.
+
+#### 6. Mobile Vertical Presentation Glass Bar (`PresentationGlassBar.tsx`)
+* On viewports < 1024px, the floating presentation glass capsule is pinned vertically along the left viewport edge (`left-3 top-1/2 -translate-y-1/2`), preventing horizontal cutoff.
+* Features camera perspective cycling (persisting `activeCameraPreset`), 360° turntable, day/night lighting, snapshot capture, poster studio launch, and exit button.
 
 ---
 

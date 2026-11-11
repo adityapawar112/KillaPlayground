@@ -6,6 +6,7 @@ import {
   RADIUS_TIERS,
   TYPE_SCALE,
   ICON_CONFIG,
+  INTERACTION_CLASSES,
 } from './tokens';
 
 describe('Studio Design System Tokens', () => {
@@ -53,6 +54,15 @@ describe('Studio Design System Tokens', () => {
     expect(ICON_CONFIG.defaultSize).toBe(16);
     expect(ICON_CONFIG.prominentSize).toBe(18);
     expect(ICON_CONFIG.strokeWidth).toBe(1.75);
+  });
+
+  it('standardizes universal interaction states and accessible focus rings', () => {
+    expect(INTERACTION_CLASSES.focusRing).toContain('focus-visible:ring-[#B85F45]');
+    expect(INTERACTION_CLASSES.touchHitTarget).toContain('min-w-[44px]');
+    expect(INTERACTION_CLASSES.touchHitTarget).toContain('min-h-[44px]');
+    expect(INTERACTION_CLASSES.buttonDefault).toContain('bg-[#FAF8F5]');
+    expect(INTERACTION_CLASSES.buttonSelected).toContain('bg-[#2B2621]');
+    expect(INTERACTION_CLASSES.buttonDisabled).toContain('opacity-40');
   });
 });
 

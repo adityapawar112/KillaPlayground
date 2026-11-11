@@ -21,6 +21,7 @@ import { loadTexturesIntoArray } from '@/lib/terrain/terrainPaintBuffer';
 import { FOLIAGE_MANIFEST, getFoliageById } from '@/lib/foliage/foliageManifest';
 import { generateScatterCandidates, eraseFoliageInRadius } from '@/lib/foliage/foliageScatter';
 import { FoliageInstance } from '@/lib/foliage/foliageTypes';
+import { GestureController } from '@/lib/interaction/gestureController';
 
 /**
  * 3D Visual Brush Ring Cursor that tracks pointer raycast hit and aligns with the terrain surface normal.
@@ -212,6 +213,10 @@ export const BaseTerrainContent: React.FC = () => {
   const pondOriginRef = useRef<{ x: number; y: number; z: number } | null>(null);
   const lastFoliagePointRef = useRef<{ x: number; z: number } | null>(null);
   const lastFoliageTimeRef = useRef<number>(0);
+  const gestureControllerRef = useRef(new GestureController());
+  const pendingTapHitRef = useRef<{ point: THREE.Vector3; normal?: THREE.Vector3 } | null>(null);
+  const isContinuousToolDragRef = useRef(false);
+  const isMousePanRef = useRef(false);
   const cursorStateRef = useRef<CursorStateRef>({
     x: 0,
     y: 0,
@@ -250,6 +255,7 @@ export const BaseTerrainContent: React.FC = () => {
   const lightingSubTool = useEditorStore((s) => s.lightingSubTool);
   const showWireframe = useEditorStore((s) => s.showWireframe);
   const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
+  const isJoystickActive = useEditorStore((s) => s.isJoystickActive);
 
   // Load 52 retro textures into DataArrayTexture asynchronously on client once on mount
   useEffect(() => {
@@ -559,21 +565,19 @@ export const BaseTerrainContent: React.FC = () => {
     [sculptTerrain, getSlopeDirection, getEffectiveSlopeAngle, invalidate]
   );
 
-  const handlePointerDown = useCallback(
-    (e: ThreeEvent<PointerEvent>) => {
+  // Execute Single Tap Action on Terrain Surface (Taps <= 8px, <= 350ms)
+  const executeSingleTapAction = useCallback(
+    (hitPoint: THREE.Vector3, faceNormal?: THREE.Vector3) => {
       const editor = useEditorStore.getState();
-      if (editor.isPresentationMode || editor.activeTool === 'view') return;
+      if (editor.isPresentationMode || editor.activeTool === 'view' || editor.isJoystickActive) return;
 
-      // Handle Building / Walls Tool Actions (Ticket 09)
+      // 1. Building / Walls Tool Actions
       if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
-        if (e.button !== 0 || e.altKey) return;
-        e.stopPropagation();
-
         // A. Magnetic Stamp placement (Fortifications mode)
         if ((editor.buildingMode === 'fortifications' || editor.wallMode === 'fortify') && editor.activeStamp) {
           const snap = calculateMagneticSnap(
             editor.activeStamp,
-            e.point,
+            hitPoint,
             editor.walls,
             editor.selectedWallId,
             stateBuffer
@@ -616,7 +620,7 @@ export const BaseTerrainContent: React.FC = () => {
         if (editor.buildingMode === 'walls' || (editor.activeTool === 'walls' && editor.wallMode === 'draw')) {
           const draft = editor.activeWallDraft;
           if (draft.length >= 3) {
-            const dStart = Math.hypot(e.point.x - draft[0].x, e.point.z - draft[0].z);
+            const dStart = Math.hypot(hitPoint.x - draft[0].x, hitPoint.z - draft[0].z);
             if (dStart < 0.35) {
               editor.proceedToFortify();
               editor.setToastMessage('Fort perimeter wall closed into defensive circuit!');
@@ -625,19 +629,14 @@ export const BaseTerrainContent: React.FC = () => {
             }
           }
 
-          if (controls) {
-            controls.enabled = false;
-          }
-          isDrawingWallRef.current = true;
-          editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
-          lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          editor.addWallDraftPoint({ x: hitPoint.x, y: hitPoint.y, z: hitPoint.z });
+          lastWallPointRef.current = { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z };
           invalidate();
           return;
         }
 
-        // C. Foundation mode: Drag-to-build rectangular slab + height confirmation
+        // C. Foundation mode:
         if (editor.buildingMode === 'foundation') {
-          // If already in height confirmation phase, clicking places and confirms the foundation slab!
           if (editor.activeFoundationDraft && editor.activeFoundationDraft.phase === 'height') {
             const draft = editor.activeFoundationDraft;
             const dx = Math.abs(draft.x2 - draft.x1);
@@ -664,53 +663,48 @@ export const BaseTerrainContent: React.FC = () => {
             editor.setActiveFoundationDraft(null);
             isDraggingFoundationRef.current = false;
             foundationAnchorRef.current = null;
-            if (controls) {
-              controls.enabled = true;
-            }
+            if (controls) controls.enabled = true;
             invalidate();
             return;
           }
 
-          if (controls) {
-            controls.enabled = false;
-          }
-          isDraggingFoundationRef.current = true;
-          foundationAnchorRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
-          editor.setActiveFoundationDraft({
-            x1: e.point.x,
-            z1: e.point.z,
-            x2: e.point.x,
-            z2: e.point.z,
-            y: e.point.y,
-            phase: 'base',
+          // Single tap foundation: constructs standard 1.5m x 1.5m stone foundation slab
+          const baseHeight = sampleBilinearHeight(stateBuffer, hitPoint.x, hitPoint.z);
+          const rawHeight = editor.defaultFoundationHeight ?? 0.40;
+          editor.addFoundation({
+            name: `Stone Foundation ${editor.foundations.length + 1}`,
+            x: hitPoint.x,
+            z: hitPoint.z,
+            y: baseHeight,
+            length: 1.5,
+            width: 1.5,
+            height: rawHeight,
+            verticalOffset: editor.defaultFoundationOffset || 0.0,
+            tilingRepeat: editor.defaultFoundationTiling || 3.0,
           });
+          editor.setToastMessage(`Stone foundation slab placed!`);
           invalidate();
           return;
         }
 
-        // D. Stairs mode: click or hold and drag along slope to place stone steps path
+        // D. Stairs mode: add stair point
         if (editor.buildingMode === 'stairs') {
-          if (controls) {
-            controls.enabled = false;
-          }
-          isDrawingStairsRef.current = true;
           if (!editor.isDrawingStairs) {
             editor.startStairs();
           }
-          editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
-          lastStairPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          editor.addStairPoint([hitPoint.x, hitPoint.y, hitPoint.z]);
+          lastStairPointRef.current = { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z };
           invalidate();
           return;
         }
 
-        // E. Select mode: Select stairs or wall if clicked nearby (Foundations have exact 3D mesh raycasting)
+        // E. Select mode: Select stairs or wall if tapped nearby
         if (editor.buildingMode === 'select' || editor.wallMode === 'select') {
-          // Check stone stairs
           let closestStairDist = Infinity;
           let targetStairId: string | null = null;
           for (const s of editor.stairs) {
             for (const pt of s.points) {
-              const d = Math.hypot(e.point.x - pt[0], e.point.z - pt[2]);
+              const d = Math.hypot(hitPoint.x - pt[0], hitPoint.z - pt[2]);
               if (d < closestStairDist) {
                 closestStairDist = d;
                 targetStairId = s.id;
@@ -727,12 +721,11 @@ export const BaseTerrainContent: React.FC = () => {
             return;
           }
 
-          // Check walls (radius 0.35m to avoid clashing with nearby stairs)
           let closestDist = Infinity;
           let targetWallId: string | null = null;
           for (const wall of editor.walls) {
             for (const pt of wall.points) {
-              const d = Math.hypot(e.point.x - pt.x, e.point.z - pt.z);
+              const d = Math.hypot(hitPoint.x - pt.x, hitPoint.z - pt.z);
               if (d < closestDist) {
                 closestDist = d;
                 targetWallId = wall.id;
@@ -749,69 +742,44 @@ export const BaseTerrainContent: React.FC = () => {
             return;
           }
         }
+        return;
       }
 
-      // Handle Spline Tool Drawing
+      // 2. Spline Tool Drawing
       if (editor.activeTool === 'spline') {
-        if (e.button !== 0 || e.altKey || editor.splineMode !== 'draw') return;
-        // If cursor raycast hit any structure in front of the terrain (walls, bastions, towers, platforms), do not draw on terrain under it
-        if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
-          return;
-        }
-        e.stopPropagation();
-
-        if (controls) {
-          controls.enabled = false;
-        }
-
-        isDrawingSplineRef.current = true;
+        if (editor.splineMode !== 'draw') return;
         if (!editor.isDrawingSpline) {
           editor.startSpline();
         }
-        editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
-        lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+        editor.addSplinePoint([hitPoint.x, hitPoint.y, hitPoint.z]);
+        lastSplinePointRef.current = { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z };
         invalidate();
         return;
       }
 
-      // Handle Texture Tool Direct Surface Painting (Ticket 06)
+      // 3. Texture Tool Single Dab
       if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
-        if (e.button !== 0 || e.altKey) return;
-        e.stopPropagation();
-
-        if (controls) {
-          controls.enabled = false;
-        }
-
-        isPaintingRef.current = true;
         pushUndo();
-
         const texItem = getTextureById(editor.selectedTextureId) || TEXTURE_MANIFEST[0];
-        const layerIdx = texItem.layerIndex;
-
-        applyPaintBrush(e.point.x, e.point.z, {
+        applyPaintBrush(hitPoint.x, hitPoint.z, {
           operation: editor.paintSubTool,
-          targetLayer: layerIdx,
+          targetLayer: texItem.layerIndex,
           radius: editor.paintBrushRadius,
           strength: editor.paintBrushStrength,
           falloff: editor.paintBrushFalloff,
         });
-
-        updateCursor(e.point, e.face?.normal);
+        updateCursor(hitPoint, faceNormal);
         invalidate();
         return;
       }
 
-      // Handle Foliage Tool Nature Scattering & Pruning (Ticket 07)
+      // 4. Foliage Tool Placement / Scatter / Erase on Tap
       if (editor.activeTool === 'foliage') {
-        if (e.button !== 0 || e.altKey) return;
-        e.stopPropagation();
-
         const foliageItem = getFoliageById(editor.selectedFoliageId) || FOLIAGE_MANIFEST[0];
 
         if (editor.foliageSubTool === 'single') {
           pushUndo();
-          const norm = computeCursorNormal(e.point, e.face?.normal);
+          const norm = computeCursorNormal(hitPoint, faceNormal);
           const jitterFactor = 1.0 + (Math.random() * 2 - 1) * editor.foliageScaleJitter;
           const randomYaw = Math.random() * Math.PI * 2;
 
@@ -827,26 +795,18 @@ export const BaseTerrainContent: React.FC = () => {
           const singleInstance: FoliageInstance = {
             id: `foliage_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
             typeId: foliageItem.id,
-            position: [e.point.x, e.point.y, e.point.z],
+            position: [hitPoint.x, hitPoint.y, hitPoint.z],
             rotation: [euler.x, euler.y, euler.z],
             scale: [jitterFactor, jitterFactor, jitterFactor],
           };
           editor.addFoliageInstances([singleInstance]);
-
-          updateCursor(e.point, e.face?.normal);
+          updateCursor(hitPoint, faceNormal);
           invalidate();
           return;
         }
 
-        if (controls) {
-          controls.enabled = false;
-        }
-        isPaintingRef.current = true;
         pushUndo();
-
         if (editor.foliageSubTool === 'scatter') {
-          lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
-          lastFoliageTimeRef.current = performance.now();
           const activeTypeIds =
             editor.foliageSelectMode === 'multi' && editor.selectedFoliageIds.length > 0
               ? editor.selectedFoliageIds
@@ -855,8 +815,8 @@ export const BaseTerrainContent: React.FC = () => {
           const avgSpacing = activeItems.reduce((acc, item) => acc + item.spacing, 0) / activeItems.length;
 
           const candidates = generateScatterCandidates({
-            centerX: e.point.x,
-            centerZ: e.point.z,
+            centerX: hitPoint.x,
+            centerZ: hitPoint.z,
             typeId: activeItems[0].id,
             typeIds: activeTypeIds,
             spacing: avgSpacing,
@@ -878,133 +838,225 @@ export const BaseTerrainContent: React.FC = () => {
             editor.addFoliageInstances(candidates);
           }
         } else if (editor.foliageSubTool === 'erase') {
-          lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
-          lastFoliageTimeRef.current = performance.now();
-          const { erased, remaining } = eraseFoliageInRadius(
-            e.point.x,
-            e.point.z,
+          const { remaining } = eraseFoliageInRadius(
+            hitPoint.x,
+            hitPoint.z,
             editor.foliageBrushRadius,
             editor.foliageInstances
           );
-          if (erased.length > 0) {
-            editor.setFoliageInstances(remaining);
-          }
+          editor.setFoliageInstances(remaining);
         }
-
-        updateCursor(e.point, e.face?.normal);
+        updateCursor(hitPoint, faceNormal);
         invalidate();
         return;
       }
 
-      // Handle Figurine Erase Brush Direct Surface Erasing
+      // 5. Figurine Erase Brush on Tap
       if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
-        if (e.button !== 0 || e.altKey) return;
-        e.stopPropagation();
-
-        if (controls) {
-          controls.enabled = false;
-        }
-
-        isPaintingRef.current = true;
         pushUndo();
-
         const toRemove = editor.placedProps.filter((p) => {
-          const dx = p.position[0] - e.point.x;
-          const dz = p.position[2] - e.point.z;
+          const dx = p.position[0] - hitPoint.x;
+          const dz = p.position[2] - hitPoint.z;
           return Math.hypot(dx, dz) <= editor.propEraseRadius;
         });
         if (toRemove.length > 0) {
           editor.removeProps(toRemove.map((p) => p.id));
         }
-
-        updateCursor(e.point, e.face?.normal);
+        updateCursor(hitPoint, faceNormal);
         invalidate();
         return;
       }
 
-      // Handle Lighting & Fireworks Erase Brush Direct Surface Erasing
+      // 6. Lighting Erase Brush on Tap
       if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
-        if (e.button !== 0 || e.altKey) return;
-        e.stopPropagation();
-
-        if (controls) {
-          controls.enabled = false;
-        }
-
-        isPaintingRef.current = true;
         pushUndo();
-
         const toRemove = editor.placedLights.filter((l) => {
-          const dx = l.position[0] - e.point.x;
-          const dz = l.position[2] - e.point.z;
+          const dx = l.position[0] - hitPoint.x;
+          const dz = l.position[2] - hitPoint.z;
           return Math.hypot(dx, dz) <= editor.lightEraseRadius;
         });
         if (toRemove.length > 0) {
           editor.removeLights(toRemove.map((l) => l.id));
         }
-
-        updateCursor(e.point, e.face?.normal);
+        updateCursor(hitPoint, faceNormal);
         invalidate();
         return;
       }
 
-      if (editor.activeTool !== 'terrain' || e.button !== 0 || e.altKey) {
-        return;
+      // 7. Terrain Sculpting Dab on Tap
+      if (editor.activeTool === 'terrain') {
+        pushUndo();
+        if (editor.terrainSubTool === 'slope') {
+          slopeAnchorRef.current = { x: hitPoint.x, z: hitPoint.z, height: hitPoint.y };
+        }
+        if (editor.terrainSubTool === 'pond') {
+          pondOriginRef.current = { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z };
+        }
+        executeSculpt(hitPoint);
+        updateCursor(hitPoint, faceNormal);
+        const geo = useTerrainStore.getState().terrainGeometry;
+        if (geo) {
+          refitTerrainBVH(geo);
+        }
+        useTerrainStore.setState({ lastUpdated: Date.now() });
+        invalidate();
       }
-      e.stopPropagation();
-
-      // Push undo snapshot before applying the stroke
-      pushUndo();
-      isSculptingRef.current = true;
-
-      // Disable camera orbit while dragging to sculpt
-      if (controls) {
-        controls.enabled = false;
-      }
-
-      updateCursor(e.point, e.face?.normal);
-
-      if (editor.terrainSubTool === 'slope') {
-        slopeAnchorRef.current = { x: e.point.x, z: e.point.z, height: e.point.y };
-      }
-      if (editor.terrainSubTool === 'pond') {
-        pondOriginRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
-      }
-
-      executeSculpt(e.point);
     },
-    [controls, executeSculpt, pushUndo, updateCursor, invalidate]
+    [
+      executeSculpt,
+      pushUndo,
+      applyPaintBrush,
+      updateCursor,
+      computeCursorNormal,
+      stateBuffer,
+      controls,
+      invalidate,
+    ]
+  );
+
+  const handlePointerDown = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      const editor = useEditorStore.getState();
+      if (editor.isPresentationMode || editor.activeTool === 'view' || editor.isJoystickActive) return;
+
+      const action = gestureControllerRef.current.onPointerDown(
+        {
+          x: e.clientX,
+          y: e.clientY,
+          pointerType: e.pointerType,
+          pointerId: e.pointerId,
+        },
+        {
+          isJoystickActive: editor.isJoystickActive,
+          isAltPressed: e.altKey,
+        }
+      );
+
+      pendingTapHitRef.current = {
+        point: e.point.clone(),
+        normal: e.face?.normal?.clone(),
+      };
+
+      if (action.type === 'continuous_tool_drag') {
+        // Double-tap & drag on touch OR Alt+drag on mouse: disable OrbitControls to stop orbiting/panning!
+        if (controls) {
+          controls.enabled = false;
+        }
+        isContinuousToolDragRef.current = true;
+        e.stopPropagation();
+
+        if (editor.activeTool === 'terrain') {
+          pushUndo();
+          isSculptingRef.current = true;
+          if (editor.terrainSubTool === 'slope') {
+            slopeAnchorRef.current = { x: e.point.x, z: e.point.z, height: e.point.y };
+          }
+          if (editor.terrainSubTool === 'pond') {
+            pondOriginRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          }
+          executeSculpt(e.point);
+        } else if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+          pushUndo();
+          isPaintingRef.current = true;
+          const texItem = getTextureById(editor.selectedTextureId) || TEXTURE_MANIFEST[0];
+          applyPaintBrush(e.point.x, e.point.z, {
+            operation: editor.paintSubTool,
+            targetLayer: texItem.layerIndex,
+            radius: editor.paintBrushRadius,
+            strength: editor.paintBrushStrength,
+            falloff: editor.paintBrushFalloff,
+          });
+        } else if (editor.activeTool === 'foliage') {
+          pushUndo();
+          isPaintingRef.current = true;
+        } else if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
+          if (editor.buildingMode === 'foundation') {
+            isDraggingFoundationRef.current = true;
+            foundationAnchorRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+            editor.setActiveFoundationDraft({
+              x1: e.point.x,
+              z1: e.point.z,
+              x2: e.point.x,
+              z2: e.point.z,
+              y: e.point.y,
+              phase: 'base',
+            });
+          } else if (editor.buildingMode === 'walls' || editor.wallMode === 'draw') {
+            isDrawingWallRef.current = true;
+            editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
+            lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          } else if (editor.buildingMode === 'stairs') {
+            isDrawingStairsRef.current = true;
+            if (!editor.isDrawingStairs) {
+              editor.startStairs();
+            }
+            editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+            lastStairPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          }
+        } else if (editor.activeTool === 'spline') {
+          isDrawingSplineRef.current = true;
+          if (!editor.isDrawingSpline) {
+            editor.startSpline();
+          }
+          editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+          lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+        }
+        updateCursor(e.point, e.face?.normal);
+        invalidate();
+      } else if (action.type === 'mouse_pan') {
+        if (controls) {
+          controls.enabled = false;
+        }
+        isMousePanRef.current = true;
+      }
+      // Note: for pending_tap_or_orbit, controls.enabled remains TRUE so dragging orbits camera!
+    },
+    [controls, executeSculpt, applyPaintBrush, pushUndo, updateCursor, invalidate]
   );
 
   const handlePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       const editor = useEditorStore.getState();
-      if (editor.isPresentationMode || editor.activeTool === 'view') {
+      if (editor.isPresentationMode || editor.activeTool === 'view' || editor.isJoystickActive) {
         hideCursor();
         return;
       }
 
-      if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
-        hideCursor();
+      const action = gestureControllerRef.current.onPointerMove(
+        {
+          x: e.clientX,
+          y: e.clientY,
+          pointerType: e.pointerType,
+        },
+        { isJoystickActive: editor.isJoystickActive }
+      );
 
-        // Foundation drag tracking & height extrusion
-        if (editor.buildingMode === 'foundation') {
-          if (editor.activeFoundationDraft?.phase === 'height') {
-            e.stopPropagation();
-            const clientY = (e.nativeEvent as MouseEvent)?.clientY ?? 0;
-            const startY = editor.activeFoundationDraft.startPointerY ?? clientY;
-            const delta = (startY - clientY) * 0.008;
-            const baseH = editor.defaultFoundationHeight || 0.40;
-            const newHeight = Math.max(-10.0, Math.min(25.0, +(baseH + delta).toFixed(2)));
-            editor.setActiveFoundationDraft({
-              ...editor.activeFoundationDraft,
-              height: newHeight,
-            });
-            invalidate();
-            return;
-          }
+      // Trackpad / Mouse Pan on double-tap & drag
+      if (action.type === 'mouse_pan') {
+        if (controls) {
+          const panSpeed = 0.008;
+          const forward = new THREE.Vector3();
+          camera.getWorldDirection(forward);
+          forward.y = 0;
+          forward.normalize();
+          const right = new THREE.Vector3();
+          right.crossVectors(camera.up, forward).normalize();
+          const panOffset = new THREE.Vector3()
+            .addScaledVector(right, -action.deltaX * panSpeed)
+            .addScaledVector(forward, -action.deltaY * panSpeed);
+          camera.position.add(panOffset);
+          (controls as any).target?.add(panOffset);
+          (controls as any).update?.();
+          invalidate();
+        }
+        return;
+      }
 
-          if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
+      // Continuous tool drag stroke (Touch double-tap drag or Alt+drag)
+      if (action.type === 'continuous_tool_drag' || isContinuousToolDragRef.current) {
+        if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
+          hideCursor();
+          if (editor.buildingMode === 'foundation' && isDraggingFoundationRef.current && foundationAnchorRef.current) {
             e.stopPropagation();
             editor.setActiveFoundationDraft({
               x1: foundationAnchorRef.current.x,
@@ -1017,322 +1069,339 @@ export const BaseTerrainContent: React.FC = () => {
             invalidate();
             return;
           }
-        }
-
-        // Magnetic snap hologram tracking (Fortifications mode only)
-        if ((editor.buildingMode === 'fortifications' || editor.wallMode === 'fortify') && editor.activeStamp) {
-          if (e.buttons !== 0) return;
-          const snap = calculateMagneticSnap(
-            editor.activeStamp,
-            e.point,
-            editor.walls,
-            editor.selectedWallId,
-            stateBuffer
-          );
-          editor.setWallSnapPreview(snap);
-          invalidate();
-          return;
-        }
-
-        if (editor.wallSnapPreview) {
-          editor.setWallSnapPreview(null);
-        }
-
-        // Continuous drag-drawing for walls
-        if ((editor.buildingMode === 'walls' || editor.wallMode === 'draw') && isDrawingWallRef.current && lastWallPointRef.current) {
-          e.stopPropagation();
-          const dx = e.point.x - lastWallPointRef.current.x;
-          const dz = e.point.z - lastWallPointRef.current.z;
-          const dist = Math.hypot(dx, dz);
-          if (dist >= 0.15) {
-            editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
-            lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
-            invalidate();
-          }
-          return;
-        }
-
-        // Continuous drag-drawing for stairs
-        if (editor.buildingMode === 'stairs' && isDrawingStairsRef.current && lastStairPointRef.current) {
-          e.stopPropagation();
-          const dx = e.point.x - lastStairPointRef.current.x;
-          const dy = e.point.y - lastStairPointRef.current.y;
-          const dz = e.point.z - lastStairPointRef.current.z;
-          const dist = Math.hypot(dx, dy, dz);
-          if (dist >= 0.15) {
-            editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
-            lastStairPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
-            invalidate();
-          }
-          return;
-        }
-        return;
-      }
-
-      if (editor.activeTool === 'spline') {
-        hideCursor();
-        // If cursor raycast hit any structure in front of the terrain (walls, bastions, towers, platforms), do not draw on terrain under it
-        if (e.intersections && e.intersections.length > 0 && e.intersections[0].object !== e.object) {
-          return;
-        }
-        if (editor.splineMode === 'draw' && (isDrawingSplineRef.current || (e.buttons === 1 && editor.isDrawingSpline))) {
-          const pts = editor.currentSplinePoints;
-          const last = lastSplinePointRef.current || (pts.length > 0 ? { x: pts[pts.length - 1][0], y: pts[pts.length - 1][1], z: pts[pts.length - 1][2] } : null);
-          if (last) {
-            const dx = e.point.x - last.x;
-            const dy = e.point.y - last.y;
-            const dz = e.point.z - last.z;
-            const dist = Math.hypot(dx, dy, dz);
-            if (dist >= 0.15) {
-              e.stopPropagation();
-              editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
-              lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+          if ((editor.buildingMode === 'walls' || editor.wallMode === 'draw') && isDrawingWallRef.current && lastWallPointRef.current) {
+            e.stopPropagation();
+            const dx = e.point.x - lastWallPointRef.current.x;
+            const dz = e.point.z - lastWallPointRef.current.z;
+            if (Math.hypot(dx, dz) >= 0.15) {
+              editor.addWallDraftPoint({ x: e.point.x, y: e.point.y, z: e.point.z });
+              lastWallPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
               invalidate();
             }
+            return;
           }
+          if (editor.buildingMode === 'stairs' && isDrawingStairsRef.current && lastStairPointRef.current) {
+            e.stopPropagation();
+            const dx = e.point.x - lastStairPointRef.current.x;
+            const dy = e.point.y - lastStairPointRef.current.y;
+            const dz = e.point.z - lastStairPointRef.current.z;
+            if (Math.hypot(dx, dy, dz) >= 0.15) {
+              editor.addStairPoint([e.point.x, e.point.y, e.point.z]);
+              lastStairPointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+              invalidate();
+            }
+            return;
+          }
+          return;
         }
-        return;
+
+        if (editor.activeTool === 'spline') {
+          hideCursor();
+          if (editor.splineMode === 'draw' && isDrawingSplineRef.current) {
+            const pts = editor.currentSplinePoints;
+            const last = lastSplinePointRef.current || (pts.length > 0 ? { x: pts[pts.length - 1][0], y: pts[pts.length - 1][1], z: pts[pts.length - 1][2] } : null);
+            if (last) {
+              const dx = e.point.x - last.x;
+              const dy = e.point.y - last.y;
+              const dz = e.point.z - last.z;
+              if (Math.hypot(dx, dy, dz) >= 0.15) {
+                e.stopPropagation();
+                editor.addSplinePoint([e.point.x, e.point.y, e.point.z]);
+                lastSplinePointRef.current = { x: e.point.x, y: e.point.y, z: e.point.z };
+                invalidate();
+              }
+            }
+          }
+          return;
+        }
+
+        if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+          updateCursor(e.point, e.face?.normal);
+          if (isPaintingRef.current) {
+            e.stopPropagation();
+            const texItem = getTextureById(editor.selectedTextureId) || TEXTURE_MANIFEST[0];
+            applyPaintBrush(e.point.x, e.point.z, {
+              operation: editor.paintSubTool,
+              targetLayer: texItem.layerIndex,
+              radius: editor.paintBrushRadius,
+              strength: editor.paintBrushStrength,
+              falloff: editor.paintBrushFalloff,
+            });
+            invalidate();
+          }
+          return;
+        }
+
+        if (editor.activeTool === 'foliage') {
+          updateCursor(e.point, e.face?.normal);
+          if (isPaintingRef.current) {
+            e.stopPropagation();
+            const now = performance.now();
+            if (lastFoliagePointRef.current) {
+              const dx = e.point.x - lastFoliagePointRef.current.x;
+              const dz = e.point.z - lastFoliagePointRef.current.z;
+              if (Math.hypot(dx, dz) < 0.05 && now - lastFoliageTimeRef.current < 35) {
+                return;
+              }
+            }
+            lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
+            lastFoliageTimeRef.current = now;
+
+            if (editor.foliageSubTool === 'scatter') {
+              const activeTypeIds =
+                editor.foliageSelectMode === 'multi' && editor.selectedFoliageIds.length > 0
+                  ? editor.selectedFoliageIds
+                  : [editor.selectedFoliageId || FOLIAGE_MANIFEST[0].id];
+              const activeItems = activeTypeIds.map((id) => getFoliageById(id) || FOLIAGE_MANIFEST[0]);
+              const avgSpacing = activeItems.reduce((acc, item) => acc + item.spacing, 0) / activeItems.length;
+
+              const candidates = generateScatterCandidates({
+                centerX: e.point.x,
+                centerZ: e.point.z,
+                typeId: activeItems[0].id,
+                typeIds: activeTypeIds,
+                spacing: avgSpacing,
+                options: {
+                  operation: 'scatter',
+                  radius: editor.foliageBrushRadius,
+                  density: editor.foliageBrushDensity,
+                  scaleJitter: editor.foliageScaleJitter,
+                  normalAlign: editor.foliageNormalAlign,
+                },
+                existingInstances: editor.foliageInstances,
+                getHeightAt: (x, z) => getTerrainHeightAt(x, z, stateBuffer),
+                getNormalAt: (x, z) => {
+                  const n = getTerrainNormalAt(x, z, stateBuffer);
+                  return [n.x, n.y, n.z];
+                },
+              });
+              if (candidates.length > 0) {
+                editor.addFoliageInstances(candidates);
+              }
+            } else if (editor.foliageSubTool === 'erase') {
+              const { remaining } = eraseFoliageInRadius(
+                e.point.x,
+                e.point.z,
+                editor.foliageBrushRadius,
+                editor.foliageInstances
+              );
+              editor.setFoliageInstances(remaining);
+            }
+            invalidate();
+          }
+          return;
+        }
+
+        if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
+          updateCursor(e.point, e.face?.normal);
+          if (isPaintingRef.current) {
+            e.stopPropagation();
+            const toRemove = editor.placedProps.filter((p) => {
+              const dx = p.position[0] - e.point.x;
+              const dz = p.position[2] - e.point.z;
+              return Math.hypot(dx, dz) <= editor.propEraseRadius;
+            });
+            if (toRemove.length > 0) {
+              editor.removeProps(toRemove.map((p) => p.id));
+            }
+            invalidate();
+          }
+          return;
+        }
+
+        if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
+          updateCursor(e.point, e.face?.normal);
+          if (isPaintingRef.current) {
+            e.stopPropagation();
+            const toRemove = editor.placedLights.filter((l) => {
+              const dx = l.position[0] - e.point.x;
+              const dz = l.position[2] - e.point.z;
+              return Math.hypot(dx, dz) <= editor.lightEraseRadius;
+            });
+            if (toRemove.length > 0) {
+              editor.removeLights(toRemove.map((l) => l.id));
+            }
+            invalidate();
+          }
+          return;
+        }
+
+        if (editor.activeTool === 'terrain') {
+          updateCursor(e.point, e.face?.normal);
+          if (isSculptingRef.current) {
+            e.stopPropagation();
+            executeSculpt(e.point);
+          }
+          return;
+        }
       }
 
-      if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
-        updateCursor(e.point, e.face?.normal);
+      // Default pointer move: updates visual cursor smoothly & previews magnetic snap or foundation height
+      updateCursor(e.point, e.face?.normal);
 
-        if (isPaintingRef.current) {
+      if (editor.activeTool === 'building' || editor.activeTool === 'walls') {
+        if (editor.buildingMode === 'foundation' && editor.activeFoundationDraft?.phase === 'height') {
           e.stopPropagation();
-          const texItem = getTextureById(editor.selectedTextureId) || TEXTURE_MANIFEST[0];
-          const layerIdx = texItem.layerIndex;
-
-          applyPaintBrush(e.point.x, e.point.z, {
-            operation: editor.paintSubTool,
-            targetLayer: layerIdx,
-            radius: editor.paintBrushRadius,
-            strength: editor.paintBrushStrength,
-            falloff: editor.paintBrushFalloff,
+          const clientY = (e.nativeEvent as MouseEvent)?.clientY ?? 0;
+          const startY = editor.activeFoundationDraft.startPointerY ?? clientY;
+          const delta = (startY - clientY) * 0.008;
+          const baseH = editor.defaultFoundationHeight || 0.40;
+          const newHeight = Math.max(-10.0, Math.min(25.0, +(baseH + delta).toFixed(2)));
+          editor.setActiveFoundationDraft({
+            ...editor.activeFoundationDraft,
+            height: newHeight,
           });
           invalidate();
+          return;
         }
+
+        if ((editor.buildingMode === 'fortifications' || editor.wallMode === 'fortify') && editor.activeStamp) {
+          if (e.buttons === 0) {
+            const snap = calculateMagneticSnap(
+              editor.activeStamp,
+              e.point,
+              editor.walls,
+              editor.selectedWallId,
+              stateBuffer
+            );
+            editor.setWallSnapPreview(snap);
+            invalidate();
+            return;
+          }
+        } else if (editor.wallSnapPreview) {
+          editor.setWallSnapPreview(null);
+        }
+      }
+    },
+    [
+      executeSculpt,
+      applyPaintBrush,
+      updateCursor,
+      hideCursor,
+      camera,
+      controls,
+      stateBuffer,
+      invalidate,
+    ]
+  );
+
+  const handlePointerUp = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      const editor = useEditorStore.getState();
+      if (editor.isPresentationMode || editor.activeTool === 'view' || editor.isJoystickActive) {
+        gestureControllerRef.current.reset();
+        isSculptingRef.current = false;
+        isPaintingRef.current = false;
+        isDrawingWallRef.current = false;
+        isDraggingFoundationRef.current = false;
+        isDrawingStairsRef.current = false;
+        isDrawingSplineRef.current = false;
+        isContinuousToolDragRef.current = false;
+        isMousePanRef.current = false;
+        pendingTapHitRef.current = null;
         return;
       }
 
-      if (editor.activeTool === 'foliage') {
-        updateCursor(e.point, e.face?.normal);
+      const action = gestureControllerRef.current.onPointerUp(
+        {
+          x: e.clientX,
+          y: e.clientY,
+          pointerType: e.pointerType,
+        },
+        { isJoystickActive: editor.isJoystickActive }
+      );
 
-        if (isPaintingRef.current) {
-          e.stopPropagation();
-          const now = performance.now();
-          if (lastFoliagePointRef.current) {
-            const dx = e.point.x - lastFoliagePointRef.current.x;
-            const dz = e.point.z - lastFoliagePointRef.current.z;
-            const dist = Math.hypot(dx, dz);
-            if (dist < 0.05 && now - lastFoliageTimeRef.current < 35) {
+      // 1. Single Tap Action Execution
+      if (action.type === 'single_tap') {
+        const hit = pendingTapHitRef.current || { point: e.point, normal: e.face?.normal };
+        executeSingleTapAction(hit.point, hit.normal);
+      }
+
+      // 2. Continuous Drag Stroke Completion
+      if (action.type === 'end_continuous_tool_drag' || isContinuousToolDragRef.current) {
+        isContinuousToolDragRef.current = false;
+
+        if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
+          const draft = editor.activeFoundationDraft;
+          if (draft && draft.phase === 'base') {
+            const dx = Math.abs(draft.x2 - draft.x1);
+            const dz = Math.abs(draft.z2 - draft.z1);
+            if (dx >= 0.15 && dz >= 0.15) {
+              isDraggingFoundationRef.current = false;
+              if (controls) {
+                controls.enabled = false;
+              }
+              const clientY = (window.event as MouseEvent)?.clientY || window.innerHeight / 2;
+              editor.setActiveFoundationDraft({
+                ...draft,
+                phase: 'height',
+                height: editor.defaultFoundationHeight || 0.40,
+                startPointerY: clientY,
+              });
+              editor.setToastMessage('Base locked! Move mouse up/down to adjust height, click to place.');
+              invalidate();
               return;
             }
           }
-          lastFoliagePointRef.current = { x: e.point.x, z: e.point.z };
-          lastFoliageTimeRef.current = now;
-
-          const foliageItem = getFoliageById(editor.selectedFoliageId) || FOLIAGE_MANIFEST[0];
-
-          if (editor.foliageSubTool === 'scatter') {
-            const activeTypeIds =
-              editor.foliageSelectMode === 'multi' && editor.selectedFoliageIds.length > 0
-                ? editor.selectedFoliageIds
-                : [editor.selectedFoliageId || FOLIAGE_MANIFEST[0].id];
-            const activeItems = activeTypeIds.map((id) => getFoliageById(id) || FOLIAGE_MANIFEST[0]);
-            const avgSpacing = activeItems.reduce((acc, item) => acc + item.spacing, 0) / activeItems.length;
-
-            const candidates = generateScatterCandidates({
-              centerX: e.point.x,
-              centerZ: e.point.z,
-              typeId: activeItems[0].id,
-              typeIds: activeTypeIds,
-              spacing: avgSpacing,
-              options: {
-                operation: 'scatter',
-                radius: editor.foliageBrushRadius,
-                density: editor.foliageBrushDensity,
-                scaleJitter: editor.foliageScaleJitter,
-                normalAlign: editor.foliageNormalAlign,
-              },
-              existingInstances: editor.foliageInstances,
-              getHeightAt: (x, z) => getTerrainHeightAt(x, z, stateBuffer),
-              getNormalAt: (x, z) => {
-                const n = getTerrainNormalAt(x, z, stateBuffer);
-                return [n.x, n.y, n.z];
-              },
-            });
-            if (candidates.length > 0) {
-              editor.addFoliageInstances(candidates);
-            }
-          } else if (editor.foliageSubTool === 'erase') {
-            const { erased, remaining } = eraseFoliageInRadius(
-              e.point.x,
-              e.point.z,
-              editor.foliageBrushRadius,
-              editor.foliageInstances
-            );
-            if (erased.length > 0) {
-              editor.setFoliageInstances(remaining);
-            }
-          }
-          invalidate();
+          editor.setActiveFoundationDraft(null);
+          isDraggingFoundationRef.current = false;
+          foundationAnchorRef.current = null;
         }
-        return;
-      }
 
-      // Handle Figurine Erase Tool Pointer Move & Brush Dragging
-      if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
-        updateCursor(e.point, e.face?.normal);
+        if (isDrawingStairsRef.current) {
+          isDrawingStairsRef.current = false;
+          lastStairPointRef.current = null;
+        }
 
         if (isPaintingRef.current) {
-          e.stopPropagation();
-          const toRemove = editor.placedProps.filter((p) => {
-            const dx = p.position[0] - e.point.x;
-            const dz = p.position[2] - e.point.z;
-            return Math.hypot(dx, dz) <= editor.propEraseRadius;
-          });
-          if (toRemove.length > 0) {
-            editor.removeProps(toRemove.map((p) => p.id));
-          }
-          invalidate();
+          isPaintingRef.current = false;
+          lastFoliagePointRef.current = null;
+          useTerrainStore.setState({ lastUpdated: Date.now() });
         }
-        return;
-      }
 
-      // Handle Lighting & Fireworks Erase Tool Pointer Move & Brush Dragging
-      if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
-        updateCursor(e.point, e.face?.normal);
-
-        if (isPaintingRef.current) {
-          e.stopPropagation();
-          const toRemove = editor.placedLights.filter((l) => {
-            const dx = l.position[0] - e.point.x;
-            const dz = l.position[2] - e.point.z;
-            return Math.hypot(dx, dz) <= editor.lightEraseRadius;
-          });
-          if (toRemove.length > 0) {
-            editor.removeLights(toRemove.map((l) => l.id));
-          }
-          invalidate();
+        if (isDrawingSplineRef.current) {
+          isDrawingSplineRef.current = false;
+          lastSplinePointRef.current = null;
         }
-        return;
+
+        if (isDrawingWallRef.current) {
+          isDrawingWallRef.current = false;
+          lastWallPointRef.current = null;
+        }
+
+        if (isSculptingRef.current) {
+          pondOriginRef.current = null;
+          slopeAnchorRef.current = null;
+          isSculptingRef.current = false;
+          const geo = useTerrainStore.getState().terrainGeometry;
+          if (geo) {
+            refitTerrainBVH(geo);
+          }
+          useTerrainStore.setState({ lastUpdated: Date.now() });
+        }
+
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
       }
 
-      if (editor.activeTool !== 'terrain') {
-        hideCursor();
-        return;
+      // 3. Mouse Pan Completion
+      if (action.type === 'end_mouse_pan' || isMousePanRef.current) {
+        isMousePanRef.current = false;
+        if (controls) {
+          controls.enabled = true;
+        }
+        invalidate();
       }
 
-      updateCursor(e.point, e.face?.normal);
-
-      if (isSculptingRef.current) {
-        e.stopPropagation();
-        executeSculpt(e.point);
-      }
+      pendingTapHitRef.current = null;
     },
-    [executeSculpt, applyPaintBrush, updateCursor, hideCursor, invalidate]
+    [controls, executeSingleTapAction, invalidate]
   );
 
-  const handlePointerUp = useCallback(() => {
-    const editor = useEditorStore.getState();
-    if (editor.isPresentationMode || editor.activeTool === 'view') {
-      isSculptingRef.current = false;
-      isPaintingRef.current = false;
-      isDrawingWallRef.current = false;
-      isDraggingFoundationRef.current = false;
-      isDrawingStairsRef.current = false;
-      isDrawingSplineRef.current = false;
-      return;
-    }
-
-    if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
-      const editor = useEditorStore.getState();
-      const draft = editor.activeFoundationDraft;
-      if (draft && draft.phase === 'base') {
-        const dx = Math.abs(draft.x2 - draft.x1);
-        const dz = Math.abs(draft.z2 - draft.z1);
-        if (dx >= 0.15 && dz >= 0.15) {
-          isDraggingFoundationRef.current = false;
-          // Keep controls disabled during height adjustment phase so dragging doesn't orbit camera
-          if (controls) {
-            controls.enabled = false;
-          }
-          const clientY = (window.event as MouseEvent)?.clientY || window.innerHeight / 2;
-          editor.setActiveFoundationDraft({
-            ...draft,
-            phase: 'height',
-            height: editor.defaultFoundationHeight || 0.40,
-            startPointerY: clientY,
-          });
-          editor.setToastMessage('Base locked! Move mouse up/down to adjust height, click to place.');
-          invalidate();
-          return;
-        }
-      }
-      editor.setActiveFoundationDraft(null);
-      isDraggingFoundationRef.current = false;
-      foundationAnchorRef.current = null;
-      if (controls) {
-        controls.enabled = true;
-      }
-      invalidate();
-    }
-
-    if (isDrawingStairsRef.current) {
-      isDrawingStairsRef.current = false;
-      lastStairPointRef.current = null;
-      if (controls) {
-        controls.enabled = true;
-      }
-      invalidate();
-    }
-
-    if (isPaintingRef.current) {
-      isPaintingRef.current = false;
-      lastFoliagePointRef.current = null;
-      if (controls) {
-        controls.enabled = true;
-      }
-      useTerrainStore.setState({ lastUpdated: Date.now() });
-      invalidate();
-    }
-
-    if (isDrawingSplineRef.current) {
-      isDrawingSplineRef.current = false;
-      lastSplinePointRef.current = null;
-      if (controls) {
-        controls.enabled = true;
-      }
-      invalidate();
-    }
-
-    if (isDrawingWallRef.current) {
-      isDrawingWallRef.current = false;
-      lastWallPointRef.current = null;
-      if (controls) {
-        controls.enabled = true;
-      }
-      invalidate();
-    }
-
-    if (isSculptingRef.current) {
-      pondOriginRef.current = null;
-      slopeAnchorRef.current = null;
-      isSculptingRef.current = false;
-      const geo = useTerrainStore.getState().terrainGeometry;
-      if (geo) {
-        refitTerrainBVH(geo);
-      }
-      useTerrainStore.setState({ lastUpdated: Date.now() });
-      if (controls) {
-        controls.enabled = true;
-      }
-      invalidate();
-    }
-  }, [controls, invalidate]);
-
   const handlePointerLeave = useCallback(() => {
-    if (!isSculptingRef.current && !isPaintingRef.current) {
+    if (!isSculptingRef.current && !isPaintingRef.current && !isContinuousToolDragRef.current) {
       hideCursor();
     }
     const editor = useEditorStore.getState();
@@ -1344,6 +1413,10 @@ export const BaseTerrainContent: React.FC = () => {
   // Global window pointerup to catch pointer released outside mesh
   useEffect(() => {
     const handleGlobalPointerUp = () => {
+      gestureControllerRef.current.reset();
+      isContinuousToolDragRef.current = false;
+      isMousePanRef.current = false;
+
       if (isDraggingFoundationRef.current && foundationAnchorRef.current) {
         const editor = useEditorStore.getState();
         const draft = editor.activeFoundationDraft;

@@ -244,11 +244,15 @@ export const FigurineRenderer: React.FC = () => {
   const removeProps = useEditorStore((s) => s.removeProps);
   const hoveredElement = useEditorStore((s) => s.hoveredElement);
   const setHoveredElement = useEditorStore((s) => s.setHoveredElement);
+  const isJoystickActive = useEditorStore((s) => s.isJoystickActive);
 
   const { scene, camera, raycaster, gl, invalidate } = useThree();
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
   const [ghostRot, setGhostRot] = useState<[number, number, number]>([0, 0, 0]);
   const isDraggingProp = useRef(false);
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerDownTimeRef = useRef<number>(0);
+  const hasDraggedRef = useRef<boolean>(false);
 
   // Group active placed figurines by type
   const instancesByType = useMemo(() => {
@@ -354,7 +358,18 @@ export const FigurineRenderer: React.FC = () => {
     };
 
     const handlePointerMove = (e: PointerEvent) => {
-      if (activeTool !== 'prop') return;
+      const editor = useEditorStore.getState();
+      if (editor.isJoystickActive || activeTool !== 'prop') return;
+
+      if (pointerDownPosRef.current) {
+        const dist = Math.hypot(
+          e.clientX - pointerDownPosRef.current.x,
+          e.clientY - pointerDownPosRef.current.y
+        );
+        if (dist > 8) {
+          hasDraggedRef.current = true;
+        }
+      }
 
       const hit = getSurfaceIntersection(e.clientX, e.clientY);
       if (!hit) {
@@ -383,36 +398,66 @@ export const FigurineRenderer: React.FC = () => {
     };
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (activeTool !== 'prop' || e.button !== 0) return; // Only primary left-click
+      const editor = useEditorStore.getState();
+      if (editor.isJoystickActive || editor.activeTool !== 'prop' || e.button !== 0) return; // Only primary left-click
 
-      if (propSubTool === 'place') {
-        const hit = getSurfaceIntersection(e.clientX, e.clientY);
-        if (hit) {
-          useTerrainStore.getState().pushUndo();
-          const baseYaw =
-            propRandomRotation
-              ? Math.random() * Math.PI * 2
-              : (propPlacementRotation * Math.PI) / 180;
+      pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+      pointerDownTimeRef.current = performance.now();
+      hasDraggedRef.current = false;
 
-          const rot = computeRotation(baseYaw, hit.normal);
-          const scaleVal = propPlacementScale;
-          const finalY = hit.point.y + propElevationOffset;
-
-          addProp({
-            type: selectedPropType || 'warrior',
-            position: [hit.point.x, finalY, hit.point.z],
-            rotation: rot,
-            scale: [scaleVal, scaleVal, scaleVal],
-          });
-          invalidate(); // Instantly render placed figurine without delay!
-        }
-      } else if (propSubTool === 'transform' && selectedPropId) {
+      if (editor.propSubTool === 'transform' && selectedPropId) {
         isDraggingProp.current = true;
       }
     };
 
-    const handlePointerUp = () => {
-      isDraggingProp.current = false;
+    const handlePointerUp = (e: PointerEvent) => {
+      const editor = useEditorStore.getState();
+      if (editor.isJoystickActive) {
+        isDraggingProp.current = false;
+        pointerDownPosRef.current = null;
+        return;
+      }
+
+      if (isDraggingProp.current) {
+        isDraggingProp.current = false;
+        pointerDownPosRef.current = null;
+        return;
+      }
+
+      // Tap-to-place figurine: Only if pointer was pressed and released <= 8px and <= 350ms without orbiting
+      if (editor.activeTool === 'prop' && editor.propSubTool === 'place' && pointerDownPosRef.current) {
+        const now = performance.now();
+        const duration = now - pointerDownTimeRef.current;
+        const dist = Math.hypot(
+          e.clientX - pointerDownPosRef.current.x,
+          e.clientY - pointerDownPosRef.current.y
+        );
+
+        if (!hasDraggedRef.current && dist <= 8 && duration <= 350) {
+          const hit = getSurfaceIntersection(e.clientX, e.clientY);
+          if (hit) {
+            useTerrainStore.getState().pushUndo();
+            const baseYaw =
+              propRandomRotation
+                ? Math.random() * Math.PI * 2
+                : (propPlacementRotation * Math.PI) / 180;
+
+            const rot = computeRotation(baseYaw, hit.normal);
+            const scaleVal = propPlacementScale;
+            const finalY = hit.point.y + propElevationOffset;
+
+            addProp({
+              type: selectedPropType || 'warrior',
+              position: [hit.point.x, finalY, hit.point.z],
+              rotation: rot,
+              scale: [scaleVal, scaleVal, scaleVal],
+            });
+            invalidate(); // Instantly render placed figurine without delay!
+          }
+        }
+      }
+
+      pointerDownPosRef.current = null;
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {

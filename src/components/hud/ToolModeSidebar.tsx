@@ -100,7 +100,7 @@ export const ToolModeSidebar: React.FC = () => {
   // Dynamic horizontal position based on Left Sidebar state
   const isLeftSidebarOpen = !isMobileSidebarMinimized;
   const modeRailLeft = isLeftSidebarOpen ? `${leftSidebarWidth}px` : '0px';
-  const minimizedTabLeft = isLeftSidebarOpen ? `${leftSidebarWidth + 8}px` : '108px';
+  const minimizedTabLeft = isLeftSidebarOpen ? `${leftSidebarWidth + 8}px` : '116px';
 
   // Rail width based on compact mode toggle
   const railWidthClass = isToolRailCompact ? 'w-[48px]' : 'w-[68px]';
@@ -160,11 +160,12 @@ export const ToolModeSidebar: React.FC = () => {
         >
           <button
             onClick={toggleToolMode}
-            className="flex items-center gap-1 px-2.5 py-1 bg-[#EBE6DC] border border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] hover:bg-[#D8D1C5] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 h-[26px] px-3 py-1 bg-[#EBE6DC] hover:bg-[#D8D1C5] border-x border-b border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] active:scale-95 transition-all cursor-pointer"
             title={t.toolModeSidebar.openModes}
           >
+            <Columns2 className="w-3.5 h-3.5 text-[#8F4938]" />
             <span className="text-[10px] font-semibold">{t.toolModeSidebar.mode}</span>
-            <ChevronDown size={13} strokeWidth={1.75} className="text-[#5A5248]" />
+            <ChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
       )}

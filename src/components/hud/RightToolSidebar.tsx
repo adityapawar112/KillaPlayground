@@ -90,7 +90,10 @@ const HISTORICAL_NAMES = [
   'Sea Gate',
 ];
 
-export const RightToolSidebar: React.FC = () => {
+export const RightToolSidebar: React.FC<{
+  isDrawer?: boolean;
+  activeDrawerTab?: 'outliner' | 'assets' | 'element';
+}> = ({ isDrawer = false, activeDrawerTab }) => {
   const { t, locale } = useTranslation();
   const {
     activeTool,
@@ -201,6 +204,7 @@ export const RightToolSidebar: React.FC = () => {
     hoveredElement,
     rightSidebarWidth: sidebarWidth,
     setRightSidebarWidth: setSidebarWidth,
+    setMobileDrawerTab,
   } = useEditorStore();
 
   const isDraggingWidthRef = useRef<boolean>(false);
@@ -299,10 +303,12 @@ export const RightToolSidebar: React.FC = () => {
       ? LIGHTING_CATEGORIES
       : LIGHTING_CATEGORIES.filter((c) => c.id === lightingCategoryFilter);
 
+  if (!isDrawer && !isRelevantTool) return null;
+
   return (
     <>
       {/* Minimized Hanging Guide Tab (Pinned to top-right below studio header) */}
-      {isRightSidebarMinimized && (
+      {!isDrawer && isRightSidebarMinimized && (
         <div
           className={`fixed right-2 z-30 pointer-events-auto transition-all duration-200 ${
             !showContextualDock || isMobileTopBarMinimized ? 'top-[38px]' : 'top-[72px]'
@@ -310,7 +316,7 @@ export const RightToolSidebar: React.FC = () => {
         >
           <button
             onClick={toggleRightSidebar}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#E4D8CB] border-x border-b border-[#D8D1C5] rounded-b-lg shadow-sm text-xs font-semibold text-[#2B2621] active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-1.5 h-[26px] px-3 py-1 bg-[#EBE6DC] hover:bg-[#D8D1C5] border-x border-b border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] active:scale-95 transition-all cursor-pointer"
             title={
               activeTool === 'foliage'
                 ? t.sidebars.right.openFoliage
@@ -334,7 +340,7 @@ export const RightToolSidebar: React.FC = () => {
             ) : (
               <Castle className="w-3.5 h-3.5 text-[#8F4938]" />
             )}
-            <span className="text-[11px] font-bold">
+            <span className="text-[10px] font-semibold">
               {activeTool === 'foliage'
                 ? t.sidebars.right.foliage
                 : activeTool === 'texture' || activeTool === 'paint'
@@ -350,98 +356,106 @@ export const RightToolSidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Docked Right Sidebar (Matching Left Panel style exactly) */}
+      {/* Docked Right Sidebar / Mobile Drawer Body */}
       <aside
         aria-label="Right Tools Sidebar"
-        style={{ width: `${sidebarWidth}px` }}
-        className={`fixed right-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-l border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
-          isRightSidebarMinimized ? 'translate-x-full' : 'translate-x-0'
-        } ${
-          !showContextualDock
-            ? 'top-[38px]'
-            : isMobileTopBarMinimized
-            ? 'top-[38px]'
-            : 'top-[72px]'
-        }`}
+        style={isDrawer ? undefined : { width: `${sidebarWidth}px` }}
+        className={
+          isDrawer
+            ? "w-full h-full flex flex-col bg-transparent select-none pointer-events-auto"
+            : `fixed right-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-l border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
+                isRightSidebarMinimized ? 'translate-x-full' : 'translate-x-0'
+              } ${
+                !showContextualDock
+                  ? 'top-[38px]'
+                  : isMobileTopBarMinimized
+                  ? 'top-[38px]'
+                  : 'top-[72px]'
+              }`
+        }
       >
-        {/* Left Resizing Edge with Tactile Grip Dots */}
-        <div
-          onMouseDown={handleResizeStart}
-          title="Drag to resize panel"
-          className="group absolute top-0 left-0 w-2 h-full cursor-ew-resize hover:bg-[#B85F45]/30 transition-colors z-30 flex items-center justify-center"
-        >
-          {/* Tactile embossed 6-dot grip */}
-          <div className="flex flex-col items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-          </div>
-        </div>
-
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-3 border-b border-[#D8D1C5] shrink-0 bg-[#ECE2D5]/70">
-          <div className="flex items-center gap-1.5 text-[#2B2621]">
-            {activeTool === 'foliage' ? (
-              <Trees className="w-4 h-4 text-[#15803D]" />
-            ) : activeTool === 'texture' || activeTool === 'paint' ? (
-              <Palette className="w-4 h-4 text-[#8F4938]" />
-            ) : activeTool === 'prop' ? (
-              <Users className="w-4 h-4 text-[#B85F45]" />
-            ) : activeTool === 'lighting' ? (
-              <Flame className="w-4 h-4 text-[#F59E0B]" />
-            ) : (
-              <Castle className="w-4 h-4 text-[#8F4938]" />
-            )}
-            <span className="text-xs font-bold uppercase tracking-wider">
-              {activeTool === 'building' || activeTool === 'walls'
-                ? t.sidebars.right.fortArchitecture
-                : activeTool === 'spline'
-                ? t.sidebars.right.pathOutliner
-                : activeTool === 'foliage'
-                ? t.sidebars.right.foliageBrowser
-                : activeTool === 'texture' || activeTool === 'paint'
-                ? t.sidebars.right.textureBrowser
-                : activeTool === 'prop'
-                ? (propSubTool === 'place' ? t.sidebars.right.figurineVault : t.sidebars.right.elementProperties)
-                : activeTool === 'lighting'
-                ? (lightingSubTool === 'place' ? t.sidebars.right.lightingVault : t.sidebars.right.elementProperties)
-                : t.sidebars.right.propsOutliner}
-            </span>
-            {(activeTool === 'texture' || activeTool === 'paint') && (
-              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
-                52
-              </span>
-            )}
-            {activeTool === 'foliage' && (
-              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
-                {FOLIAGE_MANIFEST.length}
-              </span>
-            )}
-            {activeTool === 'prop' && propSubTool === 'place' && (
-              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
-                {FIGURINE_MANIFEST.length}
-              </span>
-            )}
-            {activeTool === 'lighting' && lightingSubTool === 'place' && (
-              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
-                {LIGHTING_MANIFEST.length}
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={toggleRightSidebar}
-              title={t.sidebars.right.minimizeOutliner}
-              className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
+        {!isDrawer && (
+          <>
+            {/* Left Resizing Edge with Tactile Grip Dots */}
+            <div
+              onMouseDown={handleResizeStart}
+              title="Drag to resize panel"
+              className="group absolute top-0 left-0 w-2 h-full cursor-ew-resize hover:bg-[#B85F45]/30 transition-colors z-30 flex items-center justify-center"
             >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+              {/* Tactile embossed 6-dot grip */}
+              <div className="flex flex-col items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+              </div>
+            </div>
+
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between p-3 border-b border-[#D8D1C5] shrink-0 bg-[#ECE2D5]/70">
+              <div className="flex items-center gap-1.5 text-[#2B2621]">
+                {activeTool === 'foliage' ? (
+                  <Trees className="w-4 h-4 text-[#15803D]" />
+                ) : activeTool === 'texture' || activeTool === 'paint' ? (
+                  <Palette className="w-4 h-4 text-[#8F4938]" />
+                ) : activeTool === 'prop' ? (
+                  <Users className="w-4 h-4 text-[#B85F45]" />
+                ) : activeTool === 'lighting' ? (
+                  <Flame className="w-4 h-4 text-[#F59E0B]" />
+                ) : (
+                  <Castle className="w-4 h-4 text-[#8F4938]" />
+                )}
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  {activeTool === 'building' || activeTool === 'walls'
+                    ? t.sidebars.right.fortArchitecture
+                    : activeTool === 'spline'
+                    ? t.sidebars.right.pathOutliner
+                    : activeTool === 'foliage'
+                    ? t.sidebars.right.foliageBrowser
+                    : activeTool === 'texture' || activeTool === 'paint'
+                    ? t.sidebars.right.textureBrowser
+                    : activeTool === 'prop'
+                    ? (propSubTool === 'place' ? t.sidebars.right.figurineVault : t.sidebars.right.elementProperties)
+                    : activeTool === 'lighting'
+                    ? (lightingSubTool === 'place' ? t.sidebars.right.lightingVault : t.sidebars.right.elementProperties)
+                    : t.sidebars.right.propsOutliner}
+                </span>
+                {(activeTool === 'texture' || activeTool === 'paint') && (
+                  <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                    52
+                  </span>
+                )}
+                {activeTool === 'foliage' && (
+                  <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                    {FOLIAGE_MANIFEST.length}
+                  </span>
+                )}
+                {activeTool === 'prop' && propSubTool === 'place' && (
+                  <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                    {FIGURINE_MANIFEST.length}
+                  </span>
+                )}
+                {activeTool === 'lighting' && lightingSubTool === 'place' && (
+                  <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full ml-1">
+                    {LIGHTING_MANIFEST.length}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={toggleRightSidebar}
+                  title={t.sidebars.right.minimizeOutliner}
+                  className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Scrollable Container */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3.5 text-xs text-[#2B2621]">
@@ -754,7 +768,7 @@ export const RightToolSidebar: React.FC = () => {
             </div>
           ) : activeTool === 'prop' ? (
             <div className="space-y-4">
-              {propSubTool === 'place' ? (
+              {(isDrawer ? activeDrawerTab === 'assets' : propSubTool === 'place') ? (
                 /* ======================================================== */
                 /* FIGURINE VAULT (ASSET BROWSER IN PLACE MODE)             */
                 /* ======================================================== */
@@ -922,111 +936,120 @@ export const RightToolSidebar: React.FC = () => {
                 /* ======================================================== */
                 <div className="space-y-4">
                   {/* 1. PLACED FIGURINES OUTLINER */}
-                  <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
-                          {t.sidebars.right.placedFigurines}
-                        </span>
-                        <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
-                          {placedProps.length} / 250
-                        </span>
-                      </div>
-                      {selectedPropId && (
-                        <button
-                          onClick={() => setSelectedPropId(null)}
-                          className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
-                        >
-                          {t.sidebars.right.deselect}
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
-                      {placedProps.length === 0 ? (
-                        <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
-                          {t.sidebars.right.noFigurines}
+                  {(!isDrawer || activeDrawerTab === 'outliner') && (
+                    <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
+                            {t.sidebars.right.placedFigurines}
+                          </span>
+                          <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                            {placedProps.length} / 250
+                          </span>
                         </div>
-                      ) : (
-                        placedProps.map((prop, idx) => {
-                          const isSelected = selectedPropId === prop.id;
-                          const isHovered = hoveredElement?.type === 'prop' && hoveredElement.id === prop.id;
-                          const meta = getFigurineById(prop.type) || FIGURINE_MANIFEST[0];
-                          const label = meta
-                            ? (locale === 'mr' || locale === 'hi') && meta.devanagariName
-                              ? meta.devanagariName
-                              : meta.name
-                            : `Figurine ${idx + 1}`;
+                        {selectedPropId && (
+                          <button
+                            onClick={() => setSelectedPropId(null)}
+                            className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                          >
+                            {t.sidebars.right.deselect}
+                          </button>
+                        )}
+                      </div>
 
-                          return (
-                            <div
-                              key={prop.id}
-                              onClick={() => {
-                                setSelectedPropId(prop.id);
-                              }}
-                              onMouseEnter={() => setHoveredElement({ type: 'prop', id: prop.id })}
-                              onMouseLeave={() => setHoveredElement(null)}
-                              className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
-                                  : isHovered
-                                  ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
-                                  : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
-                                  <img
-                                    src={meta?.previewPath}
-                                    alt={label}
-                                    className="w-full h-full object-contain p-0.5"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
+                      <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
+                        {placedProps.length === 0 ? (
+                          <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
+                            {t.sidebars.right.noFigurines}
+                          </div>
+                        ) : (
+                          placedProps.map((prop, idx) => {
+                            const isSelected = selectedPropId === prop.id;
+                            const isHovered = hoveredElement?.type === 'prop' && hoveredElement.id === prop.id;
+                            const meta = getFigurineById(prop.type) || FIGURINE_MANIFEST[0];
+                            const label = meta
+                              ? (locale === 'mr' || locale === 'hi') && meta.devanagariName
+                                ? meta.devanagariName
+                                : meta.name
+                              : `Figurine ${idx + 1}`;
+
+                            return (
+                              <div
+                                key={prop.id}
+                                onClick={() => {
+                                  setSelectedPropId(prop.id);
+                                  if (propSubTool !== 'select') {
+                                    setPropSubTool('select');
+                                  }
+                                  if (isDrawer) {
+                                    setMobileDrawerTab('element');
+                                  }
+                                }}
+                                onMouseEnter={() => setHoveredElement({ type: 'prop', id: prop.id })}
+                                onMouseLeave={() => setHoveredElement(null)}
+                                className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
+                                    : isHovered
+                                    ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
+                                    : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
+                                    <img
+                                      src={meta?.previewPath}
+                                      alt={label}
+                                      className="w-full h-full object-contain p-0.5"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
+                                  <span
+                                    className={`text-[9px] font-mono shrink-0 ${
+                                      isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
+                                    }`}
+                                  >
+                                    ({prop.position[0].toFixed(1)}, {prop.position[2].toFixed(1)})
+                                  </span>
                                 </div>
-                                <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
-                                <span
-                                  className={`text-[9px] font-mono shrink-0 ${
-                                    isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
-                                  }`}
-                                >
-                                  ({prop.position[0].toFixed(1)}, {prop.position[2].toFixed(1)})
-                                </span>
-                              </div>
 
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPropId(prop.id);
-                                    focusCamera(e);
-                                  }}
-                                  title={t.sidebars.right.focusCamera}
-                                  className="p-1 rounded hover:bg-black/10 cursor-pointer"
-                                >
-                                  <Focus className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeProp(prop.id);
-                                  }}
-                                  title={t.sidebars.right.deleteElement}
-                                  className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedPropId(prop.id);
+                                      focusCamera(e);
+                                    }}
+                                    title={t.sidebars.right.focusCamera}
+                                    className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                                  >
+                                    <Focus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeProp(prop.id);
+                                    }}
+                                    title={t.sidebars.right.deleteElement}
+                                    className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* 2. ELEMENT PROPERTIES INSPECTOR */}
-                  <div className="space-y-2.5">
+                  {(!isDrawer || activeDrawerTab === 'element') && (
+                    <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                       {t.sidebars.right.elementProperties}
@@ -1157,12 +1180,13 @@ export const RightToolSidebar: React.FC = () => {
                     </div>
                   )}
                 </div>
+                )}
               </div>
             )}
           </div>
         ) : activeTool === 'lighting' ? (
             <div className="space-y-4">
-              {lightingSubTool === 'place' ? (
+              {(isDrawer ? activeDrawerTab === 'assets' : lightingSubTool === 'place') ? (
                 /* ======================================================== */
                 /* LIGHTING VAULT (ASSET BROWSER IN PLACE MODE)             */
                 /* ======================================================== */
@@ -1331,114 +1355,120 @@ export const RightToolSidebar: React.FC = () => {
                 /* ======================================================== */
                 <div className="space-y-4">
                   {/* 1. PLACED LIGHTS OUTLINER */}
-                  <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
-                          {t.sidebars.right.placedLighting}
-                        </span>
-                        <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
-                          {placedLights.length} / 250
-                        </span>
-                      </div>
-                      {selectedLightId && (
-                        <button
-                          onClick={() => setSelectedLightId(null)}
-                          className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
-                        >
-                          {t.sidebars.right.deselect}
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
-                      {placedLights.length === 0 ? (
-                        <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
-                          {t.sidebars.right.noLighting}
+                  {(!isDrawer || activeDrawerTab === 'outliner') && (
+                    <div className="space-y-1.5 pb-3 border-b border-[#D8D1C5]">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
+                            {t.sidebars.right.placedLighting}
+                          </span>
+                          <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                            {placedLights.length} / 250
+                          </span>
                         </div>
-                      ) : (
-                        placedLights.map((light, idx) => {
-                          const isSelected = selectedLightId === light.id;
-                          const isHovered = hoveredElement?.type === 'light' && hoveredElement.id === light.id;
-                          const meta = getLightById(light.type) || LIGHTING_MANIFEST[0];
-                          const label = meta
-                            ? (locale === 'mr' || locale === 'hi') && meta.devanagariName
-                              ? meta.devanagariName
-                              : meta.name
-                            : `Light ${idx + 1}`;
+                        {selectedLightId && (
+                          <button
+                            onClick={() => setSelectedLightId(null)}
+                            className="text-[10px] font-bold text-[#B85F45] hover:underline cursor-pointer"
+                          >
+                            {t.sidebars.right.deselect}
+                          </button>
+                        )}
+                      </div>
 
-                          return (
-                            <div
-                              key={light.id}
-                              onClick={() => {
-                                setSelectedLightId(light.id);
-                                if (lightingSubTool !== 'select') {
-                                  setLightingSubTool('select');
-                                }
-                              }}
-                              onMouseEnter={() => setHoveredElement({ type: 'light', id: light.id })}
-                              onMouseLeave={() => setHoveredElement(null)}
-                              className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
-                                isSelected
-                                  ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
-                                  : isHovered
-                                  ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
-                                  : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
-                                  <img
-                                    src={meta?.previewPath}
-                                    alt={label}
-                                    className="w-full h-full object-contain p-0.5"
-                                    onError={(e) => {
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
+                      <div className="space-y-1.5 max-h-[190px] overflow-y-auto pr-0.5">
+                        {placedLights.length === 0 ? (
+                          <div className="text-center py-4 text-[#7C7267] italic text-xs bg-[#FAF8F5] rounded-xl border border-[#D8D1C5]/60">
+                            {t.sidebars.right.noLighting}
+                          </div>
+                        ) : (
+                          placedLights.map((light, idx) => {
+                            const isSelected = selectedLightId === light.id;
+                            const isHovered = hoveredElement?.type === 'light' && hoveredElement.id === light.id;
+                            const meta = getLightById(light.type) || LIGHTING_MANIFEST[0];
+                            const label = meta
+                              ? (locale === 'mr' || locale === 'hi') && meta.devanagariName
+                                ? meta.devanagariName
+                                : meta.name
+                              : `Light ${idx + 1}`;
+
+                            return (
+                              <div
+                                key={light.id}
+                                onClick={() => {
+                                  setSelectedLightId(light.id);
+                                  if (lightingSubTool !== 'select') {
+                                    setLightingSubTool('select');
+                                  }
+                                  if (isDrawer) {
+                                    setMobileDrawerTab('element');
+                                  }
+                                }}
+                                onMouseEnter={() => setHoveredElement({ type: 'light', id: light.id })}
+                                onMouseLeave={() => setHoveredElement(null)}
+                                className={`group flex items-center justify-between px-2 py-1.5 rounded-xl border transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'bg-[#B85F45] text-[#FAF8F5] border-[#A04F38] shadow-xs'
+                                    : isHovered
+                                    ? 'bg-[#FAF8F5] border-[#B85F45] ring-1 ring-[#B85F45]/60 text-[#2B2621]'
+                                    : 'bg-[#FAF8F5] hover:bg-[#D8D1C5] border-[#D8D1C5] text-[#2B2621]'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div className="w-5 h-5 rounded bg-[#E8DDD0] shrink-0 overflow-hidden flex items-center justify-center">
+                                    <img
+                                      src={meta?.previewPath}
+                                      alt={label}
+                                      className="w-full h-full object-contain p-0.5"
+                                      onError={(e) => {
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
+                                  <span
+                                    className={`text-[9px] font-mono shrink-0 ${
+                                      isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
+                                    }`}
+                                  >
+                                    ({light.position[0].toFixed(1)}, {light.position[2].toFixed(1)})
+                                  </span>
                                 </div>
-                                <span className="font-semibold text-xs truncate max-w-[110px]">{label}</span>
-                                <span
-                                  className={`text-[9px] font-mono shrink-0 ${
-                                    isSelected ? 'text-[#FAF8F5]/80' : 'text-[#7C7267]'
-                                  }`}
-                                >
-                                  ({light.position[0].toFixed(1)}, {light.position[2].toFixed(1)})
-                                </span>
-                              </div>
 
-                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedLightId(light.id);
-                                    focusCamera(e);
-                                  }}
-                                  title={t.sidebars.right.focusCamera}
-                                  className="p-1 rounded hover:bg-black/10 cursor-pointer"
-                                >
-                                  <Focus className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    removeLight(light.id);
-                                  }}
-                                  title={t.sidebars.right.deleteElement}
-                                  className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedLightId(light.id);
+                                      focusCamera(e);
+                                    }}
+                                    title={t.sidebars.right.focusCamera}
+                                    className="p-1 rounded hover:bg-black/10 cursor-pointer"
+                                  >
+                                    <Focus className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeLight(light.id);
+                                    }}
+                                    title={t.sidebars.right.deleteElement}
+                                    className="p-1 rounded text-red-500 hover:bg-red-500/10 cursor-pointer"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* 2. ELEMENT PROPERTIES INSPECTOR */}
-                  <div className="space-y-2.5">
+                  {(!isDrawer || activeDrawerTab === 'element') && (
+                    <div className="space-y-2.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                         Element Properties
@@ -1603,6 +1633,7 @@ export const RightToolSidebar: React.FC = () => {
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1611,60 +1642,64 @@ export const RightToolSidebar: React.FC = () => {
               {/* ======================================================== */}
               {/* 1. HIERARCHICAL OUTLINER FILE TREE                        */}
               {/* ======================================================== */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
-                {t.sidebars.right.sceneOutliner}
-              </span>
-              <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
-                {(activeTool === 'building' || activeTool === 'walls')
-                  ? walls.length + foundations.length + stairs.length
-                  : splines.length}
-              </span>
-            </div>
+              {(!isDrawer || activeDrawerTab === 'outliner') && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
+                      {t.sidebars.right.sceneOutliner}
+                    </span>
+                    <span className="text-[10px] font-bold bg-[#FAF8F5] text-[#5C4638] px-1.5 py-0.5 rounded-full">
+                      {(activeTool === 'building' || activeTool === 'walls')
+                        ? walls.length + foundations.length + stairs.length
+                        : splines.length}
+                    </span>
+                  </div>
 
-              {/* FORT ARCHITECTURE TREE VIEW (Walls, Foundations, Stairs) */}
-              {(activeTool === 'building' || activeTool === 'walls') && (
-                <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
-                  {walls.length === 0 && foundations.length === 0 && stairs.length === 0 ? (
-                    <div className="text-center py-4 text-[#7C7267] italic text-xs">
-                      No fort structures built yet.
-                    </div>
-                  ) : (
-                    <>
-                      {/* 1. Walls List */}
-                      {walls.map((wall, idx) => {
-                      const isSelected = selectedWallId === wall.id && !selectedComponent;
-                      const isExpanded = expandedWalls[wall.id] ?? true;
-                      const totalLengthM = calculateWallTotalLength(wall.points, wall.isClosed);
-                      const bastionIndices = detectBastionLocations(
-                        wall.points,
-                        wall.isClosed,
-                        wall.settings?.autoBastions ?? true,
-                        wall.manualBastionIndices,
-                        wall.excludedBastionIndices
-                      );
-                      const childCount =
-                        bastionIndices.length +
-                        (wall.towers?.length || 0) +
-                        (wall.boxBastions?.length || 0) +
-                        (wall.roundBastions?.length || 0) +
-                        (wall.gates?.length || 0);
+                  {/* FORT ARCHITECTURE TREE VIEW (Walls, Foundations, Stairs) */}
+                  {(activeTool === 'building' || activeTool === 'walls') && (
+                    <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-0.5">
+                      {walls.length === 0 && foundations.length === 0 && stairs.length === 0 ? (
+                        <div className="text-center py-4 text-[#7C7267] italic text-xs">
+                          No fort structures built yet.
+                        </div>
+                      ) : (
+                        <>
+                          {/* 1. Walls List */}
+                          {walls.map((wall, idx) => {
+                          const isSelected = selectedWallId === wall.id && !selectedComponent;
+                          const isExpanded = expandedWalls[wall.id] ?? true;
+                          const totalLengthM = calculateWallTotalLength(wall.points, wall.isClosed);
+                          const bastionIndices = detectBastionLocations(
+                            wall.points,
+                            wall.isClosed,
+                            wall.settings?.autoBastions ?? true,
+                            wall.manualBastionIndices,
+                            wall.excludedBastionIndices
+                          );
+                          const childCount =
+                            bastionIndices.length +
+                            (wall.towers?.length || 0) +
+                            (wall.boxBastions?.length || 0) +
+                            (wall.roundBastions?.length || 0) +
+                            (wall.gates?.length || 0);
 
-                      return (
-                        <div key={wall.id} className="rounded-xl border border-[#D8D1C5] bg-[#FAF8F5] overflow-hidden">
-                          {/* Wall Row */}
-                          <div
-                            onClick={() => {
-                              setSelectedWallId(wall.id);
-                              setSelectedComponent(null);
-                            }}
-                            onMouseEnter={() => setHoveredElement({ type: 'wall', id: wall.id })}
-                            onMouseLeave={() => setHoveredElement(null)}
-                            className={`group flex items-center justify-between px-2.5 py-1.5 transition-colors cursor-pointer ${
-                              isSelected ? 'bg-[#B85F45] text-[#FAF8F5]' : 'hover:bg-[#D8D1C5]'
-                            }`}
-                          >
+                          return (
+                            <div key={wall.id} className="rounded-xl border border-[#D8D1C5] bg-[#FAF8F5] overflow-hidden">
+                              {/* Wall Row */}
+                              <div
+                                onClick={() => {
+                                  setSelectedWallId(wall.id);
+                                  setSelectedComponent(null);
+                                  if (isDrawer) {
+                                    setMobileDrawerTab('element');
+                                  }
+                                }}
+                                onMouseEnter={() => setHoveredElement({ type: 'wall', id: wall.id })}
+                                onMouseLeave={() => setHoveredElement(null)}
+                                className={`group flex items-center justify-between px-2.5 py-1.5 transition-colors cursor-pointer ${
+                                  isSelected ? 'bg-[#B85F45] text-[#FAF8F5]' : 'hover:bg-[#D8D1C5]'
+                                }`}
+                              >
                             <div className="flex items-center gap-1.5 min-w-0">
                               {childCount > 0 ? (
                                 <button
@@ -1730,6 +1765,9 @@ export const RightToolSidebar: React.FC = () => {
                                     onClick={() => {
                                       setSelectedWallId(wall.id);
                                       setSelectedComponent({ type: 'bastion', idOrIndex: bIdx, wallId: wall.id });
+                                      if (isDrawer) {
+                                        setMobileDrawerTab('element');
+                                      }
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
@@ -1768,6 +1806,9 @@ export const RightToolSidebar: React.FC = () => {
                                     onClick={() => {
                                       setSelectedWallId(wall.id);
                                       setSelectedComponent({ type: 'tower', idOrIndex: tw.id, wallId: wall.id });
+                                      if (isDrawer) {
+                                        setMobileDrawerTab('element');
+                                      }
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
@@ -1806,6 +1847,9 @@ export const RightToolSidebar: React.FC = () => {
                                     onClick={() => {
                                       setSelectedWallId(wall.id);
                                       setSelectedComponent({ type: 'box', idOrIndex: bx.id, wallId: wall.id });
+                                      if (isDrawer) {
+                                        setMobileDrawerTab('element');
+                                      }
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
@@ -1844,6 +1888,9 @@ export const RightToolSidebar: React.FC = () => {
                                     onClick={() => {
                                       setSelectedWallId(wall.id);
                                       setSelectedComponent({ type: 'round_bastion', idOrIndex: rb.id, wallId: wall.id });
+                                      if (isDrawer) {
+                                        setMobileDrawerTab('element');
+                                      }
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
@@ -1882,6 +1929,9 @@ export const RightToolSidebar: React.FC = () => {
                                     onClick={() => {
                                       setSelectedWallId(wall.id);
                                       setSelectedComponent({ type: 'gate', idOrIndex: gt.id, wallId: wall.id });
+                                      if (isDrawer) {
+                                        setMobileDrawerTab('element');
+                                      }
                                     }}
                                     className={`flex items-center justify-between px-2 py-1 rounded-lg transition-colors cursor-pointer ${
                                       isChildSelected
@@ -1926,6 +1976,9 @@ export const RightToolSidebar: React.FC = () => {
                               setSelectedWallId(null);
                               setSelectedComponent(null);
                               setSelectedStairId(null);
+                              if (isDrawer) {
+                                setMobileDrawerTab('element');
+                              }
                             }}
                             onMouseEnter={() => setHoveredElement({ type: 'foundation', id: foundation.id })}
                             onMouseLeave={() => setHoveredElement(null)}
@@ -1985,6 +2038,9 @@ export const RightToolSidebar: React.FC = () => {
                               setSelectedWallId(null);
                               setSelectedComponent(null);
                               setSelectedFoundationId(null);
+                              if (isDrawer) {
+                                setMobileDrawerTab('element');
+                              }
                             }}
                             onMouseEnter={() => setHoveredElement({ type: 'stair', id: stair.id })}
                             onMouseLeave={() => setHoveredElement(null)}
@@ -2059,7 +2115,12 @@ export const RightToolSidebar: React.FC = () => {
                       return (
                         <div
                           key={spline.id}
-                          onClick={() => setSelectedSplineId(spline.id)}
+                          onClick={() => {
+                            setSelectedSplineId(spline.id);
+                            if (isDrawer) {
+                              setMobileDrawerTab('element');
+                            }
+                          }}
                           onMouseEnter={() => setHoveredElement({ type: 'spline', id: spline.id })}
                           onMouseLeave={() => setHoveredElement(null)}
                           className={`group flex items-center justify-between px-2.5 py-1.5 rounded-xl border border-[#D8D1C5] transition-colors cursor-pointer ${
@@ -2106,11 +2167,13 @@ export const RightToolSidebar: React.FC = () => {
                 </div>
               )}
             </div>
+          )}
 
           {/* ======================================================== */}
           {/* 2. CONTEXTUAL OBJECT INSPECTOR                            */}
           {/* ======================================================== */}
-          <div className="border-t border-[#D8D1C5] pt-3 space-y-2.5">
+          {(!isDrawer || activeDrawerTab === 'element') && (
+            <div className="border-t border-[#D8D1C5] pt-3 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold text-[#7C7267] uppercase tracking-wider">
                 {t.sidebars.right.elementInspector}
@@ -3374,6 +3437,7 @@ export const RightToolSidebar: React.FC = () => {
                 </div>
               )}
             </div>
+          )}
           </>
         )}
       </div>

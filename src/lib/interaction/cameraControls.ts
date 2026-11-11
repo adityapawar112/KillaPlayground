@@ -1,12 +1,13 @@
 /**
  * Camera Navigation & OrbitControls Mouse Button Configuration
  * Enforces:
- * - Left-click is permanently dedicated as the primary action for the active tool and mode
- *   (sculpting, drafting wall paths, placing bastions/towers, painting textures, scattering nature flora, selecting elements).
- * - Left-click orbit in OrbitControls is permanently disabled (-1) across all tools and modes.
- * - Camera Orbiting defaults strictly to Right-Click Drag.
- * - Camera Panning defaults to Middle-Click Drag.
- * - Camera Zooming defaults to Scroll Wheel.
+ * - Left-click drag & touch drag: Orbit around the diorama.
+ * - Single click / tap without drag (<= 8px, <= 350ms): Execute active tool action.
+ * - Double-tap and drag: Initiates continuous tool drag action (sculpting/painting), pausing orbit/pan.
+ * - Right-click drag: Camera Orbiting.
+ * - Middle-click drag: Camera Panning.
+ * - Two-finger drag on touch: Camera Panning.
+ * - Pinch-to-zoom: Camera Zooming.
  */
 
 import * as THREE from 'three';
@@ -18,27 +19,13 @@ export interface CameraControlButtons {
   RIGHT: THREE.MOUSE;
 }
 
-/**
- * Returns OrbitControls mouseButtons configuration.
- * Left-click is permanently -1 (disabled in OrbitControls) so left-click is exclusively
- * reserved for primary tool and selection actions.
- * Right-click is permanently ROTATE (0).
- * Middle-click is permanently PAN (2).
- */
 export function getOrbitMouseButtons(
-  tool?: ToolType,
+  _tool?: ToolType,
   _wallMode?: WallMode,
   _splineMode?: SplineMode
 ): CameraControlButtons {
-  if (tool === 'view') {
-    return {
-      LEFT: THREE.MOUSE.ROTATE,
-      MIDDLE: THREE.MOUSE.PAN,
-      RIGHT: THREE.MOUSE.ROTATE,
-    };
-  }
   return {
-    LEFT: -1 as unknown as THREE.MOUSE,
+    LEFT: THREE.MOUSE.ROTATE,
     MIDDLE: THREE.MOUSE.PAN,
     RIGHT: THREE.MOUSE.ROTATE,
   };

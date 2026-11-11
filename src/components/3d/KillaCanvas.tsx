@@ -109,6 +109,9 @@ const InvalidateBridge: React.FC = () => {
       (window as any).__threeScene = scene;
       (window as any).__threeGL = gl;
       (window as any).__threeCamera = camera;
+      (window as any).__killa_camera = camera;
+      (window as any).__editorStore = useEditorStore;
+      (window as any).THREE = THREE;
     }
   }, [invalidate, scene, gl, camera]);
   return null;
@@ -123,6 +126,7 @@ const CameraKeyboardController: React.FC<{
   const wallMode = useEditorStore((s) => s.wallMode);
   const splineMode = useEditorStore((s) => s.splineMode);
   const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
+  const isJoystickActive = useEditorStore((s) => s.isJoystickActive);
 
   const resetCamera = useCallback(() => {
     if (!controlsRef.current) return;
@@ -135,8 +139,16 @@ const CameraKeyboardController: React.FC<{
   useEffect(() => {
     if (typeof window !== 'undefined' && controlsRef.current) {
       (window as any).__orbitControls = controlsRef.current;
+      (window as any).__killa_controls = controlsRef.current;
     }
   }, [controlsRef]);
+
+  // Immediately toggle controls enabled state when joystick is engaged or released
+  useEffect(() => {
+    if (controlsRef.current) {
+      controlsRef.current.enabled = !isJoystickActive;
+    }
+  }, [controlsRef, isJoystickActive]);
 
   // Synchronize dynamic mouse buttons immediately whenever activeTool, wallMode, splineMode, or isPresentationMode changes
   useEffect(() => {
@@ -262,30 +274,104 @@ const CameraKeyboardController: React.FC<{
       } else if (e.key === 'Home' || e.key.toLowerCase() === 'f') {
         resetCamera();
         e.preventDefault();
-      } else if (e.key === '[' || e.key === ']') {
+      } else if (
+        e.key === 'AudioVolumeUp' ||
+        e.code === 'AudioVolumeUp' ||
+        e.key === 'VolumeUp' ||
+        e.key === ']' ||
+        (e.altKey && (e.key === '=' || e.key === '+'))
+      ) {
         const editor = useEditorStore.getState();
-        const step = e.key === ']' ? 0.1 : -0.1;
-        if (editor.activeTool === 'prop' && editor.propSubTool === 'erase') {
-          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.propEraseRadius + step).toFixed(2))));
-          editor.setPropEraseRadius(newRadius);
-          e.preventDefault();
-        } else if (editor.activeTool === 'lighting' && editor.lightingSubTool === 'erase') {
-          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.lightEraseRadius + step).toFixed(2))));
-          editor.setLightEraseRadius(newRadius);
-          e.preventDefault();
-        } else if (editor.activeTool === 'foliage') {
+        const tool = editor.activeTool;
+        const step = 0.1;
+        if (tool === 'prop') {
+          if (editor.propSubTool === 'erase') {
+            const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.propEraseRadius + step).toFixed(2))));
+            editor.setPropEraseRadius(newRadius);
+            editor.setToastMessage(`Prop Erase Radius: ${newRadius}m`);
+          } else {
+            const newScale = Math.max(0.3, Math.min(2.5, parseFloat((editor.propPlacementScale + 0.1).toFixed(1))));
+            editor.setPropPlacementScale(newScale);
+            editor.setToastMessage(`Prop Scale: ${newScale}x`);
+          }
+        } else if (tool === 'lighting') {
+          if (editor.lightingSubTool === 'erase') {
+            const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.lightEraseRadius + step).toFixed(2))));
+            editor.setLightEraseRadius(newRadius);
+            editor.setToastMessage(`Light Erase Radius: ${newRadius}m`);
+          } else {
+            const newScale = Math.max(0.3, Math.min(2.5, parseFloat((editor.lightPlacementScale + 0.1).toFixed(1))));
+            editor.setLightPlacementScale(newScale);
+            editor.setToastMessage(`Light Scale: ${newScale}x`);
+          }
+        } else if (tool === 'foliage') {
           const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.foliageBrushRadius + step).toFixed(2))));
           editor.setFoliageBrushRadius(newRadius);
-          e.preventDefault();
-        } else if (editor.activeTool === 'texture' || editor.activeTool === 'paint') {
+          editor.setToastMessage(`Foliage Radius: ${newRadius}m`);
+        } else if (tool === 'texture' || tool === 'paint') {
           const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.paintBrushRadius + step).toFixed(2))));
           editor.setPaintBrushRadius(newRadius);
-          e.preventDefault();
-        } else if (editor.activeTool === 'terrain') {
-          const newRadius = Math.max(0.2, Math.min(2.5, parseFloat((editor.brushRadius + step).toFixed(2))));
+          editor.setToastMessage(`Paint Radius: ${newRadius}m`);
+        } else if (tool === 'view') {
+          let newTime = editor.timeOfDay + 0.5;
+          if (newTime >= 24) newTime -= 24;
+          editor.setTimeOfDay(parseFloat(newTime.toFixed(2)));
+          editor.setToastMessage(`Time: ${newTime.toFixed(1)}h`);
+        } else {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.brushRadius + step).toFixed(2))));
           editor.setBrushRadius(newRadius);
-          e.preventDefault();
+          editor.setToastMessage(`Brush Size: ${newRadius}m`);
         }
+        e.preventDefault();
+      } else if (
+        e.key === 'AudioVolumeDown' ||
+        e.code === 'AudioVolumeDown' ||
+        e.key === 'VolumeDown' ||
+        e.key === '[' ||
+        (e.altKey && (e.key === '-' || e.key === '_'))
+      ) {
+        const editor = useEditorStore.getState();
+        const tool = editor.activeTool;
+        const step = -0.1;
+        if (tool === 'prop') {
+          if (editor.propSubTool === 'erase') {
+            const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.propEraseRadius + step).toFixed(2))));
+            editor.setPropEraseRadius(newRadius);
+            editor.setToastMessage(`Prop Erase Radius: ${newRadius}m`);
+          } else {
+            const newScale = Math.max(0.3, Math.min(2.5, parseFloat((editor.propPlacementScale - 0.1).toFixed(1))));
+            editor.setPropPlacementScale(newScale);
+            editor.setToastMessage(`Prop Scale: ${newScale}x`);
+          }
+        } else if (tool === 'lighting') {
+          if (editor.lightingSubTool === 'erase') {
+            const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.lightEraseRadius + step).toFixed(2))));
+            editor.setLightEraseRadius(newRadius);
+            editor.setToastMessage(`Light Erase Radius: ${newRadius}m`);
+          } else {
+            const newScale = Math.max(0.3, Math.min(2.5, parseFloat((editor.lightPlacementScale - 0.1).toFixed(1))));
+            editor.setLightPlacementScale(newScale);
+            editor.setToastMessage(`Light Scale: ${newScale}x`);
+          }
+        } else if (tool === 'foliage') {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.foliageBrushRadius + step).toFixed(2))));
+          editor.setFoliageBrushRadius(newRadius);
+          editor.setToastMessage(`Foliage Radius: ${newRadius}m`);
+        } else if (tool === 'texture' || tool === 'paint') {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.paintBrushRadius + step).toFixed(2))));
+          editor.setPaintBrushRadius(newRadius);
+          editor.setToastMessage(`Paint Radius: ${newRadius}m`);
+        } else if (tool === 'view') {
+          let newTime = editor.timeOfDay - 0.5;
+          if (newTime < 0) newTime += 24;
+          editor.setTimeOfDay(parseFloat(newTime.toFixed(2)));
+          editor.setToastMessage(`Time: ${newTime.toFixed(1)}h`);
+        } else {
+          const newRadius = Math.max(0.2, Math.min(3.0, parseFloat((editor.brushRadius + step).toFixed(2))));
+          editor.setBrushRadius(newRadius);
+          editor.setToastMessage(`Brush Size: ${newRadius}m`);
+        }
+        e.preventDefault();
       }
     };
 
@@ -321,6 +407,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
   const showGuides = useEditorStore((s) => s.showGuides);
   const showBrickRing = useEditorStore((s) => s.showBrickRing);
   const isPresentationMode = useEditorStore((s) => s.isPresentationMode);
+  const isJoystickActive = useEditorStore((s) => s.isJoystickActive);
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -543,32 +630,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
     const container = containerRef.current;
     if (!container) return;
 
-    const handlePointerDown = (e: PointerEvent) => {
-      const editor = useEditorStore.getState();
-      // If left-click without Alt while activeTool is spline or walls layout step:
-      if (
-        (editor.activeTool === 'spline' || (editor.activeTool === 'walls' && editor.wallStep === 'layout')) &&
-        e.button === 0 &&
-        !e.altKey
-      ) {
-        if (controlsRef.current) {
-          controlsRef.current.enabled = false;
-        }
-      }
-    };
-
-    const handlePointerUp = () => {
-      if (controlsRef.current && !controlsRef.current.enabled) {
-        controlsRef.current.enabled = true;
-      }
-    };
-
-    container.addEventListener('pointerdown', handlePointerDown, { capture: true });
-    window.addEventListener('pointerup', handlePointerUp);
-    return () => {
-      container.removeEventListener('pointerdown', handlePointerDown, { capture: true });
-      window.removeEventListener('pointerup', handlePointerUp);
-    };
+  // Legacy pointerdown capture listener removed to allow single-drag to orbit seamlessly across all tools.
   }, []);
 
   // Zoom delta handler
@@ -650,6 +712,7 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
         <OrbitControls
           ref={controlsRef}
           makeDefault
+          enabled={!isJoystickActive}
           enableDamping
           dampingFactor={0.08}
           minDistance={0.25}
@@ -658,6 +721,10 @@ export const KillaCanvas: React.FC<KillaCanvasProps> = ({ children }) => {
           maxPolarAngle={Math.PI / 2 - 0.05} // Constrain polar angle above floor
           target={[0, 0.5, 0]}
           mouseButtons={orbitMouseButtons as any}
+          touches={{
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.DOLLY_PAN,
+          }}
           autoRotate={viewMode === 'turntable'}
           autoRotateSpeed={(turntableSpeed || 1.5) * 1.5}
         />

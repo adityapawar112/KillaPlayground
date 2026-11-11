@@ -228,7 +228,7 @@ export const ProjectHubModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/65 backdrop-blur-xs animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-black/65 backdrop-blur-xs animate-in fade-in duration-200 select-none overflow-hidden">
       <input
         ref={fileInputRef}
         type="file"
@@ -237,11 +237,11 @@ export const ProjectHubModal: React.FC = () => {
         className="hidden"
       />
 
-      <div className="relative w-full max-w-4xl bg-[#EBE6DC] rounded-3xl border-2 border-[#D8D1C5] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+      <div className="relative w-full max-w-4xl bg-[#EBE6DC] rounded-2xl sm:rounded-3xl border-2 border-[#D8D1C5] shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
         {/* Banner Header */}
-        <div className="relative bg-[#2B2621] px-6 py-4 text-white flex items-center justify-between border-b border-[#D8D1C5]/40 shadow-sm shrink-0">
-          <div className="flex items-center gap-3.5">
-            <div className="relative w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-md p-1 shrink-0">
+        <div className="relative bg-[#2B2621] px-3.5 sm:px-6 py-2.5 sm:py-4 text-white flex items-center justify-between border-b border-[#D8D1C5]/40 shadow-sm shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="relative w-9 h-9 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center shadow-md p-1 shrink-0">
               <Image
                 src="/killaplayground-tranparent.png"
                 alt="Logo"
@@ -251,73 +251,73 @@ export const ProjectHubModal: React.FC = () => {
                 priority
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="font-yatra text-2xl sm:text-3xl tracking-wide text-white drop-shadow-sm">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="font-yatra text-lg sm:text-2xl tracking-wide text-white drop-shadow-sm truncate">
                   {t.startupModal.title}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-[#B85F45] text-[10px] font-sans font-bold uppercase tracking-wider text-white shadow-xs">
+                <span className="px-1.5 py-0.2 sm:px-2 sm:py-0.5 rounded-full bg-[#B85F45] text-[9px] sm:text-[10px] font-sans font-bold uppercase tracking-wider text-white shadow-xs shrink-0">
                   v1.2
                 </span>
               </div>
-              <p className="text-xs text-[#F2EBE1]/90 font-sans">
+              <p className="text-[11px] sm:text-xs text-[#F2EBE1]/90 font-sans truncate">
                 {t.startupModal.subtitle}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-2">
             {/* Quick Language Switcher */}
-            <LanguageSelector className="hidden sm:inline-flex" size="sm" />
+            <LanguageSelector size="sm" />
 
             <button
               onClick={() => setStartupModalOpen(false)}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
               title={t.startupModal.close}
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 sm:w-5 sm:h-5" />
             </button>
           </div>
         </div>
 
         {/* Tab Switcher Pills */}
-        <div className="px-6 py-2.5 bg-[#EBE6DC]/70 border-b border-[#D8D1C5] flex items-center justify-between gap-2 shrink-0">
-          <div className="flex items-center gap-2 flex-1 max-w-xl">
+        <div className="px-3 sm:px-6 py-2 bg-[#EBE6DC]/70 border-b border-[#D8D1C5] flex items-center justify-between gap-1.5 sm:gap-2 shrink-0 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 min-w-0">
             <button
               onClick={() => setProjectHubTab('blueprints')}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              className={`flex-1 py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 projectHubTab === 'blueprints'
                   ? 'bg-[#2B2621] text-white shadow-sm'
                   : 'bg-[#FAF8F5] text-[#5A5248] hover:bg-[#D8D1C5]'
               }`}
             >
-              <Castle className="w-4 h-4" />
-              <span>{t.startupModal.tabBlueprints || 'Fort Blueprints'}</span>
+              <Castle className="w-3.5 h-3.5 shrink-0" />
+              <span>{t.startupModal.tabBlueprints || 'Blueprints'}</span>
             </button>
 
             <button
               onClick={() => setProjectHubTab('procedural')}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              className={`flex-1 py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 projectHubTab === 'procedural'
                   ? 'bg-[#2B2621] text-white shadow-sm'
                   : 'bg-[#FAF8F5] text-[#5A5248] hover:bg-[#D8D1C5]'
               }`}
             >
-              <Mountain className="w-4 h-4" />
-              <span>{t.startupModal.tabProcedural || 'Procedural Terrain'}</span>
+              <Mountain className="w-3.5 h-3.5 shrink-0" />
+              <span>{t.startupModal.tabProcedural || 'Procedural'}</span>
             </button>
 
             <button
               onClick={() => setProjectHubTab('vault')}
-              className={`flex-1 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              className={`flex-1 py-1.5 px-2 sm:px-3 rounded-lg sm:rounded-xl font-bold text-[11px] sm:text-xs flex items-center justify-center gap-1 sm:gap-2 transition-all cursor-pointer whitespace-nowrap ${
                 projectHubTab === 'vault'
                   ? 'bg-[#2B2621] text-white shadow-sm'
                   : 'bg-[#FAF8F5] text-[#5A5248] hover:bg-[#D8D1C5]'
               }`}
             >
-              <Save className="w-4 h-4" />
-              <span>{t.startupModal.tabVault || 'Saved Dioramas'}</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-sans">
+              <Save className="w-3.5 h-3.5 shrink-0" />
+              <span>{t.startupModal.tabVault || 'Saved'}</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[9px] font-sans">
                 {savedProjects.length}
               </span>
             </button>
@@ -326,7 +326,7 @@ export const ProjectHubModal: React.FC = () => {
           {/* Quick Import Button in tab strip */}
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#D8D1C5] border border-[#D8D1C5] text-xs font-bold text-[#2B2621] transition-all cursor-pointer"
+            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF8F5] hover:bg-[#D8D1C5] border border-[#D8D1C5] text-xs font-bold text-[#2B2621] transition-all cursor-pointer shrink-0"
           >
             <FolderOpen className="w-4 h-4 text-[#0284C7]" />
             <span>{t.startupModal.importFile}</span>
@@ -334,7 +334,7 @@ export const ProjectHubModal: React.FC = () => {
         </div>
 
         {/* Tab Content Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-6 w-full">
           {/* TAB 1: HISTORICAL FORT BLUEPRINTS */}
           {projectHubTab === 'blueprints' && (
             <div className="space-y-3">

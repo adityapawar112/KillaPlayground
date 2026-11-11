@@ -27,6 +27,20 @@ import { PropSubTool } from '../figurines/figurineTypes';
 import { PlacedLight, LightingSubTool } from '../lighting/lightingTypes';
 export type { SplineConversionType, SplineSettings, SplinePath, SplineMode, WallMode, FoliageInstance, FoliageSubTool, PropSubTool, PlacedLight, LightingSubTool };
 
+export type WorkspaceLayout = 'standard' | 'focus' | 'presentation';
+export type MobileDrawerTab = 'properties' | 'assets' | 'outliner' | 'element';
+export type MobileDrawerState = 'peek' | 'open' | 'half' | 'full' | 'collapsed';
+export type ActiveRadialMenu = 'none' | 'tool' | 'mode';
+
+export interface DestructiveModalState {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+}
+
 export type BuildingMode = 'select' | 'walls' | 'foundation' | 'stairs' | 'fortifications';
 
 export interface FoundationSlab {
@@ -478,6 +492,24 @@ interface EditorState {
   setPresentationMode: (mode: boolean) => void;
   togglePresentationMode: () => void;
 
+  // Ticket 19: Workspaces, Responsive Drawers & Universal States
+  workspaceLayout: WorkspaceLayout;
+  prePresentationWorkspaceLayout: WorkspaceLayout | null;
+  setWorkspaceLayout: (layout: WorkspaceLayout) => void;
+  toggleWorkspaceLayout: () => void;
+  mobileDrawerTab: MobileDrawerTab;
+  setMobileDrawerTab: (tab: MobileDrawerTab) => void;
+  mobileDrawerState: MobileDrawerState;
+  setMobileDrawerState: (state: MobileDrawerState) => void;
+  toggleMobileDrawer: () => void;
+  activeRadialMenu: ActiveRadialMenu;
+  setActiveRadialMenu: (menu: ActiveRadialMenu) => void;
+  isJoystickActive: boolean;
+  setIsJoystickActive: (active: boolean) => void;
+  destructiveModal: DestructiveModalState | null;
+  openDestructiveConfirm: (params: Omit<DestructiveModalState, 'isOpen'>) => void;
+  closeDestructiveConfirm: () => void;
+
   isPropDrawerOpen: boolean;
   isPosterModalOpen: boolean;
   isModeSelectModalOpen: boolean;
@@ -543,7 +575,9 @@ interface EditorState {
   cameraResetTrigger: number;
   triggerCameraReset: () => void;
   cameraViewPreset: CameraViewPreset | null;
+  activeCameraPreset: CameraViewPreset;
   setCameraViewPreset: (view: CameraViewPreset | null) => void;
+  setActiveCameraPreset: (preset: CameraViewPreset) => void;
 
   // Actions
   setActiveTool: (tool: ToolType) => void;
@@ -1687,39 +1721,126 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   toggleBrickRing: () => set((state) => ({ showBrickRing: !state.showBrickRing })),
   prePresentationTool: null,
   isPresentationMode: false,
-  setPresentationMode: (mode: boolean) =>
+  setPresentationMode: (mode: boolean) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('killa_workspace_layout_v1', mode ? 'presentation' : 'standard');
+      }
+    } catch {}
+
     set((state) => {
       if (mode) {
         return {
           isPresentationMode: true,
           prePresentationTool: state.activeTool !== 'view' ? state.activeTool : state.prePresentationTool,
           activeTool: 'view',
+          prePresentationWorkspaceLayout: state.workspaceLayout !== 'presentation' ? state.workspaceLayout : state.prePresentationWorkspaceLayout,
+          workspaceLayout: 'presentation',
+          isMobileSidebarMinimized: true,
+          isRightSidebarMinimized: true,
         };
       } else {
         return {
           isPresentationMode: false,
           activeTool: state.prePresentationTool || state.activeTool || 'terrain',
           prePresentationTool: null,
+          workspaceLayout: state.prePresentationWorkspaceLayout || 'standard',
+          prePresentationWorkspaceLayout: null,
+          isMobileSidebarMinimized: false,
+          isRightSidebarMinimized: false,
         };
       }
-    }),
-  togglePresentationMode: () =>
+    });
+  },
+  togglePresentationMode: () => {
+    const nextMode = !get().isPresentationMode;
+    get().setPresentationMode(nextMode);
+  },
+
+  // Ticket 19: Workspaces & Mobile Studio Engine
+  workspaceLayout: 'standard',
+  prePresentationWorkspaceLayout: null,
+  setWorkspaceLayout: (layout: WorkspaceLayout) => {
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('killa_workspace_layout_v1', layout);
+      }
+    } catch {}
+
     set((state) => {
-      const nextMode = !state.isPresentationMode;
-      if (nextMode) {
+      if (layout === 'presentation') {
         return {
+          workspaceLayout: 'presentation',
+          prePresentationWorkspaceLayout: state.workspaceLayout !== 'presentation' ? state.workspaceLayout : state.prePresentationWorkspaceLayout,
           isPresentationMode: true,
           prePresentationTool: state.activeTool !== 'view' ? state.activeTool : state.prePresentationTool,
           activeTool: 'view',
+          isMobileSidebarMinimized: true,
+          isRightSidebarMinimized: true,
         };
-      } else {
+      } else if (layout === 'focus') {
         return {
+          workspaceLayout: 'focus',
           isPresentationMode: false,
           activeTool: state.prePresentationTool || state.activeTool || 'terrain',
           prePresentationTool: null,
+          prePresentationWorkspaceLayout: null,
+          isMobileSidebarMinimized: false,
+          isRightSidebarMinimized: true,
+        };
+      } else {
+        return {
+          workspaceLayout: 'standard',
+          isPresentationMode: false,
+          activeTool: state.prePresentationTool || state.activeTool || 'terrain',
+          prePresentationTool: null,
+          prePresentationWorkspaceLayout: null,
+          isMobileSidebarMinimized: false,
+          isRightSidebarMinimized: false,
         };
       }
+    });
+  },
+  toggleWorkspaceLayout: () => {
+    const current = get().workspaceLayout;
+    const nextLayout: WorkspaceLayout =
+      current === 'standard' ? 'focus' : current === 'focus' ? 'presentation' : 'standard';
+    get().setWorkspaceLayout(nextLayout);
+  },
+
+  mobileDrawerTab: 'properties',
+  setMobileDrawerTab: (tab: MobileDrawerTab) => set({ mobileDrawerTab: tab, mobileDrawerState: 'half' }),
+  mobileDrawerState: 'peek',
+  setMobileDrawerState: (drawerState: MobileDrawerState) => set({ mobileDrawerState: drawerState }),
+  toggleMobileDrawer: () =>
+    set((state) => ({
+      mobileDrawerState:
+        state.mobileDrawerState === 'collapsed' || state.mobileDrawerState === 'peek' ? 'half' : 'peek',
+    })),
+
+  activeRadialMenu: 'none',
+  setActiveRadialMenu: (menu: ActiveRadialMenu) => set({ activeRadialMenu: menu }),
+  isJoystickActive: false,
+  setIsJoystickActive: (active: boolean) => {
+    if (typeof window !== 'undefined' && (window as any).__orbitControls) {
+      (window as any).__orbitControls.enabled = !active;
+    }
+    set({ isJoystickActive: active });
+  },
+
+  destructiveModal: null,
+  openDestructiveConfirm: (params: Omit<DestructiveModalState, 'isOpen'>) =>
+    set({
+      destructiveModal: {
+        isOpen: true,
+        title: params.title,
+        description: params.description,
+        confirmLabel: params.confirmLabel,
+        cancelLabel: params.cancelLabel,
+        onConfirm: params.onConfirm,
+      },
     }),
+  closeDestructiveConfirm: () => set({ destructiveModal: null }),
   collapseAllPanels: () =>
     set({
       isMobileSidebarMinimized: true,
@@ -1925,7 +2046,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   cameraResetTrigger: 0,
   triggerCameraReset: () => set((state) => ({ cameraResetTrigger: state.cameraResetTrigger + 1 })),
   cameraViewPreset: null,
-  setCameraViewPreset: (v) => set({ cameraViewPreset: v }),
+  activeCameraPreset: 'isometric',
+  setCameraViewPreset: (v) =>
+    set((s) => ({
+      cameraViewPreset: v,
+      activeCameraPreset:
+        v && ['isometric', 'top', 'rampart', 'reset', 'front', 'side'].includes(v)
+          ? v
+          : s.activeCameraPreset,
+    })),
+  setActiveCameraPreset: (preset) => set({ activeCameraPreset: preset }),
 
   loadSavedProjects: async () => {
     try {

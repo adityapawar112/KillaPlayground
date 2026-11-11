@@ -18,6 +18,10 @@ import { TerrainStudioDrawer } from '@/components/modals/TerrainStudioDrawer';
 import { TerrainChangeConfirmModal } from '@/components/modals/TerrainChangeConfirmModal';
 import { PosterStudioModal } from '@/components/modals/PosterStudioModal';
 import { AboutModal } from '@/components/modals/AboutModal';
+import { DestructiveConfirmModal } from '@/components/modals/DestructiveConfirmModal';
+import { MobileTopNav } from '@/components/hud/MobileTopNav';
+import { VirtualJoystick } from '@/components/hud/VirtualJoystick';
+import { MobileBottomDrawer } from '@/components/hud/MobileBottomDrawer';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTerrainStore } from '@/lib/terrain/terrainStore';
 import { useVaultHydration } from '@/lib/persistence/useVaultHydration';
@@ -75,6 +79,30 @@ export default function HomePage() {
   const redo = useTerrainStore((s) => s.redo);
   const canUndo = useTerrainStore((s) => (s.historyVersion !== undefined ? s.canUndo() : s.canUndo()));
   const canRedo = useTerrainStore((s) => (s.historyVersion !== undefined ? s.canRedo() : s.canRedo()));
+  const workspaceLayout = useEditorStore((s) => s.workspaceLayout);
+  const setStartupModalOpen = useEditorStore((s) => s.setStartupModalOpen);
+
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  useEffect(() => {
+    try {
+      const savedLayout = localStorage.getItem('killa_workspace_layout_v1');
+      if (savedLayout === 'standard' || savedLayout === 'focus') {
+        useEditorStore.getState().setWorkspaceLayout(savedLayout as any);
+      } else {
+        useEditorStore.getState().setWorkspaceLayout('standard');
+      }
+    } catch {}
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -236,34 +264,53 @@ export default function HomePage() {
           {/* Standard Studio Chrome (Suppressed during Presentation Mode) */}
           {!isPresentationMode && (
             <>
-              {/* Desktop Application Menu Bar + Webpage Title */}
-              <AppMenuBar
-                onUndo={undo}
-                onRedo={redo}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                onSetCameraView={(view) => setCameraViewPreset(view)}
-              />
+              {isMobile ? (
+                /* ======================================================== */
+                /* MOBILE & TABLET STUDIO CONTROLS (< 1024px)              */
+                /* ======================================================== */
+                <>
+                  <MobileTopNav />
+                  <VirtualJoystick />
+                  <MobileBottomDrawer />
+                </>
+              ) : (
+                /* ======================================================== */
+                /* DESKTOP STUDIO WORKSPACE CONTROLS (>= 1024px)           */
+                /* ======================================================== */
+                <>
+                  {/* Desktop Application Menu Bar + Webpage Title */}
+                  <AppMenuBar
+                    onUndo={undo}
+                    onRedo={redo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
+                    onSetCameraView={(view) => setCameraViewPreset(view)}
+                  />
 
-              {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
-              <TopToolBar />
+                  {/* Top Tool Modes Shelf (Solid sub-bar beneath menu bar) */}
+                  <TopToolBar />
 
-              {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
-              <LeftToolSidebar />
+                  {/* Left Resizable Sidebar: Top Camera Controls + Bottom Scrollable Tool Properties */}
+                  <LeftToolSidebar />
 
-              {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
-              <ToolModeSidebar />
+                  {/* Vertical Tool Mode Strip: Attached to right edge of Left Sidebar */}
+                  <ToolModeSidebar />
 
-              {/* Right Resizable Sidebar: Outliner + Contextual Inspector */}
-              <RightToolSidebar />
+                  {/* Right Resizable Sidebar: Outliner + Contextual Inspector (Suppressed in Focus Crafting mode) */}
+                  {workspaceLayout !== 'focus' && <RightToolSidebar />}
 
-              {/* Floating Centered Unified Viewport Toolbar (Ticket 16 Review Item 11) */}
-              <DioramaQuickBar />
+                  {/* Floating Centered Unified Viewport Toolbar (Ticket 16 Review Item 11) */}
+                  <DioramaQuickBar />
 
-              {/* Contextual In-Canvas Dynamic Keycaps (Ticket 16 Review Item 15) */}
-              <BottomStatusBar />
+                  {/* Contextual In-Canvas Dynamic Keycaps (Ticket 16 Review Item 15) */}
+                  <BottomStatusBar />
+                </>
+              )}
             </>
           )}
+
+          {/* Destructive Action Confirmation Modal Engine (Ticket 19) */}
+          <DestructiveConfirmModal />
 
           {/* Left-Side Dropdown Terrain Studio (Visible 3D Viewport) */}
           <TerrainStudioDrawer />

@@ -31,11 +31,13 @@ import {
   Grid,
   Box,
   Layers,
+  LayoutTemplate,
 } from 'lucide-react';
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
 import type { Locale } from '@/lib/i18n/translations';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
+import { INTERACTION_CLASSES } from '@/lib/theme/tokens';
 
 interface AppMenuBarProps {
   onUndo?: () => void;
@@ -84,6 +86,9 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
     toggleBrickRing,
     isPresentationMode,
     togglePresentationMode,
+    workspaceLayout,
+    setWorkspaceLayout,
+    toggleWorkspaceLayout,
     collapseAllPanels,
     expandAllPanels,
     setPosterModalOpen,
@@ -572,6 +577,7 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
             </span>
           </div>
 
+
           <div className="hidden xl:block w-[1px] h-3.5 bg-[#D8D1C5] mx-1" />
 
           {/* DESKTOP MENUS (>= xl) */}
@@ -787,6 +793,42 @@ export const AppMenuBar: React.FC<AppMenuBarProps> = ({
                       <span className="font-semibold text-[#B85F45]">{t.appMenuBar.presentationMode}</span>
                     </span>
                     <kbd className="text-[10px] text-[#7C7267] font-mono">P</kbd>
+                  </button>
+                  <div className="my-1 border-t border-[#D8D1C5]" />
+
+                  {/* Workspace Layouts (Ticket 19) */}
+                  <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-[#7C7267]">
+                    {t.appMenuBar.workspaces}
+                  </div>
+                  <button
+                    onClick={() => {
+                      setWorkspaceLayout('standard');
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer ${INTERACTION_CLASSES.focusRing}`}
+                  >
+                    <span>{t.appMenuBar.workspaceStandard}</span>
+                    {workspaceLayout === 'standard' && <Check className="w-4 h-4 text-[#B85F45]" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWorkspaceLayout('focus');
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer ${INTERACTION_CLASSES.focusRing}`}
+                  >
+                    <span>{t.appMenuBar.workspaceFocus}</span>
+                    {workspaceLayout === 'focus' && <Check className="w-4 h-4 text-[#B85F45]" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setWorkspaceLayout('presentation');
+                      setActiveMenu(null);
+                    }}
+                    className={`w-full px-3.5 py-1.5 text-left flex items-center justify-between text-[#2B1E16] hover:bg-[#D8D1C5] transition-colors cursor-pointer ${INTERACTION_CLASSES.focusRing}`}
+                  >
+                    <span>{t.appMenuBar.workspacePresentation}</span>
+                    {workspaceLayout === 'presentation' && <Check className="w-4 h-4 text-[#B85F45]" />}
                   </button>
                   <div className="my-1 border-t border-[#D8D1C5]" />
 

@@ -452,11 +452,15 @@ export const LightingRenderer: React.FC = () => {
   const isPlaying = useEditorStore((s) => s.isPlaying);
   const salvoTrigger = useEditorStore((s) => s.salvoTrigger);
   const fireworkSalvoEndTime = useEditorStore((s) => s.fireworkSalvoEndTime);
+  const isJoystickActive = useEditorStore((s) => s.isJoystickActive);
 
   const { scene, camera, raycaster, gl, invalidate } = useThree();
   const [ghostPos, setGhostPos] = useState<[number, number, number] | null>(null);
   const [ghostRot, setGhostRot] = useState<[number, number, number]>([0, 0, 0]);
   const lightFlickerTimeRef = useRef<number>(0);
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerDownTimeRef = useRef<number>(0);
+  const hasDraggedRef = useRef<boolean>(false);
 
   // Statically Pre-Allocated 3D Omnidirectional Point Lights (Strictly 16 lights, 0ms shader recompile)
   const pointLightRefs = useRef<Array<THREE.PointLight | null>>([]);
@@ -807,63 +811,91 @@ export const LightingRenderer: React.FC = () => {
     };
 
     const handlePointerDown = (e: PointerEvent) => {
-      if (activeTool !== 'lighting' || e.button !== 0 || e.altKey) return;
+      const editor = useEditorStore.getState();
+      if (editor.isJoystickActive || editor.activeTool !== 'lighting' || e.button !== 0 || e.altKey) return;
 
-      if (lightingSubTool === 'place') {
-        const hit = getSurfaceIntersection(e.clientX, e.clientY);
-        if (hit) {
-          const type = selectedLightType || 'diya_clay_01';
-          const meta = getLightById(type) || LIGHTING_MANIFEST[0];
-          const baseYaw = lightRandomRotation
-            ? Math.random() * Math.PI * 2
-            : (lightPlacementRotation * Math.PI) / 180;
-          const rot = computeRotation(baseYaw, hit.normal);
-          const scaleVal = lightPlacementScale * meta.defaultScale;
+      pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+      pointerDownTimeRef.current = performance.now();
+      hasDraggedRef.current = false;
+    };
 
-          const isFirework = meta.category === 'fireworks';
-          const burstHeightVal = isFirework
-            ? (lightRandomBurstHeight
-                ? parseFloat((0.6 + Math.random() * 1.8).toFixed(2))
-                : lightBurstHeight)
-            : undefined;
+    const handlePointerUp = (e: PointerEvent) => {
+      const editor = useEditorStore.getState();
+      if (editor.isJoystickActive || editor.activeTool !== 'lighting') {
+        pointerDownPosRef.current = null;
+        return;
+      }
 
-          addLight({
-            type,
-            category: meta.category,
-            position: [hit.point.x, hit.point.y + lightElevationOffset, hit.point.z],
-            rotation: rot,
-            scale: [scaleVal, scaleVal, scaleVal],
-            colorTheme: meta.colorTheme,
-            burstHeight: burstHeightVal,
-          });
-          invalidate(); // Immediately render placed light!
-        }
-      } else if (lightingSubTool === 'erase') {
-        // Erase brush deletion
-        const hit = getSurfaceIntersection(e.clientX, e.clientY);
-        if (hit) {
-          const radiusSq = lightEraseRadius * lightEraseRadius;
-          const toRemove: string[] = [];
-          for (const l of placedLights) {
-            const dx = l.position[0] - hit.point.x;
-            const dz = l.position[2] - hit.point.z;
-            if (dx * dx + dz * dz <= radiusSq) {
-              toRemove.push(l.id);
+      if (pointerDownPosRef.current) {
+        const now = performance.now();
+        const duration = now - pointerDownTimeRef.current;
+        const dist = Math.hypot(
+          e.clientX - pointerDownPosRef.current.x,
+          e.clientY - pointerDownPosRef.current.y
+        );
+
+        if (!hasDraggedRef.current && dist <= 8 && duration <= 350) {
+          if (editor.lightingSubTool === 'place') {
+            const hit = getSurfaceIntersection(e.clientX, e.clientY);
+            if (hit) {
+              const type = selectedLightType || 'diya_clay_01';
+              const meta = getLightById(type) || LIGHTING_MANIFEST[0];
+              const baseYaw = lightRandomRotation
+                ? Math.random() * Math.PI * 2
+                : (lightPlacementRotation * Math.PI) / 180;
+              const rot = computeRotation(baseYaw, hit.normal);
+              const scaleVal = lightPlacementScale * meta.defaultScale;
+
+              const isFirework = meta.category === 'fireworks';
+              const burstHeightVal = isFirework
+                ? (lightRandomBurstHeight
+                    ? parseFloat((0.6 + Math.random() * 1.8).toFixed(2))
+                    : lightBurstHeight)
+                : undefined;
+
+              addLight({
+                type,
+                category: meta.category,
+                position: [hit.point.x, hit.point.y + lightElevationOffset, hit.point.z],
+                rotation: rot,
+                scale: [scaleVal, scaleVal, scaleVal],
+                colorTheme: meta.colorTheme,
+                burstHeight: burstHeightVal,
+              });
+              invalidate(); // Immediately render placed light!
             }
-          }
-          if (toRemove.length > 0) {
-            removeLights(toRemove);
-            invalidate();
+          } else if (lightingSubTool === 'erase') {
+            // Erase brush deletion on tap
+            const hit = getSurfaceIntersection(e.clientX, e.clientY);
+            if (hit) {
+              const radiusSq = lightEraseRadius * lightEraseRadius;
+              const toRemove: string[] = [];
+              for (const l of placedLights) {
+                const dx = l.position[0] - hit.point.x;
+                const dz = l.position[2] - hit.point.z;
+                if (dx * dx + dz * dz <= radiusSq) {
+                  toRemove.push(l.id);
+                }
+              }
+              if (toRemove.length > 0) {
+                removeLights(toRemove);
+                invalidate();
+              }
+            }
           }
         }
       }
+
+      pointerDownPosRef.current = null;
     };
 
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointerup', handlePointerUp);
     return () => {
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
   }, [
     activeTool,

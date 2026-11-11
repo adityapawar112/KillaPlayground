@@ -25,6 +25,7 @@ export function handleStructurePointerDown(
 ): boolean {
   if (e.button !== 0 || e.altKey) return false;
   const editor = useEditorStore.getState();
+  if (editor.isJoystickActive) return false;
 
   // 1. Spline / Building Stairs Tool (draw/stairs mode)
   const isStairsActive =

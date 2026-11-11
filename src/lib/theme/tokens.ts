@@ -65,3 +65,18 @@ export const ICON_CONFIG = {
   strokeWidth: 1.75,
 } as const;
 
+export const INTERACTION_CLASSES = {
+  // Accessible keyboard focus ring
+  focusRing:
+    'focus-visible:ring-2 focus-visible:ring-[#B85F45] focus-visible:ring-offset-1 focus-visible:outline-none',
+  // Touch hit envelope (guarantees >= 44x44px touch target)
+  touchHitTarget: 'min-w-[44px] min-h-[44px] flex items-center justify-center',
+  // Universal button interaction states
+  buttonDefault:
+    'bg-[#FAF8F5] text-[#5A5248] border border-[#D8D1C5] transition-all duration-150 select-none',
+  buttonHover: 'hover:bg-[#E0D9CE] hover:text-[#2B2621]',
+  buttonActive: 'active:scale-95',
+  buttonSelected: 'bg-[#2B2621] text-[#FAF8F5] shadow-xs ring-1 ring-[#1C1815]',
+  buttonDisabled: 'opacity-40 cursor-not-allowed pointer-events-none',
+} as const;
+

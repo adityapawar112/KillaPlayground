@@ -71,7 +71,7 @@ export const TopToolBar: React.FC = () => {
   const toolsAndViewsRight = isRightPanelOpen
     ? `${rightSidebarWidth + 8}px`
     : isOutlinerTabPresent
-    ? '104px'
+    ? '150px'
     : '8px';
 
   const toolDetails: Record<
@@ -169,12 +169,12 @@ export const TopToolBar: React.FC = () => {
         >
           <button
             onClick={toggleMobileTopBar}
-            className="flex items-center gap-1.5 px-3 py-0.5 bg-[#EBE6DC] border-x border-b border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-1.5 h-[26px] px-3 py-1 bg-[#EBE6DC] hover:bg-[#D8D1C5] border-x border-b border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] active:scale-95 transition-all cursor-pointer"
             title={t.topToolBar.showToolsCamera}
           >
             <Mountain size={13} strokeWidth={1.75} className="text-[#B85F45]" />
             <span className="text-[10px] font-semibold">{t.topToolBar.toolsAndViews}</span>
-            <ChevronDown size={13} strokeWidth={1.75} className="text-[#5A5248]" />
+            <ChevronDown size={13} strokeWidth={1.75} className="text-[#5C4638]" />
           </button>
         </div>
       )}

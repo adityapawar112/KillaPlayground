@@ -65,7 +65,7 @@ import { FortStampType } from '@/lib/walls/wallTypes';
 
 const STORAGE_WIDTH_KEY = 'killa_sidebar_width_v1';
 
-export const LeftToolSidebar: React.FC = () => {
+export const LeftToolSidebar: React.FC<{ isDrawer?: boolean }> = ({ isDrawer = false }) => {
   const {
     activeTool,
     terrainSubTool,
@@ -86,6 +86,7 @@ export const LeftToolSidebar: React.FC = () => {
     isMobileSidebarMinimized,
     toggleMobileSidebar,
     isToolModeMinimized,
+    isToolRailCompact,
     isMobileTopBarMinimized,
     setPropDrawerOpen,
     walls,
@@ -143,6 +144,7 @@ export const LeftToolSidebar: React.FC = () => {
     finishSpline,
     cancelSpline,
     translateSpline,
+    openDestructiveConfirm,
     rotateSpline,
     scaleSplineItem,
     setToastMessage,
@@ -541,7 +543,7 @@ export const LeftToolSidebar: React.FC = () => {
     });
   };
 
-  if (!showLeftToolbar) return null;
+  if (!isDrawer && !showLeftToolbar) return null;
 
   const selectedWall = walls.find((w) => w.id === selectedWallId);
   const selectedSpline = splines.find((s) => s.id === selectedSplineId);
@@ -550,12 +552,12 @@ export const LeftToolSidebar: React.FC = () => {
 
   const isModePanelOpen =
     ['building', 'walls', 'spline', 'terrain', 'texture', 'paint', 'foliage', 'prop', 'lighting', 'view'].includes(activeTool) && !isToolModeMinimized;
-  const propertiesTabLeft = isModePanelOpen ? '84px' : '8px';
+  const propertiesTabLeft = isModePanelOpen ? (isToolRailCompact ? '56px' : '76px') : '8px';
 
   return (
     <>
       {/* Minimized Hanging Guide Tab (Pinned to top-left below studio header) */}
-      {isMobileSidebarMinimized && (
+      {!isDrawer && isMobileSidebarMinimized && (
         <div
           style={{ left: propertiesTabLeft }}
           className={`fixed z-30 pointer-events-auto transition-all duration-200 ${
@@ -564,62 +566,70 @@ export const LeftToolSidebar: React.FC = () => {
         >
           <button
             onClick={toggleMobileSidebar}
-            className="flex items-center gap-1.5 px-3 py-1 bg-[#D8D1C5] border-x border-b border-[#D8D1C5] rounded-b-lg shadow-sm text-xs font-semibold text-[#2B2621] active:scale-95 transition-transform cursor-pointer"
+            className="flex items-center gap-1.5 h-[26px] px-3 py-1 bg-[#EBE6DC] hover:bg-[#D8D1C5] border-x border-b border-[#D8D1C5] rounded-b-md shadow-xs text-xs font-semibold text-[#2B2621] active:scale-95 transition-all cursor-pointer"
             title={t.sidebars.left.openProperties}
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-[#8F4938]" />
-            <span className="text-[11px] font-bold">{t.sidebars.left.properties}</span>
+            <span className="text-[10px] font-semibold">{t.sidebars.left.properties}</span>
             <ChevronDown className="w-3.5 h-3.5 text-[#5C4638]" />
           </button>
         </div>
       )}
 
-      {/* Docked Left Sidebar */}
+      {/* Docked Left Sidebar / Mobile Drawer Body */}
       <aside
         aria-label="Editor Sidebar"
-        style={{ width: `${sidebarWidth}px` }}
-        className={`fixed left-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-r border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
-          isMobileSidebarMinimized ? '-translate-x-full' : 'translate-x-0'
-        } ${
-          !showContextualDock || isMobileTopBarMinimized ? 'top-[38px]' : 'top-[72px]'
-        }`}
+        style={isDrawer ? undefined : { width: `${sidebarWidth}px` }}
+        className={
+          isDrawer
+            ? "w-full h-full flex flex-col bg-transparent select-none pointer-events-auto"
+            : `fixed left-0 bottom-0 z-20 flex flex-col bg-[#EBE6DC] border-r border-[#D8D1C5] shadow-lg select-none pointer-events-auto transition-all duration-200 max-w-[85vw] ${
+                isMobileSidebarMinimized ? '-translate-x-full' : 'translate-x-0'
+              } ${
+                !showContextualDock || isMobileTopBarMinimized ? 'top-[38px]' : 'top-[72px]'
+              }`
+        }
       >
-        {/* Right Resizing Edge with Tactile Grip Dots */}
-        <div
-          onMouseDown={handleResizeStart}
-          title="Drag to resize panel"
-          className="group absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-[#B85F45]/30 transition-colors z-30 flex items-center justify-center"
-        >
-          <div className="flex flex-col items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-            <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
-          </div>
-        </div>
-
-        {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-3 border-b border-[#D8D1C5] shrink-0 bg-[#ECE2D5]/70">
-          <div className="flex items-center gap-1.5 text-[#2B2621]">
-            <SlidersHorizontal className="w-4 h-4 text-[#8F4938]" />
-            <span className="text-xs font-bold uppercase tracking-wider">{t.sidebars.left.toolProperties}</span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] font-bold bg-[#E0D3C3] text-[#5C4638] px-2 py-0.5 rounded-full uppercase tracking-wider">
-              {((t.tools as any)[activeTool]?.label) || activeTool}
-            </span>
-            <button
-              onClick={toggleMobileSidebar}
-              title={t.sidebars.left.minimizeSidebar}
-              className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
+        {!isDrawer && (
+          <>
+            {/* Right Resizing Edge with Tactile Grip Dots */}
+            <div
+              onMouseDown={handleResizeStart}
+              title="Drag to resize panel"
+              className="group absolute top-0 right-0 w-2 h-full cursor-ew-resize hover:bg-[#B85F45]/30 transition-colors z-30 flex items-center justify-center"
             >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+              <div className="flex flex-col items-center justify-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+                <div className="w-1 h-1 rounded-full bg-[#8D7666]" />
+              </div>
+            </div>
+
+            {/* Sidebar Header */}
+            <div className="flex items-center justify-between p-3 border-b border-[#D8D1C5] shrink-0 bg-[#ECE2D5]/70">
+              <div className="flex items-center gap-1.5 text-[#2B2621]">
+                <SlidersHorizontal className="w-4 h-4 text-[#8F4938]" />
+                <span className="text-xs font-bold uppercase tracking-wider">{t.sidebars.left.toolProperties}</span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-bold bg-[#E0D3C3] text-[#5C4638] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  {((t.tools as any)[activeTool]?.label) || activeTool}
+                </span>
+                <button
+                  onClick={toggleMobileSidebar}
+                  title={t.sidebars.left.minimizeSidebar}
+                  className="p-1 rounded hover:bg-[#D8C7B5] text-[#5C4638] transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
 
         {/* Scrollable Tool Content */}
         <div className="flex-1 overflow-y-auto p-3.5 space-y-4 text-xs text-[#2B2621]">
@@ -2123,9 +2133,11 @@ export const LeftToolSidebar: React.FC = () => {
                       <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to remove all placed figurines from the diorama?')) {
-                              clearAllProps();
-                            }
+                            openDestructiveConfirm({
+                              title: t.destructiveModal.clearFigurinesTitle,
+                              description: t.destructiveModal.clearFigurinesDesc,
+                              onConfirm: clearAllProps,
+                            });
                           }}
                           className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >
@@ -2311,9 +2323,11 @@ export const LeftToolSidebar: React.FC = () => {
                       <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
-                            if (window.confirm(`Are you sure you want to remove all ${placedProps.length} placed figurines from the diorama?`)) {
-                              clearAllProps();
-                            }
+                            openDestructiveConfirm({
+                              title: t.destructiveModal.clearFigurinesTitle,
+                              description: t.destructiveModal.clearFigurinesDesc,
+                              onConfirm: clearAllProps,
+                            });
                           }}
                           className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >
@@ -2700,9 +2714,11 @@ export const LeftToolSidebar: React.FC = () => {
                       <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
-                            if (window.confirm('Are you sure you want to remove all placed lights & fireworks from the diorama?')) {
-                              clearAllLights();
-                            }
+                            openDestructiveConfirm({
+                              title: t.destructiveModal.clearLightsTitle,
+                              description: t.destructiveModal.clearLightsDesc,
+                              onConfirm: clearAllLights,
+                            });
                           }}
                           className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >
@@ -2911,9 +2927,11 @@ export const LeftToolSidebar: React.FC = () => {
                       <div className="pt-2 border-t border-[#D8D1C5]">
                         <button
                           onClick={() => {
-                            if (window.confirm(`Are you sure you want to remove all ${placedLights.length} placed lights & fireworks from the diorama?`)) {
-                              clearAllLights();
-                            }
+                            openDestructiveConfirm({
+                              title: t.destructiveModal.clearLightsTitle,
+                              description: t.destructiveModal.clearLightsDesc,
+                              onConfirm: clearAllLights,
+                            });
                           }}
                           className="w-full py-1.5 border border-red-300 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold cursor-pointer transition-colors"
                         >

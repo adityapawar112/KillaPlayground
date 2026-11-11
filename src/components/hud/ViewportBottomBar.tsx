@@ -29,6 +29,8 @@ export const ViewportBottomBar: React.FC = () => {
     togglePlay,
     viewMode,
     setViewMode,
+    cameraViewPreset,
+    activeCameraPreset,
     setCameraViewPreset,
     isCapturingScreenshot,
     setIsCapturingScreenshot,
@@ -135,48 +137,39 @@ export const ViewportBottomBar: React.FC = () => {
     >
       <div className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 bg-[#EBE6DC]/95 backdrop-blur-md border border-[#D8D1C5] rounded-full shadow-lg text-xs font-semibold text-[#2B2621]">
         {/* ======================================================== */}
-        {/* CLUSTER A: CAMERA PERSPECTIVES (Review Item 11)           */}
+        {/* CLUSTER A: CAMERA PERSPECTIVES (Cycle Button)             */}
         {/* ======================================================== */}
-        <div className="flex items-center gap-1">
-          {/* 1. Isometric 45° */}
-          <button
-            onClick={() => setCameraViewPreset('isometric')}
-            title={t.dioramaQuickBar.isometricTooltip}
-            className="flex items-center gap-1 px-2 py-1 rounded-full text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-all cursor-pointer"
-          >
-            <Box size={13} strokeWidth={1.75} className="text-[#8F4938]" />
-            <span className="text-[11px] font-semibold hidden md:inline">{t.dioramaQuickBar.isometric}</span>
-          </button>
+        <div className="flex items-center">
+          {(() => {
+            const CAMERA_CYCLE = [
+              { id: 'isometric' as const, label: t.dioramaQuickBar.isometric, icon: Box, color: 'text-[#8F4938]' },
+              { id: 'top' as const, label: t.dioramaQuickBar.birdsEye, icon: Eye, color: 'text-[#0284C7]' },
+              { id: 'rampart' as const, label: t.dioramaQuickBar.rampartEye, icon: Castle, color: 'text-[#B85F45]' },
+              { id: 'reset' as const, label: t.dioramaQuickBar.resetHome, icon: Focus, color: 'text-[#777A57]' },
+            ];
+            const currentIdx = Math.max(0, CAMERA_CYCLE.findIndex((c) => c.id === activeCameraPreset));
+            const current = CAMERA_CYCLE[currentIdx] || CAMERA_CYCLE[0];
+            const CurrentIcon = current.icon;
 
-          {/* 2. Bird's Eye Top View (Numpad 7) */}
-          <button
-            onClick={() => setCameraViewPreset('top')}
-            title={t.dioramaQuickBar.birdsEyeTooltip}
-            className="flex items-center gap-1 px-2 py-1 rounded-full text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-all cursor-pointer"
-          >
-            <Eye size={13} strokeWidth={1.75} className="text-[#7C7267]" />
-            <span className="text-[11px] font-semibold hidden md:inline">{t.dioramaQuickBar.birdsEye}</span>
-          </button>
+            const handleCycleCamera = () => {
+              const nextIdx = (currentIdx + 1) % CAMERA_CYCLE.length;
+              setCameraViewPreset(CAMERA_CYCLE[nextIdx].id);
+            };
 
-          {/* 3. Rampart Eye View (Numpad 1) */}
-          <button
-            onClick={() => setCameraViewPreset('rampart')}
-            title={t.dioramaQuickBar.rampartEyeTooltip}
-            className="flex items-center gap-1 px-2 py-1 rounded-full text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-all cursor-pointer"
-          >
-            <Castle size={13} strokeWidth={1.75} className="text-[#7C7267]" />
-            <span className="text-[11px] font-semibold hidden md:inline">{t.dioramaQuickBar.rampartEye}</span>
-          </button>
-
-          {/* 4. Center / Reset to Home (Home / F) */}
-          <button
-            onClick={() => setCameraViewPreset('reset')}
-            title={t.dioramaQuickBar.resetHomeTooltip}
-            className="flex items-center gap-1 px-2 py-1 rounded-full text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-all cursor-pointer"
-          >
-            <Focus size={13} strokeWidth={1.75} className="text-[#7C7267]" />
-            <span className="text-[11px] font-semibold hidden lg:inline">{t.dioramaQuickBar.resetHome}</span>
-          </button>
+            return (
+              <button
+                onClick={handleCycleCamera}
+                title={`Camera View: ${current.label} (Click to cycle view)`}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[#5A5248] hover:bg-[#D8D1C5] hover:text-[#2B2621] transition-all cursor-pointer group"
+              >
+                <CurrentIcon size={13} strokeWidth={1.75} className={current.color} />
+                <span className="text-[11px] font-semibold">{current.label}</span>
+                <span className="text-[9px] text-[#7C7267] group-hover:text-[#2B2621] font-mono transition-transform group-hover:rotate-45">
+                  ↻
+                </span>
+              </button>
+            );
+          })()}
         </div>
 
         {/* Hairline Divider between Camera & Environment Clusters */}

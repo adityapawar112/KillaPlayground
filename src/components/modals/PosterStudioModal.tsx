@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   X,
   Download,
@@ -18,6 +18,7 @@ import {
   Sun,
   Sunset,
   Flame,
+  LayoutGrid,
 } from 'lucide-react';
 
 const WhatsappIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
@@ -32,9 +33,9 @@ const XSocialIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
   </svg>
 );
+
 import { useEditorStore } from '@/lib/state/useEditorStore';
 import { useTranslation } from '@/lib/i18n/useTranslation';
-import type { Locale } from '@/lib/i18n/translations';
 import { LanguageSelector } from '@/components/common/LanguageSelector';
 import {
   POSTER_TEMPLATES,
@@ -42,6 +43,7 @@ import {
   ImageCount,
   GridLayoutType,
   getAvailableGridLayouts,
+  calculateGridSlotRects,
 } from '@/lib/poster/posterTemplates';
 import {
   captureHeadlessSnapshot,
@@ -106,10 +108,10 @@ const LOCALE_PRESETS = {
     defaultGreeting: 'Happy Diwali & Prosperous New Year',
     creditLine: (name: string) => `Created by: ${name} • Diwali 2026`,
     perspectives: {
-      isometric: 'Isometric',
-      top: "Bird's Eye",
-      rampart: 'Rampart Eye',
-      bastion: 'Bastion Hero',
+      isometric: 'Isometric (45°)',
+      top: "Bird's Eye (90°)",
+      rampart: 'Rampart Eye (15°)',
+      bastion: 'Bastion Hero (30°)',
     },
     times: {
       dawn: 'Dawn',
@@ -135,6 +137,34 @@ const LOCALE_PRESETS = {
       'none': 'Pure Artwork',
     },
     cleanNone: 'None',
+    tabs: {
+      slots: 'Slots & Layout',
+      style: 'Poster Style',
+    },
+    slotNavigator: 'Photo Slots',
+    recaptureAll: 'Recapture All',
+    recaptureSlot: 'Recapture Slot',
+    slotInspector: 'Slot Configuration',
+    sourceLabel: 'Image Source',
+    sources: {
+      perspective: '3D Angles',
+      current: 'Live Viewport',
+      gallery: 'Screenshot Vault',
+    },
+    cameraAngle: 'Camera Perspective',
+    timeOfDay: 'Diurnal Lighting & Sky',
+    screenshotVault: 'Screenshot Vault',
+    themeLabel: 'Festival Theme',
+    textLabel: 'Royal Plaque & Typography',
+    fortTitle: 'Fort Title',
+    builderCredit: 'Builder / Team Credit',
+    festiveWish: 'Festive Greeting',
+    bannerStyle: 'Plaque / Watermark Style',
+    exportFormat: 'Export Format',
+    downloadBtn: 'Download Festive Poster',
+    shareBtn: 'Share Poster',
+    copyBtn: 'Copy Image',
+    shareX: 'Share on X',
   },
   mr: {
     titles: [
@@ -155,10 +185,10 @@ const LOCALE_PRESETS = {
     defaultGreeting: 'दिवाळीच्या हार्दिक शुभेच्छा',
     creditLine: (name: string) => `निर्मिती: ${name} • दिवाळी २०२६`,
     perspectives: {
-      isometric: 'त्रिमितीय देखावा',
-      top: 'विहंगम देखावा',
-      rampart: 'तटबंदी देखावा',
-      bastion: 'बुरुज देखावा',
+      isometric: 'त्रिमितीय (४५°)',
+      top: 'विहंगम (९०°)',
+      rampart: 'तटबंदी (१५°)',
+      bastion: 'बुरुज देखावा (३०°)',
     },
     times: {
       dawn: 'पहाट',
@@ -184,6 +214,34 @@ const LOCALE_PRESETS = {
       'none': 'केवळ कलाकृती',
     },
     cleanNone: 'काही नाही',
+    tabs: {
+      slots: 'चित्र व मांडणी',
+      style: 'पोस्टर शैली',
+    },
+    slotNavigator: 'चित्रांचे स्लॉट्स',
+    recaptureAll: 'सर्व पुन्हा घ्या',
+    recaptureSlot: 'हे चित्र पुन्हा घ्या',
+    slotInspector: 'चित्र संरचना',
+    sourceLabel: 'चित्राचा स्रोत',
+    sources: {
+      perspective: 'त्रिमितीय कोन',
+      current: 'थेट कॅमेरा',
+      gallery: 'स्क्रीनशॉट गॅलरी',
+    },
+    cameraAngle: 'कॅमेरा कोन',
+    timeOfDay: 'वेळ व प्रकाश',
+    screenshotVault: 'स्क्रीनशॉट गॅलरी',
+    themeLabel: 'पोस्टर थीम',
+    textLabel: 'शिलालेख व मजकूर',
+    fortTitle: 'किल्ल्याचे नाव',
+    builderCredit: 'निर्माता / संघ',
+    festiveWish: 'उत्सव शुभेच्छा',
+    bannerStyle: 'मुद्रा / पट्टी शैली',
+    exportFormat: 'स्वरूप',
+    downloadBtn: 'पोस्टर डाऊनलोड करा',
+    shareBtn: 'शेअर करा',
+    copyBtn: 'इमेज कॉपी',
+    shareX: 'एक्स वर शेअर',
   },
   hi: {
     titles: [
@@ -204,10 +262,10 @@ const LOCALE_PRESETS = {
     defaultGreeting: 'शुभ दीपावली',
     creditLine: (name: string) => `रचना: ${name} • दिवाली २०२६`,
     perspectives: {
-      isometric: 'त्रिविमीय दृश्य',
-      top: 'विहंगम दृश्य',
-      rampart: 'परकोटा दृश्य',
-      bastion: 'बुर्ज दृश्य',
+      isometric: 'त्रिविमीय (45°)',
+      top: 'विहंगम (90°)',
+      rampart: 'परकोटा (15°)',
+      bastion: 'बुर्ज दृश्य (30°)',
     },
     times: {
       dawn: 'उषाकाल',
@@ -233,13 +291,47 @@ const LOCALE_PRESETS = {
       'none': 'केवल कलाकृति',
     },
     cleanNone: 'कोई नहीं',
+    tabs: {
+      slots: 'चित्र व लेआउट',
+      style: 'पोस्टर शैली',
+    },
+    slotNavigator: 'फोटो स्लॉट्स',
+    recaptureAll: 'सभी फिर लें',
+    recaptureSlot: 'यह फोटो फिर लें',
+    slotInspector: 'फोटो संरचना',
+    sourceLabel: 'फोटो का स्रोत',
+    sources: {
+      perspective: '3D कोण',
+      current: 'लाइव कैमरा',
+      gallery: 'स्क्रीनशॉट गैलरी',
+    },
+    cameraAngle: 'कैमरा कोण',
+    timeOfDay: 'समय व प्रकाश',
+    screenshotVault: 'स्क्रीनशॉट गैलरी',
+    themeLabel: 'पोस्टर थीम',
+    textLabel: 'शिलालेख व टेक्स्ट',
+    fortTitle: 'किले का नाम',
+    builderCredit: 'निर्माता / दल',
+    festiveWish: 'उत्सव शुभकामनाएं',
+    bannerStyle: 'मुहर / पट्टी शैली',
+    exportFormat: 'प्रारूप',
+    downloadBtn: 'पोस्टर डाउनलोड करें',
+    shareBtn: 'साझा करें',
+    copyBtn: 'इमेज कॉपी',
+    shareX: 'एक्स पर साझा',
   },
 };
 
 export const PosterStudioModal: React.FC = () => {
   const { isPosterModalOpen, setPosterModalOpen, setToastMessage } = useEditorStore();
-  const { t, locale, setLocale } = useTranslation();
+  const { t, locale } = useTranslation();
   const presets = LOCALE_PRESETS[locale] || LOCALE_PRESETS.en;
+
+  // Navigation tab in control panel: 'slots' | 'style'
+  const [activeTab, setActiveTab] = useState<'slots' | 'style'>('slots');
+
+  // Active selected slot index (0, 1, 2, or 3)
+  const [activeSlotIndex, setActiveSlotIndex] = useState<number>(0);
 
   // 1. Template selection
   const [selectedTemplateId, setSelectedTemplateId] = useState<PosterTemplateId>('archway_cannon');
@@ -259,13 +351,10 @@ export const PosterStudioModal: React.FC = () => {
     ];
   });
 
-  // Which slot has its inline gallery open (null = closed)
-  const [activeGallerySlotIndex, setActiveGallerySlotIndex] = useState<number | null>(null);
-
   // 4. Rendered canvases per slot
   const [slotCanvases, setSlotCanvases] = useState<(HTMLCanvasElement | null)[]>([null, null, null, null]);
 
-  // 5. Typography and personalization (initialized according to current locale)
+  // 5. Typography and personalization
   const [fortTitle, setFortTitle] = useState<string>(presets.defaultTitle);
   const [builderName, setBuilderName] = useState<string>(presets.defaultBuilder);
   const [festiveGreeting, setFestiveGreeting] = useState<string>(presets.defaultGreeting);
@@ -294,6 +383,11 @@ export const PosterStudioModal: React.FC = () => {
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const slotRequestVersions = useRef<number[]>([0, 0, 0, 0]);
   const initialCapturedRef = useRef(false);
+
+  // Clamp active slot index whenever image count changes
+  useEffect(() => {
+    setActiveSlotIndex((prev) => Math.min(prev, imageCount - 1));
+  }, [imageCount]);
 
   // Synchronize locale changes to default inputs if user hasn't heavily customized
   useEffect(() => {
@@ -326,6 +420,16 @@ export const PosterStudioModal: React.FC = () => {
       setGridLayout(available[0].id);
     }
   }, [imageCount, gridLayout]);
+
+  // Compute bounding rects for all slots on the 1080x1350 poster canvas
+  const slotRects = useMemo(() => {
+    return calculateGridSlotRects(
+      POSTER_TEMPLATES[selectedTemplateId].gridBounds,
+      gridLayout,
+      1080,
+      1350
+    );
+  }, [selectedTemplateId, gridLayout]);
 
   // Capture single slot canvas cleanly given its source with authentic diurnal lighting & sky
   const captureSingleSlotCanvas = useCallback(async (source: SlotSourceConfig): Promise<HTMLCanvasElement | null> => {
@@ -364,7 +468,7 @@ export const PosterStudioModal: React.FC = () => {
     });
   }, []);
 
-  // Atomic update for a single slot's source & canvas (No race conditions, no bouncing!)
+  // Atomic update for a single slot's source & canvas
   const updateSlot = useCallback(
     async (slotIdx: number, newSource: SlotSourceConfig) => {
       const version = ++slotRequestVersions.current[slotIdx];
@@ -378,7 +482,6 @@ export const PosterStudioModal: React.FC = () => {
       try {
         setIsCapturing(true);
         const canvas = await captureSingleSlotCanvas(newSource);
-        // Only commit if this is still the most recent request for this slot
         if (slotRequestVersions.current[slotIdx] === version) {
           setSlotCanvases((prev) => {
             const next = [...prev];
@@ -395,7 +498,7 @@ export const PosterStudioModal: React.FC = () => {
     [captureSingleSlotCanvas]
   );
 
-  // Capture snapshots for all active slots (initial open or user-requested Recapture All)
+  // Capture snapshots for all active slots
   const captureAllSlots = useCallback(async () => {
     setIsCapturing(true);
     try {
@@ -424,6 +527,16 @@ export const PosterStudioModal: React.FC = () => {
       setIsCapturing(false);
     }
   }, [imageCount, slotSources, captureSingleSlotCanvas]);
+
+  // Recapture single currently active slot
+  const handleRecaptureActiveSlot = useCallback(() => {
+    const cur = slotSources[activeSlotIndex] || {
+      type: 'perspective',
+      perspectiveId: 'isometric',
+      timePreset: 'noon',
+    };
+    updateSlot(activeSlotIndex, cur);
+  }, [activeSlotIndex, slotSources, updateSlot]);
 
   // Capture initial slots on modal open
   useEffect(() => {
@@ -506,44 +619,43 @@ export const PosterStudioModal: React.FC = () => {
   useEffect(() => {
     if (previewContainerRef.current && previewCanvas) {
       previewContainerRef.current.innerHTML = '';
-      previewCanvas.style.maxWidth = '100%';
-      previewCanvas.style.maxHeight = '100%';
+      previewCanvas.style.width = '100%';
+      previewCanvas.style.height = '100%';
       previewCanvas.style.objectFit = 'contain';
       previewCanvas.style.borderRadius = '8px';
-      previewCanvas.style.boxShadow = '0 12px 36px rgba(0,0,0,0.35)';
+      previewCanvas.style.display = 'block';
       previewContainerRef.current.appendChild(previewCanvas);
     }
   }, [previewCanvas]);
 
-  // Assign a perspective to a slot
-  const handleAssignPerspective = (slotIdx: number, pId: CameraPerspectiveId) => {
-    const curTime = slotSources[slotIdx]?.timePreset || 'noon';
-    updateSlot(slotIdx, {
+  // Assign a perspective to the active slot
+  const handleAssignPerspective = (pId: CameraPerspectiveId) => {
+    const curTime = slotSources[activeSlotIndex]?.timePreset || 'noon';
+    updateSlot(activeSlotIndex, {
       type: pId === 'current' ? 'current' : 'perspective',
       perspectiveId: pId,
       timePreset: curTime,
     });
   };
 
-  // Assign a time-of-day preset to a slot
-  const handleAssignTimePreset = (slotIdx: number, timePreset: TimePresetId) => {
-    const cur = slotSources[slotIdx] || { type: 'perspective', perspectiveId: 'isometric', timePreset: 'noon' };
-    updateSlot(slotIdx, {
+  // Assign a time-of-day preset to the active slot
+  const handleAssignTimePreset = (timePreset: TimePresetId) => {
+    const cur = slotSources[activeSlotIndex] || { type: 'perspective', perspectiveId: 'isometric', timePreset: 'noon' };
+    updateSlot(activeSlotIndex, {
       ...cur,
       timePreset,
     });
   };
 
-  // Assign a gallery screenshot to a specific slot
-  const handleAssignGalleryShot = (slotIdx: number, dataUrl: string) => {
-    const curTime = slotSources[slotIdx]?.timePreset || 'noon';
-    updateSlot(slotIdx, {
+  // Assign a gallery screenshot to the active slot
+  const handleAssignGalleryShot = (dataUrl: string) => {
+    const curTime = slotSources[activeSlotIndex]?.timePreset || 'noon';
+    updateSlot(activeSlotIndex, {
       type: 'gallery',
       galleryDataUrl: dataUrl,
       timePreset: curTime,
     });
-    setActiveGallerySlotIndex(null);
-    setToastMessage(`Assigned snapshot to Slot ${slotIdx + 1}`);
+    setToastMessage(`Assigned snapshot to Slot ${activeSlotIndex + 1}`);
   };
 
   // Open confirmation dialog for deleting a single screenshot
@@ -649,6 +761,7 @@ export const PosterStudioModal: React.FC = () => {
 
   const availableGrids = getAvailableGridLayouts(imageCount);
   const socialLinks = getSocialShareLinks(fortTitle, festiveGreeting);
+  const activeSource = slotSources[activeSlotIndex] || { type: 'perspective', perspectiveId: 'isometric', timePreset: 'noon' };
 
   return (
     <div
@@ -659,14 +772,14 @@ export const PosterStudioModal: React.FC = () => {
     >
       <div className="relative w-full max-w-6xl h-[92vh] max-h-[960px] bg-[#EBE6DC] border-2 border-[#D8D1C5] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[#2B2621]">
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[#FAF8F5] border-b border-[#D8D1C5]">
+        <div className="flex items-center justify-between px-4 py-3 bg-[#FAF8F5] border-b border-[#D8D1C5] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#FFFBEB] border border-[#F59E0B] flex items-center justify-center text-[#B45309]">
               <Palette className="w-5 h-5 text-[#E85D04]" />
             </div>
             <div>
               <h2 id="poster-studio-title" className="text-base font-bold text-[#2B2621]">
-                {t.posterModal?.title || 'Festive Killa Poster Studio'}
+                {t.posterModal?.title || 'Festive Fort Poster Studio'}
               </h2>
             </div>
           </div>
@@ -686,12 +799,12 @@ export const PosterStudioModal: React.FC = () => {
         </div>
 
         {/* Studio Body: 2-Column Responsive Layout */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
           {/* Left / Center: Interactive Live Poster Preview */}
-          <div className="flex-1 bg-[#1E1915] p-3 sm:p-5 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="flex-1 bg-[#1E1915] p-3 sm:p-5 flex flex-col items-center justify-center relative overflow-hidden min-h-0">
             {/* Compositing / Capturing Loading Overlay */}
             {(isCapturing || isCompositing) && (
-              <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/75 backdrop-blur-xs text-white text-xs font-semibold shadow-lg">
+              <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-xs text-white text-xs font-semibold shadow-lg">
                 <RefreshCw className="w-4 h-4 animate-spin text-[#F59E0B]" />
                 <span>
                   {locale === 'mr'
@@ -703,200 +816,343 @@ export const PosterStudioModal: React.FC = () => {
               </div>
             )}
 
-            {/* Canvas Mount Container */}
+            {/* 4:5 Poster Frame with Strict Aspect Ratio */}
             <div
-              ref={previewContainerRef}
-              className="w-full h-full flex items-center justify-center relative"
-            />
-          </div>
+              className="relative rounded-lg shadow-2xl overflow-hidden max-w-full max-h-full flex items-center justify-center"
+              style={{
+                aspectRatio: '1080 / 1350',
+                maxHeight: '100%',
+              }}
+            >
+              {/* 1080x1350 Canvas Target */}
+              <div
+                ref={previewContainerRef}
+                className="w-full h-full flex items-center justify-center pointer-events-none"
+              />
 
-          {/* Right Sidebar: Studio Controls & Configuration */}
-          <div className="w-full md:w-[380px] lg:w-[420px] bg-[#EBE6DC] border-t md:border-t-0 md:border-l border-[#D8D1C5] flex flex-col overflow-y-auto p-3.5 sm:p-4 space-y-4">
-            {/* 1. Template Selector (Full visible thumbnails) */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
-                <Palette className="w-4 h-4 text-[#B85F45]" />
-                <span>{locale === 'mr' ? 'पोस्टर थीम' : locale === 'hi' ? 'पोस्टर थीम' : 'Poster Theme'}</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(POSTER_TEMPLATES) as PosterTemplateId[]).map((tid) => {
-                  const tpl = POSTER_TEMPLATES[tid];
-                  const isSelected = selectedTemplateId === tid;
-                  const displayName = locale === 'mr' || locale === 'hi' ? tpl.marathiName : tpl.name;
-
-                  return (
-                    <button
-                      key={tid}
-                      onClick={() => setSelectedTemplateId(tid)}
-                      className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
-                        isSelected
-                          ? 'border-[#E85D04] bg-[#FFFBEB] ring-2 ring-[#E85D04]/30 shadow-xs'
-                          : 'border-[#D8D1C5] bg-[#FAF8F5] hover:bg-[#EFE8DD]'
-                      }`}
-                    >
-                      {/* Thumbnail container adjusted so ENTIRE 4:5 poster is 100% visible */}
-                      <div className="w-full h-36 sm:h-40 flex items-center justify-center bg-[#EFE8DD]/40 rounded-lg overflow-hidden relative p-1">
-                        <img
-                          src={tpl.previewUrl}
-                          alt={displayName}
-                          className="max-h-full max-w-full object-contain rounded shadow-xs"
-                        />
-                        {isSelected && (
-                          <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#E85D04] text-white flex items-center justify-center shadow-xs">
-                            <Check className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="px-0.5">
-                        <div className="text-[12px] font-bold text-[#2B2621] truncate text-center">
-                          {displayName}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* 2. Image Count & Grid Pattern Selector */}
-            <div className="space-y-2 pt-2 border-t border-[#D8D1C5]">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
-                  <Grid className="w-4 h-4 text-[#B85F45]" />
-                  <span>{locale === 'mr' ? 'चित्रांची संख्या' : locale === 'hi' ? 'चित्रों की संख्या' : 'Images in Poster'}</span>
-                </label>
-                {/* Count selector pills (1, 2, 3, 4) */}
-                <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D8D1C5]">
-                  {([1, 2, 3, 4] as ImageCount[]).map((cnt) => (
-                    <button
-                      key={cnt}
-                      onClick={() => setImageCount(cnt)}
-                      className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
-                        imageCount === cnt
-                          ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
-                          : 'text-[#5A5248] hover:text-[#2B1E16]'
-                      }`}
-                    >
-                      {cnt}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Grid Layout Variations */}
-              <div className="flex flex-wrap gap-1.5">
-                {availableGrids.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => setGridLayout(g.id)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
-                      gridLayout === g.id
-                        ? 'border-[#E85D04] bg-[#FFFBEB] text-[#B45309] font-bold shadow-2xs'
-                        : 'border-[#D8D1C5] bg-[#FAF8F5] text-[#5A5248] hover:bg-[#EAE0D3]'
-                    }`}
-                  >
-                    {presets.grids[g.id] || g.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Slot Camera Angles & Sources Manager with INLINE Gallery Drawers */}
-            <div className="space-y-2 pt-2 border-t border-[#D8D1C5]">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
-                  <Camera className="w-4 h-4 text-[#B85F45]" />
-                  <span>{locale === 'mr' ? 'चित्रांचे कोन व स्रोत' : locale === 'hi' ? 'चित्रों के कोण व स्रोत' : 'Slot Angles & Sources'}</span>
-                </label>
-                <button
-                  onClick={captureAllSlots}
-                  className="flex items-center gap-1 text-[11px] font-bold text-[#B85F45] hover:text-[#8F4938] transition-colors cursor-pointer"
-                  title="Recapture all slots"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" />
-                  <span>{locale === 'mr' ? 'सर्व पुन्हा घ्या' : locale === 'hi' ? 'सभी फिर लें' : 'Recapture All'}</span>
-                </button>
-              </div>
-
-              <div className="space-y-2">
-                {Array.from({ length: imageCount }).map((_, idx) => {
-                  const source = slotSources[idx] || { type: 'perspective', perspectiveId: 'isometric' };
-                  const isInlineGalleryOpen = activeGallerySlotIndex === idx;
+              {/* Synchronized Slot Selection Overlay (Zero export impact) */}
+              <div className="absolute inset-0 pointer-events-none">
+                {slotRects.map((rect, idx) => {
+                  if (idx >= imageCount) return null;
+                  const isSelected = activeSlotIndex === idx;
+                  const leftPct = (rect.x / 1080) * 100;
+                  const topPct = (rect.y / 1350) * 100;
+                  const widthPct = (rect.width / 1080) * 100;
+                  const heightPct = (rect.height / 1350) * 100;
 
                   return (
                     <div
                       key={idx}
-                      className={`p-2 rounded-xl border transition-all ${
-                        isInlineGalleryOpen
-                          ? 'border-[#F59E0B] bg-[#FFFBEB]/50 shadow-xs'
-                          : 'border-[#D8D1C5] bg-[#FAF8F5]/70'
+                      onClick={() => setActiveSlotIndex(idx)}
+                      className={`absolute pointer-events-auto cursor-pointer transition-all ${
+                        isSelected
+                          ? 'ring-2 ring-[#E85D04] bg-[#E85D04]/10 shadow-lg'
+                          : 'hover:bg-white/10'
                       }`}
+                      style={{
+                        left: `${leftPct}%`,
+                        top: `${topPct}%`,
+                        width: `${widthPct}%`,
+                        height: `${heightPct}%`,
+                      }}
+                      title={`Slot ${idx + 1} (Click to inspect)`}
                     >
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[11px] font-bold text-[#2B2621]">
-                          {locale === 'mr' ? `चित्र ${idx + 1}` : locale === 'hi' ? `चित्र ${idx + 1}` : `Slot ${idx + 1}`}
-                        </span>
-                        <div className="flex items-center gap-1">
+                      {/* Subtle Corner Brackets for Active Slot */}
+                      {isSelected && (
+                        <>
+                          <div className="absolute top-1 left-1 w-3.5 h-3.5 border-t-2 border-l-2 border-[#E85D04] drop-shadow-md" />
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 border-t-2 border-r-2 border-[#E85D04] drop-shadow-md" />
+                          <div className="absolute bottom-1 left-1 w-3.5 h-3.5 border-b-2 border-l-2 border-[#E85D04] drop-shadow-md" />
+                          <div className="absolute bottom-1 right-1 w-3.5 h-3.5 border-b-2 border-r-2 border-[#E85D04] drop-shadow-md" />
+                          <span className="absolute top-1.5 left-2 px-1.5 py-0.5 rounded bg-black/85 text-white text-[9px] font-bold tracking-wider shadow-sm flex items-center gap-1">
+                            <span>SLOT {idx + 1}</span>
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar: Streamlined Studio Inspector & Sticky Dock */}
+          <div className="w-full md:w-[380px] lg:w-[420px] bg-[#EBE6DC] border-t md:border-t-0 md:border-l border-[#D8D1C5] flex flex-col h-full overflow-hidden min-h-0 shrink-0">
+            {/* Top Navigation Tabs: Slots & Layout vs Poster Style */}
+            <div className="px-3.5 pt-3 pb-2.5 bg-[#FAF8F5] border-b border-[#D8D1C5] shrink-0">
+              <div className="grid grid-cols-2 p-1 bg-[#EAE0D3] rounded-xl border border-[#D8D1C5]">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('slots')}
+                  className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeTab === 'slots'
+                      ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
+                      : 'text-[#5A5248] hover:text-[#2B2621]'
+                  }`}
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span>{presets.tabs.slots}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('style')}
+                  className={`py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    activeTab === 'style'
+                      ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
+                      : 'text-[#5A5248] hover:text-[#2B2621]'
+                  }`}
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                  <span>{presets.tabs.style}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable Middle Controls Area */}
+            <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4 min-h-0">
+              {activeTab === 'slots' ? (
+                <>
+                  {/* 1. Images Count & Grid Pattern */}
+                  <div className="space-y-2 bg-[#FAF8F5] p-3 rounded-xl border border-[#D8D1C5]">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                        <Grid className="w-4 h-4 text-[#B85F45]" />
+                        <span>{locale === 'mr' ? 'चित्रांची संख्या' : locale === 'hi' ? 'चित्रों की संख्या' : 'Images in Poster'}</span>
+                      </label>
+                      {/* Count selector pills (1, 2, 3, 4) */}
+                      <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D8D1C5]">
+                        {([1, 2, 3, 4] as ImageCount[]).map((cnt) => (
                           <button
-                            onClick={() => handleAssignPerspective(idx, 'current')}
-                            className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#EFE8DD] hover:bg-[#E0D5C5] text-[#2B2621] border border-[#D8D1C5] transition-colors cursor-pointer"
-                            title="Capture current viewport view"
-                          >
-                            {locale === 'mr' ? 'थेट कॅमेरा' : locale === 'hi' ? 'लाइव कैमरा' : 'Live Camera'}
-                          </button>
-                          <button
-                            onClick={() =>
-                              setActiveGallerySlotIndex(isInlineGalleryOpen ? null : idx)
-                            }
-                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors cursor-pointer flex items-center gap-1 ${
-                              isInlineGalleryOpen
-                                ? 'bg-[#E85D04] text-white border-[#E85D04]'
-                                : 'bg-[#FFFBEB] hover:bg-[#FEF3C7] text-[#B45309] border-[#F59E0B]'
+                            key={cnt}
+                            type="button"
+                            onClick={() => setImageCount(cnt)}
+                            className={`px-2.5 py-0.5 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                              imageCount === cnt
+                                ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
+                                : 'text-[#5A5248] hover:text-[#2B1E16]'
                             }`}
-                            title="Pick from local screenshot gallery"
                           >
-                            <ImageIcon className="w-3 h-3" />
-                            <span>{locale === 'mr' ? 'गॅलरी' : locale === 'hi' ? 'गैलरी' : 'Gallery'}</span>
+                            {cnt}
                           </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Grid Layout Variations */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {availableGrids.map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setGridLayout(g.id)}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                            gridLayout === g.id
+                              ? 'border-[#E85D04] bg-[#FFFBEB] text-[#B45309] font-bold shadow-2xs'
+                              : 'border-[#D8D1C5] bg-[#EBE6DC]/60 text-[#5A5248] hover:bg-[#EAE0D3]'
+                          }`}
+                        >
+                          {presets.grids[g.id] || g.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 2. Compact Horizontal Slot Navigator Strip */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                        <Camera className="w-4 h-4 text-[#B85F45]" />
+                        <span>{presets.slotNavigator}</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={captureAllSlots}
+                        className="flex items-center gap-1 text-[11px] font-bold text-[#B85F45] hover:text-[#8F4938] transition-colors cursor-pointer"
+                        title="Recapture all slots"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        <span>{presets.recaptureAll}</span>
+                      </button>
+                    </div>
+
+                    {/* Horizontal Navigator Strip */}
+                    <div className="grid grid-cols-4 gap-1.5 p-1 bg-[#FAF8F5] border border-[#D8D1C5] rounded-xl">
+                      {Array.from({ length: imageCount }).map((_, idx) => {
+                        const isSelected = activeSlotIndex === idx;
+                        const src = slotSources[idx];
+                        const timeKey = src?.timePreset || 'noon';
+                        const TimeIcon =
+                          timeKey === 'dawn'
+                            ? Sunrise
+                            : timeKey === 'noon'
+                            ? Sun
+                            : timeKey === 'sunset'
+                            ? Sunset
+                            : Flame;
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setActiveSlotIndex(idx)}
+                            className={`py-2 px-1 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center gap-1 cursor-pointer border ${
+                              isSelected
+                                ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] shadow-xs ring-1 ring-[#E85D04]/30'
+                                : 'bg-[#EBE6DC]/40 border-transparent text-[#5A5248] hover:bg-[#EAE0D3]'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span>Slot {idx + 1}</span>
+                              <TimeIcon className="w-3 h-3 text-[#B85F45]" />
+                            </div>
+                            <span className="text-[9px] font-normal text-[#7C7267] truncate max-w-full">
+                              {src?.type === 'current'
+                                ? 'Live'
+                                : src?.type === 'gallery'
+                                ? 'Vault'
+                                : src?.perspectiveId === 'top'
+                                ? '90°'
+                                : src?.perspectiveId === 'rampart'
+                                ? '15°'
+                                : src?.perspectiveId === 'bastion'
+                                ? '30°'
+                                : '45°'}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 3. Focused Single-Slot Inspector */}
+                  <div className="space-y-3 bg-[#FAF8F5] p-3 rounded-xl border border-[#D8D1C5]">
+                    <div className="flex items-center justify-between pb-1.5 border-b border-[#D8D1C5]">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-[#2B2621]">
+                          {locale === 'mr' ? `चित्र ${activeSlotIndex + 1} संरचना` : locale === 'hi' ? `चित्र ${activeSlotIndex + 1} संरचना` : `Slot ${activeSlotIndex + 1} Configuration`}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#EAE0D3] text-[#5A5248]">
+                          {activeSource.type === 'current'
+                            ? presets.sources.current
+                            : activeSource.type === 'gallery'
+                            ? presets.sources.gallery
+                            : presets.sources.perspective}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRecaptureActiveSlot}
+                        className="text-[11px] font-bold text-[#B85F45] hover:text-[#8F4938] flex items-center gap-1 cursor-pointer"
+                        title="Recapture this slot"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        <span>{presets.recaptureSlot}</span>
+                      </button>
+                    </div>
+
+                    {/* Source Selector Tabs */}
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-[#5A5248]">
+                        {presets.sourceLabel}
+                      </label>
+                      <div className="grid grid-cols-3 gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (activeSource.type !== 'perspective') {
+                              handleAssignPerspective('isometric');
+                            }
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer text-center ${
+                            activeSource.type === 'perspective'
+                              ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] shadow-2xs'
+                              : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                          }`}
+                        >
+                          {presets.sources.perspective}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAssignPerspective('current')}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer text-center ${
+                            activeSource.type === 'current'
+                              ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] shadow-2xs'
+                              : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                          }`}
+                        >
+                          {presets.sources.current}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (activeSource.type !== 'gallery') {
+                              if (galleryScreenshots.length > 0) {
+                                handleAssignGalleryShot(galleryScreenshots[0].dataUrl);
+                              } else {
+                                updateSlot(activeSlotIndex, {
+                                  type: 'gallery',
+                                  galleryDataUrl: undefined,
+                                  timePreset: activeSource.timePreset,
+                                });
+                              }
+                            }
+                          }}
+                          className={`py-1.5 px-2 rounded-lg text-[10px] font-bold border transition-colors cursor-pointer flex items-center justify-center gap-1 ${
+                            activeSource.type === 'gallery'
+                              ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] shadow-2xs'
+                              : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                          }`}
+                        >
+                          <ImageIcon className="w-3 h-3" />
+                          <span>{presets.sources.gallery}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Camera Perspectives (Only if perspective mode is selected) */}
+                    {activeSource.type === 'perspective' && (
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[11px] font-bold text-[#5A5248]">
+                          {presets.cameraAngle}
+                        </label>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {(Object.keys(CAMERA_PERSPECTIVES) as (keyof typeof CAMERA_PERSPECTIVES)[]).map((pKey) => {
+                            const isActive = activeSource.perspectiveId === pKey;
+                            const pLabel = presets.perspectives[pKey] || CAMERA_PERSPECTIVES[pKey].name;
+
+                            return (
+                              <button
+                                key={pKey}
+                                type="button"
+                                onClick={() => handleAssignPerspective(pKey)}
+                                className={`py-1.5 px-2 rounded-lg text-[10.5px] font-semibold border text-left truncate transition-colors cursor-pointer ${
+                                  isActive
+                                    ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
+                                    : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                                }`}
+                              >
+                                {pLabel}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
+                    )}
 
-                      {/* Perspective Presets Pills */}
-                      <div className="grid grid-cols-2 gap-1">
-                        {(Object.keys(CAMERA_PERSPECTIVES) as (keyof typeof CAMERA_PERSPECTIVES)[]).map((pKey) => {
-                          const isActive = source.type === 'perspective' && source.perspectiveId === pKey;
-                          const pLabel = presets.perspectives[pKey] || CAMERA_PERSPECTIVES[pKey].name;
-
-                          return (
-                            <button
-                              key={pKey}
-                              onClick={() => {
-                                handleAssignPerspective(idx, pKey);
-                                if (isInlineGalleryOpen) setActiveGallerySlotIndex(null);
-                              }}
-                              className={`py-1 px-1.5 rounded-md text-[10px] font-semibold border text-left truncate transition-colors cursor-pointer ${
-                                isActive
-                                  ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
-                                  : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
-                              }`}
-                            >
-                              {pLabel}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* 4-Tile Diurnal Time of Day Toggle */}
-                      <div className="mt-2 pt-1.5 border-t border-[#D8D1C5]/60">
-                        <div className="text-[10px] font-bold text-[#5A5248] mb-1 flex items-center justify-between">
-                          <span>{locale === 'mr' ? 'वेळ व प्रकाश' : locale === 'hi' ? 'समय व प्रकाश' : 'Time of Day'}</span>
-                          <span className="text-[9px] font-normal text-[#7C7267]">
-                            {presets.times[source.timePreset || 'noon']}
+                    {/* Diurnal Lighting & Atmosphere (For perspective and current view modes) */}
+                    {activeSource.type !== 'gallery' && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-[#5A5248]">
+                            {presets.timeOfDay}
+                          </label>
+                          <span className="text-[10px] font-medium text-[#7C7267]">
+                            {presets.times[activeSource.timePreset || 'noon']}
                           </span>
                         </div>
                         <div className="grid grid-cols-4 gap-1">
                           {TIME_PRESET_OPTIONS.map((tKey) => {
-                            const isTimeActive = source.timePreset === tKey;
+                            const isTimeActive = activeSource.timePreset === tKey;
                             const tLabel = presets.times[tKey];
                             const Icon =
                               tKey === 'dawn'
@@ -911,8 +1167,8 @@ export const PosterStudioModal: React.FC = () => {
                               <button
                                 key={tKey}
                                 type="button"
-                                onClick={() => handleAssignTimePreset(idx, tKey)}
-                                className={`py-1 px-0.5 rounded-md text-[9px] font-semibold border flex flex-col items-center justify-center gap-0.5 transition-all cursor-pointer ${
+                                onClick={() => handleAssignTimePreset(tKey)}
+                                className={`py-1.5 px-1 rounded-lg text-[10px] font-semibold border flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
                                   isTimeActive
                                     ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
                                     : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
@@ -930,7 +1186,7 @@ export const PosterStudioModal: React.FC = () => {
                                       : 'text-[#B85F45]'
                                   }`}
                                 />
-                                <span className="truncate max-w-full text-[8.5px]">
+                                <span className="truncate max-w-full text-[9px]">
                                   {tKey === 'dawn'
                                     ? (locale === 'mr' ? 'पहाट' : locale === 'hi' ? 'उषा' : 'Dawn')
                                     : tKey === 'noon'
@@ -944,52 +1200,49 @@ export const PosterStudioModal: React.FC = () => {
                           })}
                         </div>
                       </div>
+                    )}
 
-                      {/* INLINE GALLERY DRAWER: Opens DIRECTLY below the slot whose gallery was clicked */}
-                      {isInlineGalleryOpen && (
-                        <div className="mt-2.5 pt-2 border-t border-[#F59E0B]/40 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold text-[#B45309]">
-                              {locale === 'mr'
-                                ? `चित्र ${idx + 1} साठी स्क्रीनशॉट निवडा`
-                                : locale === 'hi'
-                                ? `चित्र ${idx + 1} के लिए स्क्रीनशॉट चुनें`
-                                : `Select Screenshot for Slot ${idx + 1}`}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              {galleryScreenshots.length > 0 && (
-                                <button
-                                  onClick={handleRequestClearAllScreenshots}
-                                  className="text-[9px] font-bold text-red-600 hover:text-red-700 cursor-pointer flex items-center gap-0.5"
-                                >
-                                  <Trash2 className="w-2.5 h-2.5" />
-                                  <span>{locale === 'mr' ? 'सर्व हटवा' : locale === 'hi' ? 'सभी हटाएं' : 'Clear All'}</span>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => setActiveGallerySlotIndex(null)}
-                                className="p-0.5 text-[#7C7267] hover:text-[#2B2621] cursor-pointer"
-                              >
-                                <X className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
+                    {/* Screenshot Vault Picker (Only if gallery mode is selected) */}
+                    {activeSource.type === 'gallery' && (
+                      <div className="space-y-2 pt-1 border-t border-[#D8D1C5]">
+                        <div className="flex items-center justify-between">
+                          <label className="text-[11px] font-bold text-[#5A5248]">
+                            {presets.screenshotVault}
+                          </label>
+                          {galleryScreenshots.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={handleRequestClearAllScreenshots}
+                              className="text-[9.5px] font-bold text-red-600 hover:text-red-700 cursor-pointer flex items-center gap-0.5"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                              <span>{locale === 'mr' ? 'सर्व हटवा' : locale === 'hi' ? 'सभी हटाएं' : 'Clear All'}</span>
+                            </button>
+                          )}
+                        </div>
+
+                        {galleryScreenshots.length === 0 ? (
+                          <div className="text-[10px] text-[#7C7267] italic py-3 text-center bg-[#FAF8F5] rounded-lg border border-[#D8D1C5]">
+                            {locale === 'mr'
+                              ? 'अद्याप कोणतेही स्क्रीनशॉट नाहीत. मुख्य स्क्रीनवरील कॅमेरा आयकॉन क्लिक करा.'
+                              : locale === 'hi'
+                              ? 'अभी कोई स्क्रीनशॉट नहीं है। मुख्य स्क्रीन पर कैमरा आइकन क्लिक करें।'
+                              : 'No snapshots captured yet. Click the camera icon in the diorama bar.'}
                           </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto p-0.5">
+                            {galleryScreenshots.map((shot) => {
+                              const isCurrentShot = activeSource.galleryDataUrl === shot.dataUrl;
 
-                          {galleryScreenshots.length === 0 ? (
-                            <div className="text-[10px] text-[#7C7267] italic py-2 text-center bg-[#FAF8F5] rounded-lg border border-[#D8D1C5]/50">
-                              {locale === 'mr'
-                                ? 'अद्याप कोणतेही स्क्रीनशॉट नाहीत. मुख्य स्क्रीनवरील कॅमेरा आयकॉन क्लिक करा.'
-                                : locale === 'hi'
-                                ? 'अभी कोई स्क्रीनशॉट नहीं है। मुख्य स्क्रीन पर कैमरा आइकन क्लिक करें।'
-                                : 'No snapshots captured yet. Click the camera icon in the diorama bar.'}
-                            </div>
-                          ) : (
-                            <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto p-0.5">
-                              {galleryScreenshots.map((shot) => (
+                              return (
                                 <div
                                   key={shot.id}
-                                  onClick={() => handleAssignGalleryShot(idx, shot.dataUrl)}
-                                  className="group relative h-16 rounded-lg overflow-hidden border border-[#D8D1C5] bg-[#23211E] cursor-pointer hover:border-[#E85D04] transition-all"
+                                  onClick={() => handleAssignGalleryShot(shot.dataUrl)}
+                                  className={`group relative h-16 rounded-lg overflow-hidden border cursor-pointer transition-all ${
+                                    isCurrentShot
+                                      ? 'border-[#E85D04] ring-2 ring-[#E85D04]/30'
+                                      : 'border-[#D8D1C5] hover:border-[#E85D04]'
+                                  }`}
                                 >
                                   <img
                                     src={shot.dataUrl}
@@ -997,6 +1250,7 @@ export const PosterStudioModal: React.FC = () => {
                                     className="w-full h-full object-cover"
                                   />
                                   <button
+                                    type="button"
                                     onClick={(e) => handleRequestDeleteScreenshot(e, shot.id)}
                                     className="absolute top-1 right-1 p-1 rounded bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 cursor-pointer"
                                     title="Delete from local gallery"
@@ -1007,130 +1261,195 @@ export const PosterStudioModal: React.FC = () => {
                                     {new Date(shot.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                   </div>
                                 </div>
-                              ))}
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Poster Style Tab Content */}
+                  {/* 1. Festival Theme Selector */}
+                  <div className="space-y-1.5 bg-[#FAF8F5] p-3 rounded-xl border border-[#D8D1C5]">
+                    <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                      <Palette className="w-4 h-4 text-[#B85F45]" />
+                      <span>{presets.themeLabel}</span>
+                    </label>
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {(Object.keys(POSTER_TEMPLATES) as PosterTemplateId[]).map((tid) => {
+                        const tpl = POSTER_TEMPLATES[tid];
+                        const isSelected = selectedTemplateId === tid;
+                        const displayName = locale === 'mr' || locale === 'hi' ? tpl.marathiName : tpl.name;
+
+                        return (
+                          <button
+                            key={tid}
+                            type="button"
+                            onClick={() => setSelectedTemplateId(tid)}
+                            className={`relative p-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-1.5 ${
+                              isSelected
+                                ? 'border-[#E85D04] bg-[#FFFBEB] ring-2 ring-[#E85D04]/30 shadow-xs'
+                                : 'border-[#D8D1C5] bg-[#EBE6DC]/50 hover:bg-[#EAE0D3]'
+                            }`}
+                          >
+                            <div className="w-full h-32 flex items-center justify-center bg-[#EFE8DD]/40 rounded-lg overflow-hidden relative p-1">
+                              <img
+                                src={tpl.previewUrl}
+                                alt={displayName}
+                                className="max-h-full max-w-full object-contain rounded shadow-xs"
+                              />
+                              {isSelected && (
+                                <div className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-[#E85D04] text-white flex items-center justify-center shadow-xs">
+                                  <Check className="w-3.5 h-3.5" />
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      )}
+                            <div className="text-[11.5px] font-bold text-[#2B2621] truncate text-center">
+                              {displayName}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+
+                  {/* 2. Royal Shilalekh Plaque & Typography */}
+                  <div className="space-y-3 bg-[#FAF8F5] p-3 rounded-xl border border-[#D8D1C5]">
+                    <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
+                      <Type className="w-4 h-4 text-[#B85F45]" />
+                      <span>{presets.textLabel}</span>
+                    </label>
+
+                    {/* Plaque / Watermark Style */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-[#5A5248]">
+                        {presets.bannerStyle}
+                      </span>
+                      <div className="grid grid-cols-2 gap-1">
+                        {(['traditional-banner', 'minimal-stamp', 'royal-plaque', 'none'] as const).map((sId) => (
+                          <button
+                            key={sId}
+                            type="button"
+                            onClick={() => setStampStyle(sId)}
+                            className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition-colors cursor-pointer ${
+                              stampStyle === sId
+                                ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
+                                : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                            }`}
+                          >
+                            {presets.banners[sId]}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Fort Title input & presets */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-[#5A5248]">
+                        {presets.fortTitle}
+                      </span>
+                      <input
+                        type="text"
+                        value={fortTitle}
+                        onChange={(e) => setFortTitle(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
+                        placeholder={locale === 'mr' ? 'किल्ल्याचे नाव...' : locale === 'hi' ? 'किले का नाम...' : 'Enter Fort Title...'}
+                      />
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {presets.titles.map((tItem) => (
+                          <button
+                            key={tItem}
+                            type="button"
+                            onClick={() => setFortTitle(tItem)}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
+                              fortTitle === tItem
+                                ? 'bg-[#E85D04] text-white border-[#E85D04]'
+                                : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                            }`}
+                          >
+                            {tItem}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Builder Name input */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-[#5A5248]">
+                        {presets.builderCredit}
+                      </span>
+                      <input
+                        type="text"
+                        value={builderName}
+                        onChange={(e) => setBuilderName(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
+                        placeholder={locale === 'mr' ? 'नाव...' : locale === 'hi' ? 'नाम...' : 'Builder Name...'}
+                      />
+                    </div>
+
+                    {/* Festive Greeting Presets */}
+                    <div className="space-y-1">
+                      <span className="text-[11px] font-semibold text-[#5A5248]">
+                        {presets.festiveWish}
+                      </span>
+                      <input
+                        type="text"
+                        value={festiveGreeting}
+                        onChange={(e) => setFestiveGreeting(e.target.value)}
+                        className="w-full px-2.5 py-1.5 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
+                        placeholder={locale === 'mr' ? 'शुभेच्छा...' : locale === 'hi' ? 'शुभकामनाएं...' : 'Greeting...'}
+                      />
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {presets.greetings.map((gItem) => (
+                          <button
+                            key={gItem}
+                            type="button"
+                            onClick={() => setFestiveGreeting(gItem)}
+                            className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
+                              festiveGreeting === gItem
+                                ? 'bg-[#E85D04] text-white border-[#E85D04]'
+                                : 'bg-[#EBE6DC] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
+                            }`}
+                          >
+                            {gItem || presets.cleanNone}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Show Builder Credit Toggle */}
+                    <div className="flex items-center gap-2 pt-1 border-t border-[#D8D1C5]/60">
+                      <input
+                        type="checkbox"
+                        id="show-builder-credit"
+                        checked={showBuilderCredit}
+                        onChange={(e) => setShowBuilderCredit(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-[#E85D04] rounded cursor-pointer"
+                      />
+                      <label htmlFor="show-builder-credit" className="text-xs font-semibold text-[#5A5248] cursor-pointer">
+                        {locale === 'mr' ? 'निर्माता नाव श्रेय दाखवा' : locale === 'hi' ? 'निर्माता श्रेय दिखाएं' : 'Display Builder Credits on Plaque'}
+                      </label>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
-            {/* 4. Typography & Text Personalization (Language-aware, Font locked to Yatra One) */}
-            <div className="space-y-2 pt-2 border-t border-[#D8D1C5]">
-              <label className="text-xs font-bold text-[#2B2621] flex items-center gap-1.5">
-                <Type className="w-4 h-4 text-[#B85F45]" />
-                <span>{locale === 'mr' ? 'मजकूर व मुद्रा' : locale === 'hi' ? 'टेक्स्ट व मुहर' : 'Text & Branding Presets'}</span>
-              </label>
-
-              {/* Fort Title input & language presets */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#5A5248]">
-                  {locale === 'mr' ? 'किल्ल्याचे नाव' : locale === 'hi' ? 'किले का नाम' : 'Fort Title'}
-                </span>
-                <input
-                  type="text"
-                  value={fortTitle}
-                  onChange={(e) => setFortTitle(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
-                  placeholder={locale === 'mr' ? 'किल्ल्याचे नाव...' : locale === 'hi' ? 'किले का नाम...' : 'Enter Fort Title...'}
-                />
-                <div className="flex flex-wrap gap-1 pt-0.5">
-                  {presets.titles.map((tItem) => (
-                    <button
-                      key={tItem}
-                      onClick={() => setFortTitle(tItem)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
-                        fortTitle === tItem
-                          ? 'bg-[#E85D04] text-white border-[#E85D04]'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      {tItem}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Builder Name input */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#5A5248]">
-                  {locale === 'mr' ? 'निर्माता / संघ' : locale === 'hi' ? 'निर्माता / दल' : 'Builder / Team Credit'}
-                </span>
-                <input
-                  type="text"
-                  value={builderName}
-                  onChange={(e) => setBuilderName(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
-                  placeholder={locale === 'mr' ? 'नाव...' : locale === 'hi' ? 'नाम...' : 'Builder Name...'}
-                />
-              </div>
-
-              {/* Festive Greeting Presets */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#5A5248]">
-                  {locale === 'mr' ? 'उत्सव शुभेच्छा' : locale === 'hi' ? 'उत्सव शुभकामनाएं' : 'Festive Wish'}
-                </span>
-                <input
-                  type="text"
-                  value={festiveGreeting}
-                  onChange={(e) => setFestiveGreeting(e.target.value)}
-                  className="w-full px-2.5 py-1 text-xs bg-[#FAF8F5] border border-[#D8D1C5] rounded-lg text-[#2B2621] focus:outline-hidden focus:border-[#E85D04]"
-                  placeholder={locale === 'mr' ? 'शुभेच्छा...' : locale === 'hi' ? 'शुभकामनाएं...' : 'Greeting...'}
-                />
-                <div className="flex flex-wrap gap-1 pt-0.5">
-                  {presets.greetings.map((gItem) => (
-                    <button
-                      key={gItem}
-                      onClick={() => setFestiveGreeting(gItem)}
-                      className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors cursor-pointer ${
-                        festiveGreeting === gItem
-                          ? 'bg-[#E85D04] text-white border-[#E85D04]'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      {gItem || presets.cleanNone}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Banner / Stamp Style */}
-              <div className="space-y-1">
-                <span className="text-[11px] font-semibold text-[#5A5248]">
-                  {locale === 'mr' ? 'मुद्रा / पट्टी शैली' : locale === 'hi' ? 'मुहर / पट्टी शैली' : 'Banner / Watermark Style'}
-                </span>
-                <div className="grid grid-cols-2 gap-1">
-                  {(['traditional-banner', 'minimal-stamp', 'royal-plaque', 'none'] as const).map((sId) => (
-                    <button
-                      key={sId}
-                      onClick={() => setStampStyle(sId)}
-                      className={`py-1 px-1.5 rounded-lg text-[10px] font-semibold border text-center transition-colors cursor-pointer ${
-                        stampStyle === sId
-                          ? 'bg-[#FFFBEB] border-[#E85D04] text-[#B45309] font-bold shadow-2xs'
-                          : 'bg-[#FAF8F5] border-[#D8D1C5] text-[#5A5248] hover:bg-[#EAE0D3]'
-                      }`}
-                    >
-                      {presets.banners[sId]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* 5. Export & Social Sharing Actions */}
-            <div className="space-y-2.5 pt-3 border-t border-[#D8D1C5] mt-auto">
+            {/* Pinned Bottom Action Dock: Always Visible & Accessible */}
+            <div className="shrink-0 bg-[#FAF8F5] border-t border-[#D8D1C5] p-3 sm:p-3.5 space-y-2.5 shadow-lg">
               {/* Format selection */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#5A5248]">
-                  {locale === 'mr' ? 'स्वरूप' : locale === 'hi' ? 'प्रारूप' : 'Export Format'}
+                  {presets.exportFormat}
                 </span>
                 <div className="flex items-center gap-1 bg-[#EAE0D3] p-0.5 rounded-lg border border-[#D8D1C5]">
                   <button
+                    type="button"
                     onClick={() => setExportFormat('png')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-2.5 py-0.5 rounded text-[10.5px] font-bold transition-all cursor-pointer ${
                       exportFormat === 'png'
                         ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
                         : 'text-[#5A5248] hover:text-[#2B1E16]'
@@ -1139,8 +1458,9 @@ export const PosterStudioModal: React.FC = () => {
                     PNG
                   </button>
                   <button
+                    type="button"
                     onClick={() => setExportFormat('jpeg')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                    className={`px-2.5 py-0.5 rounded text-[10.5px] font-bold transition-all cursor-pointer ${
                       exportFormat === 'jpeg'
                         ? 'bg-[#FAF8F5] text-[#E85D04] shadow-xs'
                         : 'text-[#5A5248] hover:text-[#2B1E16]'
@@ -1153,45 +1473,44 @@ export const PosterStudioModal: React.FC = () => {
 
               {/* Primary Download CTA */}
               <button
+                type="button"
                 onClick={handleDownload}
                 disabled={!previewCanvas || isCompositing}
                 className="w-full py-2.5 px-4 rounded-xl bg-[#E85D04] hover:bg-[#D04E00] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4" />
                 <span>
-                  {locale === 'mr'
-                    ? `पोस्टर डाऊनलोड करा (${exportFormat.toUpperCase()})`
-                    : locale === 'hi'
-                    ? `पोस्टर डाउनलोड करें (${exportFormat.toUpperCase()})`
-                    : `Download Festive Poster (${exportFormat.toUpperCase()})`}
+                  {presets.downloadBtn} ({exportFormat.toUpperCase()})
                 </span>
               </button>
 
               {/* Secondary Sharing Buttons */}
               <div className="grid grid-cols-2 gap-2">
                 <button
+                  type="button"
                   onClick={handleShare}
                   disabled={!previewCanvas || isCompositing}
                   className="py-1.5 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D8D1C5] text-[#2B2621] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                   title="Share to WhatsApp, Instagram, or AirDrop"
                 >
                   <Share2 className="w-3.5 h-3.5 text-[#E85D04]" />
-                  <span>{locale === 'mr' ? 'शेअर करा' : locale === 'hi' ? 'साझा करें' : 'Share Poster'}</span>
+                  <span>{presets.shareBtn}</span>
                 </button>
 
                 <button
+                  type="button"
                   onClick={handleCopyClipboard}
                   disabled={!previewCanvas || isCompositing}
                   className="py-1.5 px-3 rounded-lg bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D8D1C5] text-[#2B2621] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50"
                   title="Copy image to clipboard for WhatsApp Web / Discord"
                 >
                   <Copy className="w-3.5 h-3.5 text-[#B85F45]" />
-                  <span>{locale === 'mr' ? 'इमेज कॉपी' : locale === 'hi' ? 'इमेज कॉपी' : 'Copy Image'}</span>
+                  <span>{presets.copyBtn}</span>
                 </button>
               </div>
 
               {/* Direct Social Links */}
-              <div className="flex items-center justify-center gap-3 pt-1">
+              <div className="flex items-center justify-center gap-3 pt-0.5">
                 <a
                   href={socialLinks.whatsapp}
                   target="_blank"
@@ -1209,7 +1528,7 @@ export const PosterStudioModal: React.FC = () => {
                   className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1"
                 >
                   <XSocialIcon className="w-3.5 h-3.5" />
-                  <span>{locale === 'mr' ? 'एक्स वर शेअर' : locale === 'hi' ? 'एक्स पर साझा' : 'Share on X'}</span>
+                  <span>{presets.shareX}</span>
                 </a>
               </div>
             </div>
@@ -1248,12 +1567,12 @@ export const PosterStudioModal: React.FC = () => {
                         ? 'तुम्हाला खात्री आहे की तुम्ही सर्व स्क्रीनशॉट हटवू इच्छिता? ही कृती पूर्ववत केली जाऊ शकत नाही.'
                         : locale === 'hi'
                         ? 'क्या आप वाकई स्थानीय स्टोरेज से सभी स्क्रीनशॉट हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।'
-                        : 'Are you sure you want to delete all saved snapshots from local storage? This action cannot be undone.'
+                        : 'Are you sure you want to clear all local screenshots? This action cannot be undone.'
                       : locale === 'mr'
-                      ? 'तुम्हाला हा स्क्रीनशॉट गॅलरीतून कायमचा हटवायचा आहे का?'
+                      ? 'हा स्क्रीनशॉट कायमचा हटवला जाईल.'
                       : locale === 'hi'
-                      ? 'क्या आप इस स्क्रीनशॉट को गैलरी से हटाना चाहते हैं?'
-                      : 'Are you sure you want to delete this snapshot from your local gallery?'}
+                      ? 'यह स्क्रीनशॉट हमेशा के लिए हटा दिया जाएगा।'
+                      : 'This snapshot will be permanently removed from local storage.'}
                   </p>
                 </div>
               </div>
@@ -1262,14 +1581,14 @@ export const PosterStudioModal: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setConfirmDialog({ isOpen: false, type: 'clear-all' })}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-[#5A5248] bg-[#EFE8DD] hover:bg-[#E0D5C5] border border-[#D8D1C5] transition-colors cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg border border-[#D8D1C5] bg-[#EBE6DC] text-[#2B2621] text-xs font-semibold hover:bg-[#EAE0D3] transition-colors cursor-pointer"
                 >
                   {locale === 'mr' ? 'रद्द करा' : locale === 'hi' ? 'रद्द करें' : 'Cancel'}
                 </button>
                 <button
                   type="button"
                   onClick={handleConfirmAction}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700 shadow-xs transition-colors cursor-pointer"
+                  className="px-3.5 py-1.5 rounded-lg bg-red-600 text-white text-xs font-bold hover:bg-red-700 transition-colors shadow-xs cursor-pointer"
                 >
                   {confirmDialog.type === 'clear-all'
                     ? locale === 'mr'

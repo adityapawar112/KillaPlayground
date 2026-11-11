@@ -557,40 +557,39 @@ To maintain visual consistency and eliminate fragmented implementations across t
 
 ### Rule 25: Festive Poster Studio Modal Anatomy (`PosterStudioModal.tsx`)
 - **Modal Container & Surfaces:**
-  - Backdrop: `fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm`.
-  - Outer Container: `bg-[#FAF8F5] border border-[#CDBCAB] rounded-2xl shadow-2xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col`.
-  - Header: Clean, unified top banner with "Festive Killa Poster Studio" (`font-['Yatra_One'] text-xl text-[#2B1E16]`), language switcher pill (`EN` | `म` | `हि`) matching `AppMenuBar`, and `[✕]` close button. Header MUST NOT include decorative subtitles or technical pixel dimensions (e.g. `1080 x 1350 HD`).
+  - Backdrop: `fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs select-none`.
+  - Outer Container: `bg-[#EBE6DC] border-2 border-[#D8D1C5] rounded-2xl shadow-2xl max-w-6xl w-full h-[92vh] max-h-[960px] overflow-hidden flex flex-col text-[#2B2621]`.
+  - Header: Clean, unified top banner with "Festive Fort Poster Studio" (`text-base font-bold text-[#2B2621]`), language switcher pill (`EN` | `म` | `हि`) matching `AppMenuBar`, and `[✕]` close button. Header MUST NOT include decorative subtitles or technical pixel dimensions (e.g. `1080 x 1350 HD`).
 - **2-Column Split Studio Workspace:**
-  - **Left Studio Column (Preview Floor)**:
-    - Dedicated dark basalt viewing mat (`bg-[#1C1815] p-6 rounded-2xl flex items-center justify-center min-h-[500px]`).
-    - Displays full 4:5 aspect portrait poster canvas with 100% visible bounds (`max-h-[72vh] object-contain shadow-2xl rounded-lg`).
-  - **Right Studio Column (Tactile Parameter Controls)**:
-    - Scrolling controls panel (`bg-[#F3EBE0]/40 overflow-y-auto px-5 py-4 space-y-5`).
-- **Section 1: Theme Selection (Curated Historical Themes):**
-  - 4 authentic themes: *Archway Citadel* (कमान व तोफ), *Maratha Vanguard* (मराठा सैन्यदल), *Sahyadri Sunset* (सह्याद्री सूर्यास्त), and *Fortress Bastion* (गड बुरुज).
-  - Theme Cards: `bg-[#F3EBE0] border border-[#D9C9B4] rounded-xl p-2.5 transition-all hover:border-[#B85F45]`. Active card gets `#B85F45` ring and check badge.
-  - Thumbnails MUST display the complete uncropped poster layout (`object-contain`) rather than cropped centers.
-- **Section 2: Multi-Angle Photo Grid Framing:**
-  - Image count selector: 1 to 4 images.
-  - Layout Grid Pills: 4-Row Strips (Default), 2×2 Quad Grid, Hero Top + 3 Strips, 3-Row, 2-Row, 2-Columns, and Single View.
-  - **Transparent Grid Spacing Standard**: Diorama photo grids MUST use completely transparent gaps (`gap-1.5` or `gap-2`, `border: none`, zero drop shadow, zero dark box background), allowing the warm festive background art to frame the fort views naturally.
-- **Section 3: Slot Angles, Diurnal Sky & Screenshot Vault:**
-  - Slot Angles: 4 standard perspectives (Isometric 45°, Bird's Eye, Rampart Eye, Bastion Hero), Live Camera angle, and Screenshot Vault Gallery picker.
-  - **Inline Vault Gallery**: Selecting `Gallery` MUST open the screenshot browser immediately below the active slot, never at the end of the entire slot list.
-  - **4-Tile Time-of-Day Selector**: Sub-grid beneath angles provides 4 diurnal tiles: Dawn (पहाट), Noon (दुपार), Golden Hour (संध्याकाळ), and Diwali Night (दिवाळी रात्र). Slots initialize with randomized time-of-day assignments.
-  - **Atmospheric Sky & Lighting**: Headless snapshots automatically render matching atmospheric gradients (Dawn peach-rose, Noon sky blue, Golden Hour fiery amber, Night midnight indigo with twinkling stars) and physical scene lighting.
-- **Section 4: Text, Branding & Royal Stone Plaque:**
-  - Presets for Fort Title, Builder Credit, and Festive Wish.
-  - Strict Locale Isolation: When English (`EN`) is selected, labels and presets display pure English without transliterated Marathi in parentheses.
-  - Single Typography Standard: Default display headlines in `Yatra One`, technical body in `Inter`. No font selection dropdown.
-  - **Royal Stone Plaque (*Shilalekh* / राजकीय शिलालेख)**:
-    - Carved dark basalt gradient (`#26201B` to `#151210`) with subtle bevel highlights.
-    - Double gold border trim (`#D4AF37`, 2px outer, 1px inner).
-    - Gold diamond finial accents (`✦`) flanking fort title and builder credits.
-    - Gold Devanagari typography (`#FDE68A`) in `Yatra One`.
-- **Section 5: Dual Export & Multi-Platform Sharing:**
-  - Primary CTA: Full-width download button (`bg-[#E85D04] hover:bg-[#D45303] text-white font-medium py-3 rounded-xl shadow-md`).
-  - Secondary Actions: Share Poster (`navigator.share`), Copy Image (clipboard), WhatsApp intent, X (Twitter) intent.
+  - **Left Studio Column (Preview Floor & Synchronized Canvas)**:
+    - Dedicated dark basalt viewing mat (`bg-[#1E1915] p-3 sm:p-5 flex flex-col items-center justify-center relative overflow-hidden min-h-0`).
+    - Strict 4:5 aspect portrait poster frame (`aspectRatio: '1080 / 1350'`) with 100% visible bounds and smooth canvas containment.
+    - **Synchronized Slot Selection Overlay**:
+      - Renders an interactive CSS/DOM overlay aligned precisely to normalized slot rectangles (`calculateGridSlotRects`).
+      - Active slot displays prominent terracotta corner brackets (`border-t-2 border-l-2`, `border-t-2 border-r-2`, `border-b-2 border-l-2`, `border-b-2 border-r-2` in `#E85D04` with drop shadow) and a floating `SLOT X` badge.
+      - **Direct Canvas Interaction**: Each slot is directly clickable, focusing that slot in the inspector.
+      - **Zero Export Contamination**: Brackets and hotzones live strictly in the DOM overlay and never touch the canvas buffer, guaranteeing 100% clean poster exports.
+  - **Right Studio Column (Streamlined Studio Inspector & Pinned Dock)**:
+    - Fixed-width panel (`w-full md:w-[380px] lg:w-[420px] bg-[#EBE6DC] border-t md:border-t-0 md:border-l border-[#D8D1C5] flex flex-col h-full overflow-hidden shrink-0`).
+    - **Top Tab Switcher**: Segmented toggle between `[ Slots & Layout ]` (`LayoutGrid` icon) and `[ Poster Style ]` (`Palette` icon), eliminating the previous 1,879px vertical scrolling list.
+    - **Middle Scrollable Content Panel** (`flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-4 min-h-0`):
+      - *When Tab = Slots & Layout*:
+        - Image count selector: 1 to 4 images.
+        - Layout Grid Pills: 4-Row Strips (Default), 2×2 Quad Grid, Hero Top + 3 Strips, 3-Row, 2-Row, 2-Columns, and Single View.
+        - **Transparent Grid Spacing Standard**: Diorama photo grids MUST use completely transparent gaps (`gap-1.5` or `gap-2`, `border: none`, zero drop shadow, zero dark box background), allowing the warm festive background art to frame the fort views naturally.
+        - **Compact Horizontal 4-Slot Navigator Strip**: Fast 1-click slot switcher (`Slot 1 45°`, `Slot 2 15°`, `Slot 3 30°`, `Slot 4 90°`) displaying live diurnal lighting icons and camera perspective badges. Active slot has a warm amber background (`#FFFBEB`) and terracotta border (`#E85D04`).
+        - **Focused Single-Slot Inspector**: Scoped strictly to the selected slot with image source tabs (`3D Angles`, `Live Viewport`, `Screenshot Vault`), 4 camera perspective buttons with degree markings, 4 diurnal lighting buttons (Dawn, Noon, Golden Hour, Diwali Night), inline screenshot vault thumbnail picker, and an individual "Recapture Slot" action alongside global "Recapture All".
+      - *When Tab = Poster Style*:
+        - 4 Curated Historical Festival Themes in a 2×2 grid: *Citadel Archway* (किल्ला महाद्वार), *Royal Courtyard* (राजदरबार उत्सव), *Moonlit Fortress* (चंद्रप्रकाशित किल्ला), and *Sahyadri Sunrise* (सह्याद्री सूर्योदय).
+        - Thumbnails MUST display the complete uncropped poster layout (`object-contain`).
+        - **Royal Stone Plaque (*Shilalekh* / राजकीय शिलालेख)**: Carved dark basalt gradient (`#26201B` to `#151210`) with double gold border trim (`#D4AF37`) and gold Devanagari typography (`#FDE68A`) in `Yatra One`.
+        - Presets for Fort Title, Builder Credit, and Festive Wish with strict multilingual locale isolation (no bracketed Marathi in English mode).
+        - Display Builder Credits checkbox toggle.
+    - **Pinned Bottom Action Dock** (`shrink-0 bg-[#FAF8F5] border-t border-[#D8D1C5] p-3 sm:p-3.5 space-y-2.5 shadow-lg`):
+      - Always pinned and accessible at the bottom of the studio panel across all tabs and screen heights.
+      - Export Format Toggle: Lossless PNG (1080 × 1350) vs compact JPG.
+      - Primary CTA: Full-width download button (`bg-[#E85D04] hover:bg-[#D04E00] text-white font-bold py-2.5 rounded-xl shadow-md`).
+      - Secondary Actions: Share Poster (`navigator.share`), Copy Image (clipboard), WhatsApp intent, X (Twitter) intent.
 
 ### Rule 26: In-App Confirmation Modal & Screenshot Vault Anatomy (`ConfirmDialog.tsx` & `screenshotVault.ts`)
 - **Tactile In-App Confirmation Modal (`ConfirmDialog.tsx`):**

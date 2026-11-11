@@ -38,13 +38,11 @@ graph TD
   T14 --> T15["Ticket 15: Two-Row Studio Shell & Contextual Panels"]
   
   T15 --> T16["Ticket 16: Viewport Ergonomics, Celestial Lighting & Presentation Mode"]
-  T15 --> T17["Ticket 17: Tactile Asset Browser & Fort Blueprints Studio"]
   T14 --> T18["Ticket 18: Festive Poster Studio Streamlining"]
   T16 --> T18
   
   T15 --> T19["Ticket 19: Universal Interaction States, Responsive Drawers & Workspaces"]
   T16 --> T19
-  T17 --> T19
   T18 --> T19
   
   T19 --> T20["Ticket 20: Verification Judges, Visual Regression & Readiness"]
@@ -736,75 +734,44 @@ graph TD
 
 ---
 
-## Ticket 17: Tactile Asset Browser & Fort Blueprints Studio
-
-- **Status**: `pending`
-- **Blocked by**: `Ticket 15`
-- **Delivers**:
-  - **Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol**:
-    - *Visual Audit Baseline*: Capture screenshots of the texture picker, foliage library, figurine catalog, lighting props, and `StartupModal` / `ProjectHubModal` fort blueprint cards.
-    - *Ticket Refinement*: Document existing asset thumbnail resolutions, missing descriptions, and card selection states; update ticket criteria before implementing asset browser components.
-    - *Visual Verification*: Capture screenshots demonstrating tactile material sphere previews, foliage thumbnails, and blueprint terrain silhouettes.
-  - **Tactile 3D Asset Browser (Review Items 10 & 18)**:
-    - Upgrade `RightToolSidebar.tsx` into a studio-grade asset browser inspired by Substance 3D and Unreal Bridge.
-    - Categorized filter tabs with live text search: *All*, *Stone & Basalt*, *Earth & Mud*, *Foliage*, *Architecture*, *Figurines*, *Lanterns*.
-    - View mode toggle: Rich Visual Grid vs Compact List View.
-    - Standardized asset card previews:
-      - *Textures:* Dual-preview featuring flat procedural tile swatch alongside lit 3D material sphere showing surface roughness.
-      - *Foliage & Figurines:* Clean renders of actual 3D models against neutral studio backgrounds at normalized comparative scale.
-    - Clean selection state: terracotta border ring and subtle dark stone elevation, eliminating heavy neon green outlines.
-    - Hover inspector badge displaying asset technical metadata (source texture, polygon budget, historical cultural lore).
-  - **Fort Blueprints Selection Studio Redesign (Review Item 16)**:
-    - Overhaul `StartupModal.tsx` and `ProjectHubModal.tsx` fort selection cards:
-      - Replace generic icons with recognizable miniature 3D terrain profile silhouettes for iconic forts (*Raigad*, *Pratapgad*, *Sinhagad*, *Murud-Janjira*, *Sindhudurg*).
-      - Punchy, concise architectural summaries replacing long text paragraphs.
-      - Distinct architectural attribute badges: Elevation (High/Sea-Level), Rampart Type (Giri Durg / Jala Durg), Water Source (Moat / Cistern).
-      - Entire card surface is clickable with instant visual focus and selected indicator.
-
-### Acceptance Criteria
-- [ ] Pre-execution screenshot audit completed for all asset catalogs and blueprint modal cards.
-- [ ] Right sidebar functions as a full tactile asset browser with categories, search, and grid/list view toggle.
-- [ ] Texture cards display dual preview (tile swatch + lit material sphere); foliage/figurines display normalized previews.
-- [ ] Asset selection uses refined terracotta framing without heavy green borders.
-- [ ] Fort blueprint dialog cards display recognizable terrain silhouettes, concise attribute badges, and full-card clickability.
-
----
-
 ## Ticket 18: Festive Fort Poster Studio Streamlining
 
-- **Status**: `pending`
+- **Status**: `completed`
 - **Blocked by**: `Ticket 14`, `Ticket 16`
 - **Delivers**:
   - **Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol**:
-    - *Visual Audit Baseline*: Open the Poster Studio modal (`PosterStudioModal.tsx`) and capture screenshots of all 4 photo slot configurations, background theme selection, plaque text inputs, and export dropdowns.
-    - *Ticket Refinement*: Document repetitive slot parameters, scrolling behavior, and live preview latency; update ticket criteria before restructuring the modal layout.
+    - *Visual Audit Baseline*: Open the Poster Studio modal (`PosterStudioModal.tsx`) and capture screenshots of all 4 photo slot configurations, background theme selection, plaque text inputs, and export dropdowns (`screenshots/ticket18-audit/`).
+    - *Ticket Refinement*: Document repetitive slot parameters, scrolling behavior (1,879px height), and live preview latency; update ticket criteria before restructuring the modal layout.
     - *Visual Verification*: Capture screenshots verifying compact slot navigator, live synchronized selection, and pinned action dock.
   - **Compact 4-Slot Navigator (Review Item 17)**:
     - Replace the long, repetitive vertical scrolling list for Slots 1–4 with a clean, horizontal slot navigator strip (`Slot 1` • `Slot 2` • `Slot 3` • `Slot 4`).
     - Clicking a slot activates its settings in a focused slot inspector, displaying its current camera perspective, time of day, and image source.
   - **Synchronized Slot Selection Feedback**:
-    - The active slot is visually emphasized in both the 4:5 poster preview canvas (subtle corner bracket highlight) and the slot navigator strip.
+    - The active slot is visually emphasized in both the 4:5 poster preview canvas (subtle corner bracket highlight `┌ ┐ └ ┘`) and the slot navigator strip.
+    - Direct click-to-select on the 4:5 poster preview canvas activates the corresponding slot in the inspector.
   - **Logical Parameter Grouping & Sticky Dock**:
-    - Slot parameters organized into clean collapsible accordions:
-      - *Image Source:* Live Viewport vs Local Screenshot Vault thumbnail picker.
+    - Tabbed organization separating *Slots & Layout* from *Poster Style* (themes, royal plaque, branding).
+    - Slot parameters organized into clean grouped sections:
+      - *Image Source:* Live Viewport vs Local Screenshot Vault thumbnail picker vs 3D Presets.
       - *Camera Perspective:* Isometric (45°), Rampart Eye (15°), Bird's Eye (90°), Bastion Hero (30°).
       - *Diurnal Lighting:* Dawn, Noon, Golden Hour, Diwali Night.
-    - Global poster parameters (Royal Shilalekh Plaque text, typography, festival theme) separated into a dedicated *Poster Style* tab.
-    - Sticky layout: the live 1080×1350 poster preview and export action dock (`Download PNG`, `Download JPG`, `Share`, `Copy Image`) remain pinned and accessible while scrolling through slot settings.
+    - Sticky layout: the live 1080×1350 poster preview and export action dock (`Download PNG`, `Download JPG`, `Share`, `Copy Image`, WhatsApp, X) remain permanently pinned and accessible without scrolling.
 
 ### Acceptance Criteria
-- [ ] Pre-execution screenshot audit completed across all poster modal tabs and slot settings.
-- [ ] Compact 4-slot navigator replaces repetitive vertical scrolling lists.
-- [ ] Active slot visually syncs between canvas preview highlight and inspector controls.
-- [ ] Global styling and per-slot controls cleanly separated into tabs.
-- [ ] Live preview and export action dock remain sticky and fully accessible during editing.
+- [x] Pre-execution screenshot audit completed across all poster modal tabs and slot settings (`screenshots/ticket18-audit/`).
+- [x] Compact 4-slot navigator replaces repetitive vertical scrolling lists (`PosterStudioModal.tsx`).
+- [x] Active slot visually syncs between canvas preview highlight and inspector controls.
+- [x] Global styling and per-slot controls cleanly separated into tabs (`Slots & Layout` vs `Poster Style`).
+- [x] Live preview and export action dock remain sticky and fully accessible during editing.
+- [x] Dedicated Vitest test suite passes (`src/components/hud/ticket18.test.ts` - 9 tests, 39 suites, 282 tests).
+- [x] Next.js production build passes with 0 errors (`npm run build` static prerender 7/7).
 
 ---
 
 ## Ticket 19: Universal Interaction States, Responsive Drawers & Workspaces
 
 - **Status**: `pending`
-- **Blocked by**: `Ticket 15`, `Ticket 16`, `Ticket 17`, `Ticket 18`
+- **Blocked by**: `Ticket 15`, `Ticket 16`, `Ticket 18`
 - **Delivers**:
   - **Mandatory Pre-Execution Visual Audit & Ticket Refinement Protocol**:
     - *Visual Audit Baseline*: Capture screenshots across mobile (375px/390px), tablet (820px/1032px), and desktop (1440px+) viewports; capture focus states, keyboard navigation, and destructive confirmation modals.

@@ -332,14 +332,37 @@ An optional authentic simulation layer to be implemented in a subsequent phase:
 ### 4.6 Client-Side Multi-Angle Festive Poster Studio (₹0 Server Cost)
 Do not send screenshots to a backend server. Generate the entire high-res collage inside the user's browser in `< 400ms` using client-side headless Three.js rendering and 2D canvas compositing:
 
-1. **5-Layer Sandwich Compositor (`posterCompositor.ts`):**
-   * **Layer 1 (Base Vector Art)**: Background SVG from 4 curated historical themes (`archway_citadel`, `maratha_garrison`, `sahyadri_sunset`, `fortress_bastion`).
+1. **Streamlined 2-Tab Studio Architecture (`PosterStudioModal.tsx`):**
+   * **2-Tab Workspace Hierarchy**:
+     * *Tab 1: Slots & Layout*: Image count selector (1–4), grid pattern variations (`4 Rows`, `2×2 Quad Grid`, `1 Hero + 3 Rows`, `3 Rows`, `2 Rows`, `2 Columns`, `Single Frame`), horizontal 4-slot navigator strip, and focused single-slot inspector.
+     * *Tab 2: Poster Style*: Festival vector themes, Royal Shilalekh Plaque watermark styles, fort title, builder team credit, festive greetings, and builder credit toggle.
+     * *Scroll Height Elimination*: Reduces vertical controls height from 1,879px to ~350px, completely removing vertical scroll fatigue.
+   * **Compact Horizontal 4-Slot Navigator Strip**:
+     * Fast 1-click slot selector displaying `Slot 1 45°`, `Slot 2 15°`, `Slot 3 30°`, `Slot 4 90°` with real-time diurnal lighting icons (Dawn, Noon, Golden, Night).
+     * Automatically clamps active slot index when image count is reduced (`Math.min(activeSlot, imageCount - 1)`).
+   * **Focused Single-Slot Inspector**:
+     * Inspects and edits only the active slot, eliminating repetitive 4× stacked controls.
+     * Features source switcher (`3D Angles`, `Live Viewport`, `Screenshot Vault`), 4 camera perspective presets with degree markings, 4 diurnal lighting buttons, inline screenshot vault thumbnail picker with in-app deletion confirmations, and individual "Recapture Slot" action alongside global "Recapture All".
+   * **Synchronized Canvas Feedback & Non-Destructive Overlay**:
+     * Bounding rectangles calculated via `calculateGridSlotRects(gridBounds, gridType, 1080, 1350)`.
+     * Renders a responsive CSS/DOM overlay over the 4:5 aspect portrait frame (`aspectRatio: '1080 / 1350'`) with terracotta corner brackets (`┌ ┐ └ ┘`) and active `SLOT X` badge.
+     * *Direct Click-to-Select*: Clicking any slot quadrant/strip on the 4:5 preview canvas instantly selects that slot in the inspector.
+     * *Zero Export Contamination*: All selection brackets live in the DOM overlay and never touch the canvas buffer, ensuring downloaded PNG/JPG files and shared images are 100% clean of editor UI elements.
+   * **Permanently Pinned Export Action Dock**:
+     * Pinned at the bottom of the studio panel across all tabs and screen heights:
+       * *Export Format Toggle:* Lossless PNG (1080 × 1350) vs compact JPG.
+       * *Primary CTA:* Download Festive Poster button.
+       * *Secondary Actions:* Native Web Share API (`navigator.share`) and direct Clipboard copy (`navigator.clipboard.write`).
+       * *Social Web Intents:* Direct share links for WhatsApp and X (Twitter).
+
+2. **5-Layer Sandwich Compositor (`posterCompositor.ts`):**
+   * **Layer 1 (Base Vector Art)**: Background SVG from 4 curated historical themes (`archway_cannon`, `cream_maratha_ensemble`, `maroon_horseback`, `saffron_flag_bearer`).
    * **Layer 2 (Multi-Angle Diorama Grid)**: 1 to 4 images with dynamic grid layouts (4-stacked widescreen horizontal strips matching authentic diorama arch framing, 2×2 quad grid, 3-stacked, 2-stacked, 2-columns, and single full view). **Transparent photo grid gaps** (`border: none`, transparent spacing) allow the rich base artwork to show through seamlessly without dark box fills or heavy borders.
-   * **Layer 3 (Overlay 1)**: Foreground architectural badges and sky fireworks (`layer_02_...`). Unused cliff backgrounds pruned to ensure clean framing.
+   * **Layer 3 (Overlay 1)**: Foreground architectural badges and sky fireworks (`layer_02_...`).
    * **Layer 4 (Overlay 2)**: Foreground figures, artillery cannon, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
    * **Layer 5 (Typography & Stamp)**: Cultural Devanagari display typography (`Yatra One`) with strict multilingual locale isolation (no transliterated Marathi text leaked in English mode). Supports 4 watermark/banner styles: **Royal Stone Plaque** (*Shilalekh* / राजकीय शिलालेख with carved basalt `#26201B` to `#151210` gradient, double gold trim `#D4AF37`, and gold diamond accents `✦`), Traditional Bottom Banner, Corner Stamp, and Pure Artwork.
 
-2. **Headless Offscreen Snapshot Engine & Diurnal Lighting Pipeline (`posterSnapshotEngine.ts`):**
+3. **Headless Offscreen Snapshot Engine & Diurnal Lighting Pipeline (`posterSnapshotEngine.ts`):**
    * Uses `THREE.WebGLRenderTarget` to render at fixed dimensions independent of client screen size (zero DOM resolution distortion across mobile, tablet, 1080p, and 4K displays).
    * 4 standardized camera perspectives matching app navigation: Isometric (45°), Bird's Eye (Top-Down), Rampart Eye (15° Low), and Bastion Hero (30° Citadel Corner), plus live camera orientation.
    * **Diurnal Atmospheric Sky & Lighting Override Pipeline**:
@@ -356,14 +379,14 @@ Do not send screenshots to a backend server. Generate the entire high-res collag
    * **4-Tile Time-of-Day Selector**:
      - Each slot features a dedicated 4-tile time toggle (Dawn, Noon, Golden Hour, Diwali Night) with randomized diurnal default assignments on modal open.
 
-3. **Local Screenshot Vault (`screenshotVault.ts` & `ConfirmDialog.tsx`):**
+4. **Local Screenshot Vault (`screenshotVault.ts` & `ConfirmDialog.tsx`):**
    - Browser IndexedDB storage (`killa_screenshots_db`, store `screenshots`) for diorama snapshots.
    - Viewport screenshot button in `DioramaQuickBar.tsx` captures headless 1920 × 1080 snapshots and dual-saves:
      1. Immediate direct browser download (`killa-diorama-<timestamp>.png`).
      2. Persisted to local IndexedDB gallery for instant assignment to poster slots.
    - Custom in-app confirmation dialogs (`ConfirmDialog.tsx`) protect against accidental deletion of single screenshots or batch vault clearing, replacing invasive browser `window.confirm()`.
 
-4. **Instant Export & Sharing (`posterShare.ts`):**
+5. **Instant Export & Sharing (`posterShare.ts`):**
    * Direct lossless PNG and compact JPG downloads.
    * Web Share API (`navigator.share`) on mobile and supported desktop browsers.
    * Direct image copy to system clipboard (`navigator.clipboard.write([new ClipboardItem(...)])`).

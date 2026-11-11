@@ -347,15 +347,34 @@ Comprehensive spectator and presentation studio designed for pure diorama admira
 ---
 
 ### Phase 9: Showcase, Multi-Angle Poster Studio & Sharing
-Once the user clicks **"Finish Killa"** (or selects `File -> Export Festive Poster`), the diorama transitions into the **Festive Killa Poster Studio** (`PosterStudioModal.tsx`):
+Once the user clicks **"Finish Killa"** (or selects `File -> Export Festive Poster`), the diorama transitions into the streamlined **Festive Killa Poster Studio** (`PosterStudioModal.tsx`):
 
-#### 1. 4 Curated Historical Festival Themes
-* **Archway Citadel (कमान व तोफ):** Ornate stone gate archway with battlements, hanging brass lanterns, artillery cannon, and glowing terracotta diyas overlooking rolling Sahyadri valleys.
-* **Maratha Vanguard (मराठा सैन्यदल):** Maratha soldiers, cavalry commander, bugle herald, and cannon assembled before a sun-drenched hillfort escarpment with traditional geometric borders.
-* **Sahyadri Sunset (सह्याद्री सूर्यास्त):** Saffron flag flying high over bastion ramparts against a dramatic dusk sunset sky and glowing harvest moon.
-* **Fortress Bastion (गड बुरुज):** Saffron flag bearer standing proud on mountain crags with stone watchtowers standing guard along the ridge.
+#### 1. 2-Tab Studio Workspace & Pinned Export Dock
+* **Tab 1: Slots & Layout:**
+  * Controls image count (1 to 4 views) and layout grid variations (`4 Rows`, `2×2 Quad Grid`, `1 Hero + 3 Rows`, `3 Rows`, `2 Rows`, `2 Columns`, `Single Frame`).
+  * **Compact Horizontal 4-Slot Navigator Strip:** Fast 1-click slot switcher (`Slot 1 45°`, `Slot 2 15°`, `Slot 3 30°`, `Slot 4 90°`) displaying live diurnal lighting icons and camera perspective badges, eliminating repetitive vertical scrolling lists.
+  * **Focused Single-Slot Inspector:** Dedicated configuration panel scoped strictly to the selected slot (Image Source, Camera Perspective presets, Diurnal Lighting, and Screenshot Vault assignment). Includes an individual "Recapture Slot" action alongside the global "Recapture All".
+* **Tab 2: Poster Style:**
+  * Curated vector festival themes, Royal Shilalekh Plaque watermark styles, fort title, builder team credit, festive greetings, and builder credit toggle.
+* **Pinned Bottom Export Action Dock:**
+  * Permanently pinned and accessible at the bottom of the studio panel across all tabs and screen heights:
+    * *Export Format Toggle:* Lossless PNG (1080 × 1350) or compact JPG for messaging apps.
+    * *Download CTA:* High-resolution festival poster download button.
+    * *One-Tap Secondary Actions:* Native Web Share API (`navigator.share`) and direct Clipboard copy (`navigator.clipboard.write`).
+    * *Social Web Intents:* Direct share links for WhatsApp and X (Twitter).
 
-#### 2. 5-Layer Sandwich Compositor & Transparent Grid Framing
+#### 2. Synchronized Canvas Feedback & Clean Export Guarantee
+* **Active Slot Visual Feedback:** The active slot is highlighted both on the horizontal navigator strip and on the 4:5 live poster preview with subtle terracotta corner brackets (`┌ ┐ └ ┘`) and an active `SLOT X` badge.
+* **Direct Canvas Click-to-Select:** Clicking any quadrant or panoramic strip directly on the 4:5 poster preview instantly focuses that slot in the inspector.
+* **Zero Export Contamination:** Slot brackets and interactive hotzones are rendered via a responsive CSS/DOM overlay above the canvas. The underlying 1080 × 1350 canvas remains 100% pristine and clean, ensuring that downloaded and shared poster graphics never contain editor UI elements.
+
+#### 3. 4 Curated Historical Festival Themes
+* **Citadel Archway (किल्ला महाद्वार):** Ornate stone gate archway with battlements, hanging brass lanterns, artillery cannon, and glowing terracotta diyas overlooking rolling Sahyadri valleys.
+* **Royal Courtyard (राजदरबार उत्सव):** Maratha soldiers, cavalry commander, bugle herald, and cannon assembled before a sun-drenched hillfort escarpment with traditional geometric borders.
+* **Moonlit Fortress (चंद्रप्रकाशित किल्ला):** Twilight mountain fortress under a radiant full moon and Diwali night fireworks.
+* **Sahyadri Sunrise (सह्याद्री सूर्योदय):** Golden sunrise dawn overlooking misty Sahyadri fortress ramparts with saffron flag bearer standing guard.
+
+#### 4. 5-Layer Sandwich Compositor & Transparent Grid Framing
 * **Layer 1 (Base Vector Art):** High-resolution theme background SVG (`design_01` to `design_04`).
 * **Layer 2 (Multi-Angle Diorama Grid):** 1 to 4 images arranged in responsive layout grids:
   * *4-Row Panoramic Strips (Default):* Widescreen strips matching the central archway opening.
@@ -367,12 +386,12 @@ Once the user clicks **"Finish Killa"** (or selects `File -> Export Festive Post
 * **Layer 4 (Overlay 2):** Foreground figurines, cannon carriage, and terrain base (`layer_03_...`), producing a rich 3D layered parallax depth effect.
 * **Layer 5 (Typography & Royal Plaque):** Authentic Devanagari display typography (`Yatra One`) and custom branding watermarks.
 
-#### 3. Standard Camera Perspectives & Diurnal Snapshot Pipeline
+#### 5. Standard Camera Perspectives & Diurnal Snapshot Pipeline
 * **4 Pre-Configured Perspectives:**
   * *Isometric (45°):* Full fort overview showing perimeter ramparts, tableland, and courtyard bricks.
   * *Bird's Eye (90° Top-Down):* Blueprint layout of mountain tiers and defensive walls.
   * *Rampart Eye (15° Low Hero View):* Dramatic upward entrance view looking at the Maha Darwaza and bastions.
-  * *Bastion Hero (30° Citadel Corner):* Intimate angle focusing on Chhatrapati sinhasan, waving flags, and glowing diyas.
+  * *Bastion Hero (30° Citadel Corner):* Intimate angle focusing on royal throne, waving flags, and glowing diyas.
   * *Live Camera & Gallery:* Ability to assign the current interactive viewport view or pick from locally saved screenshots.
 * **Diurnal Atmospheric Sky & Scene Lighting Overrides:**
   * Snapshots are rendered offscreen via `THREE.WebGLRenderTarget` at fixed dimensions independent of client screen size.
@@ -384,12 +403,12 @@ Once the user clicks **"Finish Killa"** (or selects `File -> Export Festive Post
 * **Atomic Monotonic Request Tracking:**
   * Monotonically incrementing request versions (`slotRequestVersions[slotIndex] = ++lastRequestId`) discard stale asynchronous renders, eliminating flickering or angle-reverting bugs.
 
-#### 4. Screenshot Vault & In-App Deletion Safety
+#### 6. Screenshot Vault & In-App Deletion Safety
 * Dedicated local IndexedDB gallery vault (`killa_screenshots_db`, store `screenshots`).
 * Quick-action screenshot button dual-saves: downloads directly to disk and stores a copy in the vault for immediate use in poster slots.
-* Custom in-app confirmation modal (`ConfirmDialog.tsx`) replaces invasive browser popups for deleting individual shots or clearing the entire vault.
+* Custom in-app confirmation modal replaces invasive browser popups for deleting individual shots or clearing the entire vault.
 
-#### 5. Devanagari Typography, Royal Stone Plaque & Multi-Channel Sharing
+#### 7. Devanagari Typography, Royal Stone Plaque & Multi-Channel Sharing
 * **Royal Stone Plaque (*Shilalekh* / राजकीय शिलालेख):** Basalt stone cartouche (`#26201B` to `#151210`) with polished gold trim (`#D4AF37`), gold diamond accents (`✦`), and gold Devanagari typography (`#FDE68A`).
 * **Strict Multilingual Locale Isolation:** Top-bar language switcher (`EN` | `म` | `हि`) controls all presets and labels; English mode displays clean titles and greetings without bracketed Marathi text.
 * **Export & Sharing Options:**

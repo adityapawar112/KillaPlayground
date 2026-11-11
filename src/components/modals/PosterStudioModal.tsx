@@ -770,7 +770,7 @@ export const PosterStudioModal: React.FC = () => {
       aria-labelledby="poster-studio-title"
       className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs select-none"
     >
-      <div className="relative w-full max-w-6xl h-[92vh] max-h-[960px] bg-[#EBE6DC] border-2 border-[#D8D1C5] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[#2B2621]">
+      <div className="relative w-full max-w-6xl h-[96vh] md:h-[92vh] max-h-[960px] bg-[#EBE6DC] border-2 border-[#D8D1C5] rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[#2B2621]">
         {/* Header Bar */}
         <div className="flex items-center justify-between px-4 py-3 bg-[#FAF8F5] border-b border-[#D8D1C5] shrink-0">
           <div className="flex items-center gap-2.5">
@@ -798,10 +798,10 @@ export const PosterStudioModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Studio Body: 2-Column Responsive Layout */}
+        {/* Studio Body: 2-Column Responsive Layout (Upper Half Preview + Lower Half Properties on Mobile) */}
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
-          {/* Left / Center: Interactive Live Poster Preview */}
-          <div className="flex-1 bg-[#1E1915] p-3 sm:p-5 flex flex-col items-center justify-center relative overflow-hidden min-h-0">
+          {/* Upper Half (Mobile) / Left Column (Desktop): Interactive Live Poster Preview */}
+          <div className="h-[40vh] sm:h-[42vh] md:h-full md:flex-1 bg-[#1E1915] p-2 sm:p-4 flex flex-col items-center justify-center relative overflow-hidden min-h-0 shrink-0 md:shrink">
             {/* Compositing / Capturing Loading Overlay */}
             {(isCapturing || isCompositing) && (
               <div className="absolute top-4 left-4 z-20 flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-xs text-white text-xs font-semibold shadow-lg">
@@ -816,12 +816,15 @@ export const PosterStudioModal: React.FC = () => {
               </div>
             )}
 
-            {/* 4:5 Poster Frame with Strict Aspect Ratio */}
+            {/* 4:5 Poster Frame with Strict Aspect Ratio (Entire poster visible without scrolling) */}
             <div
-              className="relative rounded-lg shadow-2xl overflow-hidden max-w-full max-h-full flex items-center justify-center"
+              className="relative rounded-lg shadow-2xl overflow-hidden flex items-center justify-center"
               style={{
                 aspectRatio: '1080 / 1350',
                 maxHeight: '100%',
+                maxWidth: '100%',
+                height: '100%',
+                width: 'auto',
               }}
             >
               {/* 1080x1350 Canvas Target */}
@@ -876,8 +879,8 @@ export const PosterStudioModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Sidebar: Streamlined Studio Inspector & Sticky Dock */}
-          <div className="w-full md:w-[380px] lg:w-[420px] bg-[#EBE6DC] border-t md:border-t-0 md:border-l border-[#D8D1C5] flex flex-col h-full overflow-hidden min-h-0 shrink-0">
+          {/* Lower Half (Mobile) / Right Column (Desktop): Streamlined Studio Inspector & Sticky Dock */}
+          <div className="w-full flex-1 md:flex-initial md:w-[380px] lg:w-[420px] bg-[#EBE6DC] border-t md:border-t-0 md:border-l border-[#D8D1C5] flex flex-col md:h-full overflow-hidden min-h-0">
             {/* Top Navigation Tabs: Slots & Layout vs Poster Style */}
             <div className="px-3.5 pt-3 pb-2.5 bg-[#FAF8F5] border-b border-[#D8D1C5] shrink-0">
               <div className="grid grid-cols-2 p-1 bg-[#EAE0D3] rounded-xl border border-[#D8D1C5]">

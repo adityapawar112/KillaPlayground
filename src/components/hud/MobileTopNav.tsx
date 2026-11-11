@@ -68,6 +68,7 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = () => {
     setToastMessage,
     openDestructiveConfirm,
     setStartupModalOpen,
+    setPosterModalOpen,
     setShortcutsModalOpen,
     setAboutModalOpen,
     saveProjectLocally,
@@ -182,7 +183,7 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = () => {
     <>
       <header className="fixed top-0 left-0 right-0 z-30 select-none font-sans pointer-events-auto">
         {/* Row 1: Primary Mobile Navigation (38px) */}
-        <div className="h-[38px] px-2 bg-[#EBE6DC]/95 backdrop-blur-md border-b border-[#D8D1C5] shadow-xs flex items-center justify-between gap-1">
+        <div className="h-[38px] px-2 bg-[#EBE6DC]/95 backdrop-blur-md border-b border-[#D8D1C5] shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
           {/* 1. Hamburger Menu Button */}
           <button
             onClick={() => setIsMobileMenuOpen(true)}
@@ -264,6 +265,16 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = () => {
               <ZoomOut size={13} strokeWidth={2} />
             </button>
           </div>
+
+          {/* 6. Festive Fort Poster Studio */}
+          <button
+            onClick={() => setPosterModalOpen(true)}
+            className="h-[30px] px-2 rounded-lg bg-[#E85D04] hover:bg-[#D04E00] text-white text-[10px] font-bold flex items-center gap-1 shrink-0 cursor-pointer active:scale-95 shadow-xs transition-all"
+            title="Festive Fort Poster Studio"
+          >
+            <Sparkles size={12} strokeWidth={2} />
+            <span>Poster</span>
+          </button>
         </div>
 
         {/* Row 2: Attached Playback, Turntable, Workspace, Screenshot & Day/Night (28px) */}
@@ -428,31 +439,40 @@ export const MobileTopNav: React.FC<MobileTopNavProps> = () => {
                   <span>Export JSON Schema</span>
                   <Download size={14} className="text-[#7C7267]" />
                 </button>
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setPosterModalOpen(true);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#D8D1C5] text-left font-semibold flex items-center justify-between border border-[#D8D1C5] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={14} className="text-[#D97706]" />
+                    <span>Festive Fort Poster Studio</span>
+                  </div>
+                  <span className="text-[10px] font-bold bg-[#E85D04]/10 text-[#E85D04] px-2 py-0.5 rounded-full">HD Poster</span>
+                </button>
               </div>
 
-              {/* SECTION: WORKSPACES */}
+              {/* SECTION: PRESENTATION MODE */}
               <div className="space-y-1">
                 <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#7C7267] flex items-center gap-1.5">
-                  <LayoutTemplate size={12} />
-                  <span>Workspace Layout</span>
+                  <Maximize2 size={12} />
+                  <span>Presentation</span>
                 </div>
-                {(['standard', 'focus', 'presentation'] as const).map((ws) => (
-                  <button
-                    key={ws}
-                    onClick={() => {
-                      setWorkspaceLayout(ws);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`w-full px-3 py-2 rounded-xl text-left font-semibold flex items-center justify-between border ${
-                      workspaceLayout === ws
-                        ? 'bg-[#2B2621] text-white border-[#1C1815]'
-                        : 'bg-[#FAF8F5] text-[#2B2621] border-[#D8D1C5] hover:bg-[#D8D1C5]'
-                    }`}
-                  >
-                    <span className="capitalize">{ws} Studio</span>
-                    {workspaceLayout === ws && <Check size={14} className="text-[#B85F45]" />}
-                  </button>
-                ))}
+                <button
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    togglePresentationMode();
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-[#FAF8F5] hover:bg-[#D8D1C5] text-left font-semibold flex items-center justify-between border border-[#D8D1C5] transition-colors cursor-pointer"
+                >
+                  <div className="flex items-center gap-2">
+                    <Maximize2 size={14} className="text-[#B85F45]" />
+                    <span>Presentation View</span>
+                  </div>
+                  <span className="text-[10px] text-[#7C7267] font-mono">1-Tap</span>
+                </button>
               </div>
 
               {/* SECTION: VIEWPORT GUIDES */}

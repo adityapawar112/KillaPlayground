@@ -36,6 +36,7 @@ export const PresentationGlassBar: React.FC = () => {
     viewMode,
     setViewMode,
     cameraViewPreset,
+    activeCameraPreset,
     setCameraViewPreset,
     setPosterModalOpen,
   } = useEditorStore();
@@ -128,17 +129,20 @@ export const PresentationGlassBar: React.FC = () => {
               { id: 'rampart' as const, label: 'Rampart', icon: Castle, color: 'text-[#E85D04]' },
               { id: 'reset' as const, label: 'Home', icon: Focus, color: 'text-[#A3E635]' },
             ];
+            const currentIdx = Math.max(0, PRESETS.findIndex((p) => p.id === activeCameraPreset));
+            const current = PRESETS[currentIdx] || PRESETS[0];
+            const CurrentIcon = current.icon;
+
             return (
               <button
                 onClick={() => {
-                  const currentIdx = Math.max(0, PRESETS.findIndex((p) => p.id === useEditorStore.getState().cameraViewPreset));
                   const nextPreset = PRESETS[(currentIdx + 1) % PRESETS.length];
                   setCameraViewPreset(nextPreset.id);
                 }}
-                title="Cycle Camera View"
+                title={`Perspective: ${current.label} (Tap to cycle)`}
                 className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer active:scale-95"
               >
-                <Box size={16} strokeWidth={2} className="text-[#F59E0B]" />
+                <CurrentIcon size={16} strokeWidth={2} className={current.color} />
               </button>
             );
           })()}
@@ -190,15 +194,6 @@ export const PresentationGlassBar: React.FC = () => {
             className="p-2 rounded-xl hover:bg-white/15 text-white/80 hover:text-white transition-all cursor-pointer active:scale-95"
           >
             <Sparkles size={15} strokeWidth={2} className="text-[#F59E0B]" />
-          </button>
-
-          {/* Workspace Layout Switcher (Tap to cycle: Standard) */}
-          <button
-            onClick={toggleWorkspaceLayout}
-            title={`Workspace: ${workspaceLayout} (Tap to cycle: Standard Studio)`}
-            className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-[#F59E0B] transition-all cursor-pointer active:scale-95"
-          >
-            <LayoutTemplate size={15} strokeWidth={2} />
           </button>
 
           <div className="w-4 h-[1px] bg-white/20 my-0.5" />
@@ -324,19 +319,7 @@ export const PresentationGlassBar: React.FC = () => {
 
           <div className="w-[1px] h-4 bg-white/20 mx-0.5" />
 
-          {/* 6. Workspace Layout Cycle (Returns to Standard Studio) */}
-          <button
-            onClick={toggleWorkspaceLayout}
-            title={`Workspace: ${workspaceLayout} (Click to cycle to Standard Studio)`}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full hover:bg-white/15 text-white/80 hover:text-white transition-colors cursor-pointer"
-          >
-            <LayoutTemplate size={13} strokeWidth={1.75} className="text-[#F59E0B]" />
-            <span className="text-[11px] font-semibold">Presentation</span>
-          </button>
-
-          <div className="w-[1px] h-4 bg-white/20 mx-0.5" />
-
-          {/* 7. Exit Presentation Mode Button (Esc) */}
+          {/* 6. Exit Presentation Mode Button (Esc) */}
           <button
             onClick={() => {
               setPresentationMode(false);

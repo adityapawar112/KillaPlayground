@@ -63,7 +63,7 @@ It is designed for both nostalgic adults who never got to build a killa growing 
 ├── Continuous 360° Turntable Mode & Free Orbit Spectator with zero-modification viewport guard
 ├── 5-Second Celebratory Fireworks Salvo Test Action
 ├── 5-Button Quick-Action Diorama Bar: Day | Play | Pause | Screenshot | Night with continuous festive night pyrotechnics
-├── Mobile Studio Experience & Universal Gestures: Virtual Joystick, Touch Gestures, Bottom Drawer Tabs & Mobile Poster Studio
+├── Mobile Studio Experience & Universal Gestures: Thumb-Corner FOBs, Touch Gestures, Bottom Drawer Tabs & Mobile Poster Studio
 └── Demand Frameloop & Auto-Pause: Tool switching automatically stops playback to ensure responsive demand rendering
 │
 ▼
@@ -466,15 +466,14 @@ To bring the tactile joy of building Diwali mud forts to mobile phones, tablets,
   * *Snapshot Camera:* Captures a clean headless 1920 × 1080 screenshot with physical diurnal sky and scene lighting, dual-saving to disk and the local IndexedDB vault.
   * *Day / Night Diurnal Toggle:* Shifts between daylight courtyard radiance and luminous full-moon Diwali night with festive diyas and pyrotechnic volleys.
 
-#### 2. Double-Ring Virtual Joystick & In-Place Radial Menus (`VirtualJoystick.tsx`, `RadialPieMenu.tsx`)
-* **Bottom-Centered Dual-Zone Virtual Joystick:**
-  * *Inner Core ($r \le 32\text{px}$):* Dragging inside the inner terracotta circle orbits the camera azimuth and polar angles around `controls.target` using continuous spherical coordinate offsets ($d\theta, d\phi$) with zero viewport shear or jump.
-  * *Outer Boundary Ring ($r > 32\text{px}$):* Pushing the thumbstick outward beyond the boundary ring smoothly pans the camera viewport along the screen-right and screen-forward ground vectors.
-  * *Pinch-to-Zoom:* Supports two-finger pinch gestures directly over the joystick zone to zoom the diorama camera in and out.
-* **Flanking Collapsible Action Buttons (FABs) & In-Place Radial Pie Wheel:**
-  * Flanked by a Left FAB (Tool Mode Selector) and Right FAB (Primary Tool Selector).
-  * Tapping either FAB seamlessly converts the center joystick into an SVG radial pie wheel in-place—eliminating disconnected floating popups or secondary windows.
-  * Tapping a pie slice immediately selects the tool or mode, updates the corresponding FAB icon, closes the dial, and restores the double-ring joystick.
+#### 2. Thumb-Corner Floating Action Buttons & Individual Radial Menus (`VirtualJoystick.tsx`)
+* **Diorama Viewport Clearance:**
+  * To maximize diorama visibility on mobile screens (< 1024px), the central 140px virtual joystick was removed in favor of native multi-touch viewport gestures (1-finger orbit, 2-finger pan, pinch zoom, single tap tool action, double-tap drag for continuous sculpt/paint), leaving the central diorama completely unobstructed.
+* **Dual Thumb-Corner Floating Action Buttons (FOBs):**
+  * **Left FOB (`fixed left-4 sm:left-6 z-30`):** 44×44px Sub-Tool Mode Selector button (`#FAF8F5`, `#B85F45` border & icon) displaying the active mode icon. Tapping opens an individual SVG Radial Donut Wheel (`wheelSize: 156px`, inner $r=28\text{px}$, outer $r=76\text{px}$) with mode slices.
+  * **Right FOB (`fixed right-4 sm:right-6 z-30`):** 44×44px Primary Tool Selector button (`#2B2621`, `#D8D1C5` border & `#FAF8F5` icon) displaying the active tool icon. Tapping opens an individual SVG Radial Donut Wheel (`wheelSize: 156px`) with the 7 primary construction tools.
+  * **Seamless 1-Tap Interaction:** Tapping any slice selects the item, updates the corresponding FOB icon, and closes the menu immediately. Includes a dimmed backdrop overlay (`bg-black/20 backdrop-blur-[1px]`) for 1-tap dismiss on outside click.
+  * **Drawer Elevation:** Both FOBs glide upward to `bottom: calc(50vh + 14px)` when the bottom drawer opens, remaining comfortably accessible above the drawer.
 
 #### 3. Universal Gesture Engine (`gestureController.ts`)
 * **Multi-Touch Viewport Controls:**
@@ -488,12 +487,12 @@ To bring the tactile joy of building Diwali mud forts to mobile phones, tablets,
   * Primary click executes tool action; left-click drag orbits; double-tap drag pans; pinch gesture zooms.
   * Keyboard shortcuts provide instant property adjustments (`Shift + Scroll` for brush size, `Ctrl + Scroll` for brush strength).
 * **Input Isolation Guard:**
-  * Any pointer activity originating within the Virtual Joystick, Bottom Drawer, or Top Navigation Bar automatically mutes viewport gestures, preventing conflicting double-actions.
+  * Any pointer activity originating within the Floating Action Buttons, Radial Menus, Bottom Drawer, or Top Navigation Bar automatically mutes viewport gestures, preventing conflicting double-actions.
 
 #### 4. Single-Stage Mobile Bottom Drawer (`MobileBottomDrawer.tsx`)
 * **Single-Stage Drawer Elevation:**
   * Glides between a collapsed $44\text{px}$ grab handle peek and a single open height of $50\text{vh}$, completely eliminating multi-stage jump bugs.
-  * Pulling up the drawer automatically shifts the Virtual Joystick and flanking FABs to `bottom: calc(50vh + 14px)`, keeping navigation controls permanently accessible floating above the drawer.
+  * Pulling up the drawer automatically shifts the thumb-corner Left and Right FOBs to `bottom: calc(50vh + 14px)`, keeping navigation controls permanently accessible floating above the drawer.
 * **Direct Desktop Panel Reuse (Zero Code Duplication):**
   * Directly embeds desktop `<LeftToolSidebar isDrawer />` and `<RightToolSidebar isDrawer />` components into touch-friendly tabbed views, ensuring 100% feature and state parity with desktop mode.
 * **4 Dynamic Tabs Adapted Per Tool & Mode:**

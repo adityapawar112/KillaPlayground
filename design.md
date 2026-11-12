@@ -625,12 +625,17 @@ To maintain visual consistency and eliminate fragmented implementations across t
   - Row 2 (28px Diurnal & Playback Bar): `bg-[#F4F1EA] border-b border-[#D8D1C5] px-2 flex items-center justify-between text-[#4B382C] text-[10px]`.
     - Play/Pause toggle, 360° Turntable spin, 1-Tap Present button (`TbMaximize`), Snapshot camera, and Day/Night diurnal solar toggle.
   - Hamburger Slide-Over Sheet: Width `300px`, max-width `85vw`, `bg-[#FAF8F5] border-r border-[#D8D1C5] shadow-2xl z-50 p-4 space-y-3`. Hosts File / Open / Switch Fort, HD Poster Studio, 1-Tap Presentation View, Overlays, Language Switcher, and Help.
-- **Double-Ring Virtual Joystick & In-Place Radial Pie Wheel (`VirtualJoystick.tsx`, `RadialPieMenu.tsx`):**
-  - Position: Centered bottom viewport (`bottom: 24px` resting, elevated to `bottom: calc(50vh + 14px)` when bottom drawer is open).
-  - Outer Boundary Ring: Diameter `144px`, `bg-[#2B2621]/45 backdrop-blur-xs border border-[#D8D1C5]/60 rounded-full`. 4 tactile cardinal dots (`#D8D1C5`). Pushing past boundary pans camera viewport.
-  - Inner Core Thumbstick: Diameter `64px`, `bg-[#FAF8F5]/95 border-2 border-[#B85F45] rounded-full shadow-md flex items-center justify-center`. Center label "ORBIT" in `text-[9px] font-bold text-[#4B382C]`. Dragging orbits camera spherical angles around diorama center.
-  - Flanking Action Buttons (FABs): Diameter `48px`, `bg-[#FAF8F5] border-1.5 border-[#D8D1C5] rounded-full shadow-md`. Left FAB triggers Tool Mode selector; Right FAB triggers Primary Tool selector.
-  - In-Place Radial Pie Wheel: Tapping either FAB replaces the joystick in-place with a circular SVG donut dial (`diameter: 160px`). Slices feature dark basalt background `#2B2621`, active slice highlight `#B85F45` with gold trim, and center cancel circle (`w-12 h-12 bg-[#FAF8F5] text-[#4B382C]`). Selecting any slice immediately closes the dial and restores the joystick.
+- **Thumb-Corner Floating Action Buttons & Individual Radial Menus (`VirtualJoystick.tsx`):**
+  - Viewport Clearance: The central 140px virtual joystick is completely omitted on mobile screens (< 1024px) to prevent diorama occlusion. Full 3D camera navigation (orbit, pan, pinch-zoom) is handled natively by the gesture engine across the open canvas.
+  - Left FOB (`fixed left-4 sm:left-6 z-30`): Sub-Tool Mode Selector button (`w-11 h-11 rounded-full bg-[#FAF8F5] text-[#B85F45] border-2 border-[#B85F45] shadow-lg flex items-center justify-center active:scale-90`). Displays the active mode icon. Tapping opens the Mode Circle Menu anchored on the left.
+  - Right FOB (`fixed right-4 sm:right-6 z-30`): Primary Tool Selector button (`w-11 h-11 rounded-full bg-[#2B2621] text-[#FAF8F5] border-2 border-[#D8D1C5] shadow-lg flex items-center justify-center active:scale-90`). Displays the active tool icon. Tapping opens the Tool Circle Menu anchored on the right.
+  - Individual Radial Pie Wheel (`RadialPieWheel`): Rendered directly in place of the tapped FOB.
+    - Dimensions: SVG canvas `156×156px`, inner radius $r_{in} = 28\text{px}$, outer radius $r_{out} = 76\text{px}$.
+    - Slices: Default `#FAF8F5` with `#D8D1C5` stroke; active slice `#2B2621` with terracotta `#B85F45` icon tint.
+    - Typography & Icons: Centered at mid-radius $r_{mid} = 52\text{px}$ with 14px Lucide icon and `text-[7.5px] font-bold tracking-tight`.
+    - Center Close Button: Accessible 40×40px circle (`w-10 h-10 rounded-full bg-[#FAF8F5] border border-[#D8D1C5] text-[#5A5248] hover:text-[#2B2621] hover:bg-[#E0D9CE] shadow-md z-10 active:scale-90`).
+    - Dismiss Backdrop: Dimmed fixed overlay (`bg-black/20 backdrop-blur-[1px]`) for 1-tap outside dismissal.
+  - Drawer Coordination: Both FOBs elevate smoothly via `bottom: isDrawerOpen ? 'calc(50vh + 14px)' : '54px'` with `transition-[bottom] duration-300 ease-out`, remaining comfortably accessible above the drawer.
 - **Single-Stage Mobile Bottom Drawer (`MobileBottomDrawer.tsx`):**
   - Closed Peek: Height `44px` with pill grab handle (`w-12 h-1.5 bg-[#D8D1C5] rounded-full`).
   - Open Elevation: Height `50vh`, `bg-[#EBE6DC] border-t border-[#D8D1C5] rounded-t-2xl shadow-[0_-4px_20px_rgba(0,0,0,0.12)]`. Enforces single pull-up with zero multi-stage bouncing.

@@ -270,17 +270,19 @@ The user interface is architected into independent, decoupled modules to provide
    - Row 1 (38px): Hamburger Menu (`☰`) slide-over sheet (File, Switch Fort, HD Poster Studio, Presentation View, Overlays, Language Switcher, Help), Camera Perspective Cycle button (`Iso` -> `Top` -> `Rampart` -> `Home`), Axis Snap cycle (`Z` -> `Y` -> `X`), History Cluster (Undo, Redo, Reset), Zoom In/Out touch buttons, and Festive Fort Poster Studio CTA (`Poster` with sparkles).
    - Row 2 (28px): Play/Pause simulation toggle, 360° Turntable spin, 1-Tap Present Button, Snapshot Camera, and Day/Night Diurnal Toggle.
 8. **`MobileBottomDrawer.tsx` (< 1024px Touch Drawer Engine)**:
-   - Single-stage pull-up gliding from a collapsed 44px handle peek to a single open height of 50vh, shifting the Virtual Joystick and FABs to `bottom: calc(50vh + 14px)`.
+   - Single-stage pull-up gliding from a collapsed 44px handle peek to a single open height of 50vh, shifting the thumb-corner Left and Right FOBs to `bottom: calc(50vh + 14px)`.
    - Reuses desktop `<LeftToolSidebar isDrawer />` and `<RightToolSidebar isDrawer />` directly across 4 contextual tabs:
      - `[ Properties ]`: Universal Left Sidebar properties (sliders, mode parameters).
      - `[ Assets ]`: Asset Vault browsers (Texture Swatches, Foliage library, Figurine 3D models, Festive Diyas & Fireworks).
      - `[ Outliner ]`: Scene hierarchy list (placed structures, figurines, lights).
      - `[ Element ]`: Contextual element properties inspector.
      - Contextual tab routing filters tabs dynamically per tool mode, and selecting an item in the Outliner tab automatically switches the drawer to `[ Element ]`.
-9. **`VirtualJoystick.tsx` & `RadialPieMenu.tsx` (Mobile Navigation & Quick Dial)**:
-   - Double-ring touch joystick centered at the bottom of the screen with inner orbit core ($r \le 32\text{px}$) and outer pan boundary ($r > 32\text{px}$).
-   - Flanked by Left (Mode) and Right (Tool) Floating Action Buttons (FABs).
-   - Tapping either FAB replaces the joystick in-place with an SVG radial pie wheel dial without separate popup windows, instantly returning to the joystick upon slice selection.
+9. **Thumb-Corner Floating Action Buttons & Individual Radial Menus (`VirtualJoystick.tsx`)**:
+   - The central 140px virtual joystick was removed on viewports < 1024px to eliminate screen occlusion and provide 100% unobstructed view of the diorama canvas. Viewport navigation is handled natively by the unified multi-touch gesture engine (1-finger drag orbit, 2-finger drag pan, pinch zoom).
+   - Dual thumb-corner Floating Action Buttons:
+     - **Left FOB (`fixed left-4 sm:left-6 z-30`):** 44×44px Sub-Tool Mode Selector button (`#FAF8F5`, `#B85F45` border & icon) displaying the active mode icon. Tapping opens an individual SVG Radial Donut Wheel (`wheelSize: 156px`) with mode slices.
+     - **Right FOB (`fixed right-4 sm:right-6 z-30`):** 44×44px Primary Tool Selector button (`#2B2621`, `#D8D1C5` border & `#FAF8F5` icon) displaying the active tool icon. Tapping opens an individual SVG Radial Donut Wheel (`wheelSize: 156px`) with 7 primary construction tools.
+   - Individual radial wheels render directly in their respective thumb corners. Selecting any slice closes the wheel, updates the corresponding FOB icon, and dismisses the dimmed backdrop overlay (`bg-black/20 backdrop-blur-[1px]`). Elevates smoothly with the bottom drawer.
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic
 To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:
@@ -347,11 +349,13 @@ To prevent hanging folder guide tabs from colliding under any permutation of ope
       * Two-Finger Drag / Middle Click Drag: Pans viewport.
       * Pinch / Scroll Wheel: Zooms camera.
       * Modifier Shortcuts: `Shift + Scroll` for brush size up/down, `Ctrl + Scroll` for brush strength up/down.
-    - Input Event Isolation: Pointer events initiating over the Virtual Joystick, Bottom Drawer, or Top Navigation Bar are strictly quarantined to prevent double-action leaks into the 3D diorama canvas.
-11. **Virtual Joystick Spherical Orbit & Panning Mathematics (`VirtualJoystick.tsx`)**:
-    - Dual-zone virtual joystick centered at bottom viewport:
-      * Inner Core ($r \le 32\text{px}$): Computes angular offsets $(\Delta\theta, \Delta\phi)$ from the joystick deflection vector $(x, y)$ relative to `controls.target`. Offsets are applied directly to a native Three.js `Spherical` coordinates instance, moving the camera position along the sphere around target, updating `controls.update()`, and dispatching `__killa_invalidate()` to render on-demand. Completely eliminates crashes caused by calling non-existent OrbitControls setters.
-      * Outer Boundary Ring ($r > 32\text{px}$): Translates both camera position and `controls.target` along camera right and forward ground vectors scaled by deflection velocity, providing smooth planar panning.
+    - Input Event Isolation: Pointer events initiating over the Floating Action Buttons, Radial Menus, Bottom Drawer, or Top Navigation Bar are strictly quarantined to prevent double-action leaks into the 3D diorama canvas.
+11. **Thumb-Corner Radial Menu Geometry & Slice Angle Mathematics (`VirtualJoystick.tsx`)**:
+    - Dual thumb-corner SVG radial wheels (`wheelSize: 156px`):
+      * For $N$ slices, angle per slice is $\theta = \frac{2\pi}{N}$, with slice $i$ starting at $\alpha_i = i\theta - \frac{\pi}{2}$ and ending at $\beta_i = (i+1)\theta - \frac{\pi}{2}$.
+      * Inner radius $r_{in} = 28\text{px}$, outer radius $r_{out} = 76\text{px}$. Each donut slice path is computed as `M (x1, y1) L (x2, y2) A (rout) 0 (largeArc) 1 (x3, y3) L (x4, y4) A (rin) 0 (largeArc) 0 (x1, y1) Z`.
+      * Slice icon and label buttons are anchored at midpoint radius $r_{mid} = \frac{r_{in} + r_{out}}{2} = 52\text{px}$ along mid-angle $\frac{\alpha_i + \beta_i}{2}$.
+      * A centered 40px dismiss button (`w-10 h-10 rounded-full bg-[#FAF8F5]`) provides an accessible close touch target. Selecting any slice closes the menu, dispatches store actions, and updates the FOB icon.
 12. **Persistent Camera Perspective Cycle State Machine**:
     - State is tracked persistently via `activeCameraPreset` in `useEditorStore.ts`.
     - Cycles sequentially through `Isometric (45°)` -> `Top-Down (90°)` -> `Rampart Hero (15°)` -> `Home Reset` across desktop bottom bar, mobile top bar, and mobile vertical presentation bar, updating button icons and labels synchronously without one-shot nullification bugs.

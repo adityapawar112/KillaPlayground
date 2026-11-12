@@ -165,6 +165,8 @@ const LOCALE_PRESETS = {
     shareBtn: 'Share Poster',
     copyBtn: 'Copy Image',
     shareX: 'Share on X',
+    exportAndShare: 'Export & Share Poster',
+    exportModalTitle: 'Export & Share Options',
   },
   mr: {
     titles: [
@@ -242,6 +244,8 @@ const LOCALE_PRESETS = {
     shareBtn: 'शेअर करा',
     copyBtn: 'इमेज कॉपी',
     shareX: 'एक्स वर शेअर',
+    exportAndShare: 'पोस्टर एक्सपोर्ट व शेअर',
+    exportModalTitle: 'एक्सपोर्ट व शेअर पर्याय',
   },
   hi: {
     titles: [
@@ -319,6 +323,8 @@ const LOCALE_PRESETS = {
     shareBtn: 'साझा करें',
     copyBtn: 'इमेज कॉपी',
     shareX: 'एक्स पर साझा',
+    exportAndShare: 'पोस्टर एक्सपोर्ट और शेयर',
+    exportModalTitle: 'एक्सपोर्ट और शेयर विकल्प',
   },
 };
 
@@ -379,10 +385,18 @@ export const PosterStudioModal: React.FC = () => {
   const [previewCanvas, setPreviewCanvas] = useState<HTMLCanvasElement | null>(null);
   const [isCompositing, setIsCompositing] = useState<boolean>(false);
   const [isCapturing, setIsCapturing] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const slotRequestVersions = useRef<number[]>([0, 0, 0, 0]);
   const initialCapturedRef = useRef(false);
+
+  // Close export popup whenever main poster studio closes
+  useEffect(() => {
+    if (!isPosterModalOpen) {
+      setIsExportModalOpen(false);
+    }
+  }, [isPosterModalOpen]);
 
   // Clamp active slot index whenever image count changes
   useEffect(() => {
@@ -1441,8 +1455,8 @@ export const PosterStudioModal: React.FC = () => {
               )}
             </div>
 
-            {/* Pinned Bottom Action Dock: Always Visible & Accessible */}
-            <div className="shrink-0 bg-[#FAF8F5] border-t border-[#D8D1C5] p-3 sm:p-3.5 space-y-2.5 shadow-lg">
+            {/* Desktop Pinned Bottom Action Dock: Full Controls */}
+            <div className="hidden md:block shrink-0 bg-[#FAF8F5] border-t border-[#D8D1C5] p-3 sm:p-3.5 space-y-2.5 shadow-lg">
               {/* Format selection */}
               <div className="flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#5A5248]">
@@ -1535,8 +1549,157 @@ export const PosterStudioModal: React.FC = () => {
                 </a>
               </div>
             </div>
+
+            {/* Mobile Pinned Bottom Action Dock: Consolidated Single Button to Maximize Properties Scroll Space */}
+            <div className="md:hidden shrink-0 bg-[#FAF8F5] border-t border-[#D8D1C5] p-2.5 shadow-lg">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(true)}
+                disabled={!previewCanvas || isCompositing}
+                className="w-full py-2.5 px-4 rounded-xl bg-[#E85D04] hover:bg-[#D04E00] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              >
+                <Download className="w-4 h-4" />
+                <span>{presets.exportAndShare}</span>
+                <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-white/20 uppercase tracking-wider">
+                  {exportFormat}
+                </span>
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* Mobile Export & Share Pop-up Dialog: Full Export Settings in Compact Modal */}
+        {isExportModalOpen && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="export-dialog-title"
+            className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs select-none animate-in fade-in duration-150"
+            onClick={() => setIsExportModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-xs sm:max-w-sm bg-[#FAF8F5] border-2 border-[#D8D1C5] rounded-2xl p-4 sm:p-5 shadow-2xl text-[#2B2621] space-y-4 max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Dialog Header */}
+              <div className="flex items-center justify-between pb-2.5 border-b border-[#D8D1C5]">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#FFF2E5] border border-[#FDBA74] text-[#E85D04] flex items-center justify-center shrink-0">
+                    <Download className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 id="export-dialog-title" className="text-sm font-bold text-[#2B2621]">
+                      {presets.exportModalTitle}
+                    </h3>
+                    <p className="text-[11px] text-[#7C7267]">
+                      1080 × 1350 • 4:5 Portrait
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsExportModalOpen(false)}
+                  className="w-8 h-8 rounded-lg hover:bg-[#EAE0D3] text-[#7C7267] hover:text-[#2B2621] flex items-center justify-center transition-colors cursor-pointer"
+                  aria-label="Close export dialog"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Format Selection Row */}
+              <div className="flex items-center justify-between bg-[#EBE6DC] p-2.5 rounded-xl border border-[#D8D1C5]">
+                <span className="text-xs font-semibold text-[#5A5248]">
+                  {presets.exportFormat}
+                </span>
+                <div className="flex items-center gap-1 bg-[#FAF8F5] p-0.5 rounded-lg border border-[#D8D1C5]">
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('png')}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      exportFormat === 'png'
+                        ? 'bg-[#E85D04] text-white shadow-xs'
+                        : 'text-[#5A5248] hover:text-[#2B1E16]'
+                    }`}
+                  >
+                    PNG
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('jpeg')}
+                    className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      exportFormat === 'jpeg'
+                        ? 'bg-[#E85D04] text-white shadow-xs'
+                        : 'text-[#5A5248] hover:text-[#2B1E16]'
+                    }`}
+                  >
+                    JPG
+                  </button>
+                </div>
+              </div>
+
+              {/* Primary Download CTA */}
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={!previewCanvas || isCompositing}
+                className="w-full py-3 px-4 rounded-xl bg-[#E85D04] hover:bg-[#D04E00] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
+              >
+                <Download className="w-4 h-4" />
+                <span>
+                  {presets.downloadBtn} ({exportFormat.toUpperCase()})
+                </span>
+              </button>
+
+              {/* Secondary Sharing Buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  disabled={!previewCanvas || isCompositing}
+                  className="py-2 px-3 rounded-xl bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D8D1C5] text-[#2B2621] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 active:scale-[0.98]"
+                  title="Share to WhatsApp, Instagram, or AirDrop"
+                >
+                  <Share2 className="w-4 h-4 text-[#E85D04]" />
+                  <span>{presets.shareBtn}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCopyClipboard}
+                  disabled={!previewCanvas || isCompositing}
+                  className="py-2 px-3 rounded-xl bg-[#FAF8F5] hover:bg-[#EAE0D3] border border-[#D8D1C5] text-[#2B2621] font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-50 active:scale-[0.98]"
+                  title="Copy image to clipboard"
+                >
+                  <Copy className="w-4 h-4 text-[#B85F45]" />
+                  <span>{presets.copyBtn}</span>
+                </button>
+              </div>
+
+              {/* Direct Social Links */}
+              <div className="flex items-center justify-center gap-4 pt-1.5 border-t border-[#D8D1C5]/60">
+                <a
+                  href={socialLinks.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-[#16A34A] hover:underline flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-[#16A34A]/10 transition-colors"
+                >
+                  <WhatsappIcon className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </a>
+                <span className="text-[#D9C9B4]">•</span>
+                <a
+                  href={socialLinks.twitter}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-[#0284C7] hover:underline flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-[#0284C7]/10 transition-colors"
+                >
+                  <XSocialIcon className="w-4 h-4" />
+                  <span>{presets.shareX}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Custom Themed In-App Confirmation Modal for Screenshot Deletion */}
         {confirmDialog.isOpen && (

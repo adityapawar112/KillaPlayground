@@ -644,6 +644,12 @@ To maintain visual consistency and eliminate fragmented implementations across t
 - **Mobile Vertical Presentation Glass Bar (`PresentationGlassBar.tsx`):**
   - Pinned vertically on screens < 1024px along the left viewport edge (`fixed left-3 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 p-2 bg-[#2B2621]/90 backdrop-blur-md rounded-2xl border border-[#D8D1C5]/30 shadow-2xl`).
   - Houses camera perspective cycling (synced with `activeCameraPreset`), 360° turntable, day/night diurnal lighting, snapshot camera, poster studio launch, and exit button. Redundant presentation buttons are removed.
+- **Mobile Poster Studio Consolidated Export Dock & Dialog (`PosterStudioModal.tsx`):**
+  - Consolidated Action Dock: On viewports < 768px (`md:hidden`), the tall export panel is compressed into a single compact button (`w-full py-2.5 px-4 rounded-xl bg-[#E85D04] text-white font-bold text-sm shadow-md`) displaying `Export & Share Poster [PNG/JPG]`. Pinned height is only 52px, more than doubling the scrollable properties space for slots, layouts, perspectives, and lighting.
+  - Dedicated Export Pop-up Dialog (`fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-4 bg-black/65 backdrop-blur-xs`):
+    - Container: `w-full max-w-xs sm:max-w-sm bg-[#FAF8F5] border-2 border-[#D8D1C5] rounded-2xl p-4 sm:p-5 shadow-2xl text-[#2B2621] space-y-4 max-h-[90vh] overflow-y-auto`.
+    - Contents: Header with title and close `✕` button, PNG/JPG toggle, primary `Download Festive Poster` CTA, `Share Poster` (Web Share API), `Copy Image` (clipboard), and WhatsApp / X social links.
+    - Desktop Mode (`hidden md:block`): Displays full persistent export dock in the right sidebar.
 
 ---
 

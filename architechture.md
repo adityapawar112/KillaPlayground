@@ -283,6 +283,9 @@ The user interface is architected into independent, decoupled modules to provide
      - **Left FOB (`fixed left-4 sm:left-6 z-30`):** 44×44px Sub-Tool Mode Selector button (`#FAF8F5`, `#B85F45` border & icon) displaying the active mode icon. Tapping opens an individual SVG Radial Donut Wheel (`wheelSize: 156px`) with mode slices.
      - **Right FOB (`fixed right-4 sm:right-6 z-30`):** 44×44px Primary Tool Selector button (`#2B2621`, `#D8D1C5` border & `#FAF8F5` icon) displaying the active tool icon. Tapping opens an individual SVG Radial Donut Wheel (`wheelSize: 156px`) with 7 primary construction tools.
    - Individual radial wheels render directly in their respective thumb corners. Selecting any slice closes the wheel, updates the corresponding FOB icon, and dismisses the dimmed backdrop overlay (`bg-black/20 backdrop-blur-[1px]`). Elevates smoothly with the bottom drawer.
+10. **Mobile Poster Studio Consolidated Action Dock & Pop-Up Dialog (`PosterStudioModal.tsx`)**:
+   - On mobile screens (< 768px), the tall persistent export panel is replaced by a single compact action button (`Export & Share Poster [PNG/JPG]`, height: 52px), maximizing vertical scroll space for the properties and slots.
+   - Tapping the button launches a dedicated pop-up modal (`w-full max-w-sm max-h-[90vh]`) containing the PNG/JPG format toggle, primary download CTA, Web Share API trigger, clipboard copy, and direct WhatsApp / X sharing links. Desktop screens continue rendering the full persistent export dock in the right sidebar.
 
 #### Anti-Collision Minimized Guide Tab Positioning Logic
 To prevent hanging folder guide tabs from colliding under any permutation of open and minimized states:

@@ -506,7 +506,7 @@ To bring the tactile joy of building Diwali mud forts to mobile phones, tablets,
 * **Responsive Vertical Split Layout:**
   * *Upper Half (`h-[40vh]`):* Features a dedicated 4:5 aspect ratio viewing frame (`aspectRatio: 1080/1350`, `height: 100%`, `maxWidth: 100%`) displaying the entire festive poster collage clearly without vertical scrolling or aspect distortion.
   * *Lower Half (`flex-1`):* Hosts the desktop-identical segmented tabs (`[ Slots & Layout ]`, `[ Poster Style ]`) and scrollable controls.
-  * *Sticky Action Dock:* Pinned export controls (`Download Festive Poster PNG/JPG`, `Share Poster`, `Copy Image`, WhatsApp and X intents) remain permanently visible at the base.
+  * *Consolidated Mobile Export Action Dock:* On smaller devices (< 768px), the tall pinned export dock is streamlined into a single high-impact button (`Export & Share Poster [PNG/JPG]`) occupying just 52px height, doubling the scrollable properties space. Tapping opens a dedicated, compact Export & Share Pop-up Dialog (`max-w-sm max-h-[90vh]`) containing all settings: PNG/JPG format toggle, primary download CTA, Web Share API trigger, clipboard copy, and direct WhatsApp / X links. The desktop view retains the full side dock.
 
 #### 6. Mobile Vertical Presentation Glass Bar (`PresentationGlassBar.tsx`)
 * On viewports < 1024px, the floating presentation glass capsule is pinned vertically along the left viewport edge (`left-3 top-1/2 -translate-y-1/2`), preventing horizontal cutoff.

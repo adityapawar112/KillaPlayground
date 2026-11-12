@@ -1,7 +1,7 @@
 # Product Specification: Diwali Killa Sandbox
 
 ## 1. Product Vision & Overview
-**Diwali Killa Sandbox** is an interactive, tactile 3D browser experience that lets anyone participate in the traditional Maharashtrian Diwali custom of building miniature mud forts (*Diwali Killa*)[cite: 1, 2]. 
+**Diwali Killa Sandbox** is an interactive, tactile 3D browser experience that lets anyone participate in the traditional Maharashtrian Diwali custom of building miniature mud forts. 
 
 Rather than requiring tedious, complex soil physics just to get started, the product offers a fast, creative **Killa-First** toolset: sculpt terrain, build modular stone fortresses (parametric walls, foundations, stairs, and fortifications), paint ground textures (dirt, sand, grass, gravel, rock), scatter 3D trees and shrubs, place historical figurines and architecture, illuminate the ramparts with glowing diyas and colorful Diwali fireworks (cone fountains and sky shots), and inspect the creation through a cinematic free-fly viewer. 
 
